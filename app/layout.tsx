@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -20,16 +20,17 @@ export const metadata: Metadata = {
     index: false, // 내부 시스템이므로 검색 엔진에 노출 안 함
     follow: false,
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1, // 모바일에서 확대 방지
-  },
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-touch-icon.png',
   },
   manifest: '/manifest.webmanifest',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1, // 모바일에서 확대 방지
   themeColor: '#1e3a8a', // 주 색상
 };
 
