@@ -21,7 +21,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/dashboard"
-              className="btn bg-white text-primary border border-primary hover:bg-gray-50 px-8 py-3 text-lg"
+              className="btn bg-white text-blue-600 border border-blue-600 hover:bg-gray-50 px-8 py-3 text-lg"
             >
               대시보드 보기
             </Link>
