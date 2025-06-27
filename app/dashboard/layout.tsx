@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import DevMockDataManager from '../../components/dev/MockDataManager'
 
 export default function DashboardLayout({
   children,
@@ -171,6 +172,9 @@ export default function DashboardLayout({
           {children}
         </div>
       </main>
+
+      {/* 개발자 도구 */}
+      <DevMockDataManager />
     </div>
   )
 } 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { STORAGE_KEYS, MockDataManager } from '../data/mockData'
 
 export interface EndmillInfo {
   tNumber: number
@@ -34,15 +35,15 @@ export interface EndmillSearchResult {
   endmill: EndmillInfo
 }
 
-// 로컬 스토리지 키
-const CAM_SHEETS_STORAGE_KEY = 'camSheets'
-
 // 로컬 스토리지에서 데이터 로드
 const loadCAMSheetsFromStorage = (): CAMSheet[] => {
   if (typeof window === 'undefined') return []
   
   try {
-    const stored = localStorage.getItem(CAM_SHEETS_STORAGE_KEY)
+    // 초기 데이터가 없으면 자동으로 목업 데이터 로드
+    MockDataManager.initializeCAMSheets()
+    
+    const stored = localStorage.getItem(STORAGE_KEYS.CAM_SHEETS)
     return stored ? JSON.parse(stored) : []
   } catch (error) {
     console.error('CAM Sheets 로드 실패:', error)
@@ -55,7 +56,7 @@ const saveCAMSheetsToStorage = (camSheets: CAMSheet[]) => {
   if (typeof window === 'undefined') return
   
   try {
-    localStorage.setItem(CAM_SHEETS_STORAGE_KEY, JSON.stringify(camSheets))
+    localStorage.setItem(STORAGE_KEYS.CAM_SHEETS, JSON.stringify(camSheets))
   } catch (error) {
     console.error('CAM Sheets 저장 실패:', error)
   }
