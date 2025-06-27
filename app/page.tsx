@@ -10,7 +10,7 @@ export default function HomePage() {
             CNC 앤드밀 관리 시스템
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            800대 CNC 설비를 위한 포괄적인 공구 관리 플랫폼
+            800대 CNC 설비를 위한 포괄적인 앤드밀 관리 플랫폼
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -36,7 +36,7 @@ export default function HomePage() {
             </div>
             <h3 className="text-xl font-semibold mb-2">설비 관리</h3>
             <p className="text-gray-600">
-              800대 CNC 설비의 실시간 상태 모니터링과 24개 공구 위치 관리
+              800대 CNC 설비의 실시간 상태 모니터링과 21개 앤드밀 위치 관리
             </p>
           </div>
           
@@ -70,7 +70,7 @@ export default function HomePage() {
               <div className="text-gray-600">CNC 설비</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">19,200</div>
+              <div className="text-3xl font-bold text-green-600">16,800</div>
               <div className="text-gray-600">공구 위치</div>
             </div>
             <div className="text-center">

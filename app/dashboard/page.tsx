@@ -21,7 +21,7 @@ export default function DashboardPage() {
             <p className="text-xs text-gray-500">742대 가동중</p>
           </div>
           <div className="mt-3 flex justify-between text-xs">
-            <span className="text-gray-500">19,200개</span>
+            <span className="text-gray-500">16,800개</span>
             <span className="text-gray-500">93%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
@@ -218,7 +218,7 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-500">Tool Life 평균</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-red-600">⚠️ B7-005 교체 필요</p>
+              <p className="text-2xl font-bold text-red-600">⚠️ C156 교체 필요</p>
               <p className="text-sm text-gray-500 mt-1">Tool Life 20% 이하</p>
             </div>
             <div className="text-center">
@@ -261,7 +261,7 @@ export default function DashboardPage() {
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">PA1-001 T15</p>
+                  <p className="text-sm font-medium text-gray-900">C001 T15</p>
                   <p className="text-xs text-gray-500">FLAT 12mm - Tool Life 5%</p>
                 </div>
               </div>
@@ -271,7 +271,7 @@ export default function DashboardPage() {
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">B7-003 T08</p>
+                  <p className="text-sm font-medium text-gray-900">C156 T08</p>
                   <p className="text-xs text-gray-500">BALL 8mm - Tool Life 15%</p>
                 </div>
               </div>
@@ -376,11 +376,11 @@ export default function DashboardPage() {
           <div className="mt-4 pt-4 border-t border-gray-100">
             <div className="flex items-center text-sm">
               <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">PA1-001 T15 교체 완료</span>
+              <span className="text-gray-600">C001 T15 교체 완료</span>
             </div>
             <div className="flex items-center text-sm mt-2">
               <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">B7-005 T03 즉시 교체 필요</span>
+              <span className="text-gray-600">C156 T03 즉시 교체 필요</span>
             </div>
           </div>
         </div>
@@ -418,11 +418,11 @@ export default function DashboardPage() {
           <div className="mt-4 pt-4 border-t border-gray-100">
             <div className="flex items-center text-sm">
               <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">PA1-001 가동 중</span>
+              <span className="text-gray-600">C001 가동 중</span>
             </div>
             <div className="flex items-center text-sm mt-2">
               <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">B7-005 대기상태</span>
+              <span className="text-gray-600">C156 대기상태</span>
             </div>
           </div>
         </div>
@@ -438,7 +438,7 @@ export default function DashboardPage() {
             <div className="flex items-center p-3 bg-red-50 rounded-lg">
               <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">B7-005 T03 즉시교체</p>
+                <p className="text-sm font-medium text-gray-900">C156 T03 즉시교체</p>
                 <p className="text-xs text-gray-500">2분 전</p>
               </div>
             </div>
@@ -454,7 +454,7 @@ export default function DashboardPage() {
             <div className="flex items-center p-3 bg-green-50 rounded-lg">
               <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">PA1-001 T15 교체완료</p>
+                <p className="text-sm font-medium text-gray-900">C001 T15 교체완료</p>
                 <p className="text-xs text-gray-500">23분 전</p>
               </div>
             </div>

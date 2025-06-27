@@ -21,52 +21,52 @@ interface Equipment {
 const initialEquipments: Equipment[] = [
   {
     id: '1',
-    modelCode: 'PA1',
+    modelCode: 'C001',
     equipmentNumber: 1,
     status: 'active',
     location: '1공장 A구역',
-    processes: ['CNC#1', 'CNC#2'],
-    toolPositions: { used: 24, total: 24 },
+    processes: ['2공정', '2공종'],
+    toolPositions: { used: 21, total: 21 },
     lastMaintenance: '2024-01-08'
   },
   {
     id: '2',
-    modelCode: 'PA1',
+    modelCode: 'C002',
     equipmentNumber: 2,
     status: 'maintenance',
     location: '1공장 A구역',
-    processes: ['CNC#1', 'CNC#2'],
-    toolPositions: { used: 0, total: 24 },
+    processes: ['2공정', '2-1공정'],
+    toolPositions: { used: 0, total: 21 },
     lastMaintenance: '2024-01-10'
   },
   {
     id: '3',
-    modelCode: 'PS',
-    equipmentNumber: 1,
+    modelCode: 'C025',
+    equipmentNumber: 25,
     status: 'active',
     location: '2공장 B구역',
-    processes: ['CNC#1'],
-    toolPositions: { used: 23, total: 24 },
+    processes: ['1공정'],
+    toolPositions: { used: 20, total: 21 },
     lastMaintenance: '2024-01-05'
   },
   {
     id: '4',
-    modelCode: 'B7',
-    equipmentNumber: 1,
+    modelCode: 'C156',
+    equipmentNumber: 156,
     status: 'offline',
     location: '2공장 C구역',
-    processes: ['CNC#1', 'CNC#2'],
-    toolPositions: { used: 12, total: 24 },
+    processes: ['3공정', '2공종'],
+    toolPositions: { used: 12, total: 21 },
     lastMaintenance: '2023-12-28'
   },
   {
     id: '5',
-    modelCode: 'Q7',
-    equipmentNumber: 1,
+    modelCode: 'C342',
+    equipmentNumber: 342,
     status: 'active',
     location: '3공장 A구역',
-    processes: ['CNC#1'],
-    toolPositions: { used: 20, total: 24 },
+    processes: ['2공정'],
+    toolPositions: { used: 19, total: 21 },
     lastMaintenance: '2024-01-12'
   }
 ]
@@ -221,12 +221,15 @@ export default function EquipmentPage() {
               onChange={(e) => setModelFilter(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">모든 모델</option>
-              <option value="PA1">PA1</option>
-              <option value="PA2">PA2</option>
-              <option value="PS">PS</option>
-              <option value="B7">B7</option>
-              <option value="Q7">Q7</option>
+              <option value="">모든 설비</option>
+              <option value="C001-C100">C001-C100</option>
+              <option value="C101-C200">C101-C200</option>
+              <option value="C201-C300">C201-C300</option>
+              <option value="C301-C400">C301-C400</option>
+              <option value="C401-C500">C401-C500</option>
+              <option value="C501-C600">C501-C600</option>
+              <option value="C601-C700">C601-C700</option>
+              <option value="C701-C800">C701-C800</option>
             </select>
           </div>
           <button 
@@ -272,7 +275,7 @@ export default function EquipmentPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900">
-                        {equipment.modelCode}-{equipment.equipmentNumber.toString().padStart(3, '0')}
+                        {equipment.modelCode}
                       </div>
                       <div className="text-sm text-gray-500">{equipment.processes.join(', ')}</div>
                       <div className="text-xs text-gray-400">{equipment.location}</div>

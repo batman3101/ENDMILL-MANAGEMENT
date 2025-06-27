@@ -121,8 +121,8 @@ export default function EndmillPage() {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">PA1-001</div>
-                  <div className="text-sm text-gray-500">CNC#1 T03</div>
+                  <div className="text-sm text-gray-900">C001</div>
+                  <div className="text-sm text-gray-500">2공정 T03</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
@@ -156,8 +156,8 @@ export default function EndmillPage() {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">PA1-002</div>
-                  <div className="text-sm text-gray-500">CNC#2 T15</div>
+                  <div className="text-sm text-gray-900">C042</div>
+                  <div className="text-sm text-gray-500">2-1공정 T15</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
