@@ -107,15 +107,15 @@ export default function CAMSheetsPage() {
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-              📅
+            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+              ⚡
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">최신 버전</p>
-              <p className="text-2xl font-bold text-orange-600">
+              <p className="text-sm font-medium text-gray-600">효율성 지수</p>
+              <p className="text-2xl font-bold text-yellow-600">
                 {camSheets.length > 0 
-                  ? `v${Math.max(...camSheets.map(s => parseFloat(s.camVersion.replace('v', ''))))}`
-                  : 'v1.0'
+                  ? `${Math.round((camSheets.reduce((acc, sheet) => acc + sheet.endmills.length, 0) / Math.max(camSheets.length * 10, 1)) * 100)}%`
+                  : '0%'
                 }
               </p>
             </div>
