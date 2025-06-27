@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useCAMSheets, CAMSheet, EndmillInfo } from '../../../lib/hooks/useCAMSheets'
 import CAMSheetForm from '../../../components/features/CAMSheetForm'
+import ExcelUploader from '../../../components/features/ExcelUploader'
 
 export default function CAMSheetsPage() {
   const { 
@@ -14,6 +15,7 @@ export default function CAMSheetsPage() {
     deleteCAMSheet 
   } = useCAMSheets()
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showExcelUploader, setShowExcelUploader] = useState(false)
   const [selectedSheet, setSelectedSheet] = useState<CAMSheet | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [modelFilter, setModelFilter] = useState('')
@@ -110,6 +112,15 @@ export default function CAMSheetsPage() {
   const handleCreateCAMSheet = (data: any) => {
     createCAMSheet(data)
     setShowAddForm(false)
+  }
+
+  // 엑셀 데이터 일괄 등록 처리
+  const handleBulkImport = (camSheets: Omit<CAMSheet, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+    camSheets.forEach(sheet => {
+      createCAMSheet(sheet)
+    })
+    setShowExcelUploader(false)
+    alert(`${camSheets.length}개의 CAM Sheet가 성공적으로 등록되었습니다.`)
   }
 
   // CAM Sheet 삭제
@@ -343,12 +354,20 @@ export default function CAMSheetsPage() {
               <option value="2-1공정">2-1공정</option>
             </select>
           </div>
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            + CAM Sheet 등록
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowExcelUploader(true)}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              📁 엑셀 일괄 등록
+            </button>
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              + CAM Sheet 등록
+            </button>
+          </div>
         </div>
       </div>
 
@@ -490,6 +509,14 @@ export default function CAMSheetsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 엑셀 업로더 */}
+      {showExcelUploader && (
+        <ExcelUploader
+          onDataParsed={handleBulkImport}
+          onClose={() => setShowExcelUploader(false)}
+        />
       )}
 
       {/* CAM Sheet 등록 폼 */}
