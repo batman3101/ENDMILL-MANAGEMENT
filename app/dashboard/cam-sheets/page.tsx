@@ -469,8 +469,8 @@ export default function CAMSheetsPage() {
                     <tr>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">T번호</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">앤드밀 코드</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">앤드밀 이름</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">사양</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tool Life</th>
                     </tr>
                   </thead>

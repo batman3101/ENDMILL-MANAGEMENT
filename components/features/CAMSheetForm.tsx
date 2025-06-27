@@ -201,7 +201,7 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">앤드밀 이름</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                   <input
                     type="text"
                     placeholder="FLAT 12mm 4날"
@@ -235,7 +235,7 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">사양</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">앤드밀 이름</label>
                 <input
                   type="text"
                   placeholder="직경12mm, 4날, 코팅TiN"
@@ -256,8 +256,8 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
                       <tr>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">T번호</th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">코드</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">이름</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">사양</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">앤드밀 이름</th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tool Life</th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">작업</th>
                       </tr>
