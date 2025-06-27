@@ -62,10 +62,6 @@ export default function CAMSheetsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">CAM SHEET 관리</h1>
-        <p className="text-gray-600">모델별 CAM Sheet 및 앤드밀 정보 관리</p>
-      </div>
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -117,7 +113,10 @@ export default function CAMSheetsPage() {
             <div>
               <p className="text-sm font-medium text-gray-600">최신 버전</p>
               <p className="text-2xl font-bold text-orange-600">
-                {Math.max(...camSheets.map(s => parseFloat(s.camVersion.replace('v', ''))))}
+                {camSheets.length > 0 
+                  ? `v${Math.max(...camSheets.map(s => parseFloat(s.camVersion.replace('v', ''))))}`
+                  : 'v1.0'
+                }
               </p>
             </div>
           </div>
