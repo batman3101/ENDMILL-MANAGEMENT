@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useToast } from '../../../components/shared/Toast'
 
 // 교체 실적 데이터 타입
 interface ToolChange {
@@ -51,6 +52,7 @@ const sampleData: ToolChange[] = [
 ]
 
 export default function ToolChangesPage() {
+  const { showSuccess, showError } = useToast()
   const [showAddForm, setShowAddForm] = useState(false)
   const [toolChanges, setToolChanges] = useState<ToolChange[]>(sampleData)
   const getCurrentDateTime = () => {
@@ -96,6 +98,11 @@ export default function ToolChangesPage() {
     
     setToolChanges([newToolChange, ...toolChanges])
     setShowAddForm(false)
+    
+    showSuccess(
+      '교체 실적 등록 완료',
+      `${formData.equipmentNumber} T${formData.tNumber.toString().padStart(2, '0')} 교체 실적이 등록되었습니다.`
+    )
     
     // 폼 초기화
     setFormData({

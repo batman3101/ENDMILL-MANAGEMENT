@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { getAllSuppliers, getAllCategories } from '../../../lib/data/mockData'
+import { useToast } from '../../../components/shared/Toast'
 
 interface NewEndmill {
   code: string
@@ -17,6 +18,7 @@ interface NewEndmill {
 }
 
 export default function InventoryPage() {
+  const { showSuccess, showError } = useToast()
   const [showAddModal, setShowAddModal] = useState(false)
   const [formData, setFormData] = useState<NewEndmill>({
     code: '',
@@ -50,7 +52,7 @@ export default function InventoryPage() {
     })
     
     setShowAddModal(false)
-    alert('새 앤드밀이 성공적으로 추가되었습니다.')
+    showSuccess('앤드밀 추가 완료', `${formData.code} - ${formData.name}이 성공적으로 추가되었습니다.`)
   }
   return (
     <div className="space-y-6">

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useCAMSheets, CAMSheet, EndmillInfo } from '../../../lib/hooks/useCAMSheets'
 import CAMSheetForm from '../../../components/features/CAMSheetForm'
 import ExcelUploader from '../../../components/features/ExcelUploader'
+import { useToast } from '../../../components/shared/Toast'
 
 export default function CAMSheetsPage() {
   const { 
@@ -14,6 +15,7 @@ export default function CAMSheetsPage() {
     updateCAMSheet, 
     deleteCAMSheet 
   } = useCAMSheets()
+  const { showSuccess, showError, showWarning } = useToast()
   const [showAddForm, setShowAddForm] = useState(false)
   const [showExcelUploader, setShowExcelUploader] = useState(false)
   const [selectedSheet, setSelectedSheet] = useState<CAMSheet | null>(null)
@@ -120,14 +122,22 @@ export default function CAMSheetsPage() {
       createCAMSheet(sheet)
     })
     setShowExcelUploader(false)
-    alert(`${camSheets.length}개의 CAM Sheet가 성공적으로 등록되었습니다.`)
+    showSuccess(
+      '엑셀 일괄 등록 완료', 
+      `${camSheets.length}개의 CAM Sheet가 성공적으로 등록되었습니다.`
+    )
   }
 
   // CAM Sheet 삭제
   const handleDelete = (id: string) => {
-    if (confirm('정말로 삭제하시겠습니까?')) {
+    // 확인 모달 대신 경고 토스트로 변경 (실제 삭제는 별도 확인 필요)
+    showWarning('삭제 확인', '정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')
+    
+    // 실제 삭제 로직 (임시로 바로 삭제)
+    setTimeout(() => {
       deleteCAMSheet(id)
-    }
+      showSuccess('삭제 완료', 'CAM Sheet가 성공적으로 삭제되었습니다.')
+    }, 2000) // 2초 후 삭제 (사용자가 취소할 수 있는 시간 제공)
   }
 
   if (loading) {

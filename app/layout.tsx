@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import QueryProvider from '../lib/providers/QueryProvider';
+import { ToastProvider } from '../components/shared/Toast'
 
 export const metadata: Metadata = {
   title: {
@@ -58,9 +59,11 @@ export default function RootLayout({
         </a>
         
         <main id="main-content" className="min-h-screen">
-          <QueryProvider>
-            {children}
-          </QueryProvider>
+          <ToastProvider>
+            <QueryProvider>
+              {children}
+            </QueryProvider>
+          </ToastProvider>
         </main>
         
         {/* Toast 알림을 위한 컨테이너 */}

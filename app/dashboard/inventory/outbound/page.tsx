@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { findEndmillByCode, EndmillMaster } from '../../../../lib/data/mockData'
+import { useToast } from '../../../../components/shared/Toast'
 
 interface OutboundItem {
   id: string
@@ -19,6 +20,7 @@ interface OutboundItem {
 }
 
 export default function OutboundPage() {
+  const { showSuccess, showError, showWarning } = useToast()
   const [isScanning, setIsScanning] = useState(false)
   const [scannedCode, setScannedCode] = useState('')
   const [outboundItems, setOutboundItems] = useState<OutboundItem[]>([])
@@ -48,14 +50,14 @@ export default function OutboundPage() {
 
   const handleProcessOutbound = () => {
     if (!endmillData || quantity <= 0 || !equipmentNumber.trim()) {
-      alert('앤드밀 정보, 수량, 설비번호를 확인해주세요.')
+      showError('입력 확인 필요', '앤드밀 정보, 수량, 설비번호를 확인해주세요.')
       return
     }
 
     // 설비번호 패턴 검증
     const equipmentPattern = /^C[0-9]{3}$/
     if (!equipmentPattern.test(equipmentNumber)) {
-      alert('설비번호는 C001-C800 형식으로 입력해주세요.')
+      showWarning('설비번호 형식 오류', '설비번호는 C001-C800 형식으로 입력해주세요.')
       return
     }
 
@@ -84,7 +86,10 @@ export default function OutboundPage() {
     setScannedCode('')
     setErrorMessage('')
     
-    alert('출고 처리가 완료되었습니다.')
+    showSuccess(
+      '출고 처리 완료',
+      `${endmillData.code} ${quantity}개가 ${equipmentNumber} T${tNumber.toString().padStart(2, '0')}로 출고되었습니다.`
+    )
   }
 
   // 총액 계산

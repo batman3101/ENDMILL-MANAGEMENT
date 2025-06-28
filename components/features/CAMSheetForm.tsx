@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { findEndmillByCode } from '../../lib/data/mockData'
+import { useToast } from '../shared/Toast'
 
 interface EndmillInfo {
   tNumber: number
@@ -26,6 +27,8 @@ interface CAMSheetFormProps {
 }
 
 export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMSheetFormProps) {
+  const { showSuccess, showError, showWarning } = useToast()
+
   const [formData, setFormData] = useState<CAMSheetFormData>({
     model: initialData?.model || '',
     process: initialData?.process || '',
@@ -92,13 +95,13 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
 
   const handleAddEndmill = () => {
     if (!newEndmill.endmillCode || !newEndmill.endmillName) {
-      alert('앤드밀 코드와 이름을 입력해주세요.')
+      showError('입력 오류', '앤드밀 코드와 이름을 입력해주세요.')
       return
     }
 
     // T번호 중복 확인
     if (formData.endmills.some(e => e.tNumber === newEndmill.tNumber)) {
-      alert('이미 사용 중인 T번호입니다.')
+      showWarning('중복 오류', '이미 사용 중인 T번호입니다.')
       return
     }
 
@@ -117,6 +120,8 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
     })
     setErrorMessage('')
     setAutoLoadedInfo(null)
+    
+    showSuccess('앤드밀 추가', `T${newEndmill.tNumber.toString().padStart(2, '0')} 앤드밀이 추가되었습니다.`)
   }
 
   const handleRemoveEndmill = (tNumber: number) => {
@@ -130,16 +135,17 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
     e.preventDefault()
     
     if (!formData.model || !formData.process || !formData.camVersion) {
-      alert('필수 필드를 모두 입력해주세요.')
+      showError('입력 오류', '필수 필드를 모두 입력해주세요.')
       return
     }
 
     if (formData.endmills.length === 0) {
-      alert('최소 하나 이상의 앤드밀을 등록해주세요.')
+      showError('앤드밀 필요', '최소 하나 이상의 앤드밀을 등록해주세요.')
       return
     }
 
     onSubmit(formData)
+    showSuccess('CAM Sheet 저장', '새로운 CAM Sheet가 성공적으로 등록되었습니다.')
   }
 
   return (

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { findEndmillByCode, getAllSuppliers, EndmillMaster } from '../../../../lib/data/mockData'
+import { useToast } from '../../../../components/shared/Toast'
 
 interface InboundItem {
   id: string
@@ -17,6 +18,7 @@ interface InboundItem {
 }
 
 export default function InboundPage() {
+  const { showSuccess, showError, showWarning } = useToast()
   const [isScanning, setIsScanning] = useState(false)
   const [scannedCode, setScannedCode] = useState('')
   const [inboundItems, setInboundItems] = useState<InboundItem[]>([])
@@ -49,7 +51,7 @@ export default function InboundPage() {
 
   const handleProcessInbound = () => {
     if (!endmillData || quantity <= 0 || !selectedSupplier.trim() || unitPrice <= 0) {
-      alert('앤드밀 정보, 수량, 공급업체, 단가를 모두 확인해주세요.')
+      showError('입력 확인 필요', '앤드밀 정보, 수량, 공급업체, 단가를 모두 확인해주세요.')
       return
     }
 
@@ -75,7 +77,10 @@ export default function InboundPage() {
     setScannedCode('')
     setErrorMessage('')
     
-    alert('입고 처리가 완료되었습니다.')
+    showSuccess(
+      '입고 처리 완료', 
+      `${endmillData.code} ${quantity}개가 성공적으로 입고되었습니다. (총액: ${(quantity * unitPrice).toLocaleString()} VND)`
+    )
   }
 
   // 총액 계산
