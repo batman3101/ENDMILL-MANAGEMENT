@@ -5,11 +5,11 @@ import { useState, useMemo } from 'react'
 // 로컬 상태용 타입 정의
 interface Equipment {
   id: string
-  modelCode: string
-  equipmentNumber: number
-  status: 'active' | 'maintenance' | 'offline'
-  location: string
-  processes: string[]
+  equipmentNumber: string // C001-C800
+  location: 'A동' | 'B동'
+  status: '가동중' | '점검중' | '셋업중'
+  currentModel: string // 현재 생산 모델
+  process: string // CNC1, CNC2, CNC2-1 등
   toolPositions: {
     used: number
     total: number
@@ -17,59 +17,51 @@ interface Equipment {
   lastMaintenance: string
 }
 
-// 샘플 데이터
-const initialEquipments: Equipment[] = [
-  {
-    id: '1',
-    modelCode: 'C001',
-    equipmentNumber: 1,
-    status: 'active',
-    location: '1공장 A구역',
-    processes: ['CNC2', 'CNC2-2'],
-    toolPositions: { used: 21, total: 21 },
-    lastMaintenance: '2024-01-08'
-  },
-  {
-    id: '2',
-    modelCode: 'C002',
-    equipmentNumber: 2,
-    status: 'maintenance',
-    location: '1공장 A구역',
-    processes: ['CNC2', 'CNC2-1'],
-    toolPositions: { used: 0, total: 21 },
-    lastMaintenance: '2024-01-10'
-  },
-  {
-    id: '3',
-    modelCode: 'C025',
-    equipmentNumber: 25,
-    status: 'active',
-    location: '2공장 B구역',
-    processes: ['CNC1'],
-    toolPositions: { used: 20, total: 21 },
-    lastMaintenance: '2024-01-05'
-  },
-  {
-    id: '4',
-    modelCode: 'C156',
-    equipmentNumber: 156,
-    status: 'offline',
-    location: '2공장 C구역',
-    processes: ['CNC3', 'CNC2-2'],
-    toolPositions: { used: 12, total: 21 },
-    lastMaintenance: '2023-12-28'
-  },
-  {
-    id: '5',
-    modelCode: 'C342',
-    equipmentNumber: 342,
-    status: 'active',
-    location: '3공장 A구역',
-    processes: ['CNC2'],
-    toolPositions: { used: 19, total: 21 },
-    lastMaintenance: '2024-01-12'
+// 800대 설비 데이터 생성 함수
+const generateEquipmentData = (): Equipment[] => {
+  const equipments: Equipment[] = []
+  const models = ['PA1', 'PA2', 'PS', 'B7', 'Q7']
+  const processes = ['CNC1', 'CNC2', 'CNC2-1']
+  const locations: ('A동' | 'B동')[] = ['A동', 'B동']
+  const statuses: ('가동중' | '점검중' | '셋업중')[] = ['가동중', '점검중', '셋업중']
+  
+  for (let i = 1; i <= 800; i++) {
+    const equipmentNumber = `C${i.toString().padStart(3, '0')}`
+    const location = i <= 400 ? 'A동' : 'B동'
+    const currentModel = models[Math.floor(Math.random() * models.length)]
+    const process = processes[Math.floor(Math.random() * processes.length)]
+    
+    // 상태 분포: 가동중 70%, 점검중 20%, 셋업중 10%
+    let status: '가동중' | '점검중' | '셋업중'
+    const rand = Math.random()
+    if (rand < 0.7) status = '가동중'
+    else if (rand < 0.9) status = '점검중'
+    else status = '셋업중'
+    
+    // 앤드밀 사용량: 점검중이면 0, 나머지는 15-21개
+    const used = status === '점검중' ? 0 : Math.floor(Math.random() * 7) + 15
+    
+    // 마지막 점검일
+    const lastMaintenanceDate = new Date()
+    lastMaintenanceDate.setDate(lastMaintenanceDate.getDate() - Math.floor(Math.random() * 30))
+    
+    equipments.push({
+      id: i.toString(),
+      equipmentNumber,
+      location,
+      status,
+      currentModel,
+      process,
+      toolPositions: { used, total: 21 },
+      lastMaintenance: lastMaintenanceDate.toISOString().split('T')[0]
+    })
   }
-]
+  
+  return equipments
+}
+
+// 샘플 데이터
+const initialEquipments: Equipment[] = generateEquipmentData()
 
 export default function EquipmentPage() {
   const [equipments, setEquipments] = useState<Equipment[]>(initialEquipments)
@@ -82,12 +74,13 @@ export default function EquipmentPage() {
   const filteredEquipments = useMemo(() => {
     return equipments.filter(equipment => {
       const matchesSearch = searchTerm === '' || 
-        equipment.modelCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        equipment.equipmentNumber.toString().includes(searchTerm) ||
-        equipment.location.toLowerCase().includes(searchTerm.toLowerCase())
+        equipment.equipmentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        equipment.currentModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        equipment.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        equipment.process.toLowerCase().includes(searchTerm.toLowerCase())
       
       const matchesStatus = statusFilter === '' || equipment.status === statusFilter
-      const matchesModel = modelFilter === '' || equipment.modelCode === modelFilter
+      const matchesModel = modelFilter === '' || equipment.currentModel === modelFilter
       
       return matchesSearch && matchesStatus && matchesModel
     })
@@ -96,27 +89,27 @@ export default function EquipmentPage() {
   // 상태별 색상
   const getStatusBadge = (status: Equipment['status']) => {
     switch (status) {
-      case 'active':
+      case '가동중':
         return 'bg-green-100 text-green-800'
-      case 'maintenance':
+      case '점검중':
         return 'bg-red-100 text-red-800'
-      case 'offline':
-        return 'bg-gray-100 text-gray-800'
+      case '셋업중':
+        return 'bg-orange-100 text-orange-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
   }
 
-  const getStatusText = (status: Equipment['status']) => {
+  const getStatusIcon = (status: Equipment['status']) => {
     switch (status) {
-      case 'active':
-        return '가동 중'
-      case 'maintenance':
-        return '점검 중'
-      case 'offline':
-        return '정지'
+      case '가동중':
+        return '🟢'
+      case '점검중':
+        return '🔧'
+      case '셋업중':
+        return '⚙️'
       default:
-        return '알 수 없음'
+        return '❓'
     }
   }
 
@@ -133,7 +126,7 @@ export default function EquipmentPage() {
         <p className="text-gray-600">800대 CNC 설비 현황 및 관리</p>
       </div>
 
-      {/* 통계 카드 */}
+      {/* 상단 설비 상태 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center">
@@ -142,7 +135,7 @@ export default function EquipmentPage() {
             </div>
             <div>
               <p className="text-sm text-gray-600">총 설비</p>
-              <p className="text-xl font-bold text-gray-900">{equipments.length}</p>
+              <p className="text-xl font-bold text-gray-900">{equipments.length}대</p>
             </div>
           </div>
         </div>
@@ -150,12 +143,12 @@ export default function EquipmentPage() {
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-              ✅
+              🟢
             </div>
             <div>
-              <p className="text-sm text-gray-600">가동 중</p>
+              <p className="text-sm text-gray-600">가동설비</p>
               <p className="text-xl font-bold text-green-600">
-                {equipments.filter(eq => eq.status === 'active').length}
+                {equipments.filter(eq => eq.status === '가동중').length}대
               </p>
             </div>
           </div>
@@ -167,9 +160,9 @@ export default function EquipmentPage() {
               🔧
             </div>
             <div>
-              <p className="text-sm text-gray-600">점검 중</p>
+              <p className="text-sm text-gray-600">점검중</p>
               <p className="text-xl font-bold text-red-600">
-                {equipments.filter(eq => eq.status === 'maintenance').length}
+                {equipments.filter(eq => eq.status === '점검중').length}대
               </p>
             </div>
           </div>
@@ -177,15 +170,83 @@ export default function EquipmentPage() {
         
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
-              ⏸️
+            <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+              ⚙️
             </div>
             <div>
-              <p className="text-sm text-gray-600">정지</p>
-              <p className="text-xl font-bold text-gray-600">
-                {equipments.filter(eq => eq.status === 'offline').length}
+              <p className="text-sm text-gray-600">셋업중</p>
+              <p className="text-xl font-bold text-orange-600">
+                {equipments.filter(eq => eq.status === '셋업중').length}대
               </p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 모델별/공정별 설비 배치 현황 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 모델별 배치 현황 */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 모델별 설비 배치</h3>
+          <div className="space-y-3">
+            {['PA1', 'PA2', 'PS', 'B7', 'Q7'].map(model => {
+              const modelEquipments = equipments.filter(eq => eq.currentModel === model)
+              const aCount = modelEquipments.filter(eq => eq.location === 'A동').length
+              const bCount = modelEquipments.filter(eq => eq.location === 'B동').length
+              const total = modelEquipments.length
+              
+              return (
+                <div key={model} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-sm font-bold text-blue-600">{model}</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{model} 모델</p>
+                      <p className="text-sm text-gray-500">A동: {aCount}대 | B동: {bCount}대</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-gray-900">{total}대</p>
+                    <p className="text-xs text-gray-500">전체</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* 공정별 배치 현황 */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">⚙️ 공정별 설비 배치</h3>
+          <div className="space-y-3">
+            {['CNC1', 'CNC2', 'CNC2-1'].map(process => {
+              const processEquipments = equipments.filter(eq => eq.process === process)
+              const aCount = processEquipments.filter(eq => eq.location === 'A동').length
+              const bCount = processEquipments.filter(eq => eq.location === 'B동').length
+              const total = processEquipments.length
+              const activeCount = processEquipments.filter(eq => eq.status === '가동중').length
+              
+              return (
+                <div key={process} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-xs font-bold text-green-600">{process}</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{process} 공정</p>
+                      <p className="text-sm text-gray-500">
+                        A동: {aCount}대 | B동: {bCount}대 | 가동: {activeCount}대
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-gray-900">{total}대</p>
+                    <p className="text-xs text-gray-500">전체</p>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -196,7 +257,7 @@ export default function EquipmentPage() {
           <div className="flex-1">
             <input
               type="text"
-              placeholder="설비 번호 또는 모델명, 위치 검색..."
+              placeholder="설비번호, 모델, 현장, 공정 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -209,9 +270,9 @@ export default function EquipmentPage() {
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">모든 상태</option>
-              <option value="active">가동 중</option>
-              <option value="maintenance">점검 중</option>
-              <option value="offline">정지</option>
+              <option value="가동중">가동중</option>
+              <option value="점검중">점검중</option>
+              <option value="셋업중">셋업중</option>
             </select>
           </div>
           <div>
@@ -220,15 +281,12 @@ export default function EquipmentPage() {
               onChange={(e) => setModelFilter(e.target.value)}
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">모든 설비</option>
-              <option value="C001-C100">C001-C100</option>
-              <option value="C101-C200">C101-C200</option>
-              <option value="C201-C300">C201-C300</option>
-              <option value="C301-C400">C301-C400</option>
-              <option value="C401-C500">C401-C500</option>
-              <option value="C501-C600">C501-C600</option>
-              <option value="C601-C700">C601-C700</option>
-              <option value="C701-C800">C701-C800</option>
+              <option value="">모든 모델</option>
+              <option value="PA1">PA1</option>
+              <option value="PA2">PA2</option>
+              <option value="PS">PS</option>
+              <option value="B7">B7</option>
+              <option value="Q7">Q7</option>
             </select>
           </div>
           <button 
@@ -252,16 +310,22 @@ export default function EquipmentPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  설비 정보
+                  설비번호
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  현장
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   상태
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  공구 위치
+                  모델
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  마지막 점검
+                  공정
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  앤드밀 사용량
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   작업
@@ -271,23 +335,47 @@ export default function EquipmentPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredEquipments.map((equipment) => (
                 <tr key={equipment.id} className="hover:bg-gray-50">
+                  {/* 설비번호 */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {equipment.modelCode}
-                      </div>
-                      <div className="text-sm text-gray-500">{equipment.processes.join(', ')}</div>
-                      <div className="text-xs text-gray-400">{equipment.location}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {equipment.equipmentNumber}
                     </div>
                   </td>
+                  
+                  {/* 현장 */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(equipment.status)}`}>
-                      {getStatusText(equipment.status)}
+                    <div className="flex items-center">
+                      <div className={`w-3 h-3 rounded-full mr-2 ${equipment.location === 'A동' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+                      <span className="text-sm text-gray-900">{equipment.location}</span>
+                    </div>
+                  </td>
+                  
+                  {/* 상태 */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(equipment.status)}`}>
+                      <span className="mr-1">{getStatusIcon(equipment.status)}</span>
+                      {equipment.status}
                     </span>
                   </td>
+                  
+                  {/* 모델 */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {equipment.currentModel}
+                    </div>
+                  </td>
+                  
+                  {/* 공정 */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {equipment.process}
+                    </div>
+                  </td>
+                  
+                  {/* 앤드밀 사용량 */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center">
-                      <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
+                      <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
                         <div 
                           className="bg-blue-600 h-2 rounded-full" 
                           style={{width: `${(equipment.toolPositions.used / equipment.toolPositions.total) * 100}%`}}
@@ -298,33 +386,32 @@ export default function EquipmentPage() {
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {equipment.lastMaintenance}
-                  </td>
+                  
+                  {/* 작업 */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <button className="text-blue-600 hover:text-blue-800 mr-3">상세</button>
                     
-                    {equipment.status === 'active' && (
+                    {equipment.status === '가동중' && (
                       <button 
-                        onClick={() => handleStatusChange(equipment.id, 'maintenance')}
+                        onClick={() => handleStatusChange(equipment.id, '점검중')}
                         className="text-yellow-600 hover:text-yellow-800 mr-3"
                       >
                         점검
                       </button>
                     )}
                     
-                    {equipment.status === 'maintenance' && (
+                    {equipment.status === '점검중' && (
                       <button 
-                        onClick={() => handleStatusChange(equipment.id, 'active')}
+                        onClick={() => handleStatusChange(equipment.id, '가동중')}
                         className="text-green-600 hover:text-green-800 mr-3"
                       >
                         재가동
                       </button>
                     )}
                     
-                    {equipment.status === 'offline' && (
+                    {equipment.status === '셋업중' && (
                       <button 
-                        onClick={() => handleStatusChange(equipment.id, 'active')}
+                        onClick={() => handleStatusChange(equipment.id, '가동중')}
                         className="text-green-600 hover:text-green-800 mr-3"
                       >
                         가동
