@@ -1,4 +1,5 @@
 import { CAMSheet, EndmillInfo } from '../hooks/useCAMSheets'
+import { EndmillDetailInfo, EndmillSupplierInfo, EndmillEquipmentUsage, EndmillChangeHistory } from '../types/endmill'
 
 // 초기 목업 데이터
 export const INITIAL_CAM_SHEETS: CAMSheet[] = [
@@ -585,4 +586,206 @@ mockData.import(json)  - 데이터 JSON 가져오기
   
   // 페이지 로드 시 자동 초기화
   MockDataManager.initializeCAMSheets()
+}
+
+// 앤드밀 마스터 데이터 업데이트 함수
+export const updateEndmillMasterData = (updatedData: {
+  code: string
+  name: string
+  category: string
+  specifications: string
+  diameter: number
+  flutes: number
+  coating: string
+  material: string
+  tolerance: string
+  helix: string
+  standardLife: number
+  minStock: number
+  maxStock: number
+  recommendedStock?: number
+  qualityGrade?: string
+  suppliers: { name: string; unitPrice: number }[]
+  description?: string
+}[]): { success: number; updated: number; errors: string[] } => {
+  let success = 0
+  let updated = 0
+  const errors: string[] = []
+
+  updatedData.forEach(newData => {
+    try {
+      const existingIndex = ENDMILL_MASTER_DATA.findIndex(item => item.code === newData.code)
+      
+      if (existingIndex >= 0) {
+        // 기존 데이터 업데이트
+        ENDMILL_MASTER_DATA[existingIndex] = {
+          code: newData.code,
+          name: newData.name,
+          category: newData.category,
+          specifications: newData.specifications,
+          unitPrice: newData.suppliers.length > 0 ? newData.suppliers[0].unitPrice : ENDMILL_MASTER_DATA[existingIndex].unitPrice,
+          supplier: newData.suppliers.length > 0 ? newData.suppliers[0].name : ENDMILL_MASTER_DATA[existingIndex].supplier,
+          standardLife: newData.standardLife,
+          description: newData.description
+        }
+        updated++
+      } else {
+        // 새 데이터 추가
+        ENDMILL_MASTER_DATA.push({
+          code: newData.code,
+          name: newData.name,
+          category: newData.category,
+          specifications: newData.specifications,
+          unitPrice: newData.suppliers.length > 0 ? newData.suppliers[0].unitPrice : 1000000,
+          supplier: newData.suppliers.length > 0 ? newData.suppliers[0].name : 'A-TECH',
+          standardLife: newData.standardLife,
+          description: newData.description
+        })
+        success++
+      }
+    } catch (error) {
+      errors.push(`${newData.code}: 업데이트 중 오류 발생`)
+    }
+  })
+
+  return { success, updated, errors }
+}
+
+// 확장된 앤드밀 상세 정보 생성 함수
+export const generateEndmillDetailInfo = (code: string): EndmillDetailInfo | null => {
+  const baseEndmill = findEndmillByCode(code)
+  if (!baseEndmill) return null
+
+  // 공급업체별 정보 생성
+  const suppliers: EndmillSupplierInfo[] = getAllSuppliers().slice(0, 3).map(supplier => {
+    const basePrice = baseEndmill.unitPrice
+    const priceVariation = Math.floor(Math.random() * 200000) - 100000 // ±100,000 VND
+    const currentStock = Math.floor(Math.random() * 100) + 10
+
+    return {
+      supplierName: supplier,
+      unitPrice: Math.max(500000, basePrice + priceVariation),
+      currentStock,
+      minOrderQuantity: Math.floor(Math.random() * 50) + 10,
+      leadTime: Math.floor(Math.random() * 14) + 3, // 3-17일
+      stockStatus: currentStock < 20 ? 'critical' : currentStock < 50 ? 'low' : 'sufficient',
+      lastOrderDate: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      averageDeliveryTime: Math.floor(Math.random() * 7) + 3, // 3-10일
+      qualityRating: 3 + Math.random() * 2, // 3-5점
+      isPreferred: supplier === 'A-TECH' // A-TECH를 기본 선호 공급업체로 설정
+    }
+  })
+
+  // 설비 사용 현황 생성 (5-10개 설비에서 사용 중)
+  const equipmentUsage: EndmillEquipmentUsage[] = []
+  const usageCount = Math.floor(Math.random() * 6) + 5 // 5-10개
+  
+  for (let i = 0; i < usageCount; i++) {
+    const equipmentNum = Math.floor(Math.random() * 800) + 1
+    const tNum = Math.floor(Math.random() * 21) + 1
+    const totalLife = baseEndmill.standardLife
+    const currentLife = Math.floor(Math.random() * totalLife)
+    
+    let usageStatus: 'new' | 'active' | 'warning' | 'critical'
+    const lifePercentage = (currentLife / totalLife) * 100
+    if (lifePercentage < 10) usageStatus = 'critical'
+    else if (lifePercentage < 30) usageStatus = 'warning'
+    else if (currentLife === 0) usageStatus = 'new'
+    else usageStatus = 'active'
+
+    equipmentUsage.push({
+      equipmentNumber: `C${equipmentNum.toString().padStart(3, '0')}`,
+      process: ['CNC1', 'CNC2', 'CNC2-1'][Math.floor(Math.random() * 3)],
+      tNumber: tNum,
+      installDate: new Date(Date.now() - Math.random() * 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      currentLife,
+      totalLife,
+      usageStatus,
+      lastMaintenanceDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    })
+  }
+
+  // 최근 교체 이력 생성 (최근 3개월)
+  const recentChanges: EndmillChangeHistory[] = []
+  const changeCount = Math.floor(Math.random() * 8) + 3 // 3-10개
+  
+  for (let i = 0; i < changeCount; i++) {
+    const changeDate = new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000)
+    const equipmentNum = Math.floor(Math.random() * 800) + 1
+    const reasons = ['Tool Life 종료', '파손', '마모', '모델 변경', '예방']
+    
+    recentChanges.push({
+      id: `change_${Date.now()}_${i}`,
+      changeDate: changeDate.toISOString().split('T')[0],
+      equipmentNumber: `C${equipmentNum.toString().padStart(3, '0')}`,
+      tNumber: Math.floor(Math.random() * 21) + 1,
+      changeReason: reasons[Math.floor(Math.random() * reasons.length)],
+      previousLife: Math.floor(Math.random() * baseEndmill.standardLife),
+      changedBy: ['김관리', '이기사', '박정비', '최운영'][Math.floor(Math.random() * 4)],
+      notes: Math.random() > 0.7 ? '정상 교체' : undefined
+    })
+  }
+
+  // 사용 통계 계산
+  const totalUsageCount = recentChanges.length + Math.floor(Math.random() * 50)
+  const averageLifespan = Math.floor(baseEndmill.standardLife * (0.8 + Math.random() * 0.4)) // 80-120% 범위
+  const currentStockTotal = suppliers.reduce((sum, s) => sum + s.currentStock, 0)
+  const minStockTotal = Math.floor(currentStockTotal * 0.3) // 최소재고는 현재고의 30%
+
+  // 성능 지표 계산
+  const performanceRating = Math.floor(70 + Math.random() * 30) // 70-100점
+  const defectRate = Math.random() * 5 // 0-5%
+  const costEfficiency = Math.floor(60 + Math.random() * 40) // 60-100점
+  const qualityGrade = performanceRating >= 90 ? 'A+' : 
+                      performanceRating >= 80 ? 'A' : 
+                      performanceRating >= 70 ? 'B+' : 
+                      performanceRating >= 60 ? 'B' : 'C'
+
+  return {
+    // 기본 정보 상속
+    ...baseEndmill,
+    
+    // 재고 관리 정보
+    currentStock: currentStockTotal,
+    minStock: minStockTotal,
+    maxStock: Math.floor(currentStockTotal * 2), // 최대재고는 현재고의 2배
+    stockStatus: currentStockTotal < minStockTotal ? 'critical' : 
+                currentStockTotal < minStockTotal * 1.5 ? 'low' : 'sufficient',
+    
+    // 기술 사양 상세
+    diameter: parseInt(baseEndmill.specifications.match(/(\d+)mm/)?.[1] || '12'),
+    flutes: parseInt(baseEndmill.specifications.match(/(\d+)날/)?.[1] || '4'),
+    coating: baseEndmill.specifications.includes('TiN') ? 'TiN' : 
+             baseEndmill.specifications.includes('TiAlN') ? 'TiAlN' : 'None',
+    material: 'HSS', // High Speed Steel
+    tolerance: 'h6',
+    helix: '30°',
+    
+    // 사용 이력 및 성능
+    totalUsageCount,
+    averageLifespan,
+    lastUsedDate: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    replacementFrequency: Math.round((recentChanges.length / 3) * 10) / 10, // 월 평균
+    
+    // 품질 및 성능 지표
+    qualityGrade,
+    defectRate: Math.round(defectRate * 100) / 100,
+    performanceRating,
+    costEfficiency,
+    
+    // 관련 정보
+    suppliers,
+    equipmentUsage,
+    recentChanges: recentChanges.sort((a, b) => b.changeDate.localeCompare(a.changeDate)),
+    
+    // 예측 정보
+    predictedNextChange: new Date(Date.now() + (averageLifespan * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+    recommendedStock: Math.ceil(minStockTotal * 1.2), // 최소재고의 120%
+    
+    // 메타 정보
+    createdAt: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+    isActive: true,
+    tags: [baseEndmill.category, `${Math.floor(Math.random() * 10) + 1}개월`, performanceRating >= 80 ? '고성능' : '표준']
+  }
 } 

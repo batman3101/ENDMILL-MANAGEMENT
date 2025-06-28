@@ -126,8 +126,12 @@ export default function ToolChangesPage() {
         return 'bg-red-100 text-red-800'
       case '마모':
         return 'bg-yellow-100 text-yellow-800'
-      case '예방교체':
+      case '모델 변경':
+        return 'bg-purple-100 text-purple-800'
+      case '예방':
         return 'bg-green-100 text-green-800'
+      case '기타':
+        return 'bg-orange-100 text-orange-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -142,58 +146,150 @@ export default function ToolChangesPage() {
   return (
     <div className="space-y-6">
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
               🔄
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">오늘 교체</p>
-              <p className="text-2xl font-bold text-gray-900">{toolChanges.filter(tc => tc.changeDate.startsWith(getTodayDate())).length}</p>
+              <p className="text-xs font-medium text-gray-600">오늘 교체</p>
+              <p className="text-xl font-bold text-blue-600">{toolChanges.filter(tc => tc.changeDate.startsWith(getTodayDate())).length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
               ⏱️
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">평균 Tool Life</p>
-              <p className="text-2xl font-bold text-green-600">
-                {Math.round(toolChanges.reduce((acc, tc) => acc + (tc.toolLife || 0), 0) / toolChanges.length)}
+              <p className="text-xs font-medium text-gray-600">Tool Life 종료</p>
+              <p className="text-xl font-bold text-green-600">
+                {toolChanges.filter(tc => tc.changeReason === 'Tool Life 종료').length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
-              ⚠️
+            <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+              💥
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">파손 교체</p>
-              <p className="text-2xl font-bold text-red-600">
+              <p className="text-xs font-medium text-gray-600">파손</p>
+              <p className="text-xl font-bold text-red-600">
                 {toolChanges.filter(tc => tc.changeReason === '파손').length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-              📊
+            <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+              ⚠️
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">총 교체</p>
-              <p className="text-2xl font-bold text-purple-600">{toolChanges.length}</p>
+              <p className="text-xs font-medium text-gray-600">마모</p>
+              <p className="text-xl font-bold text-yellow-600">
+                {toolChanges.filter(tc => tc.changeReason === '마모').length}
+              </p>
             </div>
           </div>
         </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+              🔄
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-600">모델 변경</p>
+              <p className="text-xl font-bold text-purple-600">
+                {toolChanges.filter(tc => tc.changeReason === '모델 변경').length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+              🛡️
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-600">예방</p>
+              <p className="text-xl font-bold text-orange-600">
+                {toolChanges.filter(tc => tc.changeReason === '예방').length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {(() => {
+          // 오늘 교체 데이터만 필터링
+          const todayChanges = toolChanges.filter(tc => tc.changeDate.startsWith(getTodayDate()))
+          
+          // 모델별 교체 수량 계산
+          const modelCounts = todayChanges.reduce((acc: Record<string, number>, tc) => {
+            acc[tc.productionModel] = (acc[tc.productionModel] || 0) + 1
+            return acc
+          }, {})
+          
+          // 가장 많은 교체가 발생한 모델 찾기
+          const topModel = Object.entries(modelCounts).length > 0 
+            ? Object.entries(modelCounts).reduce((a, b) => a[1] > b[1] ? a : b)
+            : ['없음', 0]
+          
+          return (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
+                  🏭
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-600">오늘 최다 교체 모델</p>
+                  <p className="text-lg font-bold text-indigo-600">{topModel[0]}</p>
+                  <p className="text-xs text-gray-500">{topModel[1]}건</p>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+
+        {(() => {
+          // 오늘 교체 데이터만 필터링
+          const todayChanges = toolChanges.filter(tc => tc.changeDate.startsWith(getTodayDate()))
+          
+          // 공정별 교체 수량 계산
+          const processCounts = todayChanges.reduce((acc: Record<string, number>, tc) => {
+            acc[tc.process] = (acc[tc.process] || 0) + 1
+            return acc
+          }, {})
+          
+          // 가장 많은 교체가 발생한 공정 찾기
+          const topProcess = Object.entries(processCounts).length > 0 
+            ? Object.entries(processCounts).reduce((a, b) => a[1] > b[1] ? a : b)
+            : ['없음', 0]
+          
+          return (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center mr-3">
+                  ⚙️
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-600">오늘 최다 교체 공정</p>
+                  <p className="text-lg font-bold text-teal-600">{topProcess[0]}</p>
+                  <p className="text-xs text-gray-500">{topProcess[1]}건</p>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
       </div>
 
       {/* 교체 실적 입력 폼 */}
@@ -316,8 +412,8 @@ export default function ToolChangesPage() {
                   <option value="Tool Life 종료">Tool Life 종료</option>
                   <option value="파손">파손</option>
                   <option value="마모">마모</option>
-                  <option value="예방교체">예방교체</option>
-                  <option value="제품변경">제품변경</option>
+                  <option value="모델 변경">모델 변경</option>
+                  <option value="예방">예방</option>
                   <option value="기타">기타</option>
                 </select>
               </div>
@@ -362,7 +458,9 @@ export default function ToolChangesPage() {
               <option value="Tool Life 종료">Tool Life 종료</option>
               <option value="파손">파손</option>
               <option value="마모">마모</option>
-              <option value="예방교체">예방교체</option>
+              <option value="모델 변경">모델 변경</option>
+              <option value="예방">예방</option>
+              <option value="기타">기타</option>
             </select>
           </div>
           <button

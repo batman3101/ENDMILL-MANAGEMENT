@@ -116,6 +116,10 @@ export default function InventoryPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 20
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const [formData, setFormData] = useState<NewEndmill>({
     code: '',
     name: '',
@@ -127,6 +131,7 @@ export default function InventoryPage() {
     minStock: 0,
     maxStock: 0
   })
+  const [editFormData, setEditFormData] = useState<InventoryItem | null>(null)
 
   // 필터링된 재고 목록
   const filteredInventory = useMemo(() => {
@@ -240,6 +245,53 @@ export default function InventoryPage() {
       default:
         return '알 수 없음'
     }
+  }
+
+  // 상세보기 핸들러 (앤드밀 상세 페이지로 이동)
+  const handleViewDetail = (item: InventoryItem) => {
+    window.open(`/dashboard/endmill-detail/${item.code}`, '_blank')
+  }
+
+  // 수정 핸들러
+  const handleEdit = (item: InventoryItem) => {
+    setEditFormData({ ...item })
+    setSelectedItem(item)
+    setShowEditModal(true)
+  }
+
+  // 수정 저장 핸들러
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!editFormData) return
+    
+    // 실제로는 API 호출을 통해 데이터베이스 업데이트
+    setInventory(prev => prev.map(item => 
+      item.id === editFormData.id ? editFormData : item
+    ))
+    
+    setShowEditModal(false)
+    setEditFormData(null)
+    setSelectedItem(null)
+    
+    showSuccess('수정 완료', `${editFormData.code} - ${editFormData.name} 정보가 성공적으로 수정되었습니다.`)
+  }
+
+  // 삭제 핸들러
+  const handleDelete = (item: InventoryItem) => {
+    setSelectedItem(item)
+    setShowDeleteModal(true)
+  }
+
+  // 삭제 확인 핸들러
+  const handleConfirmDelete = () => {
+    if (!selectedItem) return
+    
+    setInventory(prev => prev.filter(inventoryItem => inventoryItem.id !== selectedItem.id))
+    showSuccess('삭제 완료', `${selectedItem.code} - ${selectedItem.name}이 성공적으로 삭제되었습니다.`)
+    
+    setShowDeleteModal(false)
+    setSelectedItem(null)
   }
 
   const handleAddEndmill = (e: React.FormEvent) => {
@@ -503,9 +555,24 @@ export default function InventoryPage() {
 
                     {/* 작업 */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button className="text-blue-600 hover:text-blue-800 mr-3">상세</button>
-                      <button className="text-green-600 hover:text-green-800 mr-3">수정</button>
-                      <button className="text-red-600 hover:text-red-800">삭제</button>
+                      <button 
+                        onClick={() => handleViewDetail(filteredInventory.find(item => item.id === row.itemId)!)}
+                        className="text-blue-600 hover:text-blue-800 mr-3"
+                      >
+                        상세
+                      </button>
+                      <button 
+                        onClick={() => handleEdit(filteredInventory.find(item => item.id === row.itemId)!)}
+                        className="text-green-600 hover:text-green-800 mr-3"
+                      >
+                        수정
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(filteredInventory.find(item => item.id === row.itemId)!)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        삭제
+                      </button>
                     </td>
                   </tr>
                 )
@@ -764,6 +831,273 @@ export default function InventoryPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 상세보기 모달 */}
+      {showDetailModal && selectedItem && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4">
+            <div className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">📋 앤드밀 상세 정보</h3>
+                <button 
+                  onClick={() => setShowDetailModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-4">기본 정보</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">앤드밀 코드</label>
+                      <p className="mt-1 text-sm text-gray-900 font-mono">{selectedItem.code}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Type</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedItem.name}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">카테고리</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedItem.category}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">앤드밀 이름</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedItem.specifications}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-4">재고 정보</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">현재고</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedItem.currentStock}개</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">최소재고</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedItem.minStock}개</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">최대재고</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedItem.maxStock}개</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">상태</label>
+                      <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                        selectedItem.status === 'sufficient' ? 'bg-green-100 text-green-800' :
+                        selectedItem.status === 'low' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {selectedItem.status === 'sufficient' ? '충분' :
+                         selectedItem.status === 'low' ? '부족' : '위험'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t">
+                <h4 className="font-medium text-gray-900 mb-4">공급업체별 단가 정보</h4>
+                <div className="space-y-2">
+                  {selectedItem.suppliers.map((supplier, index) => (
+                    <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <span className="font-medium text-gray-900">{supplier.name}</span>
+                        <span className="ml-2 text-sm text-gray-500">재고: {supplier.currentStock}개</span>
+                      </div>
+                      <span className="font-mono text-gray-900">{supplier.unitPrice.toLocaleString()} VND</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-6 border-t mt-6">
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 수정 모달 */}
+      {showEditModal && editFormData && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">✏️ 앤드밀 정보 수정</h3>
+                <button 
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <form onSubmit={handleSaveEdit} className="p-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 코드</label>
+                  <input
+                    type="text"
+                    value={editFormData.code}
+                    onChange={(e) => setEditFormData({ ...editFormData, code: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                  <input
+                    type="text"
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
+                  <select
+                    value={editFormData.category}
+                    onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">카테고리 선택</option>
+                    {getAllCategories().map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 이름</label>
+                  <input
+                    type="text"
+                    value={editFormData.specifications}
+                    onChange={(e) => setEditFormData({ ...editFormData, specifications: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">최소재고</label>
+                  <input
+                    type="number"
+                    value={editFormData.minStock}
+                    onChange={(e) => setEditFormData({ ...editFormData, minStock: Number(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">최대재고</label>
+                  <input
+                    type="number"
+                    value={editFormData.maxStock}
+                    onChange={(e) => setEditFormData({ ...editFormData, maxStock: Number(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-6 border-t mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  저장
+                </button>
+              </div>
+                         </form>
+           </div>
+         </div>
+       )}
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteModal && selectedItem && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
+            <div className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-red-600">🗑️ 삭제 확인</h3>
+                <button 
+                  onClick={() => setShowDeleteModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-4">
+                <div className="flex items-center mb-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                    <span className="text-red-600 text-xl">⚠️</span>
+                  </div>
+                  <div>
+                    <p className="text-lg font-medium text-gray-900">정말 삭제하시겠습니까?</p>
+                    <p className="text-sm text-gray-500">이 작업은 되돌릴 수 없습니다.</p>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-900">삭제될 앤드밀:</div>
+                    <div className="mt-1 text-gray-600">
+                      <span className="font-mono">{selectedItem.code}</span> - {selectedItem.name}
+                    </div>
+                    <div className="mt-1 text-gray-600">
+                      카테고리: {selectedItem.category}
+                    </div>
+                    <div className="mt-1 text-gray-600">
+                      현재고: {selectedItem.currentStock}개
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
