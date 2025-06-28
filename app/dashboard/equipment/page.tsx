@@ -413,30 +413,54 @@ export default function EquipmentPage() {
                     <button className="text-blue-600 hover:text-blue-800 mr-3">상세</button>
                     
                     {equipment.status === '가동중' && (
-                      <button 
-                        onClick={() => handleStatusChange(equipment.id, '점검중')}
-                        className="text-yellow-600 hover:text-yellow-800 mr-3"
-                      >
-                        점검
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => handleStatusChange(equipment.id, '점검중')}
+                          className="text-yellow-600 hover:text-yellow-800 mr-2"
+                        >
+                          점검
+                        </button>
+                        <button 
+                          onClick={() => handleStatusChange(equipment.id, '셋업중')}
+                          className="text-orange-600 hover:text-orange-800 mr-2"
+                        >
+                          셋업
+                        </button>
+                      </>
                     )}
                     
                     {equipment.status === '점검중' && (
-                      <button 
-                        onClick={() => handleStatusChange(equipment.id, '가동중')}
-                        className="text-green-600 hover:text-green-800 mr-3"
-                      >
-                        재가동
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => handleStatusChange(equipment.id, '가동중')}
+                          className="text-green-600 hover:text-green-800 mr-2"
+                        >
+                          재가동
+                        </button>
+                        <button 
+                          onClick={() => handleStatusChange(equipment.id, '셋업중')}
+                          className="text-orange-600 hover:text-orange-800 mr-2"
+                        >
+                          셋업
+                        </button>
+                      </>
                     )}
                     
                     {equipment.status === '셋업중' && (
-                      <button 
-                        onClick={() => handleStatusChange(equipment.id, '가동중')}
-                        className="text-green-600 hover:text-green-800 mr-3"
-                      >
-                        가동
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => handleStatusChange(equipment.id, '가동중')}
+                          className="text-green-600 hover:text-green-800 mr-2"
+                        >
+                          가동
+                        </button>
+                        <button 
+                          onClick={() => handleStatusChange(equipment.id, '점검중')}
+                          className="text-yellow-600 hover:text-yellow-800 mr-2"
+                        >
+                          점검
+                        </button>
+                      </>
                     )}
                   </td>
                 </tr>

@@ -11,12 +11,16 @@ interface InventoryItem {
   name: string
   category: string
   specifications: string
-  supplier: string
-  unitPrice: number
   currentStock: number
   minStock: number
   maxStock: number
   status: 'sufficient' | 'low' | 'critical'
+  suppliers: {
+    name: string
+    unitPrice: number
+    currentStock: number
+    status: 'sufficient' | 'low' | 'critical'
+  }[]
 }
 
 interface NewEndmill {
@@ -37,26 +41,50 @@ const generateInventoryData = (): InventoryItem[] => {
   const suppliers = getAllSuppliers()
   const items: InventoryItem[] = []
   
-  // 각 카테고리별로 15-20개 아이템 생성
+  // 각 카테고리별로 10-15개 앤드밀 생성
   categories.forEach((category, categoryIndex) => {
-    const itemCount = 15 + Math.floor(Math.random() * 6) // 15-20개
+    const itemCount = 10 + Math.floor(Math.random() * 6) // 10-15개
     
     for (let i = 1; i <= itemCount; i++) {
-      const itemNumber = (categoryIndex * 20 + i).toString().padStart(3, '0')
+      const itemNumber = (categoryIndex * 15 + i).toString().padStart(3, '0')
       const code = `AT${itemNumber}`
       
       const minStock = 10 + Math.floor(Math.random() * 20) // 10-30
       const maxStock = minStock + 50 + Math.floor(Math.random() * 50) // minStock + 50-100
-      const currentStock = Math.floor(Math.random() * (maxStock + 20)) // 0 ~ maxStock+20
       
-      // 상태 결정
-      let status: 'sufficient' | 'low' | 'critical'
-      if (currentStock < minStock * 0.5) status = 'critical'
-      else if (currentStock < minStock) status = 'low'
-      else status = 'sufficient'
+      // 각 앤드밀마다 2-4개의 공급업체 정보 생성
+      const supplierCount = 2 + Math.floor(Math.random() * 3) // 2-4개
+      const selectedSuppliers = suppliers.sort(() => 0.5 - Math.random()).slice(0, supplierCount)
       
-      // 가격 (베트남 동)
-      const basePrice = 800000 + Math.floor(Math.random() * 1000000) // 800,000 - 1,800,000 VND
+      const supplierInfos = selectedSuppliers.map(supplier => {
+        const currentStock = Math.floor(Math.random() * (maxStock + 20)) // 0 ~ maxStock+20
+        
+        // 상태 결정
+        let status: 'sufficient' | 'low' | 'critical'
+        if (currentStock < minStock * 0.5) status = 'critical'
+        else if (currentStock < minStock) status = 'low'
+        else status = 'sufficient'
+        
+        // 공급업체별로 가격 차이 (베트남 동)
+        const basePrice = 800000 + Math.floor(Math.random() * 1000000) // 800,000 - 1,800,000 VND
+        const priceVariation = Math.floor(Math.random() * 200000) - 100000 // ±100,000 VND
+        
+        return {
+          name: supplier,
+          unitPrice: Math.max(500000, basePrice + priceVariation),
+          currentStock,
+          status
+        }
+      })
+      
+      // 전체 재고량 계산 (모든 공급업체 합계)
+      const totalCurrentStock = supplierInfos.reduce((sum, s) => sum + s.currentStock, 0)
+      
+      // 전체 상태 결정
+      let overallStatus: 'sufficient' | 'low' | 'critical'
+      if (totalCurrentStock < minStock * 0.5) overallStatus = 'critical'
+      else if (totalCurrentStock < minStock) overallStatus = 'low'
+      else overallStatus = 'sufficient'
       
       items.push({
         id: itemNumber,
@@ -64,12 +92,11 @@ const generateInventoryData = (): InventoryItem[] => {
         name: `${category} ${6 + Math.floor(Math.random() * 15)}mm ${2 + Math.floor(Math.random() * 4)}날`,
         category,
         specifications: `${6 + Math.floor(Math.random() * 15)}mm ${2 + Math.floor(Math.random() * 4)}날`,
-        supplier: suppliers[Math.floor(Math.random() * suppliers.length)],
-        unitPrice: basePrice,
-        currentStock,
+        currentStock: totalCurrentStock,
         minStock,
         maxStock,
-        status
+        status: overallStatus,
+        suppliers: supplierInfos
       })
     }
   })
@@ -111,31 +138,80 @@ export default function InventoryPage() {
       
       const matchesCategory = categoryFilter === '' || item.category === categoryFilter
       const matchesStatus = statusFilter === '' || item.status === statusFilter
-      const matchesSupplier = supplierFilter === '' || item.supplier === supplierFilter
+      const matchesSupplier = supplierFilter === '' || item.suppliers.some(s => s.name === supplierFilter)
       
       return matchesSearch && matchesCategory && matchesStatus && matchesSupplier
     })
   }, [inventory, searchTerm, categoryFilter, statusFilter, supplierFilter])
 
-  // 페이지네이션 계산
-  const totalPages = Math.ceil(filteredInventory.length / itemsPerPage)
+  // 테이블 렌더링을 위한 플랫 데이터 생성
+  const flattenedData = useMemo(() => {
+    const result: Array<{
+      itemId: string
+      code: string
+      name: string
+      category: string
+      specifications: string
+      totalCurrentStock: number
+      minStock: number
+      maxStock: number
+      overallStatus: 'sufficient' | 'low' | 'critical'
+      supplier: string
+      unitPrice: number
+      supplierStock: number
+      supplierStatus: 'sufficient' | 'low' | 'critical'
+      isFirstRow: boolean
+      rowSpan: number
+    }> = []
+    
+    filteredInventory.forEach(item => {
+      item.suppliers.forEach((supplier, index) => {
+        result.push({
+          itemId: item.id,
+          code: item.code,
+          name: item.name,
+          category: item.category,
+          specifications: item.specifications,
+          totalCurrentStock: item.currentStock,
+          minStock: item.minStock,
+          maxStock: item.maxStock,
+          overallStatus: item.status,
+          supplier: supplier.name,
+          unitPrice: supplier.unitPrice,
+          supplierStock: supplier.currentStock,
+          supplierStatus: supplier.status,
+          isFirstRow: index === 0,
+          rowSpan: item.suppliers.length
+        })
+      })
+    })
+    
+    return result
+  }, [filteredInventory])
+
+  // 페이지네이션 계산 (플랫 데이터 기준)
+  const totalPages = Math.ceil(flattenedData.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-  const currentInventory = filteredInventory.slice(startIndex, endIndex)
+  const currentData = flattenedData.slice(startIndex, endIndex)
 
   // 필터 상태 변경 시 첫 페이지로 이동
   useMemo(() => {
     setCurrentPage(1)
   }, [searchTerm, categoryFilter, statusFilter, supplierFilter])
 
-  // 상태별 카운트
+  // 상태별 카운트 (수정)
   const statusCounts = useMemo(() => {
     return {
       total: inventory.reduce((sum, item) => sum + item.currentStock, 0),
       critical: inventory.filter(item => item.status === 'critical').length,
       low: inventory.filter(item => item.status === 'low').length,
       orderPending: inventory.filter(item => item.status === 'critical' || item.status === 'low').length,
-      totalValue: inventory.reduce((sum, item) => sum + (item.currentStock * item.unitPrice), 0)
+      totalValue: inventory.reduce((sum, item) => 
+        sum + item.suppliers.reduce((supplierSum, supplier) => 
+          supplierSum + (supplier.currentStock * supplier.unitPrice), 0
+        ), 0
+      )
     }
   }, [inventory])
 
@@ -336,7 +412,7 @@ export default function InventoryPage() {
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">
-            재고 현황 ({filteredInventory.length}개)
+            재고 현황 ({flattenedData.length}개 공급업체 정보)
           </h2>
           <p className="text-sm text-gray-500 mt-1">
             페이지 {currentPage} / {totalPages} (1페이지당 {itemsPerPage}개)
@@ -367,41 +443,65 @@ export default function InventoryPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {currentInventory.map((item) => {
-                const stockPercentage = Math.min((item.currentStock / item.minStock) * 100, 100)
-                const progressColor = item.status === 'critical' ? 'bg-red-600' : 
-                                    item.status === 'low' ? 'bg-yellow-600' : 'bg-green-600'
+              {currentData.map((row, index) => {
+                const stockPercentage = Math.min((row.totalCurrentStock / row.minStock) * 100, 100)
+                const progressColor = row.overallStatus === 'critical' ? 'bg-red-600' : 
+                                    row.overallStatus === 'low' ? 'bg-yellow-600' : 'bg-green-600'
                 
                 return (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{item.code}</div>
-                        <div className="text-sm text-gray-500">{item.name}</div>
+                  <tr key={`${row.itemId}-${row.supplier}`} className="hover:bg-gray-50">
+                    {/* 앤드밀 정보 - 첫 번째 행에만 표시 */}
+                    {row.isFirstRow && (
+                      <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" rowSpan={row.rowSpan}>
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{row.code}</div>
+                          <div className="text-sm text-gray-500">{row.name}</div>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 현재고/최소재고 - 첫 번째 행에만 표시 */}
+                    {row.isFirstRow && (
+                      <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" rowSpan={row.rowSpan}>
+                        <div className="text-sm text-gray-900">
+                          {row.totalCurrentStock} / {row.minStock}
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                          <div 
+                            className={`h-2 rounded-full ${progressColor}`} 
+                            style={{width: `${Math.min(stockPercentage, 100)}%`}}
+                          ></div>
+                        </div>
+                      </td>
+                    )}
+
+                    {/* 전체 상태 - 첫 번째 행에만 표시 */}
+                    {row.isFirstRow && (
+                      <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" rowSpan={row.rowSpan}>
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(row.overallStatus)}`}>
+                          {getStatusText(row.overallStatus)}
+                        </span>
+                      </td>
+                    )}
+
+                    {/* 공급업체 */}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div className="flex items-center">
+                        <span className="font-medium">{row.supplier}</span>
+                        <span className="ml-2 text-xs text-gray-500">
+                          ({row.supplierStock}개)
+                        </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {item.currentStock} / {item.minStock}
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                        <div 
-                          className={`h-2 rounded-full ${progressColor}`} 
-                          style={{width: `${Math.min(stockPercentage, 100)}%`}}
-                        ></div>
+
+                    {/* 단가 */}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div className="font-medium">
+                        {row.unitPrice.toLocaleString()} VND
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(item.status)}`}>
-                        {getStatusText(item.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.supplier}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.unitPrice.toLocaleString()} VND
-                    </td>
+
+                    {/* 작업 */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button className="text-blue-600 hover:text-blue-800 mr-3">상세</button>
                       <button className="text-green-600 hover:text-green-800 mr-3">수정</button>
@@ -436,9 +536,9 @@ export default function InventoryPage() {
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    총 <span className="font-medium">{filteredInventory.length}</span>개 중{' '}
+                    총 <span className="font-medium">{flattenedData.length}</span>개 중{' '}
                     <span className="font-medium">{startIndex + 1}</span>-
-                    <span className="font-medium">{Math.min(endIndex, filteredInventory.length)}</span>개 표시
+                    <span className="font-medium">{Math.min(endIndex, flattenedData.length)}</span>개 표시
                   </p>
                 </div>
                 <div>
@@ -494,7 +594,7 @@ export default function InventoryPage() {
         </div>
 
         {/* 검색 결과가 없을 때 */}
-        {filteredInventory.length === 0 && (
+        {flattenedData.length === 0 && (
           <div className="text-center py-8">
             <p className="text-gray-500">검색 조건에 맞는 재고가 없습니다.</p>
             <button 
