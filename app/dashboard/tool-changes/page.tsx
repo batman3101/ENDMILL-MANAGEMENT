@@ -22,7 +22,7 @@ interface ToolChange {
 const sampleData: ToolChange[] = [
   {
     id: '1',
-    changeDate: '2024-01-26',
+    changeDate: '2024-01-26 14:30',
     equipmentNumber: 'C001',
     productionModel: 'PA-001',
     process: '2공정',
@@ -36,7 +36,7 @@ const sampleData: ToolChange[] = [
   },
   {
     id: '2',
-    changeDate: '2024-01-26',
+    changeDate: '2024-01-26 16:15',
     equipmentNumber: 'C042',
     productionModel: 'PB-025',
     process: '2-1공정',
@@ -53,15 +53,26 @@ const sampleData: ToolChange[] = [
 export default function ToolChangesPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [toolChanges, setToolChanges] = useState<ToolChange[]>(sampleData)
+  const getCurrentDateTime = () => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hour = String(now.getHours()).padStart(2, '0')
+    const minute = String(now.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day} ${hour}:${minute}`
+  }
+
+  const getTodayDate = () => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const [formData, setFormData] = useState({
-    changeDate: new Date().toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    }),
+    changeDate: getCurrentDateTime(),
     equipmentNumber: '',
     productionModel: '',
     process: '',
@@ -78,6 +89,7 @@ export default function ToolChangesPage() {
     const newToolChange: ToolChange = {
       id: Date.now().toString(),
       ...formData,
+      changeDate: getCurrentDateTime(), // 저장 시점의 현재 시간으로 업데이트
       toolLife: Math.floor(Math.random() * 1000) + 1500, // 임시 Tool Life
       createdAt: new Date().toISOString()
     }
@@ -87,14 +99,7 @@ export default function ToolChangesPage() {
     
     // 폼 초기화
     setFormData({
-      changeDate: new Date().toLocaleString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      }),
+      changeDate: getCurrentDateTime(),
       equipmentNumber: '',
       productionModel: '',
       process: '',
@@ -129,11 +134,6 @@ export default function ToolChangesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">교체 실적</h1>
-        <p className="text-gray-600">앤드밀 교체 이력 기록 및 관리</p>
-      </div>
-
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
@@ -143,7 +143,7 @@ export default function ToolChangesPage() {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-600">오늘 교체</p>
-              <p className="text-2xl font-bold text-gray-900">{toolChanges.filter(tc => tc.changeDate === new Date().toISOString().split('T')[0]).length}</p>
+              <p className="text-2xl font-bold text-gray-900">{toolChanges.filter(tc => tc.changeDate.startsWith(getTodayDate())).length}</p>
             </div>
           </div>
         </div>
@@ -237,7 +237,7 @@ export default function ToolChangesPage() {
                 <select
                   value={formData.process}
                   onChange={(e) => setFormData({...formData, process: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   <option value="">공정 선택</option>
@@ -252,7 +252,7 @@ export default function ToolChangesPage() {
                 <select
                   value={formData.tNumber}
                   onChange={(e) => setFormData({...formData, tNumber: parseInt(e.target.value)})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   {Array.from({length: 21}, (_, i) => i + 1).map(num => (
@@ -302,7 +302,7 @@ export default function ToolChangesPage() {
                 <select
                   value={formData.changeReason}
                   onChange={(e) => setFormData({...formData, changeReason: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   <option value="">사유 선택</option>
@@ -344,13 +344,13 @@ export default function ToolChangesPage() {
               placeholder="설비번호, 앤드밀 코드, 교체자 검색..."
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <select className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">모든 공정</option>
               <option value="1공정">1공정</option>
               <option value="2공정">2공정</option>
               <option value="2-1공정">2-1공정</option>
             </select>
-            <select className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">모든 사유</option>
               <option value="Tool Life 종료">Tool Life 종료</option>
               <option value="파손">파손</option>
@@ -376,25 +376,37 @@ export default function ToolChangesPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   교체일시
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  설비/모델/공정/T번호
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  설비번호
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  앤드밀 정보
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  생산모델
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  공정
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  T번호
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  앤드밀 코드
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  앤드밀 이름
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   교체자
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   교체사유
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tool Life
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   작업
                 </th>
               </tr>
@@ -404,33 +416,42 @@ export default function ToolChangesPage() {
                 const toolLifeStatus = getToolLifeStatus(change.toolLife || 0)
                 return (
                   <tr key={change.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{change.changeDate}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{change.equipmentNumber}</div>
-                      <div className="text-sm text-gray-500">{change.productionModel}</div>
-                      <div className="text-sm text-gray-500">{change.process} / T{change.tNumber.toString().padStart(2, '0')}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{change.productionModel}</div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{change.process}</div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">T{change.tNumber.toString().padStart(2, '0')}</div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{change.endmillCode}</div>
-                      <div className="text-sm text-gray-500">{change.endmillName}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {change.changedBy}
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{change.endmillName}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{change.changedBy}</div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getReasonBadge(change.changeReason)}`}>
                         {change.changeReason}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <div className={`text-sm font-medium ${toolLifeStatus.color}`}>
                         {change.toolLife?.toLocaleString()}회
                       </div>
                       <div className="text-xs text-gray-500">{toolLifeStatus.status}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm">
                       <button className="text-blue-600 hover:text-blue-800 mr-3">상세</button>
                       <button className="text-gray-600 hover:text-gray-800">수정</button>
                     </td>

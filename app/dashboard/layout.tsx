@@ -42,13 +42,7 @@ export default function DashboardLayout({
       href: '/dashboard/inventory',
       icon: '📦',
       label: '재고 관리',
-      active: pathname === '/dashboard/inventory'
-    },
-    {
-      href: '/dashboard/qr-scan',
-      icon: '📱',
-      label: 'QR 스캔',
-      active: pathname === '/dashboard/qr-scan'
+      active: pathname === '/dashboard/inventory' || pathname.startsWith('/dashboard/inventory/')
     },
     {
       href: '/dashboard/reports',

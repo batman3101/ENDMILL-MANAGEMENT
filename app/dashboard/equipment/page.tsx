@@ -207,7 +207,7 @@ export default function EquipmentPage() {
             <select 
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">모든 상태</option>
               <option value="active">가동 중</option>
@@ -219,7 +219,7 @@ export default function EquipmentPage() {
             <select 
               value={modelFilter}
               onChange={(e) => setModelFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">모든 설비</option>
               <option value="C001-C100">C001-C100</option>

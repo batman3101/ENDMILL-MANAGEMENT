@@ -336,7 +336,7 @@ export default function CAMSheetsPage() {
             <select 
               value={modelFilter}
               onChange={(e) => setModelFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">모든 모델</option>
               {Array.from(new Set(camSheets.map(s => s.model))).map(model => (
@@ -346,7 +346,7 @@ export default function CAMSheetsPage() {
             <select 
               value={processFilter}
               onChange={(e) => setProcessFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">모든 공정</option>
               <option value="1공정">1공정</option>

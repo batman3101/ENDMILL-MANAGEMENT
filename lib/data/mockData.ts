@@ -192,6 +192,242 @@ export const INITIAL_CAM_SHEETS: CAMSheet[] = [
   }
 ]
 
+// 앤드밀 마스터 데이터 인터페이스
+export interface EndmillMaster {
+  code: string
+  name: string
+  category: string
+  specifications: string
+  unitPrice: number // VND
+  supplier: string
+  standardLife: number
+  description?: string
+}
+
+// 앤드밀 마스터 데이터
+export const ENDMILL_MASTER_DATA: EndmillMaster[] = [
+  {
+    code: 'AT001',
+    name: 'FLAT 12mm 4날',
+    category: 'FLAT',
+    specifications: '직경12mm, 4날, 코팅TiN',
+    unitPrice: 1080000,
+    supplier: 'A-TECH',
+    standardLife: 2500,
+    description: '범용 평형 앤드밀'
+  },
+  {
+    code: 'AT002',
+    name: 'FLAT 16mm 4날',
+    category: 'FLAT',
+    specifications: '직경16mm, 4날, 코팅TiN',
+    unitPrice: 1450000,
+    supplier: 'A-TECH',
+    standardLife: 3200,
+    description: '대형 평형 앤드밀'
+  },
+  {
+    code: 'AT003',
+    name: 'T-CUT 10mm 3날',
+    category: 'T-CUT',
+    specifications: '직경10mm, 3날, 코팅TiCN',
+    unitPrice: 1248000,
+    supplier: 'B-SUPPLIER',
+    standardLife: 1800,
+    description: 'T홈 가공용'
+  },
+  {
+    code: 'AT004',
+    name: 'FLAT 20mm 4날',
+    category: 'FLAT',
+    specifications: '직경20mm, 4날, 코팅TiAlN',
+    unitPrice: 1890000,
+    supplier: 'C-TOOLS',
+    standardLife: 3800,
+    description: '대형 고속가공용'
+  },
+  {
+    code: 'AT005',
+    name: 'BALL 8mm 2날',
+    category: 'BALL',
+    specifications: '직경8mm, 2날, 코팅TiAlN',
+    unitPrice: 912000,
+    supplier: 'B-SUPPLIER',
+    standardLife: 2000,
+    description: '볼엔드밀 중형'
+  },
+  {
+    code: 'AT007',
+    name: 'FLAT 8mm 2날',
+    category: 'FLAT',
+    specifications: '직경8mm, 2날, 코팅AlCrN',
+    unitPrice: 756000,
+    supplier: 'A-TECH',
+    standardLife: 2200,
+    description: '소형 평형 앤드밀'
+  },
+  {
+    code: 'AT008',
+    name: 'T-CUT 12mm 4날',
+    category: 'T-CUT',
+    specifications: '직경12mm, 4날, 코팅TiAlN',
+    unitPrice: 1524000,
+    supplier: 'C-TOOLS',
+    standardLife: 2100,
+    description: 'T홈 가공용 대형'
+  },
+  {
+    code: 'AT010',
+    name: 'BALL 4mm 2날',
+    category: 'BALL',
+    specifications: '직경4mm, 2날, 코팅TiAlN',
+    unitPrice: 680000,
+    supplier: 'B-SUPPLIER',
+    standardLife: 1500,
+    description: '볼엔드밀 소형'
+  },
+  {
+    code: 'AT011',
+    name: 'FLAT 14mm 3날',
+    category: 'FLAT',
+    specifications: '직경14mm, 3날, 코팅TiCN',
+    unitPrice: 1320000,
+    supplier: 'A-TECH',
+    standardLife: 2700,
+    description: '중형 평형 앤드밀'
+  },
+  {
+    code: 'AT012',
+    name: 'REAMER 6mm',
+    category: 'REAMER',
+    specifications: '직경6mm, 리머, HSS',
+    unitPrice: 540000,
+    supplier: 'D-COMPANY',
+    standardLife: 3000,
+    description: '리머 소형'
+  },
+  {
+    code: 'AT015',
+    name: 'DRILL 3mm',
+    category: 'DRILL',
+    specifications: '직경3mm, 드릴, HSS-E',
+    unitPrice: 320000,
+    supplier: 'D-COMPANY',
+    standardLife: 2800,
+    description: '소형 드릴'
+  },
+  {
+    code: 'AT016',
+    name: 'DRILL 5mm',
+    category: 'DRILL',
+    specifications: '직경5mm, 드릴, HSS-E',
+    unitPrice: 420000,
+    supplier: 'D-COMPANY',
+    standardLife: 3200,
+    description: '중형 드릴'
+  },
+  {
+    code: 'AT018',
+    name: 'BALL 5mm 2날',
+    category: 'BALL',
+    specifications: '직경5mm, 2날, 코팅TiAlN',
+    unitPrice: 720000,
+    supplier: 'B-SUPPLIER',
+    standardLife: 1600,
+    description: '볼엔드밀 소형'
+  },
+  {
+    code: 'AT020',
+    name: 'C-CUT 6mm',
+    category: 'C-CUT',
+    specifications: '직경6mm, 챔퍼밀, 초경',
+    unitPrice: 890000,
+    supplier: 'C-TOOLS',
+    standardLife: 1900,
+    description: '챔퍼 가공용'
+  },
+  {
+    code: 'AT022',
+    name: 'T-CUT 8mm 2날',
+    category: 'T-CUT',
+    specifications: '직경8mm, 2날, 초경',
+    unitPrice: 980000,
+    supplier: 'B-SUPPLIER',
+    standardLife: 1750,
+    description: 'T홈 가공용 소형'
+  },
+  {
+    code: 'AT025',
+    name: 'BALL 10mm 2날',
+    category: 'BALL',
+    specifications: '직경10mm, 2날, 코팅DLC',
+    unitPrice: 1180000,
+    supplier: 'C-TOOLS',
+    standardLife: 2400,
+    description: '볼엔드밀 대형'
+  },
+  {
+    code: 'AT028',
+    name: 'C-CUT 10mm',
+    category: 'C-CUT',
+    specifications: '직경10mm, 챔퍼밀, 초경',
+    unitPrice: 1290000,
+    supplier: 'C-TOOLS',
+    standardLife: 2600,
+    description: '챔퍼 가공용 대형'
+  },
+  {
+    code: 'AT030',
+    name: 'REAMER 8mm',
+    category: 'REAMER',
+    specifications: '직경8mm, 리머, HSS-E',
+    unitPrice: 720000,
+    supplier: 'D-COMPANY',
+    standardLife: 3500,
+    description: '리머 중형'
+  },
+  {
+    code: 'AT035',
+    name: 'REAMER 12mm',
+    category: 'REAMER',
+    specifications: '직경12mm, 리머, HSS',
+    unitPrice: 980000,
+    supplier: 'D-COMPANY',
+    standardLife: 4000,
+    description: '리머 대형'
+  }
+]
+
+// 앤드밀 마스터 데이터 검색 함수
+export const findEndmillByCode = (code: string): EndmillMaster | null => {
+  return ENDMILL_MASTER_DATA.find(endmill => endmill.code === code) || null
+}
+
+export const searchEndmillsByName = (query: string): EndmillMaster[] => {
+  const lowercaseQuery = query.toLowerCase()
+  return ENDMILL_MASTER_DATA.filter(endmill => 
+    endmill.name.toLowerCase().includes(lowercaseQuery) ||
+    endmill.code.toLowerCase().includes(lowercaseQuery) ||
+    endmill.specifications.toLowerCase().includes(lowercaseQuery)
+  )
+}
+
+export const getEndmillsBySupplier = (supplier: string): EndmillMaster[] => {
+  return ENDMILL_MASTER_DATA.filter(endmill => endmill.supplier === supplier)
+}
+
+export const getEndmillsByCategory = (category: string): EndmillMaster[] => {
+  return ENDMILL_MASTER_DATA.filter(endmill => endmill.category === category)
+}
+
+export const getAllSuppliers = (): string[] => {
+  return Array.from(new Set(ENDMILL_MASTER_DATA.map(endmill => endmill.supplier)))
+}
+
+export const getAllCategories = (): string[] => {
+  return Array.from(new Set(ENDMILL_MASTER_DATA.map(endmill => endmill.category)))
+}
+
 // 로컬 스토리지 키
 export const STORAGE_KEYS = {
   CAM_SHEETS: 'camSheets',
