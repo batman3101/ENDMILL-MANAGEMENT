@@ -83,9 +83,9 @@ export default function CAMSheetsPage() {
 
     // 공정별 정확도
     const processAccuracy = {
-      '1공정': Math.round(85 + Math.random() * 8),
-      '2공정': Math.round(90 + Math.random() * 8),
-      '2-1공정': Math.round(82 + Math.random() * 8)
+      'CNC1': Math.round(85 + Math.random() * 8),
+      'CNC2': Math.round(90 + Math.random() * 8),
+      'CNC2-1': Math.round(82 + Math.random() * 8)
     }
 
     return {
@@ -106,7 +106,7 @@ export default function CAMSheetsPage() {
     ? processEntries.reduce((a, b) => 
         insights.processAccuracy[a[0]] > insights.processAccuracy[b[0]] ? a : b
       )
-    : ['1공정', 85] // 기본값
+    : ['CNC1', 85] // 기본값
 
   // CAM Sheet 생성 처리
   const handleCreateCAMSheet = (data: any) => {
@@ -349,9 +349,9 @@ export default function CAMSheetsPage() {
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">모든 공정</option>
-              <option value="1공정">1공정</option>
-              <option value="2공정">2공정</option>
-              <option value="2-1공정">2-1공정</option>
+              <option value="CNC1">CNC1</option>
+              <option value="CNC2">CNC2</option>
+              <option value="CNC2-1">CNC2-1</option>
             </select>
           </div>
           <div className="flex gap-2">

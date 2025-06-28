@@ -25,7 +25,7 @@ const sampleData: ToolChange[] = [
     changeDate: '2024-01-26 14:30',
     equipmentNumber: 'C001',
     productionModel: 'PA-001',
-    process: '2공정',
+    process: 'CNC2',
     tNumber: 15,
     endmillCode: 'AT001',
     endmillName: 'FLAT 12mm 4날',
@@ -39,7 +39,7 @@ const sampleData: ToolChange[] = [
     changeDate: '2024-01-26 16:15',
     equipmentNumber: 'C042',
     productionModel: 'PB-025',
-    process: '2-1공정',
+    process: 'CNC2-1',
     tNumber: 3,
     endmillCode: 'AT002',
     endmillName: 'BALL 6mm 2날',
@@ -241,9 +241,9 @@ export default function ToolChangesPage() {
                   required
                 >
                   <option value="">공정 선택</option>
-                  <option value="1공정">1공정</option>
-                  <option value="2공정">2공정</option>
-                  <option value="2-1공정">2-1공정</option>
+                  <option value="CNC1">CNC1</option>
+                  <option value="CNC2">CNC2</option>
+                  <option value="CNC2-1">CNC2-1</option>
                 </select>
               </div>
 
@@ -346,9 +346,9 @@ export default function ToolChangesPage() {
             />
             <select className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">모든 공정</option>
-              <option value="1공정">1공정</option>
-              <option value="2공정">2공정</option>
-              <option value="2-1공정">2-1공정</option>
+              <option value="CNC1">CNC1</option>
+              <option value="CNC2">CNC2</option>
+              <option value="CNC2-1">CNC2-1</option>
             </select>
             <select className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">모든 사유</option>

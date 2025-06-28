@@ -25,7 +25,7 @@ const initialEquipments: Equipment[] = [
     equipmentNumber: 1,
     status: 'active',
     location: '1공장 A구역',
-    processes: ['2공정', '2공종'],
+    processes: ['CNC2', 'CNC2-2'],
     toolPositions: { used: 21, total: 21 },
     lastMaintenance: '2024-01-08'
   },
@@ -35,7 +35,7 @@ const initialEquipments: Equipment[] = [
     equipmentNumber: 2,
     status: 'maintenance',
     location: '1공장 A구역',
-    processes: ['2공정', '2-1공정'],
+    processes: ['CNC2', 'CNC2-1'],
     toolPositions: { used: 0, total: 21 },
     lastMaintenance: '2024-01-10'
   },
@@ -45,7 +45,7 @@ const initialEquipments: Equipment[] = [
     equipmentNumber: 25,
     status: 'active',
     location: '2공장 B구역',
-    processes: ['1공정'],
+    processes: ['CNC1'],
     toolPositions: { used: 20, total: 21 },
     lastMaintenance: '2024-01-05'
   },
@@ -55,7 +55,7 @@ const initialEquipments: Equipment[] = [
     equipmentNumber: 156,
     status: 'offline',
     location: '2공장 C구역',
-    processes: ['3공정', '2공종'],
+    processes: ['CNC3', 'CNC2-2'],
     toolPositions: { used: 12, total: 21 },
     lastMaintenance: '2023-12-28'
   },
@@ -65,7 +65,7 @@ const initialEquipments: Equipment[] = [
     equipmentNumber: 342,
     status: 'active',
     location: '3공장 A구역',
-    processes: ['2공정'],
+    processes: ['CNC2'],
     toolPositions: { used: 19, total: 21 },
     lastMaintenance: '2024-01-12'
   }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { findEndmillByCode } from '../../lib/data/mockData'
 
 interface EndmillInfo {
   tNumber: number
@@ -41,6 +42,54 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
     toolLife: 2000
   })
 
+  const [errorMessage, setErrorMessage] = useState('')
+  const [autoLoadedInfo, setAutoLoadedInfo] = useState<{name: string, specifications: string} | null>(null)
+
+  // 앤드밀 코드 변경 시 자동으로 정보 불러오기
+  const handleEndmillCodeChange = (code: string) => {
+    setNewEndmill(prev => ({ ...prev, endmillCode: code }))
+    setErrorMessage('')
+    setAutoLoadedInfo(null)
+
+    if (code.trim()) {
+      const foundEndmill = findEndmillByCode(code.trim().toUpperCase())
+      
+      if (foundEndmill) {
+        // 자동으로 이름과 사양 설정, Tool Life는 기본값 유지 (수동 입력 가능)
+        setNewEndmill(prev => ({
+          ...prev,
+          endmillCode: foundEndmill.code,
+          endmillName: foundEndmill.name,
+          specifications: foundEndmill.specifications,
+          // toolLife는 기존 값 유지 (수동 입력)
+        }))
+        setAutoLoadedInfo({
+          name: foundEndmill.name,
+          specifications: foundEndmill.specifications
+        })
+      } else {
+        // 앤드밀 코드가 없으면 기존 정보 초기화
+        setNewEndmill(prev => ({
+          ...prev,
+          endmillCode: code,
+          endmillName: '',
+          specifications: ''
+        }))
+        if (code.length >= 3) { // 3글자 이상 입력했을 때만 에러 표시
+          setErrorMessage(`앤드밀 코드 '${code}'를 찾을 수 없습니다.`)
+        }
+      }
+    } else {
+      // 코드가 비어있으면 모든 정보 초기화
+      setNewEndmill(prev => ({
+        ...prev,
+        endmillCode: '',
+        endmillName: '',
+        specifications: ''
+      }))
+    }
+  }
+
   const handleAddEndmill = () => {
     if (!newEndmill.endmillCode || !newEndmill.endmillName) {
       alert('앤드밀 코드와 이름을 입력해주세요.')
@@ -66,6 +115,8 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
       specifications: '',
       toolLife: 2000
     })
+    setErrorMessage('')
+    setAutoLoadedInfo(null)
   }
 
   const handleRemoveEndmill = (tNumber: number) => {
@@ -130,13 +181,13 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
               <select
                 value={formData.process}
                 onChange={(e) => setFormData({...formData, process: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
                 <option value="">공정 선택</option>
-                <option value="1공정">1공정</option>
-                <option value="2공정">2공정</option>
-                <option value="2-1공정">2-1공정</option>
+                <option value="CNC1">CNC1</option>
+                <option value="CNC2">CNC2</option>
+                <option value="CNC2-1">CNC2-1</option>
               </select>
             </div>
 
@@ -179,7 +230,7 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
                   <select
                     value={newEndmill.tNumber}
                     onChange={(e) => setNewEndmill({...newEndmill, tNumber: parseInt(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {Array.from({length: 21}, (_, i) => i + 1).map(num => (
                       <option key={num} value={num} disabled={formData.endmills.some(e => e.tNumber === num)}>
@@ -195,9 +246,15 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
                     type="text"
                     placeholder="AT001"
                     value={newEndmill.endmillCode}
-                    onChange={(e) => setNewEndmill({...newEndmill, endmillCode: e.target.value})}
+                    onChange={(e) => handleEndmillCodeChange(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  {errorMessage && (
+                    <p className="text-red-600 text-xs mt-1">{errorMessage}</p>
+                  )}
+                  {autoLoadedInfo && (
+                    <p className="text-green-600 text-xs mt-1">✓ 정보가 자동으로 불러와졌습니다</p>
+                  )}
                 </div>
 
                 <div>
@@ -207,7 +264,10 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
                     placeholder="FLAT 12mm 4날"
                     value={newEndmill.endmillName}
                     onChange={(e) => setNewEndmill({...newEndmill, endmillName: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      autoLoadedInfo ? 'bg-green-50' : ''
+                    }`}
+                    readOnly={!!autoLoadedInfo}
                   />
                 </div>
 
@@ -221,6 +281,7 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     min="1"
                   />
+                  <p className="text-xs text-gray-500 mt-1">수동 입력 필요</p>
                 </div>
 
                 <div className="flex items-end">
@@ -241,7 +302,10 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
                   placeholder="직경12mm, 4날, 코팅TiN"
                   value={newEndmill.specifications}
                   onChange={(e) => setNewEndmill({...newEndmill, specifications: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    autoLoadedInfo ? 'bg-green-50' : ''
+                  }`}
+                  readOnly={!!autoLoadedInfo}
                 />
               </div>
             </div>

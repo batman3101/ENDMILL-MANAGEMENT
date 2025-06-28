@@ -113,7 +113,7 @@ export const validateExcelData = (data: any[]): {
     }
     
     // Process 값 체크
-    const validProcesses = ['1공정', '2공정', '2-1공정', 'CNC1', 'CNC2']
+    const validProcesses = ['CNC1', 'CNC2', 'CNC2-1', 'CNC1', 'CNC2']
     if (row.Process && !validProcesses.includes(row.Process)) {
       warnings.push(`${rowNum}행: Process 값을 확인해주세요. (${row.Process})`)
     }

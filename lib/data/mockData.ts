@@ -5,7 +5,7 @@ export const INITIAL_CAM_SHEETS: CAMSheet[] = [
   {
     id: '1',
     model: 'PA-001',
-    process: '2공정',
+    process: 'CNC2',
     camVersion: 'v2.1',
     versionDate: '2024-01-15',
     endmills: [
@@ -44,7 +44,7 @@ export const INITIAL_CAM_SHEETS: CAMSheet[] = [
   {
     id: '2',
     model: 'PB-025',
-    process: '1공정',
+    process: 'CNC1',
     camVersion: 'v1.5',
     versionDate: '2024-01-10',
     endmills: [
@@ -76,7 +76,7 @@ export const INITIAL_CAM_SHEETS: CAMSheet[] = [
   {
     id: '3',
     model: 'PS-012',
-    process: '2-1공정',
+    process: 'CNC2-1',
     camVersion: 'v3.0',
     versionDate: '2024-01-20',
     endmills: [
@@ -122,7 +122,7 @@ export const INITIAL_CAM_SHEETS: CAMSheet[] = [
   {
     id: '4',
     model: 'B7-105',
-    process: '2공정',
+    process: 'CNC2',
     camVersion: 'v1.8',
     versionDate: '2024-01-12',
     endmills: [
@@ -154,7 +154,7 @@ export const INITIAL_CAM_SHEETS: CAMSheet[] = [
   {
     id: '5',
     model: 'Q7-201',
-    process: '1공정',
+    process: 'CNC1',
     camVersion: 'v2.3',
     versionDate: '2024-01-25',
     endmills: [
@@ -531,7 +531,7 @@ export class MockDataManager {
     const newSample: CAMSheet = {
       id: Date.now().toString(),
       model: `SAMPLE-${Math.floor(Math.random() * 1000)}`,
-      process: ['1공정', '2공정', '2-1공정'][Math.floor(Math.random() * 3)],
+      process: ['CNC1', 'CNC2', 'CNC2-1'][Math.floor(Math.random() * 3)],
       camVersion: `v${Math.floor(Math.random() * 5) + 1}.${Math.floor(Math.random() * 10)}`,
       versionDate: new Date().toISOString().split('T')[0],
       endmills: [
