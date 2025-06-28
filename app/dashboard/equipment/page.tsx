@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 
 // 로컬 상태용 타입 정의
 interface Equipment {
@@ -69,6 +69,8 @@ export default function EquipmentPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [modelFilter, setModelFilter] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
 
   // 필터링된 설비 목록
   const filteredEquipments = useMemo(() => {
@@ -85,6 +87,22 @@ export default function EquipmentPage() {
       return matchesSearch && matchesStatus && matchesModel
     })
   }, [equipments, searchTerm, statusFilter, modelFilter])
+
+  // 페이지네이션 계산
+  const totalPages = Math.ceil(filteredEquipments.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentEquipments = filteredEquipments.slice(startIndex, endIndex)
+
+  // 필터가 변경되면 첫 페이지로 이동
+  const resetToFirstPage = () => {
+    setCurrentPage(1)
+  }
+
+  // 필터 상태 변경 시 첫 페이지로 이동
+  useMemo(() => {
+    resetToFirstPage()
+  }, [searchTerm, statusFilter, modelFilter])
 
   // 상태별 색상
   const getStatusBadge = (status: Equipment['status']) => {
@@ -304,6 +322,9 @@ export default function EquipmentPage() {
           <h2 className="text-lg font-semibold text-gray-900">
             설비 목록 ({filteredEquipments.length}개)
           </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            페이지 {currentPage} / {totalPages} (1페이지당 {itemsPerPage}개)
+          </p>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -333,7 +354,7 @@ export default function EquipmentPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredEquipments.map((equipment) => (
+              {currentEquipments.map((equipment) => (
                 <tr key={equipment.id} className="hover:bg-gray-50">
                   {/* 설비번호 */}
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -423,6 +444,84 @@ export default function EquipmentPage() {
             </tbody>
           </table>
         </div>
+        
+        {/* 페이지네이션 */}
+        {totalPages > 1 && (
+          <div className="bg-white px-6 py-3 flex items-center justify-between border-t">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                이전
+              </button>
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                다음
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  총 <span className="font-medium">{filteredEquipments.length}</span>개 중{' '}
+                  <span className="font-medium">{startIndex + 1}</span>-
+                  <span className="font-medium">{Math.min(endIndex, filteredEquipments.length)}</span>개 표시
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ‹
+                  </button>
+                  
+                  {/* 페이지 번호들 */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          currentPage === pageNum
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ›
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 검색 결과가 없을 때 */}
@@ -434,6 +533,7 @@ export default function EquipmentPage() {
               setSearchTerm('')
               setStatusFilter('')
               setModelFilter('')
+              setCurrentPage(1)
             }}
             className="mt-2 text-blue-600 hover:text-blue-800"
           >

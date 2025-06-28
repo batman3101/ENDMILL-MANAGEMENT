@@ -1,9 +1,23 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { getAllSuppliers, getAllCategories } from '../../../lib/data/mockData'
 import { useToast } from '../../../components/shared/Toast'
+
+interface InventoryItem {
+  id: string
+  code: string
+  name: string
+  category: string
+  specifications: string
+  supplier: string
+  unitPrice: number
+  currentStock: number
+  minStock: number
+  maxStock: number
+  status: 'sufficient' | 'low' | 'critical'
+}
 
 interface NewEndmill {
   code: string
@@ -17,8 +31,63 @@ interface NewEndmill {
   maxStock: number
 }
 
+// 재고 데이터 생성 함수
+const generateInventoryData = (): InventoryItem[] => {
+  const categories = getAllCategories()
+  const suppliers = getAllSuppliers()
+  const items: InventoryItem[] = []
+  
+  // 각 카테고리별로 15-20개 아이템 생성
+  categories.forEach((category, categoryIndex) => {
+    const itemCount = 15 + Math.floor(Math.random() * 6) // 15-20개
+    
+    for (let i = 1; i <= itemCount; i++) {
+      const itemNumber = (categoryIndex * 20 + i).toString().padStart(3, '0')
+      const code = `AT${itemNumber}`
+      
+      const minStock = 10 + Math.floor(Math.random() * 20) // 10-30
+      const maxStock = minStock + 50 + Math.floor(Math.random() * 50) // minStock + 50-100
+      const currentStock = Math.floor(Math.random() * (maxStock + 20)) // 0 ~ maxStock+20
+      
+      // 상태 결정
+      let status: 'sufficient' | 'low' | 'critical'
+      if (currentStock < minStock * 0.5) status = 'critical'
+      else if (currentStock < minStock) status = 'low'
+      else status = 'sufficient'
+      
+      // 가격 (베트남 동)
+      const basePrice = 800000 + Math.floor(Math.random() * 1000000) // 800,000 - 1,800,000 VND
+      
+      items.push({
+        id: itemNumber,
+        code,
+        name: `${category} ${6 + Math.floor(Math.random() * 15)}mm ${2 + Math.floor(Math.random() * 4)}날`,
+        category,
+        specifications: `${6 + Math.floor(Math.random() * 15)}mm ${2 + Math.floor(Math.random() * 4)}날`,
+        supplier: suppliers[Math.floor(Math.random() * suppliers.length)],
+        unitPrice: basePrice,
+        currentStock,
+        minStock,
+        maxStock,
+        status
+      })
+    }
+  })
+  
+  return items.sort((a, b) => a.code.localeCompare(b.code))
+}
+
+const inventoryItems = generateInventoryData()
+
 export default function InventoryPage() {
   const { showSuccess, showError } = useToast()
+  const [inventory, setInventory] = useState<InventoryItem[]>(inventoryItems)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [supplierFilter, setSupplierFilter] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
   const [showAddModal, setShowAddModal] = useState(false)
   const [formData, setFormData] = useState<NewEndmill>({
     code: '',
@@ -31,6 +100,71 @@ export default function InventoryPage() {
     minStock: 0,
     maxStock: 0
   })
+
+  // 필터링된 재고 목록
+  const filteredInventory = useMemo(() => {
+    return inventory.filter(item => {
+      const matchesSearch = searchTerm === '' || 
+        item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.specifications.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      const matchesCategory = categoryFilter === '' || item.category === categoryFilter
+      const matchesStatus = statusFilter === '' || item.status === statusFilter
+      const matchesSupplier = supplierFilter === '' || item.supplier === supplierFilter
+      
+      return matchesSearch && matchesCategory && matchesStatus && matchesSupplier
+    })
+  }, [inventory, searchTerm, categoryFilter, statusFilter, supplierFilter])
+
+  // 페이지네이션 계산
+  const totalPages = Math.ceil(filteredInventory.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentInventory = filteredInventory.slice(startIndex, endIndex)
+
+  // 필터 상태 변경 시 첫 페이지로 이동
+  useMemo(() => {
+    setCurrentPage(1)
+  }, [searchTerm, categoryFilter, statusFilter, supplierFilter])
+
+  // 상태별 카운트
+  const statusCounts = useMemo(() => {
+    return {
+      total: inventory.reduce((sum, item) => sum + item.currentStock, 0),
+      critical: inventory.filter(item => item.status === 'critical').length,
+      low: inventory.filter(item => item.status === 'low').length,
+      orderPending: inventory.filter(item => item.status === 'critical' || item.status === 'low').length,
+      totalValue: inventory.reduce((sum, item) => sum + (item.currentStock * item.unitPrice), 0)
+    }
+  }, [inventory])
+
+  // 상태 배지 색상
+  const getStatusBadge = (status: InventoryItem['status']) => {
+    switch (status) {
+      case 'sufficient':
+        return 'bg-green-100 text-green-800'
+      case 'low':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'critical':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getStatusText = (status: InventoryItem['status']) => {
+    switch (status) {
+      case 'sufficient':
+        return '충분'
+      case 'low':
+        return '부족'
+      case 'critical':
+        return '위험'
+      default:
+        return '알 수 없음'
+    }
+  }
 
   const handleAddEndmill = (e: React.FormEvent) => {
     e.preventDefault()
@@ -68,7 +202,7 @@ export default function InventoryPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">총 재고</p>
-              <p className="text-2xl font-bold text-gray-900">1,247</p>
+              <p className="text-2xl font-bold text-gray-900">{statusCounts.total.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -81,8 +215,8 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">부족</p>
-              <p className="text-2xl font-bold text-red-600">8</p>
+              <p className="text-sm font-medium text-gray-600">위험</p>
+              <p className="text-2xl font-bold text-red-600">{statusCounts.critical}</p>
             </div>
           </div>
         </div>
@@ -96,7 +230,7 @@ export default function InventoryPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">발주 대기</p>
-              <p className="text-2xl font-bold text-yellow-600">5</p>
+              <p className="text-2xl font-bold text-yellow-600">{statusCounts.orderPending}</p>
             </div>
           </div>
         </div>
@@ -110,7 +244,9 @@ export default function InventoryPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">총 가치</p>
-              <p className="text-2xl font-bold text-green-600">1.2B VND</p>
+              <p className="text-2xl font-bold text-green-600">
+                {(statusCounts.totalValue / 1000000000).toFixed(1)}B VND
+              </p>
             </div>
           </div>
         </div>
@@ -152,21 +288,35 @@ export default function InventoryPage() {
             <input
               type="text"
               placeholder="앤드밀 코드 또는 설명 검색..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <select className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select 
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <option value="">모든 카테고리</option>
               {getAllCategories().map(category => (
                 <option key={category} value={category}>{category}</option>
               ))}
             </select>
-            <select className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <option value="">재고 상태</option>
               <option value="sufficient">충분</option>
               <option value="low">부족</option>
               <option value="critical">위험</option>
             </select>
-            <select className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select 
+              value={supplierFilter}
+              onChange={(e) => setSupplierFilter(e.target.value)}
+              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <option value="">모든 공급업체</option>
               {getAllSuppliers().map(supplier => (
                 <option key={supplier} value={supplier}>{supplier}</option>
@@ -185,7 +335,12 @@ export default function InventoryPage() {
       {/* 재고 목록 */}
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
         <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">재고 현황</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            재고 현황 ({filteredInventory.length}개)
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            페이지 {currentPage} / {totalPages} (1페이지당 {itemsPerPage}개)
+          </p>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -212,101 +367,150 @@ export default function InventoryPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {/* 샘플 데이터 */}
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">AT001</div>
-                    <div className="text-sm text-gray-500">FLAT 12mm 4날</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">25 / 20</div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                    <div className="bg-green-600 h-2 rounded-full" style={{width: '80%'}}></div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                    충분
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  A-TECH
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {(1080000).toLocaleString()} VND
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <button className="text-blue-600 hover:text-blue-800 mr-3">상세</button>
-                  <button className="text-green-600 hover:text-green-800 mr-3">수정</button>
-                  <button className="text-red-600 hover:text-red-800">삭제</button>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">AT002</div>
-                    <div className="text-sm text-gray-500">BALL 6mm 2날</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">5 / 15</div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                    <div className="bg-red-600 h-2 rounded-full" style={{width: '33%'}}></div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                    위험
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  B-SUPPLIER
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {(912000).toLocaleString()} VND
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <button className="text-blue-600 hover:text-blue-800 mr-3">상세</button>
-                  <button className="text-green-600 hover:text-green-800 mr-3">수정</button>
-                  <button className="text-red-600 hover:text-red-800">삭제</button>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">AT003</div>
-                    <div className="text-sm text-gray-500">T-CUT 8mm 3날</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">12 / 10</div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                    <div className="bg-yellow-600 h-2 rounded-full" style={{width: '60%'}}></div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                    부족
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  C-TOOLS
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {(1248000).toLocaleString()} VND
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <button className="text-blue-600 hover:text-blue-800 mr-3">상세</button>
-                  <button className="text-green-600 hover:text-green-800 mr-3">수정</button>
-                  <button className="text-red-600 hover:text-red-800">삭제</button>
-                </td>
-              </tr>
+              {currentInventory.map((item) => {
+                const stockPercentage = Math.min((item.currentStock / item.minStock) * 100, 100)
+                const progressColor = item.status === 'critical' ? 'bg-red-600' : 
+                                    item.status === 'low' ? 'bg-yellow-600' : 'bg-green-600'
+                
+                return (
+                  <tr key={item.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{item.code}</div>
+                        <div className="text-sm text-gray-500">{item.name}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {item.currentStock} / {item.minStock}
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div 
+                          className={`h-2 rounded-full ${progressColor}`} 
+                          style={{width: `${Math.min(stockPercentage, 100)}%`}}
+                        ></div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(item.status)}`}>
+                        {getStatusText(item.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {item.supplier}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {item.unitPrice.toLocaleString()} VND
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <button className="text-blue-600 hover:text-blue-800 mr-3">상세</button>
+                      <button className="text-green-600 hover:text-green-800 mr-3">수정</button>
+                      <button className="text-red-600 hover:text-red-800">삭제</button>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
-          </table>
+                      </table>
+          </div>
+          
+          {/* 페이지네이션 */}
+          {totalPages > 1 && (
+            <div className="bg-white px-6 py-3 flex items-center justify-between border-t">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  이전
+                </button>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  다음
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    총 <span className="font-medium">{filteredInventory.length}</span>개 중{' '}
+                    <span className="font-medium">{startIndex + 1}</span>-
+                    <span className="font-medium">{Math.min(endIndex, filteredInventory.length)}</span>개 표시
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ‹
+                    </button>
+                    
+                    {/* 페이지 번호들 */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            currentPage === pageNum
+                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ›
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+
+        {/* 검색 결과가 없을 때 */}
+        {filteredInventory.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-500">검색 조건에 맞는 재고가 없습니다.</p>
+            <button 
+              onClick={() => {
+                setSearchTerm('')
+                setCategoryFilter('')
+                setStatusFilter('')
+                setSupplierFilter('')
+                setCurrentPage(1)
+              }}
+              className="mt-2 text-blue-600 hover:text-blue-800"
+            >
+              필터 초기화
+            </button>
+          </div>
+        )}
 
       {/* 신규 앤드밀 추가 모달 */}
       {showAddModal && (
