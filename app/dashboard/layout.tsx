@@ -18,48 +18,63 @@ export default function DashboardLayout({
       href: '/dashboard',
       icon: '🏠',
       label: '대시보드',
+      description: '실시간 CNC 앤드밀 관리 현황',
       active: pathname === '/dashboard'
     },
     {
       href: '/dashboard/equipment',
+      icon: '🏭',
+      label: '설비 관리',
+      description: '800대 CNC 설비 현황 및 관리',
+      active: pathname === '/dashboard/equipment'
+    },
+    {
+      href: '/dashboard/endmill',
       icon: '🔧',
       label: '앤드밀 관리',
-      active: pathname === '/dashboard/equipment'
+      description: '앤드밀별 Tool Life 추적 및 교체 알림 관리',
+      active: pathname === '/dashboard/endmill'
     },
     {
       href: '/dashboard/tool-changes',
       icon: '🔄',
       label: '교체 실적',
+      description: '앤드밀 교체 이력 및 실적 관리',
       active: pathname === '/dashboard/tool-changes'
     },
     {
       href: '/dashboard/cam-sheets',
       icon: '📋',
       label: 'CAM SHEET 관리',
+      description: 'CAM 버전별 앤드밀 정보 및 Tool Life 설정',
       active: pathname === '/dashboard/cam-sheets'
     },
     {
       href: '/dashboard/inventory',
       icon: '📦',
       label: '재고 관리',
+      description: 'QR 스캔 기반 앤드밀 입고/출고 및 재고 현황',
       active: pathname === '/dashboard/inventory' || pathname.startsWith('/dashboard/inventory/')
     },
     {
       href: '/dashboard/reports',
       icon: '📊',
       label: '분석 & 리포트',
+      description: '생산성 분석 및 통계 리포트',
       active: pathname === '/dashboard/reports'
     },
     {
       href: '/dashboard/users',
       icon: '👥',
       label: '사용자 관리',
+      description: '시스템 사용자 및 권한 관리',
       active: pathname === '/dashboard/users'
     },
     {
       href: '/dashboard/settings',
       icon: '⚙️',
       label: '설정',
+      description: '시스템 환경 설정 및 구성',
       active: pathname === '/dashboard/settings'
     }
   ]
@@ -157,7 +172,7 @@ export default function DashboardLayout({
             {menuItems.find(item => item.active)?.label || '대시보드'}
           </h1>
           <p className="text-gray-600 text-sm">
-            실시간 CNC 앤드밀 관리 현황
+            {menuItems.find(item => item.active)?.description || '실시간 CNC 앤드밀 관리 현황'}
           </p>
         </div>
 

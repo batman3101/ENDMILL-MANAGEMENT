@@ -130,7 +130,6 @@ export default function EquipmentPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">설비 관리</h1>
         <p className="text-gray-600">800대 CNC 설비 현황 및 관리</p>
       </div>
 

@@ -1,6 +1,10 @@
 export default function EndmillPage() {
   return (
     <div className="space-y-6">
+      <div>
+        <p className="text-gray-600">앤드밀별 Tool Life 추적 및 교체 알림 관리</p>
+      </div>
+
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

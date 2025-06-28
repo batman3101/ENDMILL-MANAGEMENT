@@ -103,7 +103,6 @@ export default function OutboundPage() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">출고 관리</h1>
           <p className="text-gray-600">QR 스캔을 통한 앤드밀 출고 처리</p>
         </div>
         <Link 
