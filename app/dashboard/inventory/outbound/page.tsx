@@ -4,6 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { findEndmillByCode, EndmillMaster } from '../../../../lib/data/mockData'
 import { useToast } from '../../../../components/shared/Toast'
+import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
+import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
 
 interface OutboundItem {
   id: string
@@ -21,6 +23,7 @@ interface OutboundItem {
 
 export default function OutboundPage() {
   const { showSuccess, showError, showWarning } = useToast()
+  const confirmation = useConfirmation()
   const [isScanning, setIsScanning] = useState(false)
   const [scannedCode, setScannedCode] = useState('')
   const [outboundItems, setOutboundItems] = useState<OutboundItem[]>([])
@@ -48,7 +51,7 @@ export default function OutboundPage() {
     }
   }
 
-  const handleProcessOutbound = () => {
+  const handleProcessOutbound = async () => {
     if (!endmillData || quantity <= 0 || !equipmentNumber.trim()) {
       showError('입력 확인 필요', '앤드밀 정보, 수량, 설비번호를 확인해주세요.')
       return
@@ -61,35 +64,52 @@ export default function OutboundPage() {
       return
     }
 
-    const newItem: OutboundItem = {
-      id: Date.now().toString(),
-      endmillCode: endmillData.code,
-      endmillName: endmillData.name,
-      equipmentNumber: equipmentNumber,
-      tNumber: tNumber,
-      quantity: quantity,
-      unitPrice: endmillData.unitPrice,
-      totalValue: quantity * endmillData.unitPrice,
-      processedAt: new Date().toLocaleString('ko-KR'),
-      processedBy: '관리자', // 실제로는 로그인된 사용자 정보
-      purpose: purpose
-    }
-
-    setOutboundItems([newItem, ...outboundItems])
-    
-    // 폼 초기화
-    setEndmillData(null)
-    setQuantity(1)
-    setEquipmentNumber('')
-    setTNumber(1)
-    setPurpose('교체')
-    setScannedCode('')
-    setErrorMessage('')
-    
-    showSuccess(
-      '출고 처리 완료',
-      `${endmillData.code} ${quantity}개가 ${equipmentNumber} T${tNumber.toString().padStart(2, '0')}로 출고되었습니다.`
+    const totalValue = quantity * endmillData.unitPrice
+    const confirmed = await confirmation.showConfirmation(
+      createSaveConfirmation(
+        `${endmillData.code} ${quantity}개 출고 (${equipmentNumber} T${tNumber.toString().padStart(2, '0')}, ${purpose})`
+      )
     )
+
+    if (confirmed) {
+      confirmation.setLoading(true)
+      
+      try {
+        const newItem: OutboundItem = {
+          id: Date.now().toString(),
+          endmillCode: endmillData.code,
+          endmillName: endmillData.name,
+          equipmentNumber: equipmentNumber,
+          tNumber: tNumber,
+          quantity: quantity,
+          unitPrice: endmillData.unitPrice,
+          totalValue: totalValue,
+          processedAt: new Date().toLocaleString('ko-KR'),
+          processedBy: '관리자', // 실제로는 로그인된 사용자 정보
+          purpose: purpose
+        }
+
+        setOutboundItems([newItem, ...outboundItems])
+        
+        // 폼 초기화
+        setEndmillData(null)
+        setQuantity(1)
+        setEquipmentNumber('')
+        setTNumber(1)
+        setPurpose('교체')
+        setScannedCode('')
+        setErrorMessage('')
+        
+        showSuccess(
+          '출고 처리 완료',
+          `${endmillData.code} ${quantity}개가 ${equipmentNumber} T${tNumber.toString().padStart(2, '0')}로 출고되었습니다.`
+        )
+      } catch (error) {
+        showError('출고 처리 실패', '출고 처리 중 오류가 발생했습니다.')
+      } finally {
+        confirmation.setLoading(false)
+      }
+    }
   }
 
   // 총액 계산
@@ -364,6 +384,17 @@ export default function OutboundPage() {
           </div>
         )}
       </div>
+
+      {/* 승인 모달 */}
+      {confirmation.config && (
+        <ConfirmationModal
+          isOpen={confirmation.isOpen}
+          config={confirmation.config}
+          onConfirm={confirmation.handleConfirm}
+          onCancel={confirmation.handleCancel}
+          loading={confirmation.loading}
+        />
+      )}
     </div>
   )
 } 

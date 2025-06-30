@@ -1,6 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import ConfirmationModal from '../../../components/shared/ConfirmationModal'
+import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createCustomConfirmation } from '../../../lib/hooks/useConfirmation'
+import { useToast } from '../../../components/shared/Toast'
 
 // 앤드밀 인스턴스 타입 정의
 interface EndmillInstance {
@@ -71,15 +74,22 @@ const generateEndmillData = (): EndmillInstance[] => {
   return items.sort((a, b) => a.equipment.localeCompare(b.equipment) || a.position.localeCompare(b.position))
 }
 
-const endmillData = generateEndmillData()
-
 export default function EndmillPage() {
-  const [endmills, setEndmills] = useState<EndmillInstance[]>(endmillData)
+  const [endmills, setEndmills] = useState<EndmillInstance[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 20
+  const confirmation = useConfirmation()
+  const { showSuccess, showError, showWarning } = useToast()
+
+  // 클라이언트 사이드에서만 데이터 로드
+  useEffect(() => {
+    setEndmills(generateEndmillData())
+    setIsLoading(false)
+  }, [])
 
   // 필터링된 앤드밀 목록
   const filteredEndmills = useMemo(() => {
@@ -163,6 +173,91 @@ export default function EndmillPage() {
       default:
         return '❓'
     }
+  }
+
+  // 앤드밀 작업 기능들
+  const handleViewDetail = (item: EndmillInstance) => {
+    // 상세 페이지로 이동하거나 모달 표시
+    window.open(`/dashboard/endmill-detail/${item.code}`, '_blank')
+    showSuccess('상세 정보 조회', `${item.code}의 상세 정보 페이지를 새 탭에서 열었습니다.`)
+  }
+
+  const handleImmediateReplace = async (item: EndmillInstance) => {
+    const confirmed = await confirmation.showConfirmation(
+      createCustomConfirmation(
+        'warning',
+        '즉시 교체 확인',
+        `${item.equipment} ${item.position}의 앤드밀을 즉시 교체하시겠습니까?\n\n앤드밀: ${item.code} - ${item.name}\n현재 수명: ${item.currentLife.toLocaleString()}회 / ${item.totalLife.toLocaleString()}회\n⚠️ 위험: 즉시 교체가 필요한 상태입니다.`,
+        '즉시 교체',
+        '취소'
+      )
+    )
+
+    if (confirmed) {
+      // 교체 실적 등록 페이지로 이동 (데이터와 함께)
+      const url = `/dashboard/tool-changes?equipment=${item.equipment}&process=${item.process}&tNumber=${item.position.replace('T', '')}&reason=즉시교체`
+      window.location.href = url
+      showSuccess('교체 처리 시작', `${item.equipment} ${item.position} 앤드밀 교체를 진행합니다.`)
+    }
+  }
+
+  const handleScheduleReplace = async (item: EndmillInstance) => {
+    const confirmed = await confirmation.showConfirmation(
+      createCustomConfirmation(
+        'warning',
+        '교체 예약 확인',
+        `${item.equipment} ${item.position}의 앤드밀 교체를 예약하시겠습니까?\n\n앤드밀: ${item.code} - ${item.name}\n현재 수명: ${item.currentLife.toLocaleString()}회 / ${item.totalLife.toLocaleString()}회\n⚠️ 경고: 교체 권장 상태입니다.`,
+        '교체 예약',
+        '취소'
+      )
+    )
+
+    if (confirmed) {
+      // 앤드밀 상태를 예약됨으로 변경하고 알림 등록
+      showWarning('교체 예약 완료', `${item.equipment} ${item.position} 앤드밀 교체가 예약되었습니다. 적절한 시기에 교체해 주세요.`)
+    }
+  }
+
+  const handleMaintenance = async (item: EndmillInstance) => {
+    const confirmed = await confirmation.showConfirmation(
+      createCustomConfirmation(
+        'update',
+        '정비 확인',
+        `${item.equipment} ${item.position}의 앤드밀 정비를 진행하시겠습니까?\n\n앤드밀: ${item.code} - ${item.name}\n현재 수명: ${item.currentLife.toLocaleString()}회 / ${item.totalLife.toLocaleString()}회\nℹ️ 상태: 정상 사용 중입니다.`,
+        '정비 진행',
+        '취소'
+      )
+    )
+
+    if (confirmed) {
+      // 정비 기록 등록
+      const updatedEndmills = endmills.map(endmill => 
+        endmill.id === item.id 
+          ? { ...endmill, lastMaintenance: new Date().toISOString().split('T')[0] }
+          : endmill
+      )
+      setEndmills(updatedEndmills)
+      showSuccess('정비 완료', `${item.equipment} ${item.position} 앤드밀 정비가 완료되었습니다.`)
+    }
+  }
+
+  // 로딩 중일 때
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <p className="text-gray-600">앤드밀별 Tool Life 추적 및 교체 알림 관리</p>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-lg flex items-center justify-center">
+              <span className="text-2xl">🔧</span>
+            </div>
+            <p className="text-gray-600">앤드밀 데이터를 불러오는 중...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -362,13 +457,33 @@ export default function EndmillPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button className="text-blue-600 hover:text-blue-800 mr-3">상세</button>
+                      <button 
+                        onClick={() => handleViewDetail(item)}
+                        className="text-blue-600 hover:text-blue-800 mr-3"
+                      >
+                        상세
+                      </button>
                       {item.status === 'critical' ? (
-                        <button className="text-red-600 hover:text-red-800">즉시 교체</button>
+                        <button 
+                          onClick={() => handleImmediateReplace(item)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          즉시 교체
+                        </button>
                       ) : item.status === 'warning' ? (
-                        <button className="text-yellow-600 hover:text-yellow-800">교체 예약</button>
+                        <button 
+                          onClick={() => handleScheduleReplace(item)}
+                          className="text-yellow-600 hover:text-yellow-800"
+                        >
+                          교체 예약
+                        </button>
                       ) : (
-                        <button className="text-green-600 hover:text-green-800">정비</button>
+                        <button 
+                          onClick={() => handleMaintenance(item)}
+                          className="text-green-600 hover:text-green-800"
+                        >
+                          정비
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -474,6 +589,17 @@ export default function EndmillPage() {
             </button>
           </div>
         )}
-      </div>
-    )
-  } 
+
+      {/* 승인 모달 */}
+      {confirmation.config && (
+        <ConfirmationModal
+          isOpen={confirmation.isOpen}
+          config={confirmation.config}
+          onConfirm={confirmation.handleConfirm}
+          onCancel={confirmation.handleCancel}
+          loading={confirmation.loading}
+        />
+      )}
+    </div>
+  )
+} 

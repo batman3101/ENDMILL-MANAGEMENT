@@ -5,6 +5,8 @@ import { useCAMSheets, CAMSheet, EndmillInfo } from '../../../lib/hooks/useCAMSh
 import CAMSheetForm from '../../../components/features/CAMSheetForm'
 import ExcelUploader from '../../../components/features/ExcelUploader'
 import { useToast } from '../../../components/shared/Toast'
+import ConfirmationModal from '../../../components/shared/ConfirmationModal'
+import { useConfirmation, createDeleteConfirmation, createSaveConfirmation } from '../../../lib/hooks/useConfirmation'
 
 export default function CAMSheetsPage() {
   const { 
@@ -16,6 +18,7 @@ export default function CAMSheetsPage() {
     deleteCAMSheet 
   } = useCAMSheets()
   const { showSuccess, showError, showWarning } = useToast()
+  const confirmation = useConfirmation()
   const [showAddForm, setShowAddForm] = useState(false)
   const [showExcelUploader, setShowExcelUploader] = useState(false)
   const [selectedSheet, setSelectedSheet] = useState<CAMSheet | null>(null)
@@ -43,8 +46,16 @@ export default function CAMSheetsPage() {
         averageChangeInterval: 0,
         inventoryLinkage: 0,
         standardization: 0,
-        processAccuracy: {},
-        endmillTypeIntervals: {},
+        processAccuracy: {
+          'CNC1': 0,
+          'CNC2': 0,
+          'CNC2-1': 0
+        },
+        endmillTypeIntervals: {
+          FLAT: 0,
+          BALL: 0,
+          'T-CUT': 0
+        },
         inventoryStatus: { secured: 0, shortage: 0 },
         standardizationDetails: { standard: 0, duplicate: 0 }
       }
@@ -103,41 +114,69 @@ export default function CAMSheetsPage() {
   }
 
   const insights = calculateInsights()
-  const processEntries = Object.entries(insights.processAccuracy)
-  const bestProcess = processEntries.length > 0 
-    ? processEntries.reduce((a, b) => 
-        insights.processAccuracy[a[0]] > insights.processAccuracy[b[0]] ? a : b
+  const processKeys = Object.keys(insights.processAccuracy) as (keyof typeof insights.processAccuracy)[]
+  const bestProcessKey = processKeys.length > 0 
+    ? processKeys.reduce((a, b) => 
+        insights.processAccuracy[a] > insights.processAccuracy[b] ? a : b
       )
-    : ['CNC1', 85] // 기본값
+    : 'CNC1'
+  const bestProcess = [bestProcessKey, insights.processAccuracy[bestProcessKey] || 85]
 
   // CAM Sheet 생성 처리
-  const handleCreateCAMSheet = (data: any) => {
-    createCAMSheet(data)
-    setShowAddForm(false)
+  const handleCreateCAMSheet = async (data: any) => {
+    const confirmed = await confirmation.showConfirmation(
+      createSaveConfirmation(`${data.model} - ${data.process} CAM Sheet`)
+    )
+    
+    if (confirmed) {
+      createCAMSheet(data)
+      setShowAddForm(false)
+      showSuccess('CAM Sheet 생성 완료', '새로운 CAM Sheet가 성공적으로 생성되었습니다.')
+    }
   }
 
   // 엑셀 데이터 일괄 등록 처리
-  const handleBulkImport = (camSheets: Omit<CAMSheet, 'id' | 'createdAt' | 'updatedAt'>[]) => {
-    camSheets.forEach(sheet => {
-      createCAMSheet(sheet)
+  const handleBulkImport = async (camSheets: Omit<CAMSheet, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+    const confirmed = await confirmation.showConfirmation({
+      type: 'create',
+      title: '엑셀 일괄 등록 확인',
+      message: `${camSheets.length}개의 CAM Sheet를 일괄 등록하시겠습니까?`,
+      confirmText: '일괄 등록',
+      cancelText: '취소'
     })
-    setShowExcelUploader(false)
-    showSuccess(
-      '엑셀 일괄 등록 완료', 
-      `${camSheets.length}개의 CAM Sheet가 성공적으로 등록되었습니다.`
-    )
+    
+    if (confirmed) {
+      confirmation.setLoading(true)
+      try {
+        camSheets.forEach(sheet => {
+          createCAMSheet(sheet)
+        })
+        setShowExcelUploader(false)
+        showSuccess(
+          '엑셀 일괄 등록 완료', 
+          `${camSheets.length}개의 CAM Sheet가 성공적으로 등록되었습니다.`
+        )
+      } catch (error) {
+        showError('일괄 등록 실패', '일괄 등록 중 오류가 발생했습니다.')
+      } finally {
+        confirmation.setLoading(false)
+      }
+    }
   }
 
   // CAM Sheet 삭제
-  const handleDelete = (id: string) => {
-    // 확인 모달 대신 경고 토스트로 변경 (실제 삭제는 별도 확인 필요)
-    showWarning('삭제 확인', '정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')
+  const handleDelete = async (id: string) => {
+    const targetSheet = camSheets.find(sheet => sheet.id === id)
+    if (!targetSheet) return
     
-    // 실제 삭제 로직 (임시로 바로 삭제)
-    setTimeout(() => {
+    const confirmed = await confirmation.showConfirmation(
+      createDeleteConfirmation(`${targetSheet.model} - ${targetSheet.process} CAM Sheet`)
+    )
+    
+    if (confirmed) {
       deleteCAMSheet(id)
       showSuccess('삭제 완료', 'CAM Sheet가 성공적으로 삭제되었습니다.')
-    }, 2000) // 2초 후 삭제 (사용자가 취소할 수 있는 시간 제공)
+    }
   }
 
   if (loading) {
@@ -534,6 +573,17 @@ export default function CAMSheetsPage() {
         <CAMSheetForm
           onSubmit={handleCreateCAMSheet}
           onCancel={() => setShowAddForm(false)}
+        />
+      )}
+
+      {/* 승인 모달 */}
+      {confirmation.config && (
+        <ConfirmationModal
+          isOpen={confirmation.isOpen}
+          config={confirmation.config}
+          onConfirm={confirmation.handleConfirm}
+          onCancel={confirmation.handleCancel}
+          loading={confirmation.loading}
         />
       )}
     </div>

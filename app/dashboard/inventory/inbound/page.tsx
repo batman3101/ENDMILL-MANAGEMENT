@@ -4,6 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { findEndmillByCode, getAllSuppliers, EndmillMaster } from '../../../../lib/data/mockData'
 import { useToast } from '../../../../components/shared/Toast'
+import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
+import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
 
 interface InboundItem {
   id: string
@@ -19,6 +21,7 @@ interface InboundItem {
 
 export default function InboundPage() {
   const { showSuccess, showError, showWarning } = useToast()
+  const confirmation = useConfirmation()
   const [isScanning, setIsScanning] = useState(false)
   const [scannedCode, setScannedCode] = useState('')
   const [inboundItems, setInboundItems] = useState<InboundItem[]>([])
@@ -49,38 +52,55 @@ export default function InboundPage() {
     }
   }
 
-  const handleProcessInbound = () => {
+  const handleProcessInbound = async () => {
     if (!endmillData || quantity <= 0 || !selectedSupplier.trim() || unitPrice <= 0) {
       showError('입력 확인 필요', '앤드밀 정보, 수량, 공급업체, 단가를 모두 확인해주세요.')
       return
     }
 
-    const newItem: InboundItem = {
-      id: Date.now().toString(),
-      endmillCode: endmillData.code,
-      endmillName: endmillData.name,
-      supplier: selectedSupplier,
-      quantity: quantity,
-      unitPrice: unitPrice,
-      totalPrice: quantity * unitPrice,
-      processedAt: new Date().toLocaleString('ko-KR'),
-      processedBy: '관리자' // 실제로는 로그인된 사용자 정보
-    }
-
-    setInboundItems([newItem, ...inboundItems])
-    
-    // 폼 초기화
-    setEndmillData(null)
-    setQuantity(1)
-    setSelectedSupplier('')
-    setUnitPrice(0)
-    setScannedCode('')
-    setErrorMessage('')
-    
-    showSuccess(
-      '입고 처리 완료', 
-      `${endmillData.code} ${quantity}개가 성공적으로 입고되었습니다. (총액: ${(quantity * unitPrice).toLocaleString()} VND)`
+    const totalPrice = quantity * unitPrice
+    const confirmed = await confirmation.showConfirmation(
+      createSaveConfirmation(
+        `${endmillData.code} ${quantity}개 입고 (${selectedSupplier}, ${totalPrice.toLocaleString()} VND)`
+      )
     )
+
+    if (confirmed) {
+      confirmation.setLoading(true)
+      
+      try {
+        const newItem: InboundItem = {
+          id: Date.now().toString(),
+          endmillCode: endmillData.code,
+          endmillName: endmillData.name,
+          supplier: selectedSupplier,
+          quantity: quantity,
+          unitPrice: unitPrice,
+          totalPrice: totalPrice,
+          processedAt: new Date().toLocaleString('ko-KR'),
+          processedBy: '관리자' // 실제로는 로그인된 사용자 정보
+        }
+
+        setInboundItems([newItem, ...inboundItems])
+        
+        // 폼 초기화
+        setEndmillData(null)
+        setQuantity(1)
+        setSelectedSupplier('')
+        setUnitPrice(0)
+        setScannedCode('')
+        setErrorMessage('')
+        
+        showSuccess(
+          '입고 처리 완료', 
+          `${endmillData.code} ${quantity}개가 성공적으로 입고되었습니다. (총액: ${totalPrice.toLocaleString()} VND)`
+        )
+      } catch (error) {
+        showError('입고 처리 실패', '입고 처리 중 오류가 발생했습니다.')
+      } finally {
+        confirmation.setLoading(false)
+      }
+    }
   }
 
   // 총액 계산
@@ -338,6 +358,17 @@ export default function InboundPage() {
           </div>
         )}
       </div>
+
+      {/* 승인 모달 */}
+      {confirmation.config && (
+        <ConfirmationModal
+          isOpen={confirmation.isOpen}
+          config={confirmation.config}
+          onConfirm={confirmation.handleConfirm}
+          onCancel={confirmation.handleCancel}
+          loading={confirmation.loading}
+        />
+      )}
     </div>
   )
 } 

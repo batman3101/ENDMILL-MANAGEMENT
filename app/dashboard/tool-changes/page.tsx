@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useToast } from '../../../components/shared/Toast'
 import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
+import ConfirmationModal from '../../../components/shared/ConfirmationModal'
+import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createSaveConfirmation } from '../../../lib/hooks/useConfirmation'
 
 // 교체 실적 데이터 타입
 interface ToolChange {
@@ -69,6 +71,7 @@ const sampleData: ToolChange[] = [
 export default function ToolChangesPage() {
   const { showSuccess, showError, showWarning } = useToast()
   const { camSheets, getAvailableModels, getAvailableProcesses } = useCAMSheets()
+  const confirmation = useConfirmation()
   const [showAddForm, setShowAddForm] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingItem, setEditingItem] = useState<ToolChange | null>(null)
@@ -182,45 +185,51 @@ export default function ToolChangesPage() {
     }
   }, [editingItem?.productionModel, editingItem?.process, editingItem?.tNumber, isEditManualEndmillInput, autoFillEndmillInfo])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    const newToolChange: ToolChange = {
-      id: Date.now().toString(),
-      changeDate: getCurrentDateTime(), // 저장 시점의 현재 시간으로 업데이트
-      equipmentNumber: formData.equipmentNumber,
-      productionModel: formData.productionModel,
-      process: formData.process,
-      tNumber: formData.tNumber,
-      endmillCode: formData.endmillCode,
-      endmillName: formData.endmillName,
-      changedBy: '작업자', // 기본값으로 설정
-      changeReason: formData.changeReason,
-      toolLife: formData.actualToolLife, // 실제 Tool life 값 사용
-      createdAt: new Date().toISOString()
-    }
-    
-    setToolChanges([newToolChange, ...toolChanges])
-    setShowAddForm(false)
-    
-    showSuccess(
-      '교체 실적 등록 완료',
-      `${formData.equipmentNumber} T${formData.tNumber.toString().padStart(2, '0')} 교체 실적이 등록되었습니다.`
+    const confirmed = await confirmation.showConfirmation(
+      createSaveConfirmation(`${formData.equipmentNumber} T${formData.tNumber.toString().padStart(2, '0')} 교체 실적`)
     )
     
-    // 폼 초기화
-    setFormData({
-      changeDate: getCurrentDateTime(),
-      equipmentNumber: '',
-      productionModel: '',
-      process: '',
-      tNumber: 1,
-      endmillCode: '',
-      endmillName: '',
-      actualToolLife: 0,
-      changeReason: ''
-    })
-    setIsManualEndmillInput(false)
+    if (confirmed) {
+      const newToolChange: ToolChange = {
+        id: Date.now().toString(),
+        changeDate: getCurrentDateTime(), // 저장 시점의 현재 시간으로 업데이트
+        equipmentNumber: formData.equipmentNumber,
+        productionModel: formData.productionModel,
+        process: formData.process,
+        tNumber: formData.tNumber,
+        endmillCode: formData.endmillCode,
+        endmillName: formData.endmillName,
+        changedBy: '작업자', // 기본값으로 설정
+        changeReason: formData.changeReason,
+        toolLife: formData.actualToolLife, // 실제 Tool life 값 사용
+        createdAt: new Date().toISOString()
+      }
+      
+      setToolChanges([newToolChange, ...toolChanges])
+      setShowAddForm(false)
+      
+      showSuccess(
+        '교체 실적 등록 완료',
+        `${formData.equipmentNumber} T${formData.tNumber.toString().padStart(2, '0')} 교체 실적이 등록되었습니다.`
+      )
+      
+      // 폼 초기화
+      setFormData({
+        changeDate: getCurrentDateTime(),
+        equipmentNumber: '',
+        productionModel: '',
+        process: '',
+        tNumber: 1,
+        endmillCode: '',
+        endmillName: '',
+        actualToolLife: 0,
+        changeReason: ''
+      })
+      setIsManualEndmillInput(false)
+    }
   }
 
   const getReasonBadge = (reason: string) => {
@@ -256,23 +265,29 @@ export default function ToolChangesPage() {
   }
 
   // 수정 내용 저장
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingItem) return
 
-    const updatedChanges = toolChanges.map(change => 
-      change.id === editingItem.id ? editingItem : change
+    const confirmed = await confirmation.showConfirmation(
+      createUpdateConfirmation(`${editingItem.equipmentNumber} T${editingItem.tNumber.toString().padStart(2, '0')} 교체 실적`)
     )
-    
-    setToolChanges(updatedChanges)
-    setShowEditModal(false)
-    setEditingItem(null)
-    setIsEditManualEndmillInput(false) // 수동 입력 모드 초기화
-    
-    showSuccess(
-      '교체 실적 수정 완료',
-      `${editingItem.equipmentNumber} T${editingItem.tNumber.toString().padStart(2, '0')} 교체 실적이 수정되었습니다.`
-    )
+
+    if (confirmed) {
+      const updatedChanges = toolChanges.map(change => 
+        change.id === editingItem.id ? editingItem : change
+      )
+      
+      setToolChanges(updatedChanges)
+      setShowEditModal(false)
+      setEditingItem(null)
+      setIsEditManualEndmillInput(false) // 수동 입력 모드 초기화
+      
+      showSuccess(
+        '교체 실적 수정 완료',
+        `${editingItem.equipmentNumber} T${editingItem.tNumber.toString().padStart(2, '0')} 교체 실적이 수정되었습니다.`
+      )
+    }
   }
 
   // 수정 모달 닫기
@@ -282,10 +297,13 @@ export default function ToolChangesPage() {
     setIsEditManualEndmillInput(false) // 수동 입력 모드 초기화
   }
 
-  // 삭제 처리 (두 단계: 확인 요청 → 실제 삭제)
-  const handleDelete = (item: ToolChange) => {
-    if (deletingItemId === item.id) {
-      // 두 번째 클릭: 실제 삭제 수행
+  // 삭제 처리
+  const handleDelete = async (item: ToolChange) => {
+    const confirmed = await confirmation.showConfirmation(
+      createDeleteConfirmation(`${item.equipmentNumber} T${item.tNumber.toString().padStart(2, '0')} 교체 실적 (${item.endmillCode} ${item.endmillName})`)
+    )
+
+    if (confirmed) {
       const updatedChanges = toolChanges.filter(change => change.id !== item.id)
       setToolChanges(updatedChanges)
       setDeletingItemId(null)
@@ -293,18 +311,6 @@ export default function ToolChangesPage() {
         '삭제 완료', 
         `${item.equipmentNumber} T${item.tNumber.toString().padStart(2, '0')} 교체 실적이 성공적으로 삭제되었습니다.`
       )
-    } else {
-      // 첫 번째 클릭: 삭제 확인 요청
-      setDeletingItemId(item.id)
-      showWarning(
-        '삭제 확인 필요',
-        `${item.equipmentNumber} T${item.tNumber.toString().padStart(2, '0')} 교체 실적을 삭제하려면 삭제 버튼을 다시 클릭하세요. (${item.endmillCode} ${item.endmillName})`
-      )
-      
-      // 5초 후 자동으로 삭제 대기 상태 해제
-      setTimeout(() => {
-        setDeletingItemId(null)
-      }, 5000)
     }
   }
 
@@ -1048,6 +1054,17 @@ export default function ToolChangesPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 승인 모달 */}
+      {confirmation.config && (
+        <ConfirmationModal
+          isOpen={confirmation.isOpen}
+          config={confirmation.config}
+          onConfirm={confirmation.handleConfirm}
+          onCancel={confirmation.handleCancel}
+          loading={confirmation.loading}
+        />
       )}
     </div>
   )

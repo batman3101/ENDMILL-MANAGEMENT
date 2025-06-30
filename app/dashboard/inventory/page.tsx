@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { getAllSuppliers, getAllCategories } from '../../../lib/data/mockData'
 import { useToast } from '../../../components/shared/Toast'
+import ConfirmationModal from '../../../components/shared/ConfirmationModal'
+import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createSaveConfirmation, createCreateConfirmation } from '../../../lib/hooks/useConfirmation'
 
 interface InventoryItem {
   id: string
@@ -108,6 +110,7 @@ const inventoryItems = generateInventoryData()
 
 export default function InventoryPage() {
   const { showSuccess, showError } = useToast()
+  const confirmation = useConfirmation()
   const [inventory, setInventory] = useState<InventoryItem[]>(inventoryItems)
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -118,7 +121,6 @@ export default function InventoryPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const [formData, setFormData] = useState<NewEndmill>({
     code: '',
@@ -260,61 +262,92 @@ export default function InventoryPage() {
   }
 
   // 수정 저장 핸들러
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!editFormData) return
-    
-    // 실제로는 API 호출을 통해 데이터베이스 업데이트
-    setInventory(prev => prev.map(item => 
-      item.id === editFormData.id ? editFormData : item
-    ))
-    
-    setShowEditModal(false)
-    setEditFormData(null)
-    setSelectedItem(null)
-    
-    showSuccess('수정 완료', `${editFormData.code} - ${editFormData.name} 정보가 성공적으로 수정되었습니다.`)
+
+    const confirmed = await confirmation.showConfirmation(
+      createUpdateConfirmation(`${editFormData.code} - ${editFormData.name} 재고 정보`)
+    )
+
+    if (confirmed) {
+      confirmation.setLoading(true)
+      
+      try {
+        // 실제로는 API 호출을 통해 데이터베이스 업데이트
+        setInventory(prev => prev.map(item => 
+          item.id === editFormData.id ? editFormData : item
+        ))
+        
+        setShowEditModal(false)
+        setEditFormData(null)
+        setSelectedItem(null)
+        
+        showSuccess('수정 완료', `${editFormData.code} - ${editFormData.name} 정보가 성공적으로 수정되었습니다.`)
+      } catch (error) {
+        showError('수정 실패', '재고 정보 수정 중 오류가 발생했습니다.')
+      } finally {
+        confirmation.setLoading(false)
+      }
+    }
   }
 
   // 삭제 핸들러
-  const handleDelete = (item: InventoryItem) => {
-    setSelectedItem(item)
-    setShowDeleteModal(true)
+  const handleDelete = async (item: InventoryItem) => {
+    const confirmed = await confirmation.showConfirmation(
+      createDeleteConfirmation(`${item.code} - ${item.name} (재고: ${item.currentStock}개)`)
+    )
+
+    if (confirmed) {
+      confirmation.setLoading(true)
+      
+      try {
+        setInventory(prev => prev.filter(inventoryItem => inventoryItem.id !== item.id))
+        showSuccess('삭제 완료', `${item.code} - ${item.name}이 성공적으로 삭제되었습니다.`)
+      } catch (error) {
+        showError('삭제 실패', '재고 삭제 중 오류가 발생했습니다.')
+      } finally {
+        confirmation.setLoading(false)
+      }
+    }
   }
 
-  // 삭제 확인 핸들러
-  const handleConfirmDelete = () => {
-    if (!selectedItem) return
-    
-    setInventory(prev => prev.filter(inventoryItem => inventoryItem.id !== selectedItem.id))
-    showSuccess('삭제 완료', `${selectedItem.code} - ${selectedItem.name}이 성공적으로 삭제되었습니다.`)
-    
-    setShowDeleteModal(false)
-    setSelectedItem(null)
-  }
-
-  const handleAddEndmill = (e: React.FormEvent) => {
+  const handleAddEndmill = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // 여기서 실제로는 API 호출을 통해 데이터베이스에 저장
-    console.log('새 앤드밀 추가:', formData)
-    
-    // 폼 초기화
-    setFormData({
-      code: '',
-      name: '',
-      category: '',
-      specifications: '',
-      supplier: '',
-      unitPrice: 0,
-      currentStock: 0,
-      minStock: 0,
-      maxStock: 0
-    })
-    
-    setShowAddModal(false)
-    showSuccess('앤드밀 추가 완료', `${formData.code} - ${formData.name}이 성공적으로 추가되었습니다.`)
+    const confirmed = await confirmation.showConfirmation(
+      createCreateConfirmation(`${formData.code} - ${formData.name} 앤드밀`)
+    )
+
+    if (confirmed) {
+      confirmation.setLoading(true)
+      
+      try {
+        // 여기서 실제로는 API 호출을 통해 데이터베이스에 저장
+        console.log('새 앤드밀 추가:', formData)
+        
+        // 폼 초기화
+        setFormData({
+          code: '',
+          name: '',
+          category: '',
+          specifications: '',
+          supplier: '',
+          unitPrice: 0,
+          currentStock: 0,
+          minStock: 0,
+          maxStock: 0
+        })
+        
+        setShowAddModal(false)
+        showSuccess('앤드밀 추가 완료', `${formData.code} - ${formData.name}이 성공적으로 추가되었습니다.`)
+      } catch (error) {
+        showError('추가 실패', '앤드밀 추가 중 오류가 발생했습니다.')
+      } finally {
+        confirmation.setLoading(false)
+      }
+    }
   }
   return (
     <div className="space-y-6">
@@ -1039,67 +1072,15 @@ export default function InventoryPage() {
          </div>
        )}
 
-      {/* 삭제 확인 모달 */}
-      {showDeleteModal && selectedItem && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
-            <div className="px-6 py-4 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-red-600">🗑️ 삭제 확인</h3>
-                <button 
-                  onClick={() => setShowDeleteModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              <div className="mb-4">
-                <div className="flex items-center mb-3">
-                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-red-600 text-xl">⚠️</span>
-                  </div>
-                  <div>
-                    <p className="text-lg font-medium text-gray-900">정말 삭제하시겠습니까?</p>
-                    <p className="text-sm text-gray-500">이 작업은 되돌릴 수 없습니다.</p>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="text-sm">
-                    <div className="font-medium text-gray-900">삭제될 앤드밀:</div>
-                    <div className="mt-1 text-gray-600">
-                      <span className="font-mono">{selectedItem.code}</span> - {selectedItem.name}
-                    </div>
-                    <div className="mt-1 text-gray-600">
-                      카테고리: {selectedItem.category}
-                    </div>
-                    <div className="mt-1 text-gray-600">
-                      현재고: {selectedItem.currentStock}개
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                >
-                  삭제
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* 승인 모달 */}
+      {confirmation.config && (
+        <ConfirmationModal
+          isOpen={confirmation.isOpen}
+          config={confirmation.config}
+          onConfirm={confirmation.handleConfirm}
+          onCancel={confirmation.handleCancel}
+          loading={confirmation.loading}
+        />
       )}
     </div>
   )

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '../../../lib/supabase/client';
+// import { supabase } from '../../../lib/supabase/client'; // 임시 비활성화
 import { z } from 'zod';
 
 // 재고 업데이트 스키마
@@ -11,61 +11,36 @@ const updateInventorySchema = z.object({
   location: z.string().optional(),
 });
 
-// GET: 재고 목록 조회
+// GET: 재고 목록 조회 (임시로 모의 데이터 반환)
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
-    const low_stock = searchParams.get('low_stock'); // 재고 부족 필터
-    
-    let query = supabase
-      .from('inventory')
-      .select(`
-        *,
-        endmill_types (
-          id,
-          code,
-          description_ko,
-          description_vi,
-          specifications,
-          unit_cost,
-          endmill_categories (
-            code,
-            name_ko,
-            name_vi
-          )
-        )
-      `)
-      .order('created_at', { ascending: false });
-    
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error('재고 조회 에러:', error);
-      return NextResponse.json(
-        { error: '재고 목록을 가져오는데 실패했습니다.' },
-        { status: 500 }
-      );
-    }
-    
-    let filteredData = data || [];
-    
-    // 카테고리 필터
-    if (category) {
-      filteredData = filteredData.filter(item => 
-        item.endmill_types?.endmill_categories?.code === category
-      );
-    }
-    
-    // 재고 부족 필터
-    if (low_stock === 'true') {
-      filteredData = filteredData.filter(item => 
-        item.current_stock <= item.min_stock
-      );
-    }
+    // 개발 단계에서는 모의 데이터 반환
+    const mockData = [
+      {
+        id: '1',
+        endmill_type_id: '1',
+        current_stock: 50,
+        min_stock: 20,
+        max_stock: 100,
+        location: 'A-001',
+        endmill_types: {
+          id: '1',
+          code: 'AT001',
+          description_ko: 'FLAT 12mm 4날',
+          description_vi: 'FLAT 12mm 4 lưỡi',
+          specifications: '12mm 4날',
+          unit_cost: 1200000,
+          endmill_categories: {
+            code: 'FLAT',
+            name_ko: 'FLAT',
+            name_vi: 'FLAT'
+          }
+        }
+      }
+    ];
     
     // 추가 정보 계산
-    const enrichedData = filteredData.map(item => ({
+    const enrichedData = mockData.map(item => ({
       ...item,
       stock_status: getStockStatus(item.current_stock, item.min_stock, item.max_stock),
       stock_value: (item.current_stock * (item.endmill_types?.unit_cost || 0)),
@@ -86,7 +61,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT: 재고 업데이트
+// PUT: 재고 업데이트 (임시로 모의 응답 반환)
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
@@ -94,34 +69,20 @@ export async function PUT(request: NextRequest) {
     // 입력 데이터 검증
     const validatedData = updateInventorySchema.parse(body);
     
-    // 재고 업데이트
-    const { data, error } = await supabase
-      .from('inventory')
-      .update({
-        ...validatedData,
-        last_updated: new Date().toISOString(),
-      })
-      .eq('endmill_type_id', validatedData.endmill_type_id)
-      .select(`
-        *,
-        endmill_types (
-          code,
-          description_ko,
-          unit_cost
-        )
-      `)
-      .single();
-    
-    if (error) {
-      console.error('재고 업데이트 에러:', error);
-      return NextResponse.json(
-        { error: '재고 업데이트에 실패했습니다.' },
-        { status: 500 }
-      );
-    }
+    // 개발 단계에서는 모의 데이터 반환
+    const mockData = {
+      id: validatedData.endmill_type_id,
+      ...validatedData,
+      last_updated: new Date().toISOString(),
+      endmill_types: {
+        code: 'AT001',
+        description_ko: 'FLAT 12mm 4날',
+        unit_cost: 1200000
+      }
+    };
     
     return NextResponse.json({
-      data,
+      data: mockData,
       message: '재고가 성공적으로 업데이트되었습니다.',
     });
     

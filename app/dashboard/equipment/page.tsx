@@ -1,6 +1,10 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import ConfirmationModal from '../../../components/shared/ConfirmationModal'
+import { useConfirmation, createStatusChangeConfirmation } from '../../../lib/hooks/useConfirmation'
+import { useToast } from '../../../components/shared/Toast'
+import StatusChangeDropdown from '../../../components/shared/StatusChangeDropdown'
 
 // 로컬 상태용 타입 정의
 interface Equipment {
@@ -16,6 +20,8 @@ interface Equipment {
   }
   lastMaintenance: string
 }
+
+// StatusTransition 인터페이스 제거됨 (StatusChangeDropdown 컴포넌트로 이동)
 
 // 800대 설비 데이터 생성 함수
 const generateEquipmentData = (): Equipment[] => {
@@ -60,17 +66,23 @@ const generateEquipmentData = (): Equipment[] => {
   return equipments
 }
 
-// 샘플 데이터
-const initialEquipments: Equipment[] = generateEquipmentData()
-
 export default function EquipmentPage() {
-  const [equipments, setEquipments] = useState<Equipment[]>(initialEquipments)
+  const [equipments, setEquipments] = useState<Equipment[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [modelFilter, setModelFilter] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 20
+  const confirmation = useConfirmation()
+  const { showSuccess, showError } = useToast()
+
+  // 클라이언트 사이드에서만 데이터 로드
+  useEffect(() => {
+    setEquipments(generateEquipmentData())
+    setIsLoading(false)
+  }, [])
 
   // 필터링된 설비 목록
   const filteredEquipments = useMemo(() => {
@@ -112,7 +124,7 @@ export default function EquipmentPage() {
       case '점검중':
         return 'bg-red-100 text-red-800'
       case '셋업중':
-        return 'bg-orange-100 text-orange-800'
+        return 'bg-purple-100 text-purple-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -131,11 +143,49 @@ export default function EquipmentPage() {
     }
   }
 
+  // 상태 관련 함수들은 StatusChangeDropdown 컴포넌트로 이동됨
+
   // 설비 상태 변경
-  const handleStatusChange = (equipmentId: string, newStatus: Equipment['status']) => {
-    setEquipments(prev => prev.map(eq => 
-      eq.id === equipmentId ? { ...eq, status: newStatus } : eq
-    ))
+  const handleStatusChange = async (equipmentId: string, newStatus: Equipment['status']) => {
+    const equipment = equipments.find(eq => eq.id === equipmentId)
+    if (!equipment) return
+
+    const confirmed = await confirmation.showConfirmation(
+      createStatusChangeConfirmation(
+        equipment.equipmentNumber,
+        equipment.status,
+        newStatus
+      )
+    )
+
+    if (confirmed) {
+      setEquipments(prev => prev.map(eq => 
+        eq.id === equipmentId ? { ...eq, status: newStatus } : eq
+      ))
+      showSuccess(
+        '상태 변경 완료',
+        `${equipment.equipmentNumber}의 상태가 ${newStatus}(으)로 변경되었습니다.`
+      )
+    }
+  }
+
+  // 로딩 중일 때
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <p className="text-gray-600">800대 CNC 설비 현황 및 관리</p>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-lg flex items-center justify-center">
+              <span className="text-2xl">🏭</span>
+            </div>
+            <p className="text-gray-600">설비 데이터를 불러오는 중...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -354,117 +404,76 @@ export default function EquipmentPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {currentEquipments.map((equipment) => (
-                <tr key={equipment.id} className="hover:bg-gray-50">
-                  {/* 설비번호 */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {equipment.equipmentNumber}
-                    </div>
-                  </td>
-                  
-                  {/* 현장 */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 rounded-full mr-2 ${equipment.location === 'A동' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
-                      <span className="text-sm text-gray-900">{equipment.location}</span>
-                    </div>
-                  </td>
-                  
-                  {/* 상태 */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(equipment.status)}`}>
-                      <span className="mr-1">{getStatusIcon(equipment.status)}</span>
-                      {equipment.status}
-                    </span>
-                  </td>
-                  
-                  {/* 모델 */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {equipment.currentModel}
-                    </div>
-                  </td>
-                  
-                  {/* 공정 */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {equipment.process}
-                    </div>
-                  </td>
-                  
-                  {/* 앤드밀 사용량 */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex items-center">
-                      <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{width: `${(equipment.toolPositions.used / equipment.toolPositions.total) * 100}%`}}
-                        ></div>
+              {currentEquipments.map((equipment) => {
+                return (
+                  <tr key={equipment.id} className="hover:bg-gray-50">
+                    {/* 설비번호 */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {equipment.equipmentNumber}
                       </div>
-                      <span className="text-sm">
-                        {equipment.toolPositions.used}/{equipment.toolPositions.total}
+                    </td>
+                    
+                    {/* 현장 */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2 ${equipment.location === 'A동' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+                        <span className="text-sm text-gray-900">{equipment.location}</span>
+                      </div>
+                    </td>
+                    
+                    {/* 상태 */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(equipment.status)}`}>
+                        <span className="mr-1">{getStatusIcon(equipment.status)}</span>
+                        {equipment.status}
                       </span>
-                    </div>
-                  </td>
-                  
-                  {/* 작업 */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <button className="text-blue-600 hover:text-blue-800 mr-3">상세</button>
+                    </td>
                     
-                    {equipment.status === '가동중' && (
-                      <>
-                        <button 
-                          onClick={() => handleStatusChange(equipment.id, '점검중')}
-                          className="text-yellow-600 hover:text-yellow-800 mr-2"
-                        >
-                          점검
-                        </button>
-                        <button 
-                          onClick={() => handleStatusChange(equipment.id, '셋업중')}
-                          className="text-orange-600 hover:text-orange-800 mr-2"
-                        >
-                          셋업
-                        </button>
-                      </>
-                    )}
+                    {/* 모델 */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {equipment.currentModel}
+                      </div>
+                    </td>
                     
-                    {equipment.status === '점검중' && (
-                      <>
-                        <button 
-                          onClick={() => handleStatusChange(equipment.id, '가동중')}
-                          className="text-green-600 hover:text-green-800 mr-2"
-                        >
-                          재가동
-                        </button>
-                        <button 
-                          onClick={() => handleStatusChange(equipment.id, '셋업중')}
-                          className="text-orange-600 hover:text-orange-800 mr-2"
-                        >
-                          셋업
-                        </button>
-                      </>
-                    )}
+                    {/* 공정 */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {equipment.process}
+                      </div>
+                    </td>
                     
-                    {equipment.status === '셋업중' && (
-                      <>
-                        <button 
-                          onClick={() => handleStatusChange(equipment.id, '가동중')}
-                          className="text-green-600 hover:text-green-800 mr-2"
-                        >
-                          가동
-                        </button>
-                        <button 
-                          onClick={() => handleStatusChange(equipment.id, '점검중')}
-                          className="text-yellow-600 hover:text-yellow-800 mr-2"
-                        >
-                          점검
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    {/* 앤드밀 사용량 */}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex items-center">
+                        <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full" 
+                            style={{width: `${(equipment.toolPositions.used / equipment.toolPositions.total) * 100}%`}}
+                          ></div>
+                        </div>
+                        <span className="text-sm">
+                          {equipment.toolPositions.used}/{equipment.toolPositions.total}
+                        </span>
+                      </div>
+                    </td>
+                    
+                    {/* 작업 컬럼 */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {/* 상태 변경 드롭다운 */}
+                        <StatusChangeDropdown
+                          currentStatus={equipment.status}
+                          equipmentId={equipment.id}
+                          equipmentNumber={equipment.equipmentNumber}
+                          onStatusChange={handleStatusChange}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -582,6 +591,17 @@ export default function EquipmentPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* 승인 모달 */}
+      {confirmation.config && (
+        <ConfirmationModal
+          isOpen={confirmation.isOpen}
+          config={confirmation.config}
+          onConfirm={confirmation.handleConfirm}
+          onCancel={confirmation.handleCancel}
+          loading={confirmation.loading}
+        />
       )}
     </div>
   )
