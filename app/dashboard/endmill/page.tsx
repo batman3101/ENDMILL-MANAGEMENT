@@ -314,60 +314,7 @@ export default function EndmillPage() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-gray-600">앤드밀별 Tool Life 추적 및 교체 알림 관리</p>
-      </div>
-
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">총 앤드밀</p>
-              <p className="text-2xl font-bold text-gray-900">{statusStats.total.toLocaleString()}</p>
-            </div>
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              🔧
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">사용 중</p>
-              <p className="text-2xl font-bold text-green-600">{statusStats.active.toLocaleString()}</p>
-            </div>
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              ✅
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">교체 필요</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {(statusStats.warning + statusStats.critical).toLocaleString()}
-              </p>
-            </div>
-            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-              ⚠️
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">오늘 교체</p>
-              <p className="text-2xl font-bold text-blue-600">{statusStats.todayReplaced}</p>
-            </div>
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              🔄
-            </div>
-          </div>
-        </div>
+        <p className="text-gray-600">앤드밀 별 모델, 설비, 공정의 사용 현황</p>
       </div>
 
       {/* 필터 및 검색 */}
@@ -406,9 +353,6 @@ export default function EndmillPage() {
             <option value="REAMER">REAMER</option>
             <option value="DRILL">DRILL</option>
           </select>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            + 신규 등록
-          </button>
         </div>
         
         {/* 필터 초기화 버튼 */}
@@ -456,7 +400,7 @@ export default function EndmillPage() {
                   위치번호 {sortColumn === 'position' && (sortDirection === 'asc' ? '▲' : '▼')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('name')}>
-                  타입/이름 {sortColumn === 'name' && (sortDirection === 'asc' ? '▲' : '▼')}
+                  이름 {sortColumn === 'name' && (sortDirection === 'asc' ? '▲' : '▼')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('category')}>
                   카테고리 {sortColumn === 'category' && (sortDirection === 'asc' ? '▲' : '▼')}
@@ -498,7 +442,12 @@ export default function EndmillPage() {
                       {item.position}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {item.name}
+                      {/* 이름만 표시 (타입 제거) */}
+                      {(() => {
+                        // 이름에서 타입명(FLAT, BALL, T-CUT, C-CUT, REAMER, DRILL) 제거
+                        const name = item.name.replace(/^(FLAT|BALL|T-CUT|C-CUT|REAMER|DRILL)\s*/i, '')
+                        return name
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {item.category}
@@ -510,28 +459,6 @@ export default function EndmillPage() {
                       >
                         상세
                       </button>
-                      {item.status === 'critical' ? (
-                        <button 
-                          onClick={() => handleImmediateReplace(item)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          즉시 교체
-                        </button>
-                      ) : item.status === 'warning' ? (
-                        <button 
-                          onClick={() => handleScheduleReplace(item)}
-                          className="text-yellow-600 hover:text-yellow-800"
-                        >
-                          교체 예약
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => handleMaintenance(item)}
-                          className="text-green-600 hover:text-green-800"
-                        >
-                          정비
-                        </button>
-                      )}
                     </td>
                   </tr>
                 )
