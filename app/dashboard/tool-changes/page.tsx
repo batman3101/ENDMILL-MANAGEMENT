@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useToast } from '../../../components/shared/Toast'
-import { useCAMSheets, useToolChangeAutoComplete } from '../../../lib/hooks/useCAMSheets'
+import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
 
 // 교체 실적 데이터 타입
 interface ToolChange {
@@ -68,8 +68,7 @@ const sampleData: ToolChange[] = [
 
 export default function ToolChangesPage() {
   const { showSuccess, showError, showWarning } = useToast()
-  const { getAvailableModels, getAvailableProcesses } = useCAMSheets()
-  const { autoFillEndmillInfo } = useToolChangeAutoComplete()
+  const { camSheets, getAvailableModels, getAvailableProcesses } = useCAMSheets()
   const [showAddForm, setShowAddForm] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingItem, setEditingItem] = useState<ToolChange | null>(null)
@@ -79,6 +78,24 @@ export default function ToolChangesPage() {
   const [isManualEndmillInput, setIsManualEndmillInput] = useState(false)
   const [isEditManualEndmillInput, setIsEditManualEndmillInput] = useState(false)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
+  
+  // 앤드밀 정보 자동 입력 함수
+  const autoFillEndmillInfo = useCallback((model: string, process: string, tNumber: number) => {
+    if (!model || !process || !tNumber) return null
+
+    const sheet = camSheets.find(s => s.model === model && s.process === process)
+    if (!sheet) return null
+
+    const endmill = sheet.endmills.find(e => e.tNumber === tNumber)
+    if (!endmill) return null
+
+    return {
+      endmillCode: endmill.endmillCode,
+      endmillName: endmill.endmillName,
+      suggestedToolLife: endmill.toolLife
+    }
+  }, [camSheets])
+
   const getCurrentDateTime = () => {
     const now = new Date()
     const year = now.getFullYear()
@@ -113,7 +130,7 @@ export default function ToolChangesPage() {
   useEffect(() => {
     setAvailableModels(getAvailableModels())
     setAvailableProcesses(getAvailableProcesses())
-  }, [])
+  }, [camSheets])
 
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (추가 폼)
   useEffect(() => {
@@ -138,7 +155,7 @@ export default function ToolChangesPage() {
         }
       }
     }
-  }, [formData.productionModel, formData.process, formData.tNumber, isManualEndmillInput])
+  }, [formData.productionModel, formData.process, formData.tNumber, isManualEndmillInput, autoFillEndmillInfo])
 
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (수정 모달)
   useEffect(() => {
@@ -163,7 +180,7 @@ export default function ToolChangesPage() {
         }
       }
     }
-  }, [editingItem?.productionModel, editingItem?.process, editingItem?.tNumber, isEditManualEndmillInput])
+  }, [editingItem?.productionModel, editingItem?.process, editingItem?.tNumber, isEditManualEndmillInput, autoFillEndmillInfo])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
