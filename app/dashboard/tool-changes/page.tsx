@@ -266,17 +266,23 @@ export default function ToolChangesPage() {
 
   // 삭제 처리
   const handleDelete = (item: ToolChange) => {
-    showWarning(
-      '교체 실적 삭제',
-      `${item.equipmentNumber} T${item.tNumber.toString().padStart(2, '0')} 교체 실적을 삭제하시겠습니까?`
+    const confirmed = window.confirm(
+      `정말로 삭제하시겠습니까?\n\n` +
+      `설비번호: ${item.equipmentNumber}\n` +
+      `T번호: T${item.tNumber.toString().padStart(2, '0')}\n` +
+      `앤드밀: ${item.endmillCode} ${item.endmillName}\n` +
+      `교체일시: ${item.changeDate}\n\n` +
+      `이 작업은 되돌릴 수 없습니다.`
     )
     
-    // 2초 후 자동 삭제 (실제로는 사용자 확인 모달을 구현하는 것이 좋음)
-    setTimeout(() => {
+    if (confirmed) {
       const updatedChanges = toolChanges.filter(change => change.id !== item.id)
       setToolChanges(updatedChanges)
-      showSuccess('삭제 완료', '교체 실적이 성공적으로 삭제되었습니다.')
-    }, 2000)
+      showSuccess(
+        '삭제 완료', 
+        `${item.equipmentNumber} T${item.tNumber.toString().padStart(2, '0')} 교체 실적이 성공적으로 삭제되었습니다.`
+      )
+    }
   }
 
   return (
