@@ -297,7 +297,7 @@ export default function EndmillPage() {
     return (
       <div className="space-y-6">
         <div>
-          <p className="text-gray-600">앤드밀별 Tool Life 추적 및 교체 알림 관리</p>
+          <p className="text-gray-600">앤드밀 별 모델, 설비, 공정의 사용 현황</p>
         </div>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
