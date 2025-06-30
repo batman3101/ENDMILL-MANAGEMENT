@@ -190,6 +190,45 @@ export const INITIAL_CAM_SHEETS: CAMSheet[] = [
     ],
     createdAt: '2024-01-25T08:20:00.000Z',
     updatedAt: '2024-01-25T08:20:00.000Z'
+  },
+  {
+    id: '6',
+    model: 'NPA1',
+    process: 'CNC2',
+    camVersion: 'VE30',
+    versionDate: '2025-06-28',
+    endmills: [
+      {
+        tNumber: 1,
+        endmillCode: 'AT007',
+        endmillName: 'FLAT 18mm 4날',
+        specifications: '직경18mm, 4날, 코팅TiAlN',
+        toolLife: 3400
+      },
+      {
+        tNumber: 7,
+        endmillCode: 'AT012',
+        endmillName: 'BALL 12mm 2날',
+        specifications: '직경12mm, 2날, 코팅DLC',
+        toolLife: 2200
+      },
+      {
+        tNumber: 15,
+        endmillCode: 'AT024',
+        endmillName: 'T-CUT 14mm 3날',
+        specifications: '직경14mm, 3날, 초경',
+        toolLife: 1950
+      },
+      {
+        tNumber: 21,
+        endmillCode: 'AT032',
+        endmillName: 'DRILL 6mm',
+        specifications: '직경6mm, 드릴, HSS-E',
+        toolLife: 3100
+      }
+    ],
+    createdAt: '2025-06-28T10:30:00.000Z',
+    updatedAt: '2025-06-28T10:30:00.000Z'
   }
 ]
 
@@ -450,6 +489,15 @@ export class MockDataManager {
     }
   }
 
+  // CAM Sheets 강제 재초기화 (개발용)
+  static forceResetCAMSheets(): void {
+    if (typeof window === 'undefined') return
+    
+    localStorage.setItem(STORAGE_KEYS.CAM_SHEETS, JSON.stringify(INITIAL_CAM_SHEETS))
+    console.log('🔄 CAM Sheets 데이터가 강제로 재초기화되었습니다.')
+    console.log('📝 사용 가능한 모델:', INITIAL_CAM_SHEETS.map(sheet => sheet.model).join(', '))
+  }
+
   // 모든 데이터 초기화
   static resetAllData(): void {
     if (typeof window === 'undefined') return
@@ -559,6 +607,7 @@ if (typeof window !== 'undefined') {
   (window as any).mockData = {
     init: MockDataManager.initializeCAMSheets,
     reset: MockDataManager.resetAllData,
+    forceReset: MockDataManager.forceResetCAMSheets,
     export: MockDataManager.exportData,
     import: MockDataManager.importData,
     stats: MockDataManager.getDataStats,
@@ -566,11 +615,12 @@ if (typeof window !== 'undefined') {
     
     // 빠른 접근용
     help: () => {
-      console.log(`
+              console.log(`
 🔧 Mock Data Manager 사용법:
 
 mockData.init()        - CAM Sheets 초기 데이터 로드
 mockData.reset()       - 모든 데이터 초기화
+mockData.forceReset()  - CAM Sheets 강제 재초기화 (새 모델 반영)
 mockData.stats()       - 현재 데이터 통계 확인
 mockData.addSample()   - 샘플 CAM Sheet 추가
 mockData.export()      - 데이터 JSON 내보내기
@@ -578,6 +628,7 @@ mockData.import(json)  - 데이터 JSON 가져오기
 
 예시:
 > mockData.stats()
+> mockData.forceReset()  // 새 모델 데이터 반영
 > mockData.addSample()
 > console.log(mockData.export())
       `)
