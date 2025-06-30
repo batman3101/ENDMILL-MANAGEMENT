@@ -518,13 +518,29 @@ export default function ToolChangesPage() {
                     readOnly={!isManualEndmillInput}
                     required
                   />
-                  {!formData.endmillCode && formData.productionModel && formData.process && formData.tNumber && (
+                  {formData.productionModel && formData.process && formData.tNumber && (
                     <button
                       type="button"
-                      onClick={() => setIsManualEndmillInput(true)}
+                      onClick={() => {
+                        if (isManualEndmillInput) {
+                          // 자동입력 모드로 전환하고 CAM SHEET 데이터로 자동 채우기
+                          setIsManualEndmillInput(false)
+                          const endmillInfo = autoFillEndmillInfo(formData.productionModel, formData.process, formData.tNumber)
+                          if (endmillInfo) {
+                            setFormData(prev => ({
+                              ...prev,
+                              endmillCode: endmillInfo.endmillCode,
+                              endmillName: endmillInfo.endmillName
+                            }))
+                          }
+                        } else {
+                          // 수동입력 모드로 전환
+                          setIsManualEndmillInput(true)
+                        }
+                      }}
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800"
                     >
-                      수동입력
+                      {isManualEndmillInput ? "자동입력" : "수동입력"}
                     </button>
                   )}
                 </div>
@@ -535,17 +551,44 @@ export default function ToolChangesPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 이름</label>
-                <input
-                  type="text"
-                  placeholder={isManualEndmillInput ? "앤드밀 이름 입력" : "모델, 공정, T번호 선택 시 자동 입력"}
-                  value={formData.endmillName}
-                  onChange={(e) => isManualEndmillInput && setFormData({...formData, endmillName: e.target.value})}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
-                    isManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
-                  }`}
-                  readOnly={!isManualEndmillInput}
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={isManualEndmillInput ? "앤드밀 이름 입력" : "모델, 공정, T번호 선택 시 자동 입력"}
+                    value={formData.endmillName}
+                    onChange={(e) => isManualEndmillInput && setFormData({...formData, endmillName: e.target.value})}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
+                      isManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
+                    }`}
+                    readOnly={!isManualEndmillInput}
+                    required
+                  />
+                  {formData.productionModel && formData.process && formData.tNumber && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isManualEndmillInput) {
+                          // 자동입력 모드로 전환하고 CAM SHEET 데이터로 자동 채우기
+                          setIsManualEndmillInput(false)
+                          const endmillInfo = autoFillEndmillInfo(formData.productionModel, formData.process, formData.tNumber)
+                          if (endmillInfo) {
+                            setFormData(prev => ({
+                              ...prev,
+                              endmillCode: endmillInfo.endmillCode,
+                              endmillName: endmillInfo.endmillName
+                            }))
+                          }
+                        } else {
+                          // 수동입력 모드로 전환
+                          setIsManualEndmillInput(true)
+                        }
+                      }}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      {isManualEndmillInput ? "자동입력" : "수동입력"}
+                    </button>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500 mt-1">
                   {isManualEndmillInput ? "수동으로 입력해주세요" : "CAM SHEET에서 자동으로 입력됩니다"}
                 </p>
@@ -844,13 +887,29 @@ export default function ToolChangesPage() {
                         readOnly={!isEditManualEndmillInput}
                         required
                       />
-                      {!editingItem.endmillCode && editingItem.productionModel && editingItem.process && editingItem.tNumber && (
+                      {editingItem.productionModel && editingItem.process && editingItem.tNumber && (
                         <button
                           type="button"
-                          onClick={() => setIsEditManualEndmillInput(true)}
+                          onClick={() => {
+                            if (isEditManualEndmillInput) {
+                              // 자동입력 모드로 전환하고 CAM SHEET 데이터로 자동 채우기
+                              setIsEditManualEndmillInput(false)
+                              const endmillInfo = autoFillEndmillInfo(editingItem.productionModel, editingItem.process, editingItem.tNumber)
+                              if (endmillInfo) {
+                                setEditingItem(prev => prev ? ({
+                                  ...prev,
+                                  endmillCode: endmillInfo.endmillCode,
+                                  endmillName: endmillInfo.endmillName
+                                }) : null)
+                              }
+                            } else {
+                              // 수동입력 모드로 전환
+                              setIsEditManualEndmillInput(true)
+                            }
+                          }}
                           className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800"
                         >
-                          수동입력
+                          {isEditManualEndmillInput ? "자동입력" : "수동입력"}
                         </button>
                       )}
                     </div>
@@ -861,17 +920,44 @@ export default function ToolChangesPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 이름</label>
-                    <input
-                      type="text"
-                      placeholder={isEditManualEndmillInput ? "앤드밀 이름 입력" : "모델, 공정, T번호 선택 시 자동 입력"}
-                      value={editingItem.endmillName}
-                      onChange={(e) => isEditManualEndmillInput && setEditingItem({...editingItem, endmillName: e.target.value})}
-                      className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
-                        isEditManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
-                      }`}
-                      readOnly={!isEditManualEndmillInput}
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder={isEditManualEndmillInput ? "앤드밀 이름 입력" : "모델, 공정, T번호 선택 시 자동 입력"}
+                        value={editingItem.endmillName}
+                        onChange={(e) => isEditManualEndmillInput && setEditingItem({...editingItem, endmillName: e.target.value})}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
+                          isEditManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
+                        }`}
+                        readOnly={!isEditManualEndmillInput}
+                        required
+                      />
+                      {editingItem.productionModel && editingItem.process && editingItem.tNumber && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isEditManualEndmillInput) {
+                              // 자동입력 모드로 전환하고 CAM SHEET 데이터로 자동 채우기
+                              setIsEditManualEndmillInput(false)
+                              const endmillInfo = autoFillEndmillInfo(editingItem.productionModel, editingItem.process, editingItem.tNumber)
+                              if (endmillInfo) {
+                                setEditingItem(prev => prev ? ({
+                                  ...prev,
+                                  endmillCode: endmillInfo.endmillCode,
+                                  endmillName: endmillInfo.endmillName
+                                }) : null)
+                              }
+                            } else {
+                              // 수동입력 모드로 전환
+                              setIsEditManualEndmillInput(true)
+                            }
+                          }}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800"
+                        >
+                          {isEditManualEndmillInput ? "자동입력" : "수동입력"}
+                        </button>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500 mt-1">
                       {isEditManualEndmillInput ? "수동으로 입력해주세요" : "CAM SHEET에서 자동으로 입력됩니다"}
                     </p>
