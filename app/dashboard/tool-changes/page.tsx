@@ -91,7 +91,7 @@ export default function ToolChangesPage() {
 
     return {
       endmillCode: endmill.endmillCode,
-      endmillName: endmill.endmillName,
+      endmillName: endmill.specifications, // specifications가 실제 앤드밀 이름
       suggestedToolLife: endmill.toolLife
     }
   }, [camSheets])

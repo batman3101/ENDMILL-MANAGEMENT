@@ -259,7 +259,7 @@ export const useToolChangeAutoComplete = () => {
     if (result) {
       return {
         endmillCode: result.endmill.endmillCode,
-        endmillName: result.endmill.endmillName,
+        endmillName: result.endmill.specifications, // specifications가 실제 앤드밀 이름
         suggestedToolLife: result.endmill.toolLife
       }
     }
