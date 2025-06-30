@@ -78,6 +78,7 @@ export default function ToolChangesPage() {
   const [availableProcesses, setAvailableProcesses] = useState<string[]>([])
   const [isManualEndmillInput, setIsManualEndmillInput] = useState(false)
   const [isEditManualEndmillInput, setIsEditManualEndmillInput] = useState(false)
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
   const getCurrentDateTime = () => {
     const now = new Date()
     const year = now.getFullYear()
@@ -264,24 +265,29 @@ export default function ToolChangesPage() {
     setIsEditManualEndmillInput(false) // 수동 입력 모드 초기화
   }
 
-  // 삭제 처리
+  // 삭제 처리 (두 단계: 확인 요청 → 실제 삭제)
   const handleDelete = (item: ToolChange) => {
-    const confirmed = window.confirm(
-      `정말로 삭제하시겠습니까?\n\n` +
-      `설비번호: ${item.equipmentNumber}\n` +
-      `T번호: T${item.tNumber.toString().padStart(2, '0')}\n` +
-      `앤드밀: ${item.endmillCode} ${item.endmillName}\n` +
-      `교체일시: ${item.changeDate}\n\n` +
-      `이 작업은 되돌릴 수 없습니다.`
-    )
-    
-    if (confirmed) {
+    if (deletingItemId === item.id) {
+      // 두 번째 클릭: 실제 삭제 수행
       const updatedChanges = toolChanges.filter(change => change.id !== item.id)
       setToolChanges(updatedChanges)
+      setDeletingItemId(null)
       showSuccess(
         '삭제 완료', 
         `${item.equipmentNumber} T${item.tNumber.toString().padStart(2, '0')} 교체 실적이 성공적으로 삭제되었습니다.`
       )
+    } else {
+      // 첫 번째 클릭: 삭제 확인 요청
+      setDeletingItemId(item.id)
+      showWarning(
+        '삭제 확인 필요',
+        `${item.equipmentNumber} T${item.tNumber.toString().padStart(2, '0')} 교체 실적을 삭제하려면 삭제 버튼을 다시 클릭하세요. (${item.endmillCode} ${item.endmillName})`
+      )
+      
+      // 5초 후 자동으로 삭제 대기 상태 해제
+      setTimeout(() => {
+        setDeletingItemId(null)
+      }, 5000)
     }
   }
 
@@ -780,9 +786,13 @@ export default function ToolChangesPage() {
                       </button>
                       <button 
                         onClick={() => handleDelete(change)}
-                        className="text-red-600 hover:text-red-800"
+                        className={`${
+                          deletingItemId === change.id 
+                            ? 'text-white bg-red-600 hover:bg-red-700 px-2 py-1 rounded font-medium' 
+                            : 'text-red-600 hover:text-red-800'
+                        }`}
                       >
-                        삭제
+                        {deletingItemId === change.id ? '확인 삭제' : '삭제'}
                       </button>
                     </td>
                   </tr>
