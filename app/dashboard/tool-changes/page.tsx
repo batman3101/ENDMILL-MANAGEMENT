@@ -67,10 +67,12 @@ const sampleData: ToolChange[] = [
 ]
 
 export default function ToolChangesPage() {
-  const { showSuccess, showError } = useToast()
+  const { showSuccess, showError, showWarning } = useToast()
   const { getAvailableModels, getAvailableProcesses } = useCAMSheets()
   const { autoFillEndmillInfo } = useToolChangeAutoComplete()
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingItem, setEditingItem] = useState<ToolChange | null>(null)
   const [toolChanges, setToolChanges] = useState<ToolChange[]>(sampleData)
   const [availableModels, setAvailableModels] = useState<string[]>([])
   const [availableProcesses, setAvailableProcesses] = useState<string[]>([])
@@ -200,6 +202,46 @@ export default function ToolChangesPage() {
     if (toolLife < 1000) return { color: 'text-red-600', status: '짧음' }
     if (toolLife < 2000) return { color: 'text-yellow-600', status: '보통' }
     return { color: 'text-green-600', status: '양호' }
+  }
+
+  // 수정 모달 열기
+  const handleEdit = (item: ToolChange) => {
+    setEditingItem(item)
+    setShowEditModal(true)
+  }
+
+  // 수정 내용 저장
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingItem) return
+
+    const updatedChanges = toolChanges.map(change => 
+      change.id === editingItem.id ? editingItem : change
+    )
+    
+    setToolChanges(updatedChanges)
+    setShowEditModal(false)
+    setEditingItem(null)
+    
+    showSuccess(
+      '교체 실적 수정 완료',
+      `${editingItem.equipmentNumber} T${editingItem.tNumber.toString().padStart(2, '0')} 교체 실적이 수정되었습니다.`
+    )
+  }
+
+  // 삭제 처리
+  const handleDelete = (item: ToolChange) => {
+    showWarning(
+      '교체 실적 삭제',
+      `${item.equipmentNumber} T${item.tNumber.toString().padStart(2, '0')} 교체 실적을 삭제하시겠습니까?`
+    )
+    
+    // 2초 후 자동 삭제 (실제로는 사용자 확인 모달을 구현하는 것이 좋음)
+    setTimeout(() => {
+      const updatedChanges = toolChanges.filter(change => change.id !== item.id)
+      setToolChanges(updatedChanges)
+      showSuccess('삭제 완료', '교체 실적이 성공적으로 삭제되었습니다.')
+    }, 2000)
   }
 
   return (
@@ -646,8 +688,18 @@ export default function ToolChangesPage() {
                       <div className="text-xs text-gray-500">{toolLifeStatus.status}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <button className="text-blue-600 hover:text-blue-800 mr-3">상세</button>
-                      <button className="text-gray-600 hover:text-gray-800">수정</button>
+                      <button 
+                        onClick={() => handleEdit(change)}
+                        className="text-blue-600 hover:text-blue-800 mr-3"
+                      >
+                        수정
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(change)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        삭제
+                      </button>
                     </td>
                   </tr>
                 )
@@ -656,6 +708,178 @@ export default function ToolChangesPage() {
           </table>
         </div>
       </div>
+
+      {/* 수정 모달 */}
+      {showEditModal && editingItem && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">교체 실적 수정</h3>
+                <button 
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setEditingItem(null)
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <form onSubmit={handleSaveEdit}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">교체일자</label>
+                    <input
+                      type="text"
+                      value={editingItem.changeDate}
+                      onChange={(e) => setEditingItem({...editingItem, changeDate: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">설비번호</label>
+                    <input
+                      type="text"
+                      value={editingItem.equipmentNumber}
+                      onChange={(e) => setEditingItem({...editingItem, equipmentNumber: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      pattern="C[0-9]{3}"
+                      title="C001-C800 형식으로 입력해주세요"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">생산 모델</label>
+                    <input
+                      type="text"
+                      value={editingItem.productionModel}
+                      onChange={(e) => setEditingItem({...editingItem, productionModel: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">공정</label>
+                    <select
+                      value={editingItem.process}
+                      onChange={(e) => setEditingItem({...editingItem, process: e.target.value})}
+                      className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="CNC1">CNC1</option>
+                      <option value="CNC2">CNC2</option>
+                      <option value="CNC2-1">CNC2-1</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">T번호</label>
+                    <select
+                      value={editingItem.tNumber}
+                      onChange={(e) => setEditingItem({...editingItem, tNumber: parseInt(e.target.value)})}
+                      className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      {Array.from({length: 21}, (_, i) => i + 1).map(num => (
+                        <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 코드</label>
+                    <input
+                      type="text"
+                      value={editingItem.endmillCode}
+                      onChange={(e) => setEditingItem({...editingItem, endmillCode: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 이름</label>
+                    <input
+                      type="text"
+                      value={editingItem.endmillName}
+                      onChange={(e) => setEditingItem({...editingItem, endmillName: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">교체자</label>
+                    <input
+                      type="text"
+                      value={editingItem.changedBy}
+                      onChange={(e) => setEditingItem({...editingItem, changedBy: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tool Life</label>
+                    <input
+                      type="number"
+                      value={editingItem.toolLife || 0}
+                      onChange={(e) => setEditingItem({...editingItem, toolLife: parseInt(e.target.value) || 0})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min="0"
+                      max="10000"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">교체사유</label>
+                    <select
+                      value={editingItem.changeReason}
+                      onChange={(e) => setEditingItem({...editingItem, changeReason: e.target.value})}
+                      className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="Tool Life 종료">Tool Life 종료</option>
+                      <option value="파손">파손</option>
+                      <option value="마모">마모</option>
+                      <option value="모델 변경">모델 변경</option>
+                      <option value="예방">예방</option>
+                      <option value="기타">기타</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setShowEditModal(false)
+                      setEditingItem(null)
+                    }}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                  >
+                    취소
+                  </button>
+                  <button 
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    저장
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 
