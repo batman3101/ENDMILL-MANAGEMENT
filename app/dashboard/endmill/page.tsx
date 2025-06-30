@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect } from 'react'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createCustomConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
+import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
+import { INITIAL_CAM_SHEETS } from '../../../lib/data/mockData'
 
 // 앤드밀 인스턴스 타입 정의
 interface EndmillInstance {
@@ -84,6 +86,10 @@ export default function EndmillPage() {
   const itemsPerPage = 20
   const confirmation = useConfirmation()
   const { showSuccess, showError, showWarning } = useToast()
+  const [sortColumn, setSortColumn] = useState<string>('')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const { camSheets } = useCAMSheets()
+  const [selectedEndmill, setSelectedEndmill] = useState<EndmillInstance | null>(null)
 
   // 클라이언트 사이드에서만 데이터 로드
   useEffect(() => {
@@ -107,11 +113,39 @@ export default function EndmillPage() {
     })
   }, [endmills, searchTerm, statusFilter, typeFilter])
 
+  // 정렬 함수
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  // 정렬 적용된 앤드밀 목록
+  const sortedEndmills = useMemo(() => {
+    const arr = [...filteredEndmills]
+    if (!sortColumn) return arr
+    return arr.sort((a, b) => {
+      let aValue: any = a[sortColumn as keyof EndmillInstance]
+      let bValue: any = b[sortColumn as keyof EndmillInstance]
+      // 숫자/문자 구분
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue
+      } else {
+        aValue = aValue?.toString() || ''
+        bValue = bValue?.toString() || ''
+        return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
+      }
+    })
+  }, [filteredEndmills, sortColumn, sortDirection])
+
   // 페이지네이션 계산
-  const totalPages = Math.ceil(filteredEndmills.length / itemsPerPage)
+  const totalPages = Math.ceil(sortedEndmills.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-  const currentEndmills = filteredEndmills.slice(startIndex, endIndex)
+  const currentEndmills = sortedEndmills.slice(startIndex, endIndex)
 
   // 필터 상태 변경 시 첫 페이지로 이동
   useMemo(() => {
@@ -175,11 +209,28 @@ export default function EndmillPage() {
     }
   }
 
-  // 앤드밀 작업 기능들
+  // 현황 정보 집계 함수
+  const getEndmillUsageInfo = (code: string) => {
+    // CAM Sheet에서 해당 코드가 포함된 모델/공정 추출
+    const usedInSheets = camSheets.filter(sheet =>
+      sheet.endmills.some(e => e.endmillCode === code)
+    )
+    const usedModels = Array.from(new Set(usedInSheets.map(s => s.model)))
+    const usedProcesses = Array.from(new Set(usedInSheets.map(s => s.process)))
+    // 설비 데이터(목업)에서 해당 코드가 사용중인 설비 수 추출
+    const usedEquipments = endmills.filter(e => e.code === code)
+    const usedEquipmentNumbers = Array.from(new Set(usedEquipments.map(e => e.equipment)))
+    return {
+      usedEquipmentCount: usedEquipmentNumbers.length,
+      usedModels,
+      usedProcesses,
+      usedEquipmentNumbers
+    }
+  }
+
+  // 상세 버튼 클릭 핸들러 수정
   const handleViewDetail = (item: EndmillInstance) => {
-    // 상세 페이지로 이동하거나 모달 표시
-    window.open(`/dashboard/endmill-detail/${item.code}`, '_blank')
-    showSuccess('상세 정보 조회', `${item.code}의 상세 정보 페이지를 새 탭에서 열었습니다.`)
+    setSelectedEndmill(item)
   }
 
   const handleImmediateReplace = async (item: EndmillInstance) => {
@@ -382,7 +433,7 @@ export default function EndmillPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">
-            앤드밀 현황 ({filteredEndmills.length}개)
+            앤드밀 현황 ({sortedEndmills.length}개)
           </h2>
           <p className="text-sm text-gray-500 mt-1">
             페이지 {currentPage} / {totalPages} (1페이지당 {itemsPerPage}개)
@@ -392,17 +443,23 @@ export default function EndmillPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  앤드밀 정보
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('code')}>
+                  앤드밀 정보 {sortColumn === 'code' && (sortDirection === 'asc' ? '▲' : '▼')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  위치
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('equipment')}>
+                  위치 {sortColumn === 'equipment' && (sortDirection === 'asc' ? '▲' : '▼')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tool Life
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('process')}>
+                  공정 {sortColumn === 'process' && (sortDirection === 'asc' ? '▲' : '▼')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상태
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('position')}>
+                  위치번호 {sortColumn === 'position' && (sortDirection === 'asc' ? '▲' : '▼')}
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('name')}>
+                  타입/이름 {sortColumn === 'name' && (sortDirection === 'asc' ? '▲' : '▼')}
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('category')}>
+                  카테고리 {sortColumn === 'category' && (sortDirection === 'asc' ? '▲' : '▼')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   작업
@@ -411,11 +468,6 @@ export default function EndmillPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {currentEndmills.map((item) => {
-                const lifePercentage = Math.round((item.currentLife / item.totalLife) * 100)
-                const progressColor = item.status === 'critical' ? 'bg-red-600' : 
-                                    item.status === 'warning' ? 'bg-yellow-600' : 
-                                    item.status === 'new' ? 'bg-blue-600' : 'bg-green-600'
-                
                 return (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -434,27 +486,22 @@ export default function EndmillPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{item.equipment}</div>
+                      <div className="text-sm text-gray-900">
+                        {item.equipment} ({getEndmillUsageInfo(item.code).usedEquipmentCount}대 사용중)
+                      </div>
                       <div className="text-sm text-gray-500">{item.process} {item.position}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
-                          <div 
-                            className={`h-2 rounded-full ${progressColor}`} 
-                            style={{width: `${Math.min(lifePercentage, 100)}%`}}
-                          ></div>
-                        </div>
-                        <span className="text-sm text-gray-600">{lifePercentage}%</span>
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {item.currentLife.toLocaleString()} / {item.totalLife.toLocaleString()}
-                      </div>
+                      {item.process}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(item.status)}`}>
-                        {getStatusText(item.status)}
-                      </span>
+                      {item.position}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {item.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {item.category}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button 
@@ -490,105 +537,105 @@ export default function EndmillPage() {
                 )
               })}
             </tbody>
-                      </table>
-          </div>
-          
-          {/* 페이지네이션 */}
-          {totalPages > 1 && (
-            <div className="bg-white px-6 py-3 flex items-center justify-between border-t">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  이전
-                </button>
-                <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  다음
-                </button>
+          </table>
+        </div>
+        
+        {/* 페이지네이션 */}
+        {totalPages > 1 && (
+          <div className="bg-white px-6 py-3 flex items-center justify-between border-t">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                이전
+              </button>
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                다음
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  총 <span className="font-medium">{sortedEndmills.length}</span>개 중{' '}
+                  <span className="font-medium">{startIndex + 1}</span>-
+                  <span className="font-medium">{Math.min(endIndex, sortedEndmills.length)}</span>개 표시
+                </p>
               </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    총 <span className="font-medium">{filteredEndmills.length}</span>개 중{' '}
-                    <span className="font-medium">{startIndex + 1}</span>-
-                    <span className="font-medium">{Math.min(endIndex, filteredEndmills.length)}</span>개 표시
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ‹
-                    </button>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ‹
+                  </button>
+                  
+                  {/* 페이지 번호들 */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
                     
-                    {/* 페이지 번호들 */}
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-                      
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === pageNum
-                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-                    
-                    <button
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ›
-                    </button>
-                  </nav>
-                </div>
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          currentPage === pageNum
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ›
+                  </button>
+                </nav>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* 검색 결과가 없을 때 */}
-        {filteredEndmills.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">검색 조건에 맞는 앤드밀이 없습니다.</p>
-            <button 
-              onClick={() => {
-                setSearchTerm('')
-                setStatusFilter('')
-                setTypeFilter('')
-                setCurrentPage(1)
-              }}
-              className="mt-2 text-blue-600 hover:text-blue-800"
-            >
-              필터 초기화
-            </button>
           </div>
         )}
+      </div>
+
+      {/* 검색 결과가 없을 때 */}
+      {sortedEndmills.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">검색 조건에 맞는 앤드밀이 없습니다.</p>
+          <button 
+            onClick={() => {
+              setSearchTerm('')
+              setStatusFilter('')
+              setTypeFilter('')
+              setCurrentPage(1)
+            }}
+            className="mt-2 text-blue-600 hover:text-blue-800"
+          >
+            필터 초기화
+          </button>
+        </div>
+      )}
 
       {/* 승인 모달 */}
       {confirmation.config && (
@@ -599,6 +646,79 @@ export default function EndmillPage() {
           onCancel={confirmation.handleCancel}
           loading={confirmation.loading}
         />
+      )}
+
+      {/* 상세 모달 */}
+      {selectedEndmill && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <h3 className="text-lg font-medium">앤드밀 현황 상세 - {selectedEndmill.code}</h3>
+              <button 
+                onClick={() => setSelectedEndmill(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              {/* 현황 정보 */}
+              {(() => {
+                const usage = getEndmillUsageInfo(selectedEndmill.code)
+                return (
+                  <div className="mb-6">
+                    <h4 className="text-md font-semibold mb-2">현재 사용중인 현황</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-sm text-gray-600">사용중인 설비 수</span>
+                        <div className="text-lg font-bold text-blue-600">{usage.usedEquipmentCount}대</div>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-600">사용중인 설비번호</span>
+                        <div className="text-sm text-gray-900">{usage.usedEquipmentNumbers.join(', ') || '-'}</div>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-600">사용중인 모델</span>
+                        <div className="text-sm text-gray-900">{usage.usedModels.join(', ') || '-'}</div>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-600">사용중인 공정</span>
+                        <div className="text-sm text-gray-900">{usage.usedProcesses.join(', ') || '-'}</div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+              {/* 기본 정보 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-sm text-gray-600">앤드밀 코드</span>
+                  <div className="text-lg font-bold text-gray-900">{selectedEndmill.code}</div>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600">타입/이름</span>
+                  <div className="text-sm text-gray-900">{selectedEndmill.name}</div>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600">카테고리</span>
+                  <div className="text-sm text-gray-900">{selectedEndmill.category}</div>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600">설비</span>
+                  <div className="text-sm text-gray-900">{selectedEndmill.equipment}</div>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600">위치</span>
+                  <div className="text-sm text-gray-900">{selectedEndmill.position}</div>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600">공정</span>
+                  <div className="text-sm text-gray-900">{selectedEndmill.process}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
