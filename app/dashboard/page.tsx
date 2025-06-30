@@ -2,9 +2,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* 상단 통계 카드 그리드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* 총 CNC 설비 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
@@ -29,43 +29,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Tool Life 경고 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-red-600 text-lg">⚠️</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Tool Life 경고</p>
-                <p className="text-xs text-gray-500">자세히 보기 →</p>
-              </div>
-            </div>
-          </div>
-          <div className="text-center py-2">
-            <p className="text-2xl font-bold text-red-600">156<span className="text-sm text-gray-500">개</span></p>
-            <p className="text-xs text-gray-500">45개 즉시교체</p>
-          </div>
-          <div className="mt-3 flex justify-between text-xs">
-            <span className="text-gray-500">위험단계</span>
-            <span className="text-gray-500">8%</span>
-          </div>
-          <div className="mt-2">
-            <div className="flex space-x-1">
-              {[...Array(7)].map((_, i) => (
-                <div key={i} className="flex-1 bg-gray-200 rounded-sm h-6">
-                  <div 
-                    className={`rounded-sm h-full ${i < 2 ? 'bg-red-600' : i < 4 ? 'bg-yellow-500' : 'bg-green-600'}`}
-                    style={{width: `${i < 2 ? 85 : i < 4 ? 60 : 30}%`}}
-                  ></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+
 
         {/* 재고 부족 알림 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
@@ -97,7 +64,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 오늘 교체 완료 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
@@ -128,43 +95,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* QR 스캔 활동 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-purple-600 text-lg">📱</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">QR 스캔</p>
-                <p className="text-xs text-gray-500">자세히 보기 →</p>
-              </div>
-            </div>
-          </div>
-          <div className="text-center py-2">
-            <p className="text-2xl font-bold text-gray-900">342<span className="text-sm text-gray-500">회</span></p>
-            <p className="text-xs text-gray-500">오늘 스캔</p>
-          </div>
-          <div className="mt-3 flex justify-between text-xs">
-            <span className="text-gray-500">입출고<span className="text-xs">처리</span></span>
-            <span className="text-gray-500">실시간</span>
-          </div>
-          <div className="mt-2">
-            <div className="flex space-x-1 mb-1">
-              {[...Array(10)].map((_, i) => (
-                <div key={i} className="w-2 h-8 bg-gray-200 rounded-sm">
-                  <div 
-                    className="bg-purple-600 rounded-sm w-full" 
-                    style={{height: `${60 + Math.random() * 40}%`}}
-                  ></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+
 
         {/* 비용 절감 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
@@ -198,28 +132,28 @@ export default function DashboardPage() {
 
       {/* 메인 대시보드 섹션 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 앤드밀 사용 현황 */}
+        {/* 설비 가동 현황 */}
         <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">🔧 앤드밀 사용 현황</h2>
+            <h2 className="text-lg font-semibold text-gray-900">🏭 설비 가동 현황</h2>
             <div className="flex space-x-2">
               <button className="text-sm text-green-600 px-3 py-1 border border-green-200 rounded hover:bg-green-50">
-                PA1-001 교체 완료
+                가동률 93%
               </button>
-              <button className="text-sm text-red-600 px-3 py-1 border border-red-200 rounded hover:bg-red-50">
-                PS-012 즉시 교체 필요
+              <button className="text-sm text-blue-600 px-3 py-1 border border-blue-200 rounded hover:bg-blue-50">
+                생산량 증가
               </button>
             </div>
           </div>
           
           <div className="grid grid-cols-3 gap-6 mb-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">88%</p>
-              <p className="text-sm text-gray-500">Tool Life 평균</p>
+              <p className="text-2xl font-bold text-green-600">93%</p>
+              <p className="text-sm text-gray-500">설비 가동률</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-red-600">⚠️ C156 교체 필요</p>
-              <p className="text-sm text-gray-500 mt-1">Tool Life 20% 이하</p>
+              <p className="text-2xl font-bold text-blue-600">📈 생산량 증가</p>
+              <p className="text-sm text-gray-500 mt-1">전일 대비 12% 상승</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-orange-600">📦 AT002 재고 부족</p>
@@ -249,10 +183,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 교체 필요 설비 현황 */}
+        {/* 재고 부족 현황 */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">⚠️ 교체 필요 설비</h2>
+            <h2 className="text-lg font-semibold text-gray-900">📦 재고 부족 현황</h2>
             <span className="text-xs text-gray-500">자세히 보기 →</span>
           </div>
           
@@ -261,8 +195,8 @@ export default function DashboardPage() {
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">C001 T15</p>
-                  <p className="text-xs text-gray-500">FLAT 12mm - Tool Life 5%</p>
+                  <p className="text-sm font-medium text-gray-900">AT002 BALL 6mm</p>
+                  <p className="text-xs text-gray-500">현재고 5개 / 최소재고 15개</p>
                 </div>
               </div>
             </div>
@@ -271,8 +205,8 @@ export default function DashboardPage() {
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">C156 T08</p>
-                  <p className="text-xs text-gray-500">BALL 8mm - Tool Life 15%</p>
+                  <p className="text-sm font-medium text-gray-900">AT003 T-CUT 8mm</p>
+                  <p className="text-xs text-gray-500">현재고 8개 / 최소재고 20개</p>
                 </div>
               </div>
             </div>
@@ -373,16 +307,16 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">C001 T15 교체 완료</span>
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center text-sm">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                <span className="text-gray-600">설비 교체 작업 완료</span>
+              </div>
+              <div className="flex items-center text-sm mt-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                <span className="text-gray-600">오늘 목표 달성</span>
+              </div>
             </div>
-            <div className="flex items-center text-sm mt-2">
-              <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">C156 T03 즉시 교체 필요</span>
-            </div>
-          </div>
         </div>
 
         {/* CNC 설비 현황 */}
@@ -438,7 +372,7 @@ export default function DashboardPage() {
             <div className="flex items-center p-3 bg-red-50 rounded-lg">
               <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">C156 T03 즉시교체</p>
+                <p className="text-sm font-medium text-gray-900">C156 설비 점검 필요</p>
                 <p className="text-xs text-gray-500">2분 전</p>
               </div>
             </div>
@@ -454,7 +388,7 @@ export default function DashboardPage() {
             <div className="flex items-center p-3 bg-green-50 rounded-lg">
               <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">C001 T15 교체완료</p>
+                <p className="text-sm font-medium text-gray-900">C001 정상 가동 중</p>
                 <p className="text-xs text-gray-500">23분 전</p>
               </div>
             </div>
