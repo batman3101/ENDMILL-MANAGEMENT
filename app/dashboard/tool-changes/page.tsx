@@ -109,7 +109,7 @@ export default function ToolChangesPage() {
   useEffect(() => {
     setAvailableModels(getAvailableModels())
     setAvailableProcesses(getAvailableProcesses())
-  }, [getAvailableModels, getAvailableProcesses])
+  }, [])
 
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력
   useEffect(() => {
@@ -134,7 +134,7 @@ export default function ToolChangesPage() {
         }
       }
     }
-  }, [formData.productionModel, formData.process, formData.tNumber, autoFillEndmillInfo])
+  }, [formData.productionModel, formData.process, formData.tNumber, isManualEndmillInput])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
