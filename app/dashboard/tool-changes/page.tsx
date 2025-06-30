@@ -77,6 +77,7 @@ export default function ToolChangesPage() {
   const [availableModels, setAvailableModels] = useState<string[]>([])
   const [availableProcesses, setAvailableProcesses] = useState<string[]>([])
   const [isManualEndmillInput, setIsManualEndmillInput] = useState(false)
+  const [isEditManualEndmillInput, setIsEditManualEndmillInput] = useState(false)
   const getCurrentDateTime = () => {
     const now = new Date()
     const year = now.getFullYear()
@@ -113,7 +114,7 @@ export default function ToolChangesPage() {
     setAvailableProcesses(getAvailableProcesses())
   }, [])
 
-  // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력
+  // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (추가 폼)
   useEffect(() => {
     if (formData.productionModel && formData.process && formData.tNumber) {
       const endmillInfo = autoFillEndmillInfo(formData.productionModel, formData.process, formData.tNumber)
@@ -137,6 +138,31 @@ export default function ToolChangesPage() {
       }
     }
   }, [formData.productionModel, formData.process, formData.tNumber, isManualEndmillInput])
+
+  // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (수정 모달)
+  useEffect(() => {
+    if (editingItem && editingItem.productionModel && editingItem.process && editingItem.tNumber) {
+      const endmillInfo = autoFillEndmillInfo(editingItem.productionModel, editingItem.process, editingItem.tNumber)
+      
+      if (endmillInfo) {
+        setEditingItem(prev => prev ? ({
+          ...prev,
+          endmillCode: endmillInfo.endmillCode,
+          endmillName: endmillInfo.endmillName
+        }) : null)
+        setIsEditManualEndmillInput(false)
+      } else {
+        // CAM SHEET에서 찾을 수 없는 경우 수동 입력 모드가 아니면 빈 값으로 초기화
+        if (!isEditManualEndmillInput && editingItem) {
+          setEditingItem(prev => prev ? ({
+            ...prev,
+            endmillCode: '',
+            endmillName: ''
+          }) : null)
+        }
+      }
+    }
+  }, [editingItem?.productionModel, editingItem?.process, editingItem?.tNumber, isEditManualEndmillInput])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -207,6 +233,7 @@ export default function ToolChangesPage() {
   // 수정 모달 열기
   const handleEdit = (item: ToolChange) => {
     setEditingItem(item)
+    setIsEditManualEndmillInput(false) // 수동 입력 모드 초기화
     setShowEditModal(true)
   }
 
@@ -222,11 +249,19 @@ export default function ToolChangesPage() {
     setToolChanges(updatedChanges)
     setShowEditModal(false)
     setEditingItem(null)
+    setIsEditManualEndmillInput(false) // 수동 입력 모드 초기화
     
     showSuccess(
       '교체 실적 수정 완료',
       `${editingItem.equipmentNumber} T${editingItem.tNumber.toString().padStart(2, '0')} 교체 실적이 수정되었습니다.`
     )
+  }
+
+  // 수정 모달 닫기
+  const handleCloseEditModal = () => {
+    setShowEditModal(false)
+    setEditingItem(null)
+    setIsEditManualEndmillInput(false) // 수동 입력 모드 초기화
   }
 
   // 삭제 처리
@@ -717,10 +752,7 @@ export default function ToolChangesPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium">교체 실적 수정</h3>
                 <button 
-                  onClick={() => {
-                    setShowEditModal(false)
-                    setEditingItem(null)
-                  }}
+                  onClick={handleCloseEditModal}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   ✕
@@ -756,13 +788,18 @@ export default function ToolChangesPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">생산 모델</label>
-                    <input
-                      type="text"
+                    <select
                       value={editingItem.productionModel}
                       onChange={(e) => setEditingItem({...editingItem, productionModel: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
-                    />
+                    >
+                      <option value="">모델 선택</option>
+                      {availableModels.map(model => (
+                        <option key={model} value={model}>{model}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">등록된 CAM SHEET의 모델들</p>
                   </div>
 
                   <div>
@@ -795,24 +832,49 @@ export default function ToolChangesPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 코드</label>
-                    <input
-                      type="text"
-                      value={editingItem.endmillCode}
-                      onChange={(e) => setEditingItem({...editingItem, endmillCode: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder={isEditManualEndmillInput ? "앤드밀 코드 입력" : "모델, 공정, T번호 선택 시 자동 입력"}
+                        value={editingItem.endmillCode}
+                        onChange={(e) => isEditManualEndmillInput && setEditingItem({...editingItem, endmillCode: e.target.value})}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
+                          isEditManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
+                        }`}
+                        readOnly={!isEditManualEndmillInput}
+                        required
+                      />
+                      {!editingItem.endmillCode && editingItem.productionModel && editingItem.process && editingItem.tNumber && (
+                        <button
+                          type="button"
+                          onClick={() => setIsEditManualEndmillInput(true)}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800"
+                        >
+                          수동입력
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {isEditManualEndmillInput ? "수동으로 입력해주세요" : "CAM SHEET에서 자동으로 입력됩니다"}
+                    </p>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 이름</label>
                     <input
                       type="text"
+                      placeholder={isEditManualEndmillInput ? "앤드밀 이름 입력" : "모델, 공정, T번호 선택 시 자동 입력"}
                       value={editingItem.endmillName}
-                      onChange={(e) => setEditingItem({...editingItem, endmillName: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => isEditManualEndmillInput && setEditingItem({...editingItem, endmillName: e.target.value})}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
+                        isEditManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
+                      }`}
+                      readOnly={!isEditManualEndmillInput}
                       required
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {isEditManualEndmillInput ? "수동으로 입력해주세요" : "CAM SHEET에서 자동으로 입력됩니다"}
+                    </p>
                   </div>
 
                   <div>
@@ -860,10 +922,7 @@ export default function ToolChangesPage() {
                 <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
                   <button 
                     type="button"
-                    onClick={() => {
-                      setShowEditModal(false)
-                      setEditingItem(null)
-                    }}
+                    onClick={handleCloseEditModal}
                     className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                   >
                     취소
