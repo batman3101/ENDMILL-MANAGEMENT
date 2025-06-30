@@ -2,7 +2,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* 상단 통계 카드 그리드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* 총 CNC 설비 */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-3">
@@ -97,37 +97,7 @@ export default function DashboardPage() {
 
 
 
-        {/* 비용 절감 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-emerald-600 text-lg">💰</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">비용 절감</p>
-                <p className="text-xs text-gray-500">자세히 보기 →</p>
-              </div>
-            </div>
-          </div>
-          <div className="text-center py-2">
-            <p className="text-2xl font-bold text-emerald-600">₩235M</p>
-            <p className="text-xs text-gray-500">월간 절약</p>
-          </div>
-          <div className="mt-3 flex justify-between text-xs">
-            <span className="text-gray-500">목표 200M</span>
-            <span className="text-gray-500">118%</span>
-          </div>
-          <div className="mt-2 w-16 h-16 mx-auto">
-            <div className="relative w-full h-full">
-              <div className="absolute inset-0 rounded-full bg-gray-200"></div>
-              <div className="absolute inset-0 rounded-full bg-emerald-500" style={{clipPath: 'polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%)'}}></div>
-              <div className="absolute inset-2 rounded-full bg-white flex items-center justify-center">
-                <span className="text-xs font-bold text-gray-900">118%</span>
-              </div>
-            </div>
-          </div>
-        </div>
+
       </div>
 
       {/* 메인 대시보드 섹션 */}
@@ -136,14 +106,6 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900">🏭 설비 가동 현황</h2>
-            <div className="flex space-x-2">
-              <button className="text-sm text-green-600 px-3 py-1 border border-green-200 rounded hover:bg-green-50">
-                가동률 93%
-              </button>
-              <button className="text-sm text-blue-600 px-3 py-1 border border-blue-200 rounded hover:bg-blue-50">
-                생산량 증가
-              </button>
-            </div>
           </div>
           
           <div className="grid grid-cols-3 gap-6 mb-6">
@@ -152,12 +114,12 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-500">설비 가동률</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">📈 생산량 증가</p>
-              <p className="text-sm text-gray-500 mt-1">전일 대비 12% 상승</p>
+              <p className="text-2xl font-bold text-yellow-600">🔄 미가동 사유</p>
+              <p className="text-sm text-gray-500 mt-1">모델 교체중</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-orange-600">📦 AT002 재고 부족</p>
-              <p className="text-sm text-gray-500 mt-1">BALL 6mm 2날 긴급 발주</p>
+              <p className="text-2xl font-bold text-red-600">🔧 미가동 사유</p>
+              <p className="text-sm text-gray-500 mt-1">설비 점검중</p>
             </div>
           </div>
 

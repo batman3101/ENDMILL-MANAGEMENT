@@ -126,6 +126,18 @@ export const useCAMSheets = () => {
     })
   }
 
+  // 등록된 모델 목록 조회
+  const getAvailableModels = () => {
+    const models = new Set(camSheets.map(sheet => sheet.model))
+    return Array.from(models).sort()
+  }
+
+  // 등록된 공정 목록 조회
+  const getAvailableProcesses = () => {
+    const processes = new Set(camSheets.map(sheet => sheet.process))
+    return Array.from(processes).sort()
+  }
+
   return {
     camSheets,
     loading,
@@ -133,7 +145,9 @@ export const useCAMSheets = () => {
     createCAMSheet,
     updateCAMSheet,
     deleteCAMSheet,
-    getFilteredCAMSheets
+    getFilteredCAMSheets,
+    getAvailableModels,
+    getAvailableProcesses
   }
 }
 

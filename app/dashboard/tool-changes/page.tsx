@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useToast } from '../../../components/shared/Toast'
+import { useCAMSheets, useToolChangeAutoComplete } from '../../../lib/hooks/useCAMSheets'
 
 // 교체 실적 데이터 타입
 interface ToolChange {
@@ -48,13 +49,32 @@ const sampleData: ToolChange[] = [
     changeReason: '파손',
     toolLife: 1850,
     createdAt: '2024-01-26T16:15:00'
+  },
+  {
+    id: '3',
+    changeDate: '2024-01-26 18:45',
+    equipmentNumber: 'C156',
+    productionModel: 'PA-002',
+    process: 'CNC1',
+    tNumber: 8,
+    endmillCode: 'AT003',
+    endmillName: 'T-CUT 8mm 3날',
+    changedBy: '이작업자',
+    changeReason: 'Tool Life 종료',
+    toolLife: 2720,
+    createdAt: '2024-01-26T18:45:00'
   }
 ]
 
 export default function ToolChangesPage() {
   const { showSuccess, showError } = useToast()
+  const { getAvailableModels, getAvailableProcesses } = useCAMSheets()
+  const { autoFillEndmillInfo } = useToolChangeAutoComplete()
   const [showAddForm, setShowAddForm] = useState(false)
   const [toolChanges, setToolChanges] = useState<ToolChange[]>(sampleData)
+  const [availableModels, setAvailableModels] = useState<string[]>([])
+  const [availableProcesses, setAvailableProcesses] = useState<string[]>([])
+  const [isManualEndmillInput, setIsManualEndmillInput] = useState(false)
   const getCurrentDateTime = () => {
     const now = new Date()
     const year = now.getFullYear()
@@ -81,18 +101,56 @@ export default function ToolChangesPage() {
     tNumber: 1,
     endmillCode: '',
     endmillName: '',
-    changedBy: '',
+    actualToolLife: 0,
     changeReason: ''
   })
+
+  // CAM SHEET에서 사용 가능한 모델과 공정 목록 로드
+  useEffect(() => {
+    setAvailableModels(getAvailableModels())
+    setAvailableProcesses(getAvailableProcesses())
+  }, [getAvailableModels, getAvailableProcesses])
+
+  // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력
+  useEffect(() => {
+    if (formData.productionModel && formData.process && formData.tNumber) {
+      const endmillInfo = autoFillEndmillInfo(formData.productionModel, formData.process, formData.tNumber)
+      
+      if (endmillInfo) {
+        setFormData(prev => ({
+          ...prev,
+          endmillCode: endmillInfo.endmillCode,
+          endmillName: endmillInfo.endmillName
+        }))
+        setIsManualEndmillInput(false)
+      } else {
+        // CAM SHEET에서 찾을 수 없는 경우 빈 값으로 초기화
+        if (!isManualEndmillInput) {
+          setFormData(prev => ({
+            ...prev,
+            endmillCode: '',
+            endmillName: ''
+          }))
+        }
+      }
+    }
+  }, [formData.productionModel, formData.process, formData.tNumber, autoFillEndmillInfo])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
     const newToolChange: ToolChange = {
       id: Date.now().toString(),
-      ...formData,
       changeDate: getCurrentDateTime(), // 저장 시점의 현재 시간으로 업데이트
-      toolLife: Math.floor(Math.random() * 1000) + 1500, // 임시 Tool Life
+      equipmentNumber: formData.equipmentNumber,
+      productionModel: formData.productionModel,
+      process: formData.process,
+      tNumber: formData.tNumber,
+      endmillCode: formData.endmillCode,
+      endmillName: formData.endmillName,
+      changedBy: '작업자', // 기본값으로 설정
+      changeReason: formData.changeReason,
+      toolLife: formData.actualToolLife, // 실제 Tool life 값 사용
       createdAt: new Date().toISOString()
     }
     
@@ -113,9 +171,10 @@ export default function ToolChangesPage() {
       tNumber: 1,
       endmillCode: '',
       endmillName: '',
-      changedBy: '',
+      actualToolLife: 0,
       changeReason: ''
     })
+    setIsManualEndmillInput(false)
   }
 
   const getReasonBadge = (reason: string) => {
@@ -146,7 +205,7 @@ export default function ToolChangesPage() {
   return (
     <div className="space-y-6">
       {/* 통계 카드 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
@@ -325,14 +384,18 @@ export default function ToolChangesPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">생산 모델</label>
-                <input
-                  type="text"
-                  placeholder="PA-001"
+                <select
                   value={formData.productionModel}
                   onChange={(e) => setFormData({...formData, productionModel: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
-                />
+                >
+                  <option value="">모델 선택</option>
+                  {availableModels.map(model => (
+                    <option key={model} value={model}>{model}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">등록된 CAM SHEET의 모델들</p>
               </div>
 
               <div>
@@ -366,38 +429,64 @@ export default function ToolChangesPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 코드</label>
-                <input
-                  type="text"
-                  placeholder="AT001"
-                  value={formData.endmillCode}
-                  onChange={(e) => setFormData({...formData, endmillCode: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={isManualEndmillInput ? "앤드밀 코드 입력" : "모델, 공정, T번호 선택 시 자동 입력"}
+                    value={formData.endmillCode}
+                    onChange={(e) => isManualEndmillInput && setFormData({...formData, endmillCode: e.target.value})}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
+                      isManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
+                    }`}
+                    readOnly={!isManualEndmillInput}
+                    required
+                  />
+                  {!formData.endmillCode && formData.productionModel && formData.process && formData.tNumber && (
+                    <button
+                      type="button"
+                      onClick={() => setIsManualEndmillInput(true)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      수동입력
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {isManualEndmillInput ? "수동으로 입력해주세요" : "CAM SHEET에서 자동으로 입력됩니다"}
+                </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 이름</label>
                 <input
                   type="text"
-                  placeholder="FLAT 12mm 4날"
+                  placeholder={isManualEndmillInput ? "앤드밀 이름 입력" : "모델, 공정, T번호 선택 시 자동 입력"}
                   value={formData.endmillName}
-                  onChange={(e) => setFormData({...formData, endmillName: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => isManualEndmillInput && setFormData({...formData, endmillName: e.target.value})}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
+                    isManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
+                  }`}
+                  readOnly={!isManualEndmillInput}
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  {isManualEndmillInput ? "수동으로 입력해주세요" : "CAM SHEET에서 자동으로 입력됩니다"}
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">교체자</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">실제 Tool life</label>
                 <input
-                  type="text"
-                  placeholder="김작업자"
-                  value={formData.changedBy}
-                  onChange={(e) => setFormData({...formData, changedBy: e.target.value})}
+                  type="number"
+                  placeholder="2500"
+                  value={formData.actualToolLife}
+                  onChange={(e) => setFormData({...formData, actualToolLife: parseInt(e.target.value) || 0})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="0"
+                  max="10000"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">교체된 앤드밀의 실제 사용 횟수</p>
               </div>
 
               <div>
@@ -444,7 +533,7 @@ export default function ToolChangesPage() {
           <div className="flex gap-4 flex-1">
             <input
               type="text"
-              placeholder="설비번호, 앤드밀 코드, 교체자 검색..."
+              placeholder="설비번호, 앤드밀 코드 검색..."
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <select className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
