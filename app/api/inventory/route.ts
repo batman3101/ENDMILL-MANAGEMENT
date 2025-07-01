@@ -107,9 +107,25 @@ export async function PUT(request: NextRequest) {
 
 // 재고 상태 계산 함수
 function getStockStatus(current: number, min: number, max: number): string {
-  if (current <= min) return 'critical';
-  if (current <= min * 1.5) return 'low';
-  if (current >= max * 0.9) return 'high';
+  // 입력값 검증
+  if (min < 0 || max < 0 || current < 0) {
+    console.warn('재고 상태 계산: 음수 값이 입력되었습니다', { current, min, max });
+    return 'normal';
+  }
+  
+  if (min >= max) {
+    console.warn('재고 상태 계산: 최소값이 최대값보다 크거나 같습니다', { min, max });
+    return 'normal';
+  }
+
+  // 임계값 계산 (범위 겹침 방지)
+  const criticalThreshold = min;
+  const lowThreshold = min + (max - min) * 0.25; // 최소값 + 25% 범위
+  const highThreshold = max - (max - min) * 0.15; // 최대값 - 15% 범위
+
+  if (current <= criticalThreshold) return 'critical';
+  if (current <= lowThreshold) return 'low';
+  if (current >= highThreshold) return 'high';
   return 'normal';
 }
 

@@ -51,15 +51,46 @@ const loadCAMSheetsFromStorage = (): CAMSheet[] => {
   }
 }
 
-// 로컬 스토리지에 데이터 저장
+// 저장 작업 디바운싱을 위한 변수
+let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// 로컬 스토리지에 데이터 저장 (디바운스 적용)
 const saveCAMSheetsToStorage = (camSheets: CAMSheet[]) => {
   if (typeof window === 'undefined') return
   
-  try {
-    localStorage.setItem(STORAGE_KEYS.CAM_SHEETS, JSON.stringify(camSheets))
-  } catch (error) {
-    console.error('CAM Sheets 저장 실패:', error)
+  // 이전 저장 작업 취소
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
   }
+  
+  // 300ms 후에 저장 실행 (디바운스)
+  saveTimeout = setTimeout(() => {
+    try {
+      // 데이터 검증
+      if (!Array.isArray(camSheets)) {
+        throw new Error('CAM Sheets 데이터가 배열이 아닙니다');
+      }
+      
+      const serialized = JSON.stringify(camSheets);
+      
+      // 저장소 용량 체크 (5MB 제한)
+      if (serialized.length > 5 * 1024 * 1024) {
+        console.warn('CAM Sheets 데이터가 너무 큽니다. 일부 데이터를 정리해주세요.');
+        return;
+      }
+      
+      localStorage.setItem(STORAGE_KEYS.CAM_SHEETS, serialized);
+    } catch (error) {
+      console.error('CAM Sheets 저장 실패:', error);
+      
+      // 저장 실패 시 사용자에게 알림 (Toast 등으로 대체 가능)
+      if (error instanceof Error && error.message.includes('quota')) {
+        alert('저장 공간이 부족합니다. 브라우저 저장소를 정리해주세요.');
+      } else {
+        alert('데이터 저장에 실패했습니다. 다시 시도해주세요.');
+      }
+    }
+  }, 300);
 }
 
 export const useCAMSheets = () => {
