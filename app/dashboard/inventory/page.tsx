@@ -516,7 +516,7 @@ export default function InventoryPage() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">총 가치</p>
               <p className="text-2xl font-bold text-green-600">
-                {(statusCounts.totalValue / 1000000000).toFixed(1)}B VND
+                {statusCounts.totalValue.toLocaleString()} VND
               </p>
             </div>
           </div>
