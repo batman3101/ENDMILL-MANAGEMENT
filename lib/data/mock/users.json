@@ -1,0 +1,116 @@
+{
+  "users": [
+    {
+      "id": "user-001",
+      "email": "admin@company.com",
+      "name": "관리자",
+      "role": "admin",
+      "shift": "A",
+      "department": "관리부",
+      "isActive": true,
+      "createdAt": "2025-01-01T00:00:00Z",
+      "lastLogin": "2025-01-21T08:00:00Z"
+    },
+    {
+      "id": "user-002", 
+      "email": "manager@company.com",
+      "name": "김관리",
+      "role": "manager",
+      "shift": "A",
+      "department": "생산관리",
+      "isActive": true,
+      "createdAt": "2025-01-01T00:00:00Z",
+      "lastLogin": "2025-01-21T07:30:00Z"
+    },
+    {
+      "id": "user-003",
+      "email": "operator1@company.com", 
+      "name": "이작업",
+      "role": "operator",
+      "shift": "A",
+      "department": "생산1팀",
+      "isActive": true,
+      "createdAt": "2025-01-01T00:00:00Z",
+      "lastLogin": "2025-01-21T08:30:00Z"
+    },
+    {
+      "id": "user-004",
+      "email": "operator2@company.com",
+      "name": "박정비",
+      "role": "operator", 
+      "shift": "B",
+      "department": "정비팀",
+      "isActive": true,
+      "createdAt": "2025-01-01T00:00:00Z",
+      "lastLogin": "2025-01-20T16:00:00Z"
+    },
+    {
+      "id": "user-005",
+      "email": "operator3@company.com",
+      "name": "최작업",
+      "role": "operator",
+      "shift": "C",
+      "department": "생산2팀", 
+      "isActive": true,
+      "createdAt": "2025-01-01T00:00:00Z",
+      "lastLogin": "2025-01-19T22:00:00Z"
+    }
+  ],
+  "roles": [
+    {
+      "code": "admin",
+      "name": "관리자",
+      "permissions": [
+        "equipment.read",
+        "equipment.write", 
+        "equipment.delete",
+        "inventory.read",
+        "inventory.write",
+        "inventory.delete",
+        "camsheet.read",
+        "camsheet.write",
+        "camsheet.delete",
+        "toolchange.read",
+        "toolchange.write",
+        "user.read",
+        "user.write",
+        "reports.read"
+      ]
+    },
+    {
+      "code": "manager",
+      "name": "관리자",
+      "permissions": [
+        "equipment.read",
+        "equipment.write",
+        "inventory.read", 
+        "inventory.write",
+        "camsheet.read",
+        "camsheet.write",
+        "toolchange.read",
+        "toolchange.write",
+        "reports.read"
+      ]
+    },
+    {
+      "code": "operator",
+      "name": "작업자",
+      "permissions": [
+        "equipment.read",
+        "inventory.read",
+        "camsheet.read", 
+        "toolchange.read",
+        "toolchange.write"
+      ]
+    }
+  ],
+  "shifts": ["A", "B", "C"],
+  "departments": [
+    "관리부",
+    "생산관리",
+    "생산1팀",
+    "생산2팀", 
+    "정비팀",
+    "품질팀"
+  ]
+} 

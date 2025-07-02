@@ -1,0 +1,106 @@
+{
+  "inventory": [
+    {
+      "id": "inv-001",
+      "endmillCode": "AT001",
+      "currentStock": 45,
+      "minStock": 20,
+      "maxStock": 100,
+      "status": "sufficient",
+      "location": "A-001",
+      "lastUpdated": "2025-01-21T10:30:00Z",
+      "suppliers": [
+        {
+          "name": "대한공구",
+          "unitPrice": 850000,
+          "currentStock": 45,
+          "status": "sufficient"
+        },
+        {
+          "name": "삼성공구",
+          "unitPrice": 820000,
+          "currentStock": 30,
+          "status": "sufficient"
+        }
+      ]
+    },
+    {
+      "id": "inv-002",
+      "endmillCode": "AT002",
+      "currentStock": 15,
+      "minStock": 15,
+      "maxStock": 80,
+      "status": "low",
+      "location": "A-002",
+      "lastUpdated": "2025-01-21T09:15:00Z",
+      "suppliers": [
+        {
+          "name": "대한공구",
+          "unitPrice": 1200000,
+          "currentStock": 15,
+          "status": "low"
+        }
+      ]
+    },
+    {
+      "id": "inv-003",
+      "endmillCode": "AT003",
+      "currentStock": 8,
+      "minStock": 10,
+      "maxStock": 60,
+      "status": "critical",
+      "location": "A-003",
+      "lastUpdated": "2025-01-21T08:45:00Z",
+      "suppliers": [
+        {
+          "name": "삼성공구",
+          "unitPrice": 1500000,
+          "currentStock": 8,
+          "status": "critical"
+        }
+      ]
+    }
+  ],
+  "transactions": [
+    {
+      "id": "trans-001",
+      "type": "inbound",
+      "endmillCode": "AT001",
+      "quantity": 20,
+      "unitPrice": 850000,
+      "totalPrice": 17000000,
+      "supplier": "대한공구",
+      "processedAt": "2025-01-20T14:30:00Z",
+      "processedBy": "김관리",
+      "notes": "정기 입고"
+    },
+    {
+      "id": "trans-002",
+      "type": "outbound",
+      "endmillCode": "AT002",
+      "quantity": 5,
+      "unitPrice": 1200000,
+      "totalValue": 6000000,
+      "equipmentNumber": "C001",
+      "tNumber": 2,
+      "processedAt": "2025-01-21T09:15:00Z",
+      "processedBy": "이작업",
+      "purpose": "교체",
+      "notes": "정기 교체"
+    },
+    {
+      "id": "trans-003",
+      "type": "outbound",
+      "endmillCode": "AT003",
+      "quantity": 2,
+      "unitPrice": 1500000,
+      "totalValue": 3000000,
+      "equipmentNumber": "C003",
+      "tNumber": 1,
+      "processedAt": "2025-01-21T11:00:00Z",
+      "processedBy": "박정비",
+      "purpose": "긴급교체",
+      "notes": "공구 파손으로 인한 긴급 교체"
+    }
+  ]
+} 

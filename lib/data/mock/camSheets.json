@@ -1,0 +1,88 @@
+{
+  "camSheets": [
+    {
+      "id": "cam-001",
+      "model": "PA1",
+      "process": "CNC1",
+      "camVersion": "v2.3.1",
+      "versionDate": "2025-01-15",
+      "endmills": [
+        {
+          "tNumber": 1,
+          "endmillCode": "AT001",
+          "endmillName": "FLAT",
+          "specifications": "FLAT 6mm 4날",
+          "toolLife": 2000
+        },
+        {
+          "tNumber": 2,
+          "endmillCode": "AT002",
+          "endmillName": "BALL",
+          "specifications": "BALL 8mm 2날",
+          "toolLife": 1800
+        },
+        {
+          "tNumber": 3,
+          "endmillCode": "AT003",
+          "endmillName": "T-CUT",
+          "specifications": "T-CUT 10mm 4날",
+          "toolLife": 2200
+        }
+      ],
+      "createdAt": "2025-01-15T09:00:00Z",
+      "updatedAt": "2025-01-15T09:00:00Z"
+    },
+    {
+      "id": "cam-002",
+      "model": "PA1",
+      "process": "CNC2",
+      "camVersion": "v2.1.5",
+      "versionDate": "2025-01-10",
+      "endmills": [
+        {
+          "tNumber": 1,
+          "endmillCode": "AT001",
+          "endmillName": "FLAT",
+          "specifications": "FLAT 6mm 4날",
+          "toolLife": 2000
+        },
+        {
+          "tNumber": 5,
+          "endmillCode": "AT002",
+          "endmillName": "BALL",
+          "specifications": "BALL 8mm 2날",
+          "toolLife": 1800
+        }
+      ],
+      "createdAt": "2025-01-10T14:30:00Z",
+      "updatedAt": "2025-01-10T14:30:00Z"
+    },
+    {
+      "id": "cam-003",
+      "model": "PA2",
+      "process": "CNC1",
+      "camVersion": "v1.8.2",
+      "versionDate": "2025-01-08",
+      "endmills": [
+        {
+          "tNumber": 1,
+          "endmillCode": "AT003",
+          "endmillName": "T-CUT",
+          "specifications": "T-CUT 10mm 4날",
+          "toolLife": 2200
+        },
+        {
+          "tNumber": 2,
+          "endmillCode": "AT001",
+          "endmillName": "FLAT",
+          "specifications": "FLAT 6mm 4날",
+          "toolLife": 2000
+        }
+      ],
+      "createdAt": "2025-01-08T11:15:00Z",
+      "updatedAt": "2025-01-08T11:15:00Z"
+    }
+  ],
+  "models": ["PA1", "PA2", "PS", "B7", "Q7"],
+  "processes": ["CNC1", "CNC2", "CNC2-1"]
+} 

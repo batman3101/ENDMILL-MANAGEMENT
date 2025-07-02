@@ -3,9 +3,11 @@
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { getAllSuppliers, getAllCategories } from '../../../lib/data/mockData'
+import { FileDataManager } from '../../../lib/data/fileDataManager'
 import { useToast } from '../../../components/shared/Toast'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createSaveConfirmation, createCreateConfirmation } from '../../../lib/hooks/useConfirmation'
+import * as XLSX from 'xlsx'
 
 interface InventoryItem {
   id: string
@@ -134,6 +136,14 @@ export default function InventoryPage() {
     maxStock: 0
   })
   const [editFormData, setEditFormData] = useState<InventoryItem | null>(null)
+  const [showExcelUploadModal, setShowExcelUploadModal] = useState(false)
+  const [excelFile, setExcelFile] = useState<File | null>(null)
+  const [uploadProgress, setUploadProgress] = useState<{
+    processing: boolean
+    success: number
+    updated: number
+    errors: string[]
+  }>({ processing: false, success: 0, updated: 0, errors: [] })
 
   // 필터링된 재고 목록
   const filteredInventory = useMemo(() => {
@@ -349,6 +359,106 @@ export default function InventoryPage() {
       }
     }
   }
+
+  // 엑셀 업로드 핸들러
+  const handleExcelUpload = () => {
+    setShowExcelUploadModal(true)
+    setExcelFile(null)
+    setUploadProgress({ processing: false, success: 0, updated: 0, errors: [] })
+  }
+
+  // 엑셀 다운로드 핸들러
+  const handleExcelDownload = () => {
+    try {
+      const endmillData = FileDataManager.exportEndmillMasterToExcel()
+      
+      // 워크시트 생성
+      const worksheet = XLSX.utils.json_to_sheet(endmillData)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, '앤드밀마스터')
+
+      // 파일 다운로드
+      const fileName = `앤드밀마스터_${new Date().toISOString().split('T')[0]}.xlsx`
+      XLSX.writeFile(workbook, fileName)
+      
+      showSuccess('다운로드 완료', `${endmillData.length}개의 앤드밀 마스터 데이터가 다운로드되었습니다.`)
+    } catch (error) {
+      showError('다운로드 실패', '엑셀 파일 생성 중 오류가 발생했습니다.')
+      console.error('Excel download error:', error)
+    }
+  }
+
+  // 엑셀 파일 선택 핸들러
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+          file.type === 'application/vnd.ms-excel') {
+        setExcelFile(file)
+      } else {
+        showError('파일 형식 오류', '엑셀 파일(.xlsx, .xls)만 업로드 가능합니다.')
+      }
+    }
+  }
+
+  // 엑셀 파일 처리 핸들러
+  const handleProcessExcel = async () => {
+    if (!excelFile) {
+      showError('파일 오류', '업로드할 파일을 선택해주세요.')
+      return
+    }
+
+    setUploadProgress({ processing: true, success: 0, updated: 0, errors: [] })
+
+    try {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer)
+          const workbook = XLSX.read(data, { type: 'array' })
+          const sheetName = workbook.SheetNames[0]
+          const worksheet = workbook.Sheets[sheetName]
+          const jsonData = XLSX.utils.sheet_to_json(worksheet)
+
+          // FileDataManager를 사용해 데이터 업데이트
+          const result = FileDataManager.updateEndmillMasterFromExcel(jsonData)
+          
+          setUploadProgress({
+            processing: false,
+            success: result.success,
+            updated: result.updated,
+            errors: result.errors
+          })
+
+          if (result.errors.length === 0) {
+            showSuccess('업로드 완료', 
+              `성공: ${result.success}개 신규, ${result.updated}개 업데이트`
+            )
+          } else {
+            showError('업로드 완료 (일부 오류)', 
+              `성공: ${result.success + result.updated}개, 오류: ${result.errors.length}개`
+            )
+          }
+        } catch (error) {
+          setUploadProgress({ processing: false, success: 0, updated: 0, errors: ['파일 처리 중 오류가 발생했습니다.'] })
+          showError('파일 처리 실패', '엑셀 파일을 읽는 중 오류가 발생했습니다.')
+          console.error('Excel processing error:', error)
+        }
+      }
+      
+      reader.onerror = () => {
+        setUploadProgress({ processing: false, success: 0, updated: 0, errors: ['파일을 읽을 수 없습니다.'] })
+        showError('파일 읽기 실패', '파일을 읽는 중 오류가 발생했습니다.')
+      }
+      
+      reader.readAsArrayBuffer(excelFile)
+    } catch (error) {
+      setUploadProgress({ processing: false, success: 0, updated: 0, errors: ['파일 업로드 중 오류가 발생했습니다.'] })
+      showError('업로드 실패', '파일 업로드 중 오류가 발생했습니다.')
+      console.error('File upload error:', error)
+    }
+  }
+
   return (
     <div className="space-y-6">
 
@@ -484,12 +594,26 @@ export default function InventoryPage() {
               ))}
             </select>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 whitespace-nowrap"
-          >
-            + 신규 앤드밀 추가
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 whitespace-nowrap"
+            >
+              + 신규 앤드밀 추가
+            </button>
+            <button
+              onClick={handleExcelUpload}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 whitespace-nowrap"
+            >
+              📄 엑셀 업로드
+            </button>
+            <button
+              onClick={handleExcelDownload}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 whitespace-nowrap"
+            >
+              📊 엑셀 다운로드
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1071,6 +1195,110 @@ export default function InventoryPage() {
            </div>
          </div>
        )}
+
+      {/* 엑셀 업로드 모달 */}
+      {showExcelUploadModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">📄 앤드밀 마스터 데이터 엑셀 업로드</h3>
+                <button 
+                  onClick={() => setShowExcelUploadModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {/* 업로드 안내 */}
+              <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                <h4 className="text-sm font-medium text-blue-900 mb-2">📋 업로드 형식 안내</h4>
+                <div className="text-xs text-blue-800 space-y-1">
+                  <p>• 엑셀 파일(.xlsx, .xls)만 업로드 가능합니다</p>
+                  <p>• 필수 컬럼: 앤드밀코드, Type, 카테고리, 앤드밀이름, 직경(mm), 날수</p>
+                  <p>• 선택 컬럼: 코팅, 소재, 공차, 나선각, 표준수명, 최소재고, 최대재고</p>
+                  <p>• 공급업체 정보: 공급업체1, 공급업체1단가, 공급업체2, 공급업체2단가...</p>
+                </div>
+              </div>
+
+              {/* 파일 선택 */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">엑셀 파일 선택</label>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileSelect}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                {excelFile && (
+                  <p className="mt-2 text-sm text-green-600">
+                    ✅ 선택된 파일: {excelFile.name}
+                  </p>
+                )}
+              </div>
+
+              {/* 진행 상황 */}
+              {uploadProgress.processing && (
+                <div className="mb-6 p-4 bg-yellow-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
+                    <span className="text-sm text-yellow-800">파일을 처리하고 있습니다...</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 결과 표시 */}
+              {(!uploadProgress.processing && (uploadProgress.success > 0 || uploadProgress.updated > 0 || uploadProgress.errors.length > 0)) && (
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">📊 처리 결과</h4>
+                  <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div className="text-center p-3 bg-green-100 rounded-lg">
+                      <div className="text-lg font-bold text-green-800">{uploadProgress.success}</div>
+                      <div className="text-xs text-green-600">신규 추가</div>
+                    </div>
+                    <div className="text-center p-3 bg-blue-100 rounded-lg">
+                      <div className="text-lg font-bold text-blue-800">{uploadProgress.updated}</div>
+                      <div className="text-xs text-blue-600">업데이트</div>
+                    </div>
+                  </div>
+                  
+                  {uploadProgress.errors.length > 0 && (
+                    <div className="mt-4">
+                      <h5 className="text-sm font-medium text-red-800 mb-2">⚠️ 오류 목록</h5>
+                      <div className="max-h-32 overflow-y-auto">
+                        {uploadProgress.errors.map((error, index) => (
+                          <p key={index} className="text-xs text-red-600 mb-1">• {error}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 버튼 */}
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowExcelUploadModal(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                >
+                  닫기
+                </button>
+                <button
+                  onClick={handleProcessExcel}
+                  disabled={!excelFile || uploadProgress.processing}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {uploadProgress.processing ? '처리 중...' : '📄 업로드 처리'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 승인 모달 */}
       {confirmation.config && (

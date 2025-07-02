@@ -1,5 +1,7 @@
+'use client'
+
 import { useState, useEffect } from 'react'
-import { STORAGE_KEYS, MockDataManager } from '../data/mockData'
+import { FileDataManager, CAMSheet } from '../data/fileDataManager'
 
 export interface EndmillInfo {
   tNumber: number
@@ -9,16 +11,8 @@ export interface EndmillInfo {
   toolLife: number
 }
 
-export interface CAMSheet {
-  id: string
-  model: string
-  process: string
-  camVersion: string
-  versionDate: string
-  endmills: EndmillInfo[]
-  createdAt: string
-  updatedAt: string
-}
+// CAMSheet 인터페이스는 FileDataManager에서 가져옴
+export { CAMSheet } from '../data/fileDataManager'
 
 // CAM Sheet 검색을 위한 필터 타입
 export interface CAMSheetFilter {
@@ -35,30 +29,22 @@ export interface EndmillSearchResult {
   endmill: EndmillInfo
 }
 
-// 로컬 스토리지에서 데이터 로드
+// 로컬 스토리지에서 CAM Sheet 데이터 로드
 const loadCAMSheetsFromStorage = (): CAMSheet[] => {
-  if (typeof window === 'undefined') return []
-  
   try {
-    // 초기 데이터가 없으면 자동으로 목업 데이터 로드
-    MockDataManager.initializeCAMSheets()
-    
-    const stored = localStorage.getItem(STORAGE_KEYS.CAM_SHEETS)
-    return stored ? JSON.parse(stored) : []
+    return FileDataManager.getCAMSheets()
   } catch (error) {
-    console.error('CAM Sheets 로드 실패:', error)
+    console.error('CAM Sheet 데이터 로드 실패:', error)
     return []
   }
 }
 
-// 로컬 스토리지에 데이터 저장
+// 로컬 스토리지에 CAM Sheet 데이터 저장
 const saveCAMSheetsToStorage = (camSheets: CAMSheet[]) => {
-  if (typeof window === 'undefined') return
-  
   try {
-    localStorage.setItem(STORAGE_KEYS.CAM_SHEETS, JSON.stringify(camSheets))
+    FileDataManager.saveCAMSheets(camSheets)
   } catch (error) {
-    console.error('CAM Sheets 저장 실패:', error)
+    console.error('CAM Sheet 데이터 저장 실패:', error)
   }
 }
 
@@ -69,31 +55,28 @@ export const useCAMSheets = () => {
 
   // 초기 데이터 로드
   useEffect(() => {
-    setLoading(true)
     try {
-      const sheets = loadCAMSheetsFromStorage()
-      setCamSheets(sheets)
+      const data = loadCAMSheetsFromStorage()
+      setCamSheets(data)
+      setLoading(false)
     } catch (err) {
-      setError('CAM Sheets 로드 중 오류가 발생했습니다.')
-    } finally {
+      setError('CAM Sheet 데이터를 불러오는데 실패했습니다.')
       setLoading(false)
     }
   }, [])
 
-  // CAM Sheet 생성
+  // 새 CAM Sheet 생성
   const createCAMSheet = (data: Omit<CAMSheet, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newSheet: CAMSheet = {
+    const newCAMSheet: CAMSheet = {
       ...data,
-      id: Date.now().toString(),
+      id: `cam-${Date.now()}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
 
-    const updatedSheets = [...camSheets, newSheet]
+    const updatedSheets = [...camSheets, newCAMSheet]
     setCamSheets(updatedSheets)
     saveCAMSheetsToStorage(updatedSheets)
-    
-    return newSheet
   }
 
   // CAM Sheet 업데이트
@@ -103,7 +86,6 @@ export const useCAMSheets = () => {
         ? { ...sheet, ...data, updatedAt: new Date().toISOString() }
         : sheet
     )
-    
     setCamSheets(updatedSheets)
     saveCAMSheetsToStorage(updatedSheets)
   }
@@ -121,21 +103,18 @@ export const useCAMSheets = () => {
       if (filter.model && sheet.model !== filter.model) return false
       if (filter.process && sheet.process !== filter.process) return false
       if (filter.tNumber && !sheet.endmills.some(e => e.tNumber === filter.tNumber)) return false
-      
       return true
     })
   }
 
-  // 등록된 모델 목록 조회
+  // 사용 가능한 모델 목록
   const getAvailableModels = () => {
-    const models = new Set(camSheets.map(sheet => sheet.model))
-    return Array.from(models).sort()
+    return FileDataManager.getModels()
   }
 
-  // 등록된 공정 목록 조회
+  // 사용 가능한 공정 목록
   const getAvailableProcesses = () => {
-    const processes = new Set(camSheets.map(sheet => sheet.process))
-    return Array.from(processes).sort()
+    return FileDataManager.getProcesses()
   }
 
   return {
@@ -151,7 +130,7 @@ export const useCAMSheets = () => {
   }
 }
 
-// 앤드밀 자동 완성을 위한 검색 훅
+// 앤드밀 검색 Hook
 export const useEndmillSearch = () => {
   const { camSheets } = useCAMSheets()
 
@@ -179,10 +158,10 @@ export const useEndmillSearch = () => {
   const searchEndmillByTNumber = (model: string, process: string, tNumber: number): EndmillSearchResult | null => {
     const sheet = camSheets.find(s => s.model === model && s.process === process)
     if (!sheet) return null
-
+    
     const endmill = sheet.endmills.find(e => e.tNumber === tNumber)
     if (!endmill) return null
-
+    
     return {
       camSheetId: sheet.id,
       model: sheet.model,
@@ -211,31 +190,28 @@ export const useEndmillSearch = () => {
     return results
   }
 
-  // 자동 완성 제안
+  // 앤드밀 제안 (자동완성용)
   const getEndmillSuggestions = (query: string, limit: number = 10): EndmillSearchResult[] => {
-    if (!query || query.length < 2) return []
-
-    const results: EndmillSearchResult[] = []
+    const allEndmills: EndmillSearchResult[] = []
     
     camSheets.forEach(sheet => {
       sheet.endmills.forEach(endmill => {
-        const matches = (
-          endmill.endmillCode.toLowerCase().includes(query.toLowerCase()) ||
-          endmill.endmillName.toLowerCase().includes(query.toLowerCase())
-        )
-        
-        if (matches) {
-          results.push({
-            camSheetId: sheet.id,
-            model: sheet.model,
-            process: sheet.process,
-            endmill
-          })
-        }
+        allEndmills.push({
+          camSheetId: sheet.id,
+          model: sheet.model,
+          process: sheet.process,
+          endmill
+        })
       })
     })
     
-    return results.slice(0, limit)
+    const filtered = allEndmills.filter(result => 
+      result.endmill.endmillCode.toLowerCase().includes(query.toLowerCase()) ||
+      result.endmill.endmillName.toLowerCase().includes(query.toLowerCase()) ||
+      result.endmill.specifications.toLowerCase().includes(query.toLowerCase())
+    )
+    
+    return filtered.slice(0, limit)
   }
 
   return {
@@ -246,30 +222,29 @@ export const useEndmillSearch = () => {
   }
 }
 
-// 교체 실적 입력에서 사용할 앤드밀 자동 입력 훅
+// 공구 교체 자동완성 Hook
 export const useToolChangeAutoComplete = () => {
-  const { searchEndmillByTNumber, getEndmillSuggestions } = useEndmillSearch()
+  const { searchEndmillByTNumber } = useEndmillSearch()
 
-  // 모델, 공정, T번호로 앤드밀 정보 자동 입력
+  // 모델, 공정, T번호로 앤드밀 정보 자동 채우기
   const autoFillEndmillInfo = (model: string, process: string, tNumber: number) => {
-    if (!model || !process || !tNumber) return null
-
     const result = searchEndmillByTNumber(model, process, tNumber)
     
     if (result) {
       return {
         endmillCode: result.endmill.endmillCode,
-        endmillName: result.endmill.specifications, // specifications가 실제 앤드밀 이름
-        suggestedToolLife: result.endmill.toolLife
+        endmillName: result.endmill.endmillName,
+        toolLife: result.endmill.toolLife
       }
     }
     
     return null
   }
 
-  // 앤드밀 코드 입력 시 자동 완성 제안
+  // 자동완성 제안 목록
   const getAutoCompleteSuggestions = (query: string) => {
-    return getEndmillSuggestions(query)
+    const { getEndmillSuggestions } = useEndmillSearch()
+    return getEndmillSuggestions(query, 5)
   }
 
   return {

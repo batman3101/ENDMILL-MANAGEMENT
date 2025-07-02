@@ -1,0 +1,47 @@
+{
+  "equipments": [
+    {
+      "id": "eq-001",
+      "equipmentNumber": "C001",
+      "location": "A동",
+      "status": "가동중",
+      "currentModel": "PA1",
+      "process": "CNC1",
+      "toolPositions": {
+        "used": 18,
+        "total": 21
+      },
+      "lastMaintenance": "2025-01-15"
+    },
+    {
+      "id": "eq-002",
+      "equipmentNumber": "C002",
+      "location": "A동",
+      "status": "점검중",
+      "currentModel": "PA2",
+      "process": "CNC2",
+      "toolPositions": {
+        "used": 0,
+        "total": 21
+      },
+      "lastMaintenance": "2025-01-10"
+    },
+    {
+      "id": "eq-003",
+      "equipmentNumber": "C003",
+      "location": "A동",
+      "status": "셋업중",
+      "currentModel": "PS",
+      "process": "CNC2-1",
+      "toolPositions": {
+        "used": 15,
+        "total": 21
+      },
+      "lastMaintenance": "2025-01-20"
+    }
+  ],
+  "models": ["PA1", "PA2", "PS", "B7", "Q7"],
+  "processes": ["CNC1", "CNC2", "CNC2-1"],
+  "locations": ["A동", "B동"],
+  "statuses": ["가동중", "점검중", "셋업중"]
+} 
