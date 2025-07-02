@@ -64,17 +64,17 @@ export default function CAMSheetsPage() {
     // 1. Tool Life 예측 정확도 (샘플 계산)
     const toolLifeAccuracy = Math.round(85 + Math.random() * 10) // 85-95% 범위
 
-    // 2. 교체 주기 분석
+    // 2. 교체 주기 분석 (시간 단위)
     const allEndmills = camSheets.flatMap(sheet => sheet.endmills)
     const averageChangeInterval = allEndmills.length > 0 
-      ? Math.round((allEndmills.reduce((acc, endmill) => acc + (endmill.toolLife / 150), 0) / allEndmills.length) * 10) / 10
+      ? Math.round((allEndmills.reduce((acc, endmill) => acc + (endmill.toolLife / 60), 0) / allEndmills.length) * 10) / 10
       : 0
 
-    // 앤드밀 타입별 교체 주기
+    // 앤드밀 타입별 교체 주기 (시간 단위)
     const endmillTypeIntervals = {
-      FLAT: Math.round((16 + Math.random() * 2) * 10) / 10,
-      BALL: Math.round((11 + Math.random() * 2) * 10) / 10,
-      'T-CUT': Math.round((13 + Math.random() * 2) * 10) / 10
+      FLAT: Math.round((32 + Math.random() * 8) * 10) / 10,
+      BALL: Math.round((28 + Math.random() * 6) * 10) / 10,
+      'T-CUT': Math.round((35 + Math.random() * 10) * 10) / 10
     }
 
     // 3. 재고 연동률
@@ -291,7 +291,7 @@ export default function CAMSheetsPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">교체 주기 분석</p>
-                <p className="text-2xl font-bold text-blue-600">{insights.averageChangeInterval}일</p>
+                <p className="text-2xl font-bold text-blue-600">{insights.averageChangeInterval}시간</p>
               </div>
             </div>
           </div>
@@ -299,15 +299,15 @@ export default function CAMSheetsPage() {
           <div className="space-y-1">
             <div className="flex justify-between text-xs">
               <span className="text-gray-600">FLAT</span>
-              <span className="font-medium">{insights.endmillTypeIntervals.FLAT}일</span>
+              <span className="font-medium">{insights.endmillTypeIntervals.FLAT}시간</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-gray-600">BALL</span>
-              <span className="font-medium">{insights.endmillTypeIntervals.BALL}일</span>
+              <span className="font-medium">{insights.endmillTypeIntervals.BALL}시간</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-gray-600">T-CUT</span>
-              <span className="font-medium">{insights.endmillTypeIntervals['T-CUT']}일</span>
+              <span className="font-medium">{insights.endmillTypeIntervals['T-CUT']}시간</span>
             </div>
           </div>
         </div>
