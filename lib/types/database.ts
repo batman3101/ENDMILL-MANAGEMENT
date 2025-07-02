@@ -86,7 +86,7 @@ export interface Database {
           description_ko: string | null;
           description_vi: string | null;
           specifications: any; // JSONB
-          unit_cost: number | null;
+          unit_cost: number | null; // VND
           standard_life: number;
           created_at: string;
         };
@@ -97,7 +97,7 @@ export interface Database {
           description_ko?: string | null;
           description_vi?: string | null;
           specifications?: any;
-          unit_cost?: number | null;
+          unit_cost?: number | null; // VND
           standard_life?: number;
           created_at?: string;
         };
@@ -108,7 +108,7 @@ export interface Database {
           description_ko?: string | null;
           description_vi?: string | null;
           specifications?: any;
-          unit_cost?: number | null;
+          unit_cost?: number | null; // VND
           standard_life?: number;
         };
       };

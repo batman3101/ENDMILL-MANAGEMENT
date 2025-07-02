@@ -1,10 +1,12 @@
+import Link from 'next/link'
+
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* 상단 통계 카드 그리드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* 총 CNC 설비 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+        <Link href="/dashboard/equipment" className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow block">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
@@ -12,7 +14,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-900">총 CNC 설비</p>
-                <p className="text-xs text-gray-500">자세히 보기 →</p>
+                <p className="text-xs text-blue-600 hover:text-blue-800">자세히 보기 →</p>
               </div>
             </div>
           </div>
@@ -27,12 +29,12 @@ export default function DashboardPage() {
           <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
             <div className="bg-blue-600 h-2 rounded-full" style={{width: '93%'}}></div>
           </div>
-        </div>
+        </Link>
 
 
 
         {/* 재고 부족 알림 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+        <Link href="/dashboard/inventory" className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow block">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
@@ -40,7 +42,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-900">재고 부족</p>
-                <p className="text-xs text-gray-500">자세히 보기 →</p>
+                <p className="text-xs text-orange-600 hover:text-orange-800">자세히 보기 →</p>
               </div>
             </div>
           </div>
@@ -61,10 +63,10 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* 오늘 교체 완료 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+        <Link href="/dashboard/tool-changes" className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow block">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
@@ -72,7 +74,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-900">오늘 교체</p>
-                <p className="text-xs text-gray-500">자세히 보기 →</p>
+                <p className="text-xs text-green-600 hover:text-green-800">자세히 보기 →</p>
               </div>
             </div>
           </div>
@@ -93,7 +95,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        </div>
+        </Link>
 
 
 
@@ -149,7 +151,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900">📦 재고 부족 현황</h2>
-            <span className="text-xs text-gray-500">자세히 보기 →</span>
+            <Link href="/dashboard/inventory" className="text-xs text-blue-600 hover:text-blue-800">자세히 보기 →</Link>
           </div>
           
           <div className="space-y-4">
@@ -204,7 +206,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">📦 앤드밀 재고</h2>
-            <span className="text-xs text-gray-500">자세히 보기 →</span>
+            <Link href="/dashboard/inventory" className="text-xs text-blue-600 hover:text-blue-800">자세히 보기 →</Link>
           </div>
           
           <div className="space-y-4">
@@ -238,7 +240,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">🔧 교체 작업</h2>
-            <span className="text-xs text-gray-500">자세히 보기 →</span>
+            <Link href="/dashboard/tool-changes" className="text-xs text-blue-600 hover:text-blue-800">자세히 보기 →</Link>
           </div>
           
           <div className="space-y-4">
@@ -285,7 +287,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">🏭 CNC 설비</h2>
-            <span className="text-xs text-gray-500">자세히 보기 →</span>
+            <Link href="/dashboard/equipment" className="text-xs text-blue-600 hover:text-blue-800">자세히 보기 →</Link>
           </div>
           
           <div className="text-center mb-4">
@@ -327,7 +329,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">🔔 실시간 알림</h2>
-            <span className="text-xs text-gray-500">전체 보기 →</span>
+            <Link href="/dashboard/reports" className="text-xs text-blue-600 hover:text-blue-800">전체 보기 →</Link>
           </div>
           
           <div className="space-y-3">
@@ -358,9 +360,9 @@ export default function DashboardPage() {
 
           <div className="mt-4 pt-4 border-t border-gray-100">
             <div className="text-center">
-              <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+              <Link href="/dashboard/reports" className="text-sm text-blue-600 hover:text-blue-800 font-medium">
                 알림 히스토리 보기
-              </button>
+              </Link>
             </div>
           </div>
         </div>

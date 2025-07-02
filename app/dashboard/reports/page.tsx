@@ -117,7 +117,7 @@ export default function ReportsPage() {
               </div>
               <div>
                 <p className="font-medium text-gray-900">PA1 모델 비용 분석 리포트</p>
-                <p className="text-sm text-gray-500">2024-01-28 생성 • 절약된 비용: ₩2,350,000</p>
+                <p className="text-sm text-gray-500">2024-01-28 생성 • 절약된 비용: 2,350,000 VND</p>
               </div>
             </div>
             <div className="flex space-x-2">

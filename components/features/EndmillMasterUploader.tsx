@@ -23,7 +23,7 @@ interface EndmillMasterData {
   qualityGrade?: string
   suppliers: {
     name: string
-    unitPrice: number
+    unitPrice: number // VND
   }[]
   description?: string
 }
@@ -107,7 +107,7 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
       const suppliers = []
       for (let i = 1; i <= 3; i++) {
         const supplierName = row[`공급업체${i}`]
-        const supplierPrice = row[`공급업체${i}단가`]
+        const supplierPrice = row[`공급업체${i}단가(VND)`]
         if (supplierName && supplierName.trim() !== '' && supplierPrice && Number(supplierPrice) > 0) {
           suppliers.push({
             name: supplierName.trim(),

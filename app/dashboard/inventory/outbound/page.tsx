@@ -14,8 +14,8 @@ interface OutboundItem {
   equipmentNumber: string
   tNumber: number
   quantity: number
-  unitPrice: number
-  totalValue: number
+  unitPrice: number // VND
+  totalValue: number // VND
   processedAt: string
   processedBy: string
   purpose: string

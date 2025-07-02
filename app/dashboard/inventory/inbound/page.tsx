@@ -13,8 +13,8 @@ interface InboundItem {
   endmillName: string
   supplier: string
   quantity: number
-  unitPrice: number
-  totalPrice: number
+  unitPrice: number // VND
+  totalPrice: number // VND
   processedAt: string
   processedBy: string
 }

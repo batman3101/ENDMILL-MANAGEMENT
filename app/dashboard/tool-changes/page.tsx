@@ -131,9 +131,9 @@ export default function ToolChangesPage() {
 
   // CAM SHEET에서 사용 가능한 모델과 공정 목록 로드
   useEffect(() => {
-    setAvailableModels(getAvailableModels())
-    setAvailableProcesses(getAvailableProcesses())
-  }, [camSheets])
+    setAvailableModels(getAvailableModels)
+    setAvailableProcesses(getAvailableProcesses)
+  }, [getAvailableModels, getAvailableProcesses])
 
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (추가 폼)
   useEffect(() => {

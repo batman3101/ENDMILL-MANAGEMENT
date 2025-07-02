@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { FileDataManager, CAMSheet } from '../data/fileDataManager'
 
 export interface EndmillInfo {
@@ -107,15 +107,15 @@ export const useCAMSheets = () => {
     })
   }
 
-  // 사용 가능한 모델 목록
-  const getAvailableModels = () => {
+  // 사용 가능한 모델 목록 - 메모이제이션
+  const getAvailableModels = useMemo(() => {
     return FileDataManager.getModels()
-  }
+  }, [camSheets])
 
-  // 사용 가능한 공정 목록
-  const getAvailableProcesses = () => {
+  // 사용 가능한 공정 목록 - 메모이제이션
+  const getAvailableProcesses = useMemo(() => {
     return FileDataManager.getProcesses()
-  }
+  }, [camSheets])
 
   return {
     camSheets,

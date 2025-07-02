@@ -61,7 +61,7 @@ export interface EndmillDetailInfo extends EndmillMaster {
 // 공급업체별 상세 정보
 export interface EndmillSupplierInfo {
   supplierName: string
-  unitPrice: number
+  unitPrice: number // VND
   currentStock: number
   minOrderQuantity: number
   leadTime: number // 리드타임 (일)

@@ -146,11 +146,11 @@ export const downloadEndmillMasterTemplate = () => {
       '권장재고': 100,
       '품질등급': 'A',
       '공급업체1': 'A-TECH',
-      '공급업체1단가': 1200000,
+      '공급업체1단가(VND)': 1200000,
       '공급업체2': 'B-SUPPLIER',
-      '공급업체2단가': 1150000,
+      '공급업체2단가(VND)': 1150000,
       '공급업체3': 'C-TOOLS',
-      '공급업체3단가': 1180000,
+      '공급업체3단가(VND)': 1180000,
       '설명': '고성능 플랫 앤드밀'
     },
     {
@@ -170,11 +170,11 @@ export const downloadEndmillMasterTemplate = () => {
       '권장재고': 80,
       '품질등급': 'A+',
       '공급업체1': 'A-TECH',
-      '공급업체1단가': 1800000,
+      '공급업체1단가(VND)': 1800000,
       '공급업체2': 'B-SUPPLIER',
-      '공급업체2단가': 1750000,
+      '공급업체2단가(VND)': 1750000,
       '공급업체3': '',
-      '공급업체3단가': '',
+      '공급업체3단가(VND)': '',
       '설명': '정밀 볼 앤드밀'
     }
   ]
@@ -199,11 +199,11 @@ export const downloadEndmillMasterTemplate = () => {
     { wch: 10 }, // 권장재고
     { wch: 10 }, // 품질등급
     { wch: 15 }, // 공급업체1
-    { wch: 15 }, // 공급업체1단가
+    { wch: 18 }, // 공급업체1단가(VND)
     { wch: 15 }, // 공급업체2
-    { wch: 15 }, // 공급업체2단가
+    { wch: 18 }, // 공급업체2단가(VND)
     { wch: 15 }, // 공급업체3
-    { wch: 15 }, // 공급업체3단가
+    { wch: 18 }, // 공급업체3단가(VND)
     { wch: 20 }  // 설명
   ]
   ws['!cols'] = colWidths
@@ -296,7 +296,7 @@ export const validateEndmillMasterData = (data: any[]): {
     // 공급업체 단가 검증
     for (let i = 1; i <= 3; i++) {
       const supplierField = `공급업체${i}`
-      const priceField = `공급업체${i}단가`
+      const priceField = `공급업체${i}단가(VND)`
       
       if (row[supplierField] && (!row[priceField] || isNaN(Number(row[priceField])) || Number(row[priceField]) <= 0)) {
         warnings.push(`${rowNumber}행: ${supplierField}가 있으면 ${priceField}도 양수로 입력해야 합니다.`)

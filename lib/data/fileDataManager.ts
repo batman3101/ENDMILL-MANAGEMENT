@@ -33,14 +33,14 @@ export interface EndmillMaster {
   tolerance: string
   helix: string
   standardLife: number
-  unitPrice: number
+  unitPrice: number // VND
   minStock: number
   maxStock: number
   recommendedStock: number
   qualityGrade: string
   suppliers: {
     name: string
-    unitPrice: number
+    unitPrice: number // VND
     currentStock: number
     minOrderQuantity: number
     leadTime: number
@@ -79,7 +79,7 @@ export interface InventoryItem {
   lastUpdated: string
   suppliers: {
     name: string
-    unitPrice: number
+    unitPrice: number // VND
     currentStock: number
     status: string
   }[]

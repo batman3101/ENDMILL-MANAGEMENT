@@ -68,7 +68,7 @@ interface EndmillMaster {
   tolerance: string          // 공차 (±0.01mm)
   helix: string             // 나선각 (30°)
   standardLife: number       // 표준 수명 (분)
-  unitPrice: number          // 단가 (원)
+  unitPrice: number          // 단가 (VND)
   minStock: number           // 최소 재고
   maxStock: number           // 최대 재고
   recommendedStock: number   // 권장 재고

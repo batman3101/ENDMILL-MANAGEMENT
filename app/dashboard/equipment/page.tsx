@@ -5,6 +5,7 @@ import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createStatusChangeConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
 import StatusChangeDropdown from '../../../components/shared/StatusChangeDropdown'
+import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
 
 // 로컬 상태용 타입 정의
 interface Equipment {
@@ -23,11 +24,12 @@ interface Equipment {
 
 // StatusTransition 인터페이스 제거됨 (StatusChangeDropdown 컴포넌트로 이동)
 
-// 800대 설비 데이터 생성 함수
-const generateEquipmentData = (): Equipment[] => {
+// 800대 설비 데이터 생성 함수 - CAM Sheet 데이터를 참조하도록 수정
+const generateEquipmentData = (availableModels: string[], availableProcesses: string[]): Equipment[] => {
   const equipments: Equipment[] = []
-  const models = ['PA1', 'PA2', 'PS', 'B7', 'Q7']
-  const processes = ['CNC1', 'CNC2', 'CNC2-1']
+  // CAM Sheet에서 실제 모델/공정 데이터가 없으면 기본값 사용
+  const models = availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']
+  const processes = availableProcesses.length > 0 ? availableProcesses : ['CNC1', 'CNC2', 'CNC2-1']
   const locations: ('A동' | 'B동')[] = ['A동', 'B동']
   const statuses: ('가동중' | '점검중' | '셋업중')[] = ['가동중', '점검중', '셋업중']
   
@@ -77,12 +79,25 @@ export default function EquipmentPage() {
   const itemsPerPage = 20
   const confirmation = useConfirmation()
   const { showSuccess, showError } = useToast()
+  
+  // 설비 추가 폼 상태
+  const [addFormData, setAddFormData] = useState({
+    equipmentNumber: '',
+    location: 'A동' as 'A동' | 'B동',
+    status: '가동중' as '가동중' | '점검중' | '셋업중',
+    currentModel: '',
+    process: ''
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  // CAM Sheet 데이터 가져오기
+  const { camSheets, getAvailableModels, getAvailableProcesses } = useCAMSheets()
 
-  // 클라이언트 사이드에서만 데이터 로드
+  // 클라이언트 사이드에서만 데이터 로드 - CAM Sheet 데이터 기반으로 생성
   useEffect(() => {
-    setEquipments(generateEquipmentData())
+    setEquipments(generateEquipmentData(getAvailableModels, getAvailableProcesses))
     setIsLoading(false)
-  }, [])
+  }, [getAvailableModels, getAvailableProcesses])
 
   // 필터링된 설비 목록
   const filteredEquipments = useMemo(() => {
@@ -169,13 +184,98 @@ export default function EquipmentPage() {
     }
   }
 
-  // 로딩 중일 때
+  // 설비 추가 처리
+  const handleAddEquipment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!addFormData.equipmentNumber.trim()) {
+      showError('입력 오류', '설비번호를 입력해주세요.')
+      return
+    }
+    
+    if (!addFormData.currentModel) {
+      showError('입력 오류', '모델을 선택해주세요.')
+      return
+    }
+    
+    if (!addFormData.process) {
+      showError('입력 오류', '공정을 선택해주세요.')
+      return
+    }
+
+    setIsSubmitting(true)
+    
+    try {
+      const response = await fetch('/api/equipment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          equipmentNumber: addFormData.equipmentNumber,
+          location: addFormData.location,
+          status: addFormData.status,
+          currentModel: addFormData.currentModel,
+          process: addFormData.process,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '설비 추가에 실패했습니다.')
+      }
+
+      const result = await response.json()
+      
+      // 새로운 설비를 로컬 상태에 추가
+      setEquipments(prev => [...prev, result.data])
+      
+      // 폼 초기화
+      setAddFormData({
+        equipmentNumber: '',
+        location: 'A동',
+        status: '가동중',
+        currentModel: '',
+        process: ''
+      })
+      
+      setShowAddModal(false)
+      showSuccess('설비 추가 완료', `설비 ${result.data.equipmentNumber}가 성공적으로 추가되었습니다.`)
+      
+    } catch (error) {
+      console.error('설비 추가 에러:', error)
+      showError('설비 추가 실패', error instanceof Error ? error.message : '설비 추가 중 오류가 발생했습니다.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // 설비 번호 자동 생성
+  const generateNextEquipmentNumber = () => {
+    const existingNumbers = equipments.map(eq => 
+      parseInt(eq.equipmentNumber.replace('C', ''))
+    ).filter(num => !isNaN(num))
+    
+    const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0
+    const nextNumber = maxNumber + 1
+    return `C${nextNumber.toString().padStart(3, '0')}`
+  }
+
+  // 설비 추가 모달 열기
+  const handleOpenAddModal = () => {
+    setAddFormData(prev => ({
+      ...prev,
+      equipmentNumber: generateNextEquipmentNumber(),
+      currentModel: getAvailableModels[0] || 'PA1',
+      process: getAvailableProcesses[0] || 'CNC1'
+    }))
+    setShowAddModal(true)
+  }
+
+  // 로딩 중일 때 - 중복 디스크립션 제거
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <p className="text-gray-600">800대 CNC 설비 현황 및 관리</p>
-        </div>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -188,11 +288,12 @@ export default function EquipmentPage() {
     )
   }
 
+  // CAM Sheet에서 실제 모델/공정 목록 가져오기 (메모이제이션된 값)
+  const availableModels = getAvailableModels
+  const availableProcesses = getAvailableProcesses
+
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-gray-600">800대 CNC 설비 현황 및 관리</p>
-      </div>
 
       {/* 상단 설비 상태 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -253,11 +354,11 @@ export default function EquipmentPage() {
 
       {/* 모델별/공정별 설비 배치 현황 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 모델별 배치 현황 */}
+        {/* 모델별 배치 현황 - CAM Sheet 데이터 기반 */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 모델별 설비 배치</h3>
           <div className="space-y-3">
-            {['PA1', 'PA2', 'PS', 'B7', 'Q7'].map(model => {
+            {(availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']).map(model => {
               const modelEquipments = equipments.filter(eq => eq.currentModel === model)
               const aCount = modelEquipments.filter(eq => eq.location === 'A동').length
               const bCount = modelEquipments.filter(eq => eq.location === 'B동').length
@@ -266,8 +367,8 @@ export default function EquipmentPage() {
               return (
                 <div key={model} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                      <span className="text-sm font-bold text-blue-600">{model}</span>
+                    <div className="w-24 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-sm font-bold text-blue-600 text-center truncate px-1">{model}</span>
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">{model} 모델</p>
@@ -284,11 +385,11 @@ export default function EquipmentPage() {
           </div>
         </div>
 
-        {/* 공정별 배치 현황 */}
+        {/* 공정별 배치 현황 - CAM Sheet 데이터 기반 */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">⚙️ 공정별 설비 배치</h3>
           <div className="space-y-3">
-            {['CNC1', 'CNC2', 'CNC2-1'].map(process => {
+            {(availableProcesses.length > 0 ? availableProcesses : ['CNC1', 'CNC2', 'CNC2-1']).map(process => {
               const processEquipments = equipments.filter(eq => eq.process === process)
               const aCount = processEquipments.filter(eq => eq.location === 'A동').length
               const bCount = processEquipments.filter(eq => eq.location === 'B동').length
@@ -298,8 +399,8 @@ export default function EquipmentPage() {
               return (
                 <div key={process} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
-                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                      <span className="text-xs font-bold text-green-600">{process}</span>
+                    <div className="w-24 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-sm font-bold text-green-600 text-center truncate px-1">{process}</span>
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">{process} 공정</p>
@@ -350,15 +451,13 @@ export default function EquipmentPage() {
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">모든 모델</option>
-              <option value="PA1">PA1</option>
-              <option value="PA2">PA2</option>
-              <option value="PS">PS</option>
-              <option value="B7">B7</option>
-              <option value="Q7">Q7</option>
+              {(availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']).map(model => (
+                <option key={model} value={model}>{model}</option>
+              ))}
             </select>
           </div>
           <button 
-            onClick={() => setShowAddModal(true)}
+            onClick={handleOpenAddModal}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             + 설비 추가
@@ -575,20 +674,135 @@ export default function EquipmentPage() {
         </div>
       )}
 
-      {/* 설비 추가 모달 (간단한 알림) */}
+      {/* 설비 추가 모달 - 완전한 기능 구현 */}
       {showAddModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-lg font-medium mb-4">설비 추가</h3>
-            <p className="text-gray-600 mb-4">
-              설비 추가 기능은 다음 단계에서 구현될 예정입니다.
-            </p>
-            <button 
-              onClick={() => setShowAddModal(false)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              확인
-            </button>
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
+            <div className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900">새 설비 추가</h3>
+                <button 
+                  onClick={() => setShowAddModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                  disabled={isSubmitting}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <form onSubmit={handleAddEquipment} className="p-6 space-y-4">
+              {/* 설비번호 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  설비번호 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={addFormData.equipmentNumber}
+                  onChange={(e) => setAddFormData(prev => ({ ...prev, equipmentNumber: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="예: C001"
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
+
+              {/* 위치 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  위치 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={addFormData.location}
+                  onChange={(e) => setAddFormData(prev => ({ ...prev, location: e.target.value as 'A동' | 'B동' }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmitting}
+                  required
+                >
+                  <option value="A동">A동</option>
+                  <option value="B동">B동</option>
+                </select>
+              </div>
+
+              {/* 초기 상태 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  초기 상태 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={addFormData.status}
+                  onChange={(e) => setAddFormData(prev => ({ ...prev, status: e.target.value as Equipment['status'] }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmitting}
+                  required
+                >
+                  <option value="가동중">가동중</option>
+                  <option value="점검중">점검중</option>
+                  <option value="셋업중">셋업중</option>
+                </select>
+              </div>
+
+              {/* 모델 선택 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  생산 모델 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={addFormData.currentModel}
+                  onChange={(e) => setAddFormData(prev => ({ ...prev, currentModel: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmitting}
+                  required
+                >
+                  <option value="">모델 선택</option>
+                  {(availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']).map(model => (
+                    <option key={model} value={model}>{model}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 공정 선택 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  공정 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={addFormData.process}
+                  onChange={(e) => setAddFormData(prev => ({ ...prev, process: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmitting}
+                  required
+                >
+                  <option value="">공정 선택</option>
+                  {(availableProcesses.length > 0 ? availableProcesses : ['CNC1', 'CNC2', 'CNC2-1']).map(process => (
+                    <option key={process} value={process}>{process}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+                  disabled={isSubmitting}
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  )}
+                  {isSubmitting ? '추가 중...' : '설비 추가'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

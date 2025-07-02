@@ -1,7 +1,14 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import QueryProvider from '../lib/providers/QueryProvider';
 import { ToastProvider } from '../components/shared/Toast'
+
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter'
+})
 
 export const metadata: Metadata = {
   title: {
@@ -49,7 +56,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="font-sans antialiased bg-gray-50 text-gray-900">
+      <body className={`${inter.className} antialiased bg-gray-50 text-gray-900`}>
         {/* 접근성을 위한 스킵 링크 */}
         <a
           href="#main-content"
