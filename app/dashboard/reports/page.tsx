@@ -1,4 +1,11 @@
+import { useSettings } from '../../../lib/hooks/useSettings'
+
 export default function ReportsPage() {
+  // 설정에서 값 가져오기
+  const { getSetting } = useSettings()
+  const equipmentModels = getSetting('equipment', 'models')
+  const endmillCategories = getSetting('inventory', 'categories')
+
   return (
     <div className="space-y-6">
       {/* 보고서 타입 선택 */}
@@ -63,21 +70,18 @@ export default function ReportsPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">설비 모델</label>
             <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">전체</option>
-              <option value="PA1">PA1</option>
-              <option value="PA2">PA2</option>
-              <option value="PS">PS</option>
-              <option value="B7">B7</option>
-              <option value="Q7">Q7</option>
+              {equipmentModels.map(model => (
+                <option key={model} value={model}>{model}</option>
+              ))}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 타입</label>
             <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">전체</option>
-              <option value="flat">FLAT</option>
-              <option value="ball">BALL</option>
-              <option value="tcut">T-CUT</option>
-              <option value="ccut">C-CUT</option>
+              {endmillCategories.map(category => (
+                <option key={category} value={category.toLowerCase()}>{category}</option>
+              ))}
             </select>
           </div>
           <div className="flex items-end">

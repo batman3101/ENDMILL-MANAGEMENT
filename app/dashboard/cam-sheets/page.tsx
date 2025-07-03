@@ -7,6 +7,7 @@ import ExcelUploader from '../../../components/features/ExcelUploader'
 import { useToast } from '../../../components/shared/Toast'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createSaveConfirmation } from '../../../lib/hooks/useConfirmation'
+import { useSettings } from '../../../lib/hooks/useSettings'
 
 export default function CAMSheetsPage() {
   const { 
@@ -25,6 +26,10 @@ export default function CAMSheetsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [modelFilter, setModelFilter] = useState('')
   const [processFilter, setProcessFilter] = useState('')
+
+  // 설정에서 값 가져오기
+  const { getSetting } = useSettings()
+  const availableProcesses = getSetting('equipment', 'processes')
 
   // 필터링된 CAM Sheet 목록
   const filteredSheets = camSheets.filter(sheet => {
@@ -398,9 +403,9 @@ export default function CAMSheetsPage() {
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">모든 공정</option>
-              <option value="CNC1">CNC1</option>
-              <option value="CNC2">CNC2</option>
-              <option value="CNC2-1">CNC2-1</option>
+              {availableProcesses.map(process => (
+                <option key={process} value={process}>{process}</option>
+              ))}
             </select>
           </div>
           <div className="flex gap-2">

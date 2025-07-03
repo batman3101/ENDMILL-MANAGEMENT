@@ -6,6 +6,7 @@ import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, cr
 import { useToast } from '../../../components/shared/Toast'
 import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
 import { INITIAL_CAM_SHEETS } from '../../../lib/data/mockData'
+import { useSettings } from '../../../lib/hooks/useSettings'
 
 // 앤드밀 인스턴스 타입 정의
 interface EndmillInstance {
@@ -24,17 +25,24 @@ interface EndmillInstance {
   lastMaintenance: string
 }
 
-// 앤드밀 데이터 생성 함수
-const generateEndmillData = (): EndmillInstance[] => {
-  const categories = ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL']
+// 앤드밀 데이터 생성 함수 - 설정값 기반
+const generateEndmillData = (
+  totalEquipments: number,
+  toolPositions: number,
+  availableCategories: string[],
+  availableLocations: string[]
+): EndmillInstance[] => {
+  const categories = availableCategories.length > 0 ? availableCategories : ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL']
   const processes = ['CNC1', 'CNC2', 'CNC2-1']
+  const locations = availableLocations.length > 0 ? availableLocations : ['A동', 'B동']
   const items: EndmillInstance[] = []
   
-  // 800대 설비 * 평균 15개 위치 = 약 12,000개 앤드밀
-  for (let i = 1; i <= 12000; i++) {
-    const equipmentNum = Math.floor((i - 1) / 15) + 1
+  // 설비 수 * 툴 포지션 수 = 총 앤드밀 개수
+  const totalEndmills = totalEquipments * toolPositions
+  for (let i = 1; i <= totalEndmills; i++) {
+    const equipmentNum = Math.floor((i - 1) / toolPositions) + 1
     const equipment = `C${equipmentNum.toString().padStart(3, '0')}`
-    const position = `T${(((i - 1) % 15) + 1).toString().padStart(2, '0')}`
+    const position = `T${(((i - 1) % toolPositions) + 1).toString().padStart(2, '0')}`
     const category = categories[Math.floor(Math.random() * categories.length)]
     const process = processes[Math.floor(Math.random() * processes.length)]
     
@@ -62,7 +70,7 @@ const generateEndmillData = (): EndmillInstance[] => {
       name: `${category} ${6 + Math.floor(Math.random() * 15)}mm ${2 + Math.floor(Math.random() * 4)}날`,
       category,
       equipment,
-      location: equipmentNum <= 400 ? 'A동' : 'B동',
+      location: locations[Math.floor((equipmentNum - 1) / Math.ceil(totalEquipments / locations.length))],
       process,
       position,
       currentLife,
@@ -83,19 +91,31 @@ export default function EndmillPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 20
   const confirmation = useConfirmation()
   const { showSuccess, showError, showWarning } = useToast()
   const [sortColumn, setSortColumn] = useState<string>('')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const { camSheets } = useCAMSheets()
   const [selectedEndmill, setSelectedEndmill] = useState<EndmillInstance | null>(null)
+  
+  // 설정에서 값 가져오기
+  const { getSetting } = useSettings()
+  const itemsPerPage = getSetting('system', 'itemsPerPage')
+  const categories = getSetting('inventory', 'categories')
+  const equipmentLocations = getSetting('equipment', 'locations')
+  const totalEquipmentCount = getSetting('equipment', 'totalCount')
+  const toolPositionCount = getSetting('equipment', 'toolPositionCount')
 
-  // 클라이언트 사이드에서만 데이터 로드
+  // 클라이언트 사이드에서만 데이터 로드 - 설정값 기반
   useEffect(() => {
-    setEndmills(generateEndmillData())
+    setEndmills(generateEndmillData(
+      totalEquipmentCount,
+      toolPositionCount,
+      categories,
+      equipmentLocations
+    ))
     setIsLoading(false)
-  }, [])
+  }, [totalEquipmentCount, toolPositionCount, categories, equipmentLocations])
 
   // 필터링된 앤드밀 목록
   const filteredEndmills = useMemo(() => {
@@ -346,12 +366,9 @@ export default function EndmillPage() {
             className="px-4 py-2 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">모든 타입</option>
-            <option value="FLAT">FLAT</option>
-            <option value="BALL">BALL</option>
-            <option value="T-CUT">T-CUT</option>
-            <option value="C-CUT">C-CUT</option>
-            <option value="REAMER">REAMER</option>
-            <option value="DRILL">DRILL</option>
+            {categories.map(category => (
+              <option key={category} value={category}>{category}</option>
+            ))}
           </select>
         </div>
         

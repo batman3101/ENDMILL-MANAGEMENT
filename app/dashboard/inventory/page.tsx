@@ -7,6 +7,7 @@ import { FileDataManager } from '../../../lib/data/fileDataManager'
 import { useToast } from '../../../components/shared/Toast'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createSaveConfirmation, createCreateConfirmation } from '../../../lib/hooks/useConfirmation'
+import { useSettings } from '../../../lib/hooks/useSettings'
 import * as XLSX from 'xlsx'
 
 interface InventoryItem {
@@ -119,7 +120,13 @@ export default function InventoryPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [supplierFilter, setSupplierFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 20
+  
+  // 설정에서 값 가져오기
+  const { getSetting } = useSettings()
+  const itemsPerPage = getSetting('system', 'itemsPerPage')
+  const categories = getSetting('inventory', 'categories')
+  const suppliers = getSetting('inventory', 'suppliers')
+  const stockThresholds = getSetting('inventory', 'stockThresholds')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -569,7 +576,7 @@ export default function InventoryPage() {
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">모든 카테고리</option>
-              {getAllCategories().map(category => (
+              {categories.map(category => (
                 <option key={category} value={category}>{category}</option>
               ))}
             </select>
@@ -589,7 +596,7 @@ export default function InventoryPage() {
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">모든 공급업체</option>
-              {getAllSuppliers().map(supplier => (
+              {suppliers.map(supplier => (
                 <option key={supplier} value={supplier}>{supplier}</option>
               ))}
             </select>
@@ -887,7 +894,7 @@ export default function InventoryPage() {
                     required
                   >
                     <option value="">카테고리 선택</option>
-                    {getAllCategories().map(category => (
+                    {categories.map(category => (
                       <option key={category} value={category}>{category}</option>
                     ))}
                   </select>
@@ -914,7 +921,7 @@ export default function InventoryPage() {
                     required
                   >
                     <option value="">공급업체 선택</option>
-                    {getAllSuppliers().map(supplier => (
+                    {suppliers.map(supplier => (
                       <option key={supplier} value={supplier}>{supplier}</option>
                     ))}
                   </select>
@@ -1137,7 +1144,7 @@ export default function InventoryPage() {
                     required
                   >
                     <option value="">카테고리 선택</option>
-                    {getAllCategories().map(category => (
+                    {categories.map(category => (
                       <option key={category} value={category}>{category}</option>
                     ))}
                   </select>

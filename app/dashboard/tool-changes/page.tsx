@@ -5,6 +5,7 @@ import { useToast } from '../../../components/shared/Toast'
 import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createSaveConfirmation } from '../../../lib/hooks/useConfirmation'
+import { useSettings } from '../../../lib/hooks/useSettings'
 
 // 교체 실적 데이터 타입
 interface ToolChange {
@@ -82,6 +83,11 @@ export default function ToolChangesPage() {
   const [isEditManualEndmillInput, setIsEditManualEndmillInput] = useState(false)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
   
+  // 설정에서 값 가져오기
+  const { getSetting } = useSettings()
+  const toolChangesReasons = getSetting('toolChanges', 'reasons')
+  const tNumberRange = getSetting('toolChanges', 'tNumberRange')
+
   // 앤드밀 정보 자동 입력 함수
   const autoFillEndmillInfo = useCallback((model: string, process: string, tNumber: number) => {
     if (!model || !process || !tNumber) return null
@@ -527,15 +533,15 @@ export default function ToolChangesPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">T번호</label>
-                <select
-                  value={formData.tNumber}
-                  onChange={(e) => setFormData({...formData, tNumber: parseInt(e.target.value)})}
-                  className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  {Array.from({length: 21}, (_, i) => i + 1).map(num => (
-                    <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
-                  ))}
+                                    <select
+                      value={formData.tNumber}
+                      onChange={(e) => setFormData({...formData, tNumber: parseInt(e.target.value)})}
+                      className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      {Array.from({length: tNumberRange.max - tNumberRange.min + 1}, (_, i) => i + tNumberRange.min).map(num => (
+                        <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
+                      ))}
                 </select>
               </div>
 
@@ -653,12 +659,9 @@ export default function ToolChangesPage() {
                   required
                 >
                   <option value="">사유 선택</option>
-                  <option value="Tool Life 종료">Tool Life 종료</option>
-                  <option value="파손">파손</option>
-                  <option value="마모">마모</option>
-                  <option value="모델 변경">모델 변경</option>
-                  <option value="예방">예방</option>
-                  <option value="기타">기타</option>
+                  {toolChangesReasons.map(reason => (
+                    <option key={reason} value={reason}>{reason}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -699,12 +702,9 @@ export default function ToolChangesPage() {
             </select>
             <select className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">모든 사유</option>
-              <option value="Tool Life 종료">Tool Life 종료</option>
-              <option value="파손">파손</option>
-              <option value="마모">마모</option>
-              <option value="모델 변경">모델 변경</option>
-              <option value="예방">예방</option>
-              <option value="기타">기타</option>
+              {toolChangesReasons.map(reason => (
+                <option key={reason} value={reason}>{reason}</option>
+              ))}
             </select>
           </div>
           <button
@@ -906,7 +906,7 @@ export default function ToolChangesPage() {
                       className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     >
-                      {Array.from({length: 21}, (_, i) => i + 1).map(num => (
+                      {Array.from({length: tNumberRange.max - tNumberRange.min + 1}, (_, i) => i + tNumberRange.min).map(num => (
                         <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
                       ))}
                     </select>
@@ -1002,8 +1002,6 @@ export default function ToolChangesPage() {
                     </p>
                   </div>
 
-
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Tool Life</label>
                     <input
@@ -1025,12 +1023,9 @@ export default function ToolChangesPage() {
                       className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     >
-                      <option value="Tool Life 종료">Tool Life 종료</option>
-                      <option value="파손">파손</option>
-                      <option value="마모">마모</option>
-                      <option value="모델 변경">모델 변경</option>
-                      <option value="예방">예방</option>
-                      <option value="기타">기타</option>
+                      {toolChangesReasons.map(reason => (
+                        <option key={reason} value={reason}>{reason}</option>
+                      ))}
                     </select>
                   </div>
                 </div>

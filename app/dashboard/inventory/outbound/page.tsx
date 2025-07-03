@@ -6,6 +6,7 @@ import { findEndmillByCode, EndmillMaster } from '../../../../lib/data/mockData'
 import { useToast } from '../../../../components/shared/Toast'
 import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
 import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
+import { useSettings } from '../../../../lib/hooks/useSettings'
 
 interface OutboundItem {
   id: string
@@ -33,6 +34,10 @@ export default function OutboundPage() {
   const [tNumber, setTNumber] = useState(1)
   const [purpose, setPurpose] = useState('교체')
   const [errorMessage, setErrorMessage] = useState('')
+
+  // 설정에서 값 가져오기
+  const { getSetting } = useSettings()
+  const tNumberRange = getSetting('toolChanges', 'tNumberRange')
 
   const handleQRScan = (code: string) => {
     setScannedCode(code)
@@ -252,7 +257,7 @@ export default function OutboundPage() {
                     className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   >
-                    {Array.from({length: 21}, (_, i) => i + 1).map(num => (
+                    {Array.from({length: tNumberRange.max - tNumberRange.min + 1}, (_, i) => i + tNumberRange.min).map(num => (
                       <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
                     ))}
                   </select>

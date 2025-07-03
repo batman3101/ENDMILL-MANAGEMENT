@@ -6,6 +6,7 @@ import { useConfirmation, createStatusChangeConfirmation } from '../../../lib/ho
 import { useToast } from '../../../components/shared/Toast'
 import StatusChangeDropdown from '../../../components/shared/StatusChangeDropdown'
 import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
+import { useSettings } from '../../../lib/hooks/useSettings'
 
 // 로컬 상태용 타입 정의
 interface Equipment {
@@ -24,30 +25,38 @@ interface Equipment {
 
 // StatusTransition 인터페이스 제거됨 (StatusChangeDropdown 컴포넌트로 이동)
 
-// 800대 설비 데이터 생성 함수 - CAM Sheet 데이터를 참조하도록 수정
-const generateEquipmentData = (availableModels: string[], availableProcesses: string[]): Equipment[] => {
+// 설비 데이터 생성 함수 - 설정값 기반으로 수정
+const generateEquipmentData = (
+  availableModels: string[], 
+  availableProcesses: string[],
+  totalCount: number,
+  locations: string[],
+  statuses: any[],
+  toolTotal: number
+): Equipment[] => {
   const equipments: Equipment[] = []
   // CAM Sheet에서 실제 모델/공정 데이터가 없으면 기본값 사용
   const models = availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']
   const processes = availableProcesses.length > 0 ? availableProcesses : ['CNC1', 'CNC2', 'CNC2-1']
-  const locations: ('A동' | 'B동')[] = ['A동', 'B동']
-  const statuses: ('가동중' | '점검중' | '셋업중')[] = ['가동중', '점검중', '셋업중']
+  const validLocations = locations.length > 0 ? locations : ['A동', 'B동']
+  const validStatuses = statuses.length > 0 ? statuses.map(s => s.code || s.name || s) : ['가동중', '점검중', '셋업중']
   
-  for (let i = 1; i <= 800; i++) {
+  for (let i = 1; i <= totalCount; i++) {
     const equipmentNumber = `C${i.toString().padStart(3, '0')}`
-    const location = i <= 400 ? 'A동' : 'B동'
+    const location = validLocations[Math.floor((i - 1) / Math.ceil(totalCount / validLocations.length))]
     const currentModel = models[Math.floor(Math.random() * models.length)]
     const process = processes[Math.floor(Math.random() * processes.length)]
     
     // 상태 분포: 가동중 70%, 점검중 20%, 셋업중 10%
-    let status: '가동중' | '점검중' | '셋업중'
+    let status: any
     const rand = Math.random()
-    if (rand < 0.7) status = '가동중'
-    else if (rand < 0.9) status = '점검중'
-    else status = '셋업중'
+    if (rand < 0.7) status = validStatuses[0] || '가동중'
+    else if (rand < 0.9) status = validStatuses[1] || '점검중'
+    else status = validStatuses[2] || '셋업중'
     
-    // 앤드밀 사용량: 점검중이면 0, 나머지는 15-21개
-    const used = status === '점검중' ? 0 : Math.floor(Math.random() * 7) + 15
+    // 앤드밀 사용량: 점검중이면 0, 나머지는 툴 포지션의 70-100%
+    const isUnderMaintenance = status === '점검중' || status === 'maintenance'
+    const used = isUnderMaintenance ? 0 : Math.floor(Math.random() * (toolTotal * 0.3)) + Math.floor(toolTotal * 0.7)
     
     // 마지막 점검일
     const lastMaintenanceDate = new Date()
@@ -60,7 +69,7 @@ const generateEquipmentData = (availableModels: string[], availableProcesses: st
       status,
       currentModel,
       process,
-      toolPositions: { used, total: 21 },
+      toolPositions: { used, total: toolTotal },
       lastMaintenance: lastMaintenanceDate.toISOString().split('T')[0]
     })
   }
@@ -76,9 +85,16 @@ export default function EquipmentPage() {
   const [modelFilter, setModelFilter] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 20
   const confirmation = useConfirmation()
   const { showSuccess, showError } = useToast()
+  
+  // 설정에서 값 가져오기
+  const { getSetting } = useSettings()
+  const itemsPerPage = getSetting('system', 'itemsPerPage')
+  const totalEquipmentCount = getSetting('equipment', 'totalCount')
+  const equipmentLocations = getSetting('equipment', 'locations')
+  const equipmentStatuses = getSetting('equipment', 'statuses')
+  const toolPositionCount = getSetting('equipment', 'toolPositionCount')
   
   // 설비 추가 폼 상태
   const [addFormData, setAddFormData] = useState({
@@ -93,11 +109,18 @@ export default function EquipmentPage() {
   // CAM Sheet 데이터 가져오기
   const { camSheets, getAvailableModels, getAvailableProcesses } = useCAMSheets()
 
-  // 클라이언트 사이드에서만 데이터 로드 - CAM Sheet 데이터 기반으로 생성
+  // 클라이언트 사이드에서만 데이터 로드 - 설정 데이터 기반으로 생성
   useEffect(() => {
-    setEquipments(generateEquipmentData(getAvailableModels, getAvailableProcesses))
+    setEquipments(generateEquipmentData(
+      getAvailableModels, 
+      getAvailableProcesses,
+      totalEquipmentCount,
+      equipmentLocations,
+      equipmentStatuses,
+      toolPositionCount
+    ))
     setIsLoading(false)
-  }, [getAvailableModels, getAvailableProcesses])
+  }, [getAvailableModels, getAvailableProcesses, totalEquipmentCount, equipmentLocations, equipmentStatuses, toolPositionCount])
 
   // 필터링된 설비 목록
   const filteredEquipments = useMemo(() => {
@@ -266,6 +289,8 @@ export default function EquipmentPage() {
     setAddFormData(prev => ({
       ...prev,
       equipmentNumber: generateNextEquipmentNumber(),
+      location: equipmentLocations[0] || 'A동',
+      status: (equipmentStatuses[0]?.code || equipmentStatuses[0]?.name || equipmentStatuses[0] || '가동중') as Equipment['status'],
       currentModel: getAvailableModels[0] || 'PA1',
       process: getAvailableProcesses[0] || 'CNC1'
     }))
@@ -713,16 +738,17 @@ export default function EquipmentPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   위치 <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={addFormData.location}
-                  onChange={(e) => setAddFormData(prev => ({ ...prev, location: e.target.value as 'A동' | 'B동' }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={isSubmitting}
-                  required
-                >
-                  <option value="A동">A동</option>
-                  <option value="B동">B동</option>
-                </select>
+                                  <select
+                    value={addFormData.location}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, location: e.target.value as any }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmitting}
+                    required
+                  >
+                    {equipmentLocations.map(location => (
+                      <option key={location} value={location}>{location}</option>
+                    ))}
+                  </select>
               </div>
 
               {/* 초기 상태 */}
@@ -730,17 +756,19 @@ export default function EquipmentPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   초기 상태 <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={addFormData.status}
-                  onChange={(e) => setAddFormData(prev => ({ ...prev, status: e.target.value as Equipment['status'] }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={isSubmitting}
-                  required
-                >
-                  <option value="가동중">가동중</option>
-                  <option value="점검중">점검중</option>
-                  <option value="셋업중">셋업중</option>
-                </select>
+                                  <select
+                    value={addFormData.status}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, status: e.target.value as Equipment['status'] }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmitting}
+                    required
+                  >
+                    {equipmentStatuses.map(status => (
+                      <option key={status.code || status.name || status} value={status.code || status.name || status}>
+                        {status.name || status}
+                      </option>
+                    ))}
+                  </select>
               </div>
 
               {/* 모델 선택 */}

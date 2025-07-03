@@ -6,6 +6,7 @@ import { findEndmillByCode, getAllSuppliers, EndmillMaster } from '../../../../l
 import { useToast } from '../../../../components/shared/Toast'
 import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
 import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
+import { useSettings } from '../../../../lib/hooks/useSettings'
 
 interface InboundItem {
   id: string
@@ -30,6 +31,10 @@ export default function InboundPage() {
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [unitPrice, setUnitPrice] = useState(0)
   const [errorMessage, setErrorMessage] = useState('')
+  
+  // 설정에서 값 가져오기
+  const { getSetting } = useSettings()
+  const suppliers = getSetting('inventory', 'suppliers')
 
   const handleQRScan = (code: string) => {
     setScannedCode(code)
@@ -230,7 +235,7 @@ export default function InboundPage() {
                     required
                   >
                     <option value="">공급업체 선택</option>
-                    {getAllSuppliers().map(supplier => (
+                    {suppliers.map(supplier => (
                       <option key={supplier} value={supplier}>{supplier}</option>
                     ))}
                   </select>
