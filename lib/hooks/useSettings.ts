@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { SettingsManager } from '@/lib/data/settingsManager'
 import { 

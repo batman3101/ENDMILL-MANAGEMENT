@@ -1,116 +1,181 @@
 {
+  "roles": [
+    {
+      "id": "role-001",
+      "name": "시스템 관리자",
+      "type": "system_admin",
+      "description": "모든 모듈과 페이지 접근 및 CRUD 기능 사용 가능, 사용자 권한 설정 가능",
+      "permissions": {
+        "dashboard": ["read"],
+        "equipment": ["create", "read", "update", "delete", "manage"],
+        "endmill": ["create", "read", "update", "delete", "manage"],
+        "inventory": ["create", "read", "update", "delete", "manage"],
+        "camSheets": ["create", "read", "update", "delete", "manage"],
+        "toolChanges": ["create", "read", "update", "delete", "manage"],
+        "reports": ["create", "read", "update", "delete", "manage"],
+        "settings": ["create", "read", "update", "delete", "manage"],
+        "users": ["create", "read", "update", "delete", "manage"]
+      },
+      "isSystemRole": true,
+      "isActive": true,
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "role-002",
+      "name": "관리자",
+      "type": "admin",
+      "description": "설정 페이지 접근 제한, 사용자 등록/편집/삭제 가능, 각 모듈 CRUD 기능 사용 가능",
+      "permissions": {
+        "dashboard": ["read"],
+        "equipment": ["create", "read", "update", "delete"],
+        "endmill": ["create", "read", "update", "delete"],
+        "inventory": ["create", "read", "update", "delete"],
+        "camSheets": ["create", "read", "update", "delete"],
+        "toolChanges": ["create", "read", "update", "delete"],
+        "reports": ["create", "read", "update", "delete"],
+        "settings": ["read"],
+        "users": ["create", "read", "update", "delete"]
+      },
+      "isSystemRole": true,
+      "isActive": true,
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "role-003",
+      "name": "사용자",
+      "type": "user",
+      "description": "설정 페이지 접근 제한, 각 페이지 읽기 가능, 교체 실적/재고 관리/설비 관리 모듈 사용 가능",
+      "permissions": {
+        "dashboard": ["read"],
+        "equipment": ["read", "update"],
+        "endmill": ["read"],
+        "inventory": ["create", "read", "update"],
+        "camSheets": ["read"],
+        "toolChanges": ["create", "read", "update"],
+        "reports": ["read"],
+        "settings": [],
+        "users": []
+      },
+      "isSystemRole": true,
+      "isActive": true,
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z"
+    }
+  ],
   "users": [
     {
       "id": "user-001",
       "email": "admin@company.com",
-      "name": "관리자",
-      "role": "admin",
+      "name": "시스템 관리자",
+      "employeeId": "EMP001",
+      "department": "종합 관리실",
+      "position": "부장",
+      "roleId": "role-001",
       "shift": "A",
-      "department": "관리부",
+      "phone": "010-1234-5678",
       "isActive": true,
+      "lastLogin": "2025-01-21T08:00:00Z",
       "createdAt": "2025-01-01T00:00:00Z",
-      "lastLogin": "2025-01-21T08:00:00Z"
+      "updatedAt": "2025-01-21T08:00:00Z",
+      "createdBy": "system"
     },
     {
-      "id": "user-002", 
-      "email": "manager@company.com",
+      "id": "user-002",
+      "email": "manager1@company.com",
       "name": "김관리",
-      "role": "manager",
+      "employeeId": "EMP002",
+      "department": "공구 관리실",
+      "position": "과장",
+      "roleId": "role-002",
       "shift": "A",
-      "department": "생산관리",
+      "phone": "010-2345-6789",
       "isActive": true,
+      "lastLogin": "2025-01-21T07:30:00Z",
       "createdAt": "2025-01-01T00:00:00Z",
-      "lastLogin": "2025-01-21T07:30:00Z"
+      "updatedAt": "2025-01-21T07:30:00Z",
+      "createdBy": "user-001"
     },
     {
       "id": "user-003",
-      "email": "operator1@company.com", 
-      "name": "이작업",
-      "role": "operator",
-      "shift": "A",
-      "department": "생산1팀",
+      "email": "manager2@company.com",
+      "name": "이매니저",
+      "employeeId": "EMP003",
+      "department": "기술팀",
+      "position": "차장",
+      "roleId": "role-002",
+      "shift": "B",
+      "phone": "010-3456-7890",
       "isActive": true,
+      "lastLogin": "2025-01-20T16:00:00Z",
       "createdAt": "2025-01-01T00:00:00Z",
-      "lastLogin": "2025-01-21T08:30:00Z"
+      "updatedAt": "2025-01-20T16:00:00Z",
+      "createdBy": "user-001"
     },
     {
       "id": "user-004",
-      "email": "operator2@company.com",
-      "name": "박정비",
-      "role": "operator", 
-      "shift": "B",
-      "department": "정비팀",
+      "email": "operator1@company.com",
+      "name": "박작업자",
+      "employeeId": "EMP004",
+      "department": "공구 관리실",
+      "position": "주임",
+      "roleId": "role-003",
+      "shift": "A",
+      "phone": "010-4567-8901",
       "isActive": true,
+      "lastLogin": "2025-01-21T08:30:00Z",
       "createdAt": "2025-01-01T00:00:00Z",
-      "lastLogin": "2025-01-20T16:00:00Z"
+      "updatedAt": "2025-01-21T08:30:00Z",
+      "createdBy": "user-002"
     },
     {
       "id": "user-005",
-      "email": "operator3@company.com",
-      "name": "최작업",
-      "role": "operator",
-      "shift": "C",
-      "department": "생산2팀", 
+      "email": "operator2@company.com",
+      "name": "최운영자",
+      "employeeId": "EMP005",
+      "department": "기술팀",
+      "position": "기사",
+      "roleId": "role-003",
+      "shift": "B",
+      "phone": "010-5678-9012",
       "isActive": true,
+      "lastLogin": "2025-01-20T16:30:00Z",
       "createdAt": "2025-01-01T00:00:00Z",
-      "lastLogin": "2025-01-19T22:00:00Z"
-    }
-  ],
-  "roles": [
-    {
-      "code": "admin",
-      "name": "관리자",
-      "permissions": [
-        "equipment.read",
-        "equipment.write", 
-        "equipment.delete",
-        "inventory.read",
-        "inventory.write",
-        "inventory.delete",
-        "camsheet.read",
-        "camsheet.write",
-        "camsheet.delete",
-        "toolchange.read",
-        "toolchange.write",
-        "user.read",
-        "user.write",
-        "reports.read"
-      ]
+      "updatedAt": "2025-01-20T16:30:00Z",
+      "createdBy": "user-003"
     },
     {
-      "code": "manager",
-      "name": "관리자",
-      "permissions": [
-        "equipment.read",
-        "equipment.write",
-        "inventory.read", 
-        "inventory.write",
-        "camsheet.read",
-        "camsheet.write",
-        "toolchange.read",
-        "toolchange.write",
-        "reports.read"
-      ]
-    },
-    {
-      "code": "operator",
-      "name": "작업자",
-      "permissions": [
-        "equipment.read",
-        "inventory.read",
-        "camsheet.read", 
-        "toolchange.read",
-        "toolchange.write"
-      ]
+      "id": "user-006",
+      "email": "operator3@company.com",
+      "name": "정야간작업",
+      "employeeId": "EMP006",
+      "department": "공구 관리실",
+      "position": "사원",
+      "roleId": "role-003",
+      "shift": "B",
+      "isActive": false,
+      "lastLogin": "2025-01-15T22:00:00Z",
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-18T10:00:00Z",
+      "createdBy": "user-002"
     }
   ],
-  "shifts": ["A", "B", "C"],
   "departments": [
-    "관리부",
-    "생산관리",
-    "생산1팀",
-    "생산2팀", 
-    "정비팀",
-    "품질팀"
+    "종합 관리실",
+    "공구 관리실", 
+    "기술팀"
+  ],
+  "shifts": [
+    "A",
+    "B"
+  ],
+  "positions": [
+    "부장",
+    "차장", 
+    "과장",
+    "주임",
+    "기사",
+    "사원"
   ]
 } 

@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest) {
       const currentSettings = settingsManager.getSettings()
       const testSettings = {
         ...currentSettings,
-        [category]: { ...currentSettings[category], ...updates }
+        [category]: { ...(currentSettings as any)[category], ...updates }
       }
       const validation = settingsManager.validateSettings(testSettings)
       

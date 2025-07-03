@@ -1,3 +1,5 @@
+'use client'
+
 import { useSettings } from '../../../lib/hooks/useSettings'
 
 export default function ReportsPage() {

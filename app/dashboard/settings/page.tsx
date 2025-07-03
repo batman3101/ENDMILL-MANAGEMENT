@@ -1001,12 +1001,12 @@ export default function SettingsPage() {
                             type="number"
                             min="50"
                             max="95"
-                            value={formData.toolChanges?.warningThreshold || 80}
-                            onChange={(e) => updateFormData('toolChanges', 'warningThreshold', parseInt(e.target.value))}
+                            value={formData.toolChanges?.lifeThresholds?.warning || 80}
+                            onChange={(e) => updateFormData('toolChanges', 'lifeThresholds', { ...formData.toolChanges?.lifeThresholds, warning: parseInt(e.target.value) })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                           <p className="text-xs text-gray-500 mt-1">
-                            Tool Life {formData.toolChanges?.warningThreshold || 80}% 달성 시 경고
+                            Tool Life {formData.toolChanges?.lifeThresholds?.warning || 80}% 달성 시 경고
                           </p>
                         </div>
                         <div>
@@ -1017,12 +1017,12 @@ export default function SettingsPage() {
                             type="number"
                             min="90"
                             max="100"
-                            value={formData.toolChanges?.criticalThreshold || 95}
-                            onChange={(e) => updateFormData('toolChanges', 'criticalThreshold', parseInt(e.target.value))}
+                            value={formData.toolChanges?.lifeThresholds?.critical || 95}
+                            onChange={(e) => updateFormData('toolChanges', 'lifeThresholds', { ...formData.toolChanges?.lifeThresholds, critical: parseInt(e.target.value) })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                           <p className="text-xs text-gray-500 mt-1">
-                            Tool Life {formData.toolChanges?.criticalThreshold || 95}% 달성 시 필수 교체
+                            Tool Life {formData.toolChanges?.lifeThresholds?.critical || 95}% 달성 시 필수 교체
                           </p>
                         </div>
                       </div>

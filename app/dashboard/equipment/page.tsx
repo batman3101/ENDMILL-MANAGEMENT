@@ -65,8 +65,8 @@ const generateEquipmentData = (
     equipments.push({
       id: i.toString(),
       equipmentNumber,
-      location,
-      status,
+      location: location as 'A동' | 'B동',
+      status: status as '가동중' | '점검중' | '셋업중',
       currentModel,
       process,
       toolPositions: { used, total: toolTotal },
@@ -295,7 +295,7 @@ export default function EquipmentPage() {
     setAddFormData(prev => ({
       ...prev,
       equipmentNumber: generateNextEquipmentNumber(),
-      location: equipmentLocations[0] || 'A동',
+      location: (equipmentLocations[0] || 'A동') as 'A동' | 'B동',
       status: (equipmentStatuses[0]?.code || equipmentStatuses[0]?.name || equipmentStatuses[0] || '가동중') as Equipment['status'],
       currentModel: getAvailableModels[0] || 'PA1',
       process: getAvailableProcesses[0] || 'CNC1'
@@ -770,9 +770,9 @@ export default function EquipmentPage() {
                     disabled={isSubmitting}
                     required
                   >
-                    {equipmentStatuses.map(status => (
-                      <option key={status.code || status.name || status} value={status.code || status.name || status}>
-                        {status.name || status}
+                    {equipmentStatuses.map((status, index) => (
+                      <option key={String(status.code || status.name || status || index)} value={String(status.code || status.name || status)}>
+                        {String(status.name || status)}
                       </option>
                     ))}
                   </select>
