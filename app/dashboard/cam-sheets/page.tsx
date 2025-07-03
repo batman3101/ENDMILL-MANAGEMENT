@@ -28,8 +28,8 @@ export default function CAMSheetsPage() {
   const [processFilter, setProcessFilter] = useState('')
 
   // 설정에서 값 가져오기
-  const { getSetting } = useSettings()
-  const availableProcesses = getSetting('equipment', 'processes')
+  const { settings } = useSettings()
+  const availableProcesses = settings.equipment.processes
 
   // 필터링된 CAM Sheet 목록
   const filteredSheets = camSheets.filter(sheet => {

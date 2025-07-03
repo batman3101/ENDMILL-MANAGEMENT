@@ -2,9 +2,9 @@ import { useSettings } from '../../../lib/hooks/useSettings'
 
 export default function ReportsPage() {
   // 설정에서 값 가져오기
-  const { getSetting } = useSettings()
-  const equipmentModels = getSetting('equipment', 'models')
-  const endmillCategories = getSetting('inventory', 'categories')
+  const { settings } = useSettings()
+  const equipmentModels = settings.equipment.models
+  const endmillCategories = settings.inventory.categories
 
   return (
     <div className="space-y-6">

@@ -99,12 +99,12 @@ export default function EndmillPage() {
   const [selectedEndmill, setSelectedEndmill] = useState<EndmillInstance | null>(null)
   
   // 설정에서 값 가져오기
-  const { getSetting } = useSettings()
-  const itemsPerPage = getSetting('system', 'itemsPerPage')
-  const categories = getSetting('inventory', 'categories')
-  const equipmentLocations = getSetting('equipment', 'locations')
-  const totalEquipmentCount = getSetting('equipment', 'totalCount')
-  const toolPositionCount = getSetting('equipment', 'toolPositionCount')
+  const { settings } = useSettings()
+  const itemsPerPage = settings.system.itemsPerPage
+  const categories = settings.inventory.categories
+  const equipmentLocations = settings.equipment.locations
+  const totalEquipmentCount = settings.equipment.totalCount
+  const toolPositionCount = settings.equipment.toolPositionCount
 
   // 클라이언트 사이드에서만 데이터 로드 - 설정값 기반
   useEffect(() => {

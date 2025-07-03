@@ -84,9 +84,9 @@ export default function ToolChangesPage() {
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
   
   // 설정에서 값 가져오기
-  const { getSetting } = useSettings()
-  const toolChangesReasons = getSetting('toolChanges', 'reasons')
-  const tNumberRange = getSetting('toolChanges', 'tNumberRange')
+  const { settings } = useSettings()
+  const toolChangesReasons = settings.toolChanges.reasons
+  const tNumberRange = settings.toolChanges.tNumberRange
 
   // 앤드밀 정보 자동 입력 함수
   const autoFillEndmillInfo = useCallback((model: string, process: string, tNumber: number) => {

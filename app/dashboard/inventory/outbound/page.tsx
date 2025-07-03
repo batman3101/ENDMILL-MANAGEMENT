@@ -36,8 +36,8 @@ export default function OutboundPage() {
   const [errorMessage, setErrorMessage] = useState('')
 
   // 설정에서 값 가져오기
-  const { getSetting } = useSettings()
-  const tNumberRange = getSetting('toolChanges', 'tNumberRange')
+  const { settings } = useSettings()
+  const tNumberRange = settings.toolChanges.tNumberRange
 
   const handleQRScan = (code: string) => {
     setScannedCode(code)

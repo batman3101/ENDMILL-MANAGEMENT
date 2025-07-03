@@ -89,12 +89,12 @@ export default function EquipmentPage() {
   const { showSuccess, showError } = useToast()
   
   // 설정에서 값 가져오기
-  const { getSetting } = useSettings()
-  const itemsPerPage = getSetting('system', 'itemsPerPage')
-  const totalEquipmentCount = getSetting('equipment', 'totalCount')
-  const equipmentLocations = getSetting('equipment', 'locations')
-  const equipmentStatuses = getSetting('equipment', 'statuses')
-  const toolPositionCount = getSetting('equipment', 'toolPositionCount')
+  const { settings } = useSettings()
+  const itemsPerPage = settings.system.itemsPerPage
+  const totalEquipmentCount = settings.equipment.totalCount
+  const equipmentLocations = settings.equipment.locations
+  const equipmentStatuses = settings.equipment.statuses
+  const toolPositionCount = settings.equipment.toolPositionCount
   
   // 설비 추가 폼 상태
   const [addFormData, setAddFormData] = useState({

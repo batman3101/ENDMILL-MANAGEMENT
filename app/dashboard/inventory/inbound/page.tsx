@@ -33,8 +33,8 @@ export default function InboundPage() {
   const [errorMessage, setErrorMessage] = useState('')
   
   // 설정에서 값 가져오기
-  const { getSetting } = useSettings()
-  const suppliers = getSetting('inventory', 'suppliers')
+  const { settings } = useSettings()
+  const suppliers = settings.inventory.suppliers
 
   const handleQRScan = (code: string) => {
     setScannedCode(code)

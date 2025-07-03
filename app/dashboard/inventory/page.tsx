@@ -122,11 +122,11 @@ export default function InventoryPage() {
   const [currentPage, setCurrentPage] = useState(1)
   
   // 설정에서 값 가져오기
-  const { getSetting } = useSettings()
-  const itemsPerPage = getSetting('system', 'itemsPerPage')
-  const categories = getSetting('inventory', 'categories')
-  const suppliers = getSetting('inventory', 'suppliers')
-  const stockThresholds = getSetting('inventory', 'stockThresholds')
+  const { settings } = useSettings()
+  const itemsPerPage = settings.system.itemsPerPage
+  const categories = settings.inventory.categories
+  const suppliers = settings.inventory.suppliers
+  const stockThresholds = settings.inventory.stockThresholds
   const [showAddModal, setShowAddModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
