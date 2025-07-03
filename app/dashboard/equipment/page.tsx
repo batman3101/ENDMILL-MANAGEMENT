@@ -89,7 +89,7 @@ export default function EquipmentPage() {
   const { showSuccess, showError } = useToast()
   
   // 설정에서 값 가져오기
-  const { settings } = useSettings()
+  const { settings, updateCategorySettings } = useSettings()
   const itemsPerPage = settings.system.itemsPerPage
   const totalEquipmentCount = settings.equipment.totalCount
   const equipmentLocations = settings.equipment.locations
@@ -106,6 +106,75 @@ export default function EquipmentPage() {
     equipmentNumberFormat: settings.equipment.numberFormat,
     allSettings: settings
   })
+
+  // 디버깅 함수 추가
+  const debugSettings = () => {
+    console.log('=== 설정 디버깅 시작 ===')
+    
+    // 1. localStorage 원본 확인
+    const storedSettings = localStorage.getItem('system_settings')
+    console.log('📱 localStorage 원본:', storedSettings)
+    
+    if (storedSettings) {
+      try {
+        const parsedSettings = JSON.parse(storedSettings)
+        console.log('📱 localStorage 파싱됨:', parsedSettings)
+        console.log('📱 localStorage itemsPerPage:', parsedSettings?.system?.itemsPerPage)
+        console.log('📱 localStorage numberFormat:', parsedSettings?.equipment?.numberFormat)
+      } catch (e) {
+        console.error('📱 localStorage 파싱 오류:', e)
+      }
+    }
+    
+    // 2. React state 확인
+    console.log('⚛️ React state settings:', settings)
+    console.log('⚛️ React state itemsPerPage:', settings.system.itemsPerPage)
+    console.log('⚛️ React state numberFormat:', settings.equipment.numberFormat)
+    
+    // 3. 실제 사용되는 값 확인
+    console.log('🎯 실제 사용값 itemsPerPage:', itemsPerPage)
+    console.log('🎯 실제 사용값 totalEquipmentCount:', totalEquipmentCount)
+    console.log('🎯 실제 사용값 equipmentNumberFormat:', settings.equipment.numberFormat)
+    
+    // 4. 설정 매니저 직접 호출
+    try {
+      const settingsManager = require('../../../lib/data/settingsManager').SettingsManager.getInstance()
+      const directSettings = settingsManager.getSettings()
+      console.log('🔧 SettingsManager 직접 호출:', directSettings)
+      console.log('🔧 SettingsManager itemsPerPage:', directSettings.system.itemsPerPage)
+      console.log('🔧 SettingsManager numberFormat:', directSettings.equipment.numberFormat)
+    } catch (e) {
+      console.error('🔧 SettingsManager 호출 오류:', e)
+    }
+    
+    console.log('=== 설정 디버깅 끝 ===')
+  }
+
+  // 강제 설정 테스트 함수
+  const forceUpdateSettings = async () => {
+    console.log('=== 강제 설정 업데이트 시작 ===')
+    try {
+      // 테스트 값으로 강제 업데이트
+      await updateCategorySettings('system', {
+        itemsPerPage: 15  // 테스트용 값
+      }, '디버그', '강제 테스트 업데이트')
+      
+      await updateCategorySettings('equipment', {
+        numberFormat: 'CNC{number:3}'  // 테스트용 값
+      }, '디버그', '강제 테스트 업데이트')
+      
+      console.log('✅ 강제 설정 업데이트 완료')
+      
+      // 1초 후 디버깅 다시 실행
+      setTimeout(() => {
+        debugSettings()
+      }, 1000)
+      
+    } catch (error) {
+      console.error('❌ 강제 설정 업데이트 실패:', error)
+    }
+    console.log('=== 강제 설정 업데이트 끝 ===')
+  }
   
   // 설비 추가 폼 상태
   const [addFormData, setAddFormData] = useState({
@@ -122,6 +191,17 @@ export default function EquipmentPage() {
 
   // 클라이언트 사이드에서만 데이터 로드 - 설정 데이터 기반으로 생성
   useEffect(() => {
+    console.log('🔄 [Equipment] useEffect 실행됨 - 설정값 변경 감지')
+    console.log('🔄 dependencies:', {
+      getAvailableModels, 
+      getAvailableProcesses,
+      totalEquipmentCount,
+      equipmentLocations,
+      equipmentStatuses,
+      toolPositionCount,
+      itemsPerPage
+    })
+    
     setEquipments(generateEquipmentData(
       getAvailableModels, 
       getAvailableProcesses,
@@ -131,7 +211,20 @@ export default function EquipmentPage() {
       toolPositionCount
     ))
     setIsLoading(false)
-  }, [getAvailableModels, getAvailableProcesses, totalEquipmentCount, equipmentLocations, equipmentStatuses, toolPositionCount])
+  }, [getAvailableModels, getAvailableProcesses, totalEquipmentCount, equipmentLocations, equipmentStatuses, toolPositionCount, itemsPerPage])
+
+  // 설정값 변경 감지를 위한 별도 useEffect
+  useEffect(() => {
+    console.log('📊 [Equipment] itemsPerPage 변경됨:', itemsPerPage)
+  }, [itemsPerPage])
+
+  useEffect(() => {
+    console.log('🏭 [Equipment] equipment settings 변경됨:', {
+      totalEquipmentCount,
+      numberFormat: settings.equipment.numberFormat,
+      toolPositionCount
+    })
+  }, [totalEquipmentCount, settings.equipment.numberFormat, toolPositionCount])
 
   // 필터링된 설비 목록
   const filteredEquipments = useMemo(() => {
@@ -492,6 +585,20 @@ export default function EquipmentPage() {
               ))}
             </select>
           </div>
+          <button 
+            onClick={debugSettings}
+            className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+            title="콘솔에서 설정값 확인"
+          >
+            🔍 디버그
+          </button>
+          <button 
+            onClick={forceUpdateSettings}
+            className="px-3 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm"
+            title="강제로 설정값 업데이트 (테스트용)"
+          >
+            🔧 강제업데이트
+          </button>
           <button 
             onClick={handleOpenAddModal}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"

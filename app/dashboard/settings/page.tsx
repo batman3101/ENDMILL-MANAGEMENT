@@ -92,6 +92,20 @@ export default function SettingsPage() {
           currentSettings: settings,
           formData: formData[category]
         })
+        
+        // 상세 분석
+        const stored = localStorage.getItem('system_settings')
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored)
+            console.log('🔍 저장된 itemsPerPage:', parsed?.system?.itemsPerPage)
+            console.log('🔍 저장된 numberFormat:', parsed?.equipment?.numberFormat)
+            console.log('🔍 현재 React state itemsPerPage:', settings.system.itemsPerPage)
+            console.log('🔍 현재 React state numberFormat:', settings.equipment.numberFormat)
+          } catch (e) {
+            console.error('🔍 파싱 오류:', e)
+          }
+        }
       }, 500)
       
       showSuccess('저장 완료', `${activeTabInfo?.name} 설정이 성공적으로 저장되었습니다.`)
