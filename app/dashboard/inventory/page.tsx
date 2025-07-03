@@ -342,7 +342,6 @@ export default function InventoryPage() {
       
       try {
         // 여기서 실제로는 API 호출을 통해 데이터베이스에 저장
-        console.log('새 앤드밀 추가:', formData)
         
         // 폼 초기화
         setFormData({

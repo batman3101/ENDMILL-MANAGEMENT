@@ -485,7 +485,6 @@ export class MockDataManager {
     const existing = localStorage.getItem(STORAGE_KEYS.CAM_SHEETS)
     if (!existing) {
       localStorage.setItem(STORAGE_KEYS.CAM_SHEETS, JSON.stringify(INITIAL_CAM_SHEETS))
-      console.log('✅ CAM Sheets 초기 데이터가 로컬 스토리지에 저장되었습니다.')
     }
   }
 
@@ -494,8 +493,6 @@ export class MockDataManager {
     if (typeof window === 'undefined') return
     
     localStorage.setItem(STORAGE_KEYS.CAM_SHEETS, JSON.stringify(INITIAL_CAM_SHEETS))
-    console.log('🔄 CAM Sheets 데이터가 강제로 재초기화되었습니다.')
-    console.log('📝 사용 가능한 모델:', INITIAL_CAM_SHEETS.map(sheet => sheet.model).join(', '))
   }
 
   // 모든 데이터 초기화
@@ -507,7 +504,7 @@ export class MockDataManager {
     localStorage.removeItem(STORAGE_KEYS.EQUIPMENT)
     localStorage.removeItem(STORAGE_KEYS.INVENTORY)
     
-    console.log('🔄 모든 목업 데이터가 초기화되었습니다.')
+
   }
 
   // 데이터 내보내기 (JSON)
@@ -545,7 +542,7 @@ export class MockDataManager {
         localStorage.setItem(STORAGE_KEYS.INVENTORY, JSON.stringify(data.inventory))
       }
       
-      console.log('✅ 데이터 가져오기가 완료되었습니다.')
+
       return true
     } catch (error) {
       console.error('❌ 데이터 가져오기 실패:', error)
@@ -598,7 +595,6 @@ export class MockDataManager {
     
     existing.push(newSample)
     localStorage.setItem(STORAGE_KEYS.CAM_SHEETS, JSON.stringify(existing))
-    console.log('✅ 샘플 CAM Sheet가 추가되었습니다:', newSample.model)
   }
 }
 
