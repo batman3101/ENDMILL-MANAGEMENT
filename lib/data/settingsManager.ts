@@ -17,8 +17,10 @@ export class SettingsManager {
   private history: SettingsHistory[] = []
 
   private constructor() {
+    console.log('🏗️ SettingsManager 인스턴스 생성 시작')
     this.settings = this.loadSettings()
     this.history = this.loadHistory()
+    console.log('✅ SettingsManager 인스턴스 생성 완료')
   }
 
   public static getInstance(): SettingsManager {
@@ -31,18 +33,29 @@ export class SettingsManager {
   // 설정 로드
   private loadSettings(): SystemSettings {
     try {
+      console.log('🔄 설정 로드 시작:', SETTINGS_STORAGE_KEY)
+      
       if (typeof window === 'undefined') {
+        console.log('🌐 서버 사이드 렌더링: 기본 설정 반환')
         return DEFAULT_SETTINGS
       }
 
       const stored = localStorage.getItem(SETTINGS_STORAGE_KEY)
+      console.log('📱 localStorage에서 읽은 원본 데이터:', stored ? '데이터 존재' : '데이터 없음')
+      
       if (!stored) {
+        console.log('📋 저장된 설정이 없어 기본 설정 사용')
         return DEFAULT_SETTINGS
       }
 
       const parsed = JSON.parse(stored)
+      console.log('📖 파싱된 설정 데이터:', JSON.stringify(parsed, null, 2))
+      
       // 기본 설정과 병합하여 누락된 필드 보완
-      return this.mergeWithDefaults(parsed, DEFAULT_SETTINGS)
+      const merged = this.mergeWithDefaults(parsed, DEFAULT_SETTINGS)
+      console.log('🔀 기본값과 병합된 최종 설정:', JSON.stringify(merged, null, 2))
+      
+      return merged
     } catch (error) {
       console.error('설정 로드 실패:', error)
       return DEFAULT_SETTINGS
@@ -69,7 +82,18 @@ export class SettingsManager {
   private saveSettings(): void {
     try {
       if (typeof window !== 'undefined') {
+        console.log('🔄 설정 저장 시작:', SETTINGS_STORAGE_KEY)
+        console.log('💾 저장할 설정 데이터:', JSON.stringify(this.settings, null, 2))
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(this.settings))
+        console.log('✅ 설정 저장 완료')
+        
+        // 저장 확인
+        const saved = localStorage.getItem(SETTINGS_STORAGE_KEY)
+        if (saved) {
+          console.log('🔍 저장 확인: localStorage에서 다시 읽은 데이터 존재')
+        } else {
+          console.error('❌ 저장 확인 실패: localStorage에서 데이터를 찾을 수 없음')
+        }
       }
     } catch (error) {
       console.error('설정 저장 실패:', error)
