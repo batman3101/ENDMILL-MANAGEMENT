@@ -103,18 +103,18 @@ export function useSettings(): UseSettingsReturn {
     }
   }, [])
 
-  // 카테고리별 설정 조회
+  // 카테고리별 설정 조회 - settings state를 직접 사용
   const getCategorySettings = useCallback(<T extends SettingsCategory>(category: T): SystemSettings[T] => {
-    return settingsManager.getCategorySettings(category)
-  }, [])
+    return { ...settings[category] }
+  }, [settings])
 
-  // 특정 설정값 조회
+  // 특정 설정값 조회 - settings state를 직접 사용
   const getSetting = useCallback(<T extends SettingsCategory, K extends keyof SystemSettings[T]>(
     category: T,
     key: K
   ): SystemSettings[T][K] => {
-    return settingsManager.getSetting(category, key)
-  }, [])
+    return settings[category][key]
+  }, [settings])
 
   // API 호출 헬퍼 함수
   const callSettingsAPI = useCallback(async (
