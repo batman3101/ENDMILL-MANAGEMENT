@@ -83,6 +83,17 @@ export default function SettingsPage() {
     try {
       await updateCategorySettings(category, formData[category], '관리자', '설정 업데이트')
       console.log('✅ 설정 저장 API 호출 성공')
+      
+      // 저장 후 실제 설정값 확인
+      setTimeout(() => {
+        console.log('🔍 저장 후 현재 설정값 확인:', {
+          category,
+          storedInLocalStorage: localStorage.getItem('system_settings'),
+          currentSettings: settings,
+          formData: formData[category]
+        })
+      }, 500)
+      
       showSuccess('저장 완료', `${activeTabInfo?.name} 설정이 성공적으로 저장되었습니다.`)
     } catch (err) {
       console.error('❌ 설정 저장 API 호출 실패:', err)

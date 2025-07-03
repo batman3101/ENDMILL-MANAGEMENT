@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { FileDataManager, CAMSheet } from '../data/fileDataManager'
+import { FileDataManager } from '../data/fileDataManager'
+import type { CAMSheet } from '../data/fileDataManager'
 
 export interface EndmillInfo {
   tNumber: number
@@ -11,8 +12,8 @@ export interface EndmillInfo {
   toolLife: number
 }
 
-// CAMSheet 인터페이스는 FileDataManager에서 가져옴
-export { CAMSheet } from '../data/fileDataManager'
+// CAMSheet 타입 re-export
+export type { CAMSheet }
 
 // CAM Sheet 검색을 위한 필터 타입
 export interface CAMSheetFilter {

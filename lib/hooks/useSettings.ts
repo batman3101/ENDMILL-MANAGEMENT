@@ -88,7 +88,15 @@ export function useSettings(): UseSettingsReturn {
   // 설정 변경 감지 및 업데이트
   useEffect(() => {
     const handleStorageChange = () => {
-      setSettings(settingsManager.getSettings())
+      console.log('📢 [useSettings] Storage 변경 감지, 설정 다시 로드')
+      const newSettings = settingsManager.getSettings()
+      console.log('📥 [useSettings] 새로운 설정 로드됨:', {
+        itemsPerPage: newSettings.system.itemsPerPage,
+        equipmentNumberFormat: newSettings.equipment.numberFormat,
+        equipmentTotalCount: newSettings.equipment.totalCount,
+        allSettings: newSettings
+      })
+      setSettings(newSettings)
       setHasUnsavedChanges(false)
     }
 

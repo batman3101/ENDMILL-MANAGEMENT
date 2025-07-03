@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useCAMSheets, CAMSheet, EndmillInfo } from '../../../lib/hooks/useCAMSheets'
+import { useCAMSheets, type CAMSheet, type EndmillInfo } from '../../../lib/hooks/useCAMSheets'
 import CAMSheetForm from '../../../components/features/CAMSheetForm'
 import ExcelUploader from '../../../components/features/ExcelUploader'
 import { useToast } from '../../../components/shared/Toast'

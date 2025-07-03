@@ -95,6 +95,17 @@ export default function EquipmentPage() {
   const equipmentLocations = settings.equipment.locations
   const equipmentStatuses = settings.equipment.statuses
   const toolPositionCount = settings.equipment.toolPositionCount
+
+  // 디버깅: 설정값 확인
+  console.log('🔧 [Equipment] 현재 설정값:', {
+    itemsPerPage,
+    totalEquipmentCount,
+    equipmentLocations,
+    equipmentStatuses,
+    toolPositionCount,
+    equipmentNumberFormat: settings.equipment.numberFormat,
+    allSettings: settings
+  })
   
   // 설비 추가 폼 상태
   const [addFormData, setAddFormData] = useState({
