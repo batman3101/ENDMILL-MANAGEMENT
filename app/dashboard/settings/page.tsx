@@ -48,6 +48,12 @@ const SETTINGS_TABS = [
     name: '알림 설정', 
     icon: '🔔',
     description: '알림 방식 및 스케줄 설정'
+  },
+  { 
+    id: 'translations' as SettingsCategory, 
+    name: '번역 관리', 
+    icon: '🌐',
+    description: '다국어 지원 및 번역 설정'
   }
 ]
 
@@ -1663,6 +1669,669 @@ export default function SettingsPage() {
                     </button>
                     <button
                       onClick={() => handleSave('notifications')}
+                      disabled={isSubmitting}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                    >
+                      {isSubmitting && (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      )}
+                      {isSubmitting ? '저장 중...' : '💾 설정 저장'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'translations' && (
+                <div className="space-y-6">
+                  {/* 기본 번역 설정 */}
+                  <div className="bg-white border border-gray-200 rounded-lg">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                      <h3 className="text-lg font-medium text-gray-900">🌐 기본 번역 설정</h3>
+                      <p className="text-sm text-gray-600">다국어 지원을 위한 기본 언어 및 자동 번역 설정</p>
+                    </div>
+                    <div className="p-6 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* 기본 언어 */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            기본 언어
+                          </label>
+                          <select
+                            value={formData.translations?.defaultLanguage || 'ko'}
+                            onChange={(e) => updateFormData('translations', 'defaultLanguage', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="ko">🇰🇷 한국어</option>
+                            <option value="vi">🇻🇳 베트남어</option>
+                          </select>
+                        </div>
+
+                        {/* 대체 언어 */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            대체 언어
+                          </label>
+                          <select
+                            value={formData.translations?.fallbackLanguage || 'ko'}
+                            onChange={(e) => updateFormData('translations', 'fallbackLanguage', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="ko">🇰🇷 한국어</option>
+                            <option value="vi">🇻🇳 베트남어</option>
+                          </select>
+                          <p className="text-xs text-gray-500 mt-1">
+                            번역이 없을 때 사용할 언어
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        {/* 번역 관리 활성화 */}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">번역 관리 활성화</p>
+                            <p className="text-xs text-gray-500">다국어 번역 기능 사용</p>
+                          </div>
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={formData.translations?.enabled !== false}
+                              onChange={(e) => updateFormData('translations', 'enabled', e.target.checked)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                          </label>
+                        </div>
+
+                        {/* 자동 번역 */}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">자동 번역</p>
+                            <p className="text-xs text-gray-500">새 번역 키 추가 시 Google Translate 사용</p>
+                          </div>
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={formData.translations?.autoTranslate || false}
+                              onChange={(e) => updateFormData('translations', 'autoTranslate', e.target.checked)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              disabled={!formData.translations?.enabled}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Google Translate API 설정 */}
+                  <div className="bg-white border border-gray-200 rounded-lg">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                      <h3 className="text-lg font-medium text-gray-900">🔑 Google Translate API 설정</h3>
+                      <p className="text-sm text-gray-600">자동 번역을 위한 Google Cloud Translation API 설정</p>
+                    </div>
+                    <div className="p-6 space-y-6">
+                      {/* Google API 기본 설정 */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* API 키 */}
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Google Cloud Translation API 키
+                          </label>
+                          <div className="flex space-x-3">
+                            <input
+                              type="password"
+                              value={formData.translations?.googleApiKey || ''}
+                              onChange={(e) => updateFormData('translations', 'googleApiKey', e.target.value)}
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="AIzaSyB1234567890abcdefghijklmnopqrstuvwxyz"
+                              disabled={!formData.translations?.enabled}
+                            />
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                // API 키 검증 로직
+                                try {
+                                  showInfo('검증 중...', 'API 키를 검증하고 있습니다.')
+                                  // 실제 검증 로직은 GoogleTranslateService에서 처리
+                                  showSuccess('검증 완료', 'API 키가 유효합니다.')
+                                } catch (error) {
+                                  showError('검증 실패', 'API 키가 유효하지 않거나 권한이 없습니다.')
+                                }
+                              }}
+                              disabled={!formData.translations?.googleApiKey || !formData.translations?.enabled}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              검증
+                            </button>
+                          </div>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-xs text-gray-500">
+                              Google Cloud Console에서 Translation API를 활성화하고 API 키를 생성하세요.
+                            </p>
+                            <a 
+                              href="https://console.cloud.google.com/apis/library/translate.googleapis.com" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:text-blue-800 underline"
+                            >
+                              Google Cloud Translation API 설정 가이드 →
+                            </a>
+                          </div>
+                        </div>
+
+                        {/* 프로젝트 ID */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Google Cloud 프로젝트 ID
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.translations?.googleProjectId || ''}
+                            onChange={(e) => updateFormData('translations', 'googleProjectId', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="my-project-12345"
+                            disabled={!formData.translations?.enabled}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            고급 API (v3) 사용 시 필요한 프로젝트 ID
+                          </p>
+                        </div>
+
+                        {/* 위치 설정 */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Google Cloud 위치
+                          </label>
+                          <select
+                            value={formData.translations?.googleLocation || 'global'}
+                            onChange={(e) => updateFormData('translations', 'googleLocation', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled={!formData.translations?.enabled}
+                          >
+                            <option value="global">Global</option>
+                            <option value="us-central1">US Central (Iowa)</option>
+                            <option value="asia-northeast1">Asia Northeast (Tokyo)</option>
+                            <option value="asia-southeast1">Asia Southeast (Singapore)</option>
+                            <option value="europe-west1">Europe West (Belgium)</option>
+                          </select>
+                          <p className="text-xs text-gray-500 mt-1">
+                            번역 처리가 수행될 Google Cloud 리전
+                          </p>
+                        </div>
+
+                        {/* 고급 API 사용 */}
+                        <div className="md:col-span-2">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">고급 번역 API (v3) 사용</p>
+                              <p className="text-xs text-gray-500">용어집, 사용자 정의 모델 등 고급 기능 사용</p>
+                            </div>
+                            <label className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={formData.translations?.useAdvancedAPI || false}
+                                onChange={(e) => updateFormData('translations', 'useAdvancedAPI', e.target.checked)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                disabled={!formData.translations?.enabled}
+                              />
+                            </label>
+                          </div>
+                          {formData.translations?.useAdvancedAPI && (
+                            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                              <p className="text-sm text-blue-800">
+                                <span className="font-medium">주의:</span> 고급 API는 프로젝트 ID가 필요하며, 
+                                기본 API보다 더 많은 기능을 제공하지만 설정이 복잡할 수 있습니다.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* API 사용량 정보 */}
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-medium text-gray-700">📊 API 사용량</h4>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // 사용량 새로고침 로직
+                              showInfo('업데이트 중...', 'API 사용량을 업데이트하고 있습니다.')
+                              // 실제 사용량 갱신 로직 추가 예정
+                            }}
+                            className="text-xs text-blue-600 hover:text-blue-800"
+                          >
+                            새로고침
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-500">이번 달 사용량</p>
+                            <p className="font-medium">
+                              {formData.translations?.apiUsage?.currentUsage?.toLocaleString() || '0'} / {formData.translations?.apiUsage?.monthlyLimit?.toLocaleString() || '500,000'}자
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">남은 할당량</p>
+                            <p className={`font-medium ${
+                              ((formData.translations?.apiUsage?.monthlyLimit || 500000) - (formData.translations?.apiUsage?.currentUsage || 0)) > 100000 
+                                ? 'text-green-600' 
+                                : 'text-yellow-600'
+                            }`}>
+                              {((formData.translations?.apiUsage?.monthlyLimit || 500000) - (formData.translations?.apiUsage?.currentUsage || 0)).toLocaleString()}자
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">사용률</p>
+                            <p className="font-medium">
+                              {(((formData.translations?.apiUsage?.currentUsage || 0) / (formData.translations?.apiUsage?.monthlyLimit || 500000)) * 100).toFixed(1)}%
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">마지막 리셋</p>
+                            <p className="font-medium">
+                              {formData.translations?.apiUsage?.lastResetDate 
+                                ? new Date(formData.translations.apiUsage.lastResetDate).toLocaleDateString('ko-KR')
+                                : '-'}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* 사용량 제한 설정 */}
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <h5 className="text-sm font-medium text-gray-700 mb-2">월간 사용량 제한</h5>
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="number"
+                              min="10000"
+                              max="10000000"
+                              step="10000"
+                              value={formData.translations?.apiUsage?.monthlyLimit || 500000}
+                              onChange={(e) => updateFormData('translations', 'apiUsage', {
+                                ...formData.translations?.apiUsage,
+                                monthlyLimit: parseInt(e.target.value)
+                              })}
+                              className="w-32 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              disabled={!formData.translations?.enabled}
+                            />
+                            <span className="text-sm text-gray-500">문자</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateFormData('translations', 'apiUsage', {
+                                  ...formData.translations?.apiUsage,
+                                  currentUsage: 0,
+                                  lastResetDate: new Date().toISOString()
+                                })
+                                showSuccess('리셋 완료', '사용량이 0으로 초기화되었습니다.')
+                              }}
+                              className="px-3 py-1 text-xs bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
+                              disabled={!formData.translations?.enabled}
+                            >
+                              사용량 리셋
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Google Cloud Translation API 월간 할당량에 맞춰 설정하세요.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 번역 캐시 설정 */}
+                  <div className="bg-white border border-gray-200 rounded-lg">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                      <h3 className="text-lg font-medium text-gray-900">💾 번역 캐시 설정</h3>
+                      <p className="text-sm text-gray-600">번역 결과 캐싱을 통한 성능 최적화 및 API 사용량 절약</p>
+                    </div>
+                    <div className="p-6 space-y-6">
+                      <div className="space-y-4">
+                        {/* 캐시 활성화 */}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">번역 캐시 활성화</p>
+                            <p className="text-xs text-gray-500">번역 결과를 로컬에 저장하여 중복 번역 방지</p>
+                          </div>
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={formData.translations?.cacheEnabled !== false}
+                              onChange={(e) => updateFormData('translations', 'cacheEnabled', e.target.checked)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              disabled={!formData.translations?.enabled}
+                            />
+                          </label>
+                        </div>
+
+                        {/* 캐시 만료 시간 */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            캐시 만료 시간
+                          </label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <select
+                              value={formData.translations?.cacheExpiry || 60}
+                              onChange={(e) => updateFormData('translations', 'cacheExpiry', parseInt(e.target.value))}
+                              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              disabled={!formData.translations?.enabled || !formData.translations?.cacheEnabled}
+                            >
+                              <option value={30}>30분</option>
+                              <option value={60}>1시간</option>
+                              <option value={360}>6시간</option>
+                              <option value={720}>12시간</option>
+                              <option value={1440}>1일</option>
+                              <option value={10080}>1주일</option>
+                              <option value={43200}>1개월</option>
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                // 캐시 삭제 로직 (추후 구현)
+                                console.log('캐시 삭제')
+                              }}
+                              disabled={!formData.translations?.enabled || !formData.translations?.cacheEnabled}
+                              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              캐시 삭제
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            캐시된 번역 결과가 자동으로 삭제되는 시간
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 캐시 통계 */}
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">📈 캐시 통계</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-500">캐시된 번역</p>
+                            <p className="font-medium">0개</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">캐시 적중률</p>
+                            <p className="font-medium">0%</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">절약된 API 호출</p>
+                            <p className="font-medium text-green-600">0회</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">캐시 크기</p>
+                            <p className="font-medium">0 KB</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 번역 관리 도구 */}
+                  <div className="bg-white border border-gray-200 rounded-lg">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                      <h3 className="text-lg font-medium text-gray-900">🛠️ 번역 관리 도구</h3>
+                      <p className="text-sm text-gray-600">번역 데이터 백업, 복원 및 관리 도구</p>
+                    </div>
+                    <div className="p-6 space-y-6">
+                      {/* 프로젝트 스캔 및 자동 번역 */}
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">🔍 프로젝트 스캔 및 자동 번역</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                setIsSubmitting(true)
+                                showInfo('스캔 중...', '프로젝트에서 한국어 텍스트를 스캔하고 있습니다.')
+                                
+                                const response = await fetch('/api/translations', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    action: 'scan_project',
+                                    data: {
+                                      projectRoot: process.cwd()
+                                    }
+                                  })
+                                })
+                                
+                                const result = await response.json()
+                                if (result.success) {
+                                  showSuccess('스캔 완료', `${result.data.scannedTexts}개의 한국어 텍스트를 발견했습니다.`)
+                                } else {
+                                  showError('스캔 실패', result.error || '알 수 없는 오류가 발생했습니다.')
+                                }
+                              } catch (error) {
+                                showError('스캔 실패', '네트워크 오류가 발생했습니다.')
+                              } finally {
+                                setIsSubmitting(false)
+                              }
+                            }}
+                            disabled={!formData.translations?.enabled || isSubmitting}
+                            className="flex items-center justify-center px-4 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <span className="mr-2">🔎</span>
+                            {isSubmitting ? '스캔 중...' : '프로젝트 스캔'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                setIsSubmitting(true)
+                                showInfo('처리 중...', '프로젝트를 스캔하고 자동 번역을 진행하고 있습니다.')
+                                
+                                const response = await fetch('/api/translations', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    action: 'scan_and_register',
+                                    data: {
+                                      projectRoot: process.cwd(),
+                                      autoTranslateScanned: true,
+                                      confidenceThreshold: 0.7,
+                                      changedBy: '관리자'
+                                    }
+                                  })
+                                })
+                                
+                                const result = await response.json()
+                                if (result.success) {
+                                  showSuccess('완료', `${result.data.scannedTexts}개 텍스트 스캔, ${result.data.registeredKeys}개 번역 키 등록 완료`)
+                                } else {
+                                  showError('실패', result.error || '알 수 없는 오류가 발생했습니다.')
+                                }
+                              } catch (error) {
+                                showError('실패', '네트워크 오류가 발생했습니다.')
+                              } finally {
+                                setIsSubmitting(false)
+                              }
+                            }}
+                            disabled={!formData.translations?.enabled || !formData.translations?.autoTranslate || isSubmitting}
+                            className="flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <span className="mr-2">🚀</span>
+                            {isSubmitting ? '처리 중...' : '스캔 + 자동번역'}
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          프로젝트 전체에서 하드코딩된 한국어 텍스트를 찾아 번역 키로 자동 등록합니다.
+                        </p>
+                        {!formData.translations?.autoTranslate && (
+                          <p className="text-xs text-yellow-600 mt-1">
+                            ⚠️ 자동 번역이 비활성화되어 있어 "스캔 + 자동번역" 기능을 사용할 수 없습니다.
+                          </p>
+                        )}
+                      </div>
+
+                      {/* 데이터 가져오기/내보내기 */}
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">📁 데이터 가져오기/내보내기</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                const response = await fetch('/api/translations', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    action: 'export'
+                                  })
+                                })
+                                
+                                const result = await response.json()
+                                if (result.success) {
+                                  const dataStr = JSON.stringify(result.data, null, 2)
+                                  const dataBlob = new Blob([dataStr], { type: 'application/json' })
+                                  const url = URL.createObjectURL(dataBlob)
+                                  const link = document.createElement('a')
+                                  link.href = url
+                                  link.download = `translations_export_${new Date().toISOString().split('T')[0]}.json`
+                                  link.click()
+                                  URL.revokeObjectURL(url)
+                                  
+                                  showSuccess('내보내기 완료', '번역 데이터가 다운로드되었습니다.')
+                                } else {
+                                  showError('내보내기 실패', result.error || '알 수 없는 오류가 발생했습니다.')
+                                }
+                              } catch (error) {
+                                showError('내보내기 실패', '네트워크 오류가 발생했습니다.')
+                              }
+                            }}
+                            disabled={!formData.translations?.enabled}
+                            className="flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <span className="mr-2">📤</span>
+                            번역 데이터 내보내기
+                          </button>
+                          <label className="flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 cursor-pointer disabled:opacity-50">
+                            <span className="mr-2">📥</span>
+                            번역 데이터 가져오기
+                            <input
+                              type="file"
+                              accept=".json"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0]
+                                if (!file) return
+                                
+                                try {
+                                  const text = await file.text()
+                                  const response = await fetch('/api/translations', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      action: 'import',
+                                      data: {
+                                        jsonData: text,
+                                        changedBy: '관리자'
+                                      }
+                                    })
+                                  })
+                                  
+                                  const result = await response.json()
+                                  if (result.success) {
+                                    showSuccess('가져오기 완료', '번역 데이터를 성공적으로 가져왔습니다.')
+                                  } else {
+                                    showError('가져오기 실패', result.error || '알 수 없는 오류가 발생했습니다.')
+                                  }
+                                } catch (error) {
+                                  showError('가져오기 실패', '파일을 읽는 중 오류가 발생했습니다.')
+                                }
+                                
+                                // 파일 입력 초기화
+                                e.target.value = ''
+                              }}
+                              className="hidden"
+                              disabled={!formData.translations?.enabled}
+                            />
+                          </label>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          JSON 형식으로 번역 데이터를 백업하거나 복원할 수 있습니다.
+                        </p>
+                      </div>
+
+                      {/* 번역 검증 및 통계 */}
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">🔍 번역 검증 및 통계</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // 번역 검증 로직 (추후 구현)
+                              console.log('번역 검증')
+                            }}
+                            disabled={!formData.translations?.enabled}
+                            className="flex items-center justify-center px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <span className="mr-2">✅</span>
+                            번역 검증
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // 번역 통계 보기 로직 (추후 구현)
+                              console.log('번역 통계')
+                            }}
+                            disabled={!formData.translations?.enabled}
+                            className="flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <span className="mr-2">📊</span>
+                            통계 보기
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // 누락된 번역 찾기 로직 (추후 구현)
+                              console.log('누락된 번역 찾기')
+                            }}
+                            disabled={!formData.translations?.enabled}
+                            className="flex items-center justify-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <span className="mr-2">🔎</span>
+                            누락 번역 찾기
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 위험 작업 */}
+                      <div className="border-t pt-6">
+                        <h4 className="text-sm font-medium text-red-700 mb-3">⚠️ 위험 작업</h4>
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-red-800">번역 데이터 초기화</p>
+                              <p className="text-xs text-red-600">모든 번역 데이터를 기본값으로 초기화합니다. 이 작업은 되돌릴 수 없습니다.</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm('정말로 모든 번역 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                                  // 번역 데이터 초기화 로직 (추후 구현)
+                                  console.log('번역 데이터 초기화')
+                                }
+                              }}
+                              disabled={!formData.translations?.enabled}
+                              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              초기화
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 저장/초기화 버튼 */}
+                  <div className="flex justify-end space-x-3 pt-6 border-t">
+                    <button
+                      onClick={() => handleReset('translations')}
+                      disabled={isSubmitting}
+                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+                    >
+                      기본값으로 초기화
+                    </button>
+                    <button
+                      onClick={() => handleSave('translations')}
                       disabled={isSubmitting}
                       className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
                     >

@@ -199,10 +199,179 @@ SELECT id, 'CNC#2', 2 FROM equipments WHERE model_code = 'PA1' AND equipment_num
 
 -- 샘플 재고 데이터
 INSERT INTO inventory (endmill_type_id, current_stock, min_stock, max_stock, location)
-SELECT id, 25, 20, 100, 'A구역-01' FROM endmill_types WHERE code = 'AT001';
+SELECT id, 50, 10, 100, 'A구역-01' FROM endmill_types WHERE code = 'AT001';
 
 INSERT INTO inventory (endmill_type_id, current_stock, min_stock, max_stock, location)
-SELECT id, 5, 15, 80, 'A구역-02' FROM endmill_types WHERE code = 'AT002';
+SELECT id, 25, 15, 80, 'B구역-02' FROM endmill_types WHERE code = 'AT002';
 
 INSERT INTO inventory (endmill_type_id, current_stock, min_stock, max_stock, location)
-SELECT id, 12, 10, 60, 'B구역-01' FROM endmill_types WHERE code = 'AT003'; 
+SELECT id, 12, 10, 60, 'B구역-01' FROM endmill_types WHERE code = 'AT003';
+
+-- =================================================================
+-- 번역 관리 시스템 테이블
+-- =================================================================
+
+-- 1. 번역 네임스페이스 테이블
+CREATE TABLE translation_namespaces (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code VARCHAR(50) UNIQUE NOT NULL, -- common, navigation, dashboard 등
+  name_ko VARCHAR(100) NOT NULL,
+  name_vi VARCHAR(100),
+  description TEXT,
+  is_active BOOLEAN DEFAULT true,
+  display_order INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 2. 번역 키 테이블
+CREATE TABLE translation_keys (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  namespace_id UUID REFERENCES translation_namespaces(id) ON DELETE CASCADE,
+  key_name VARCHAR(100) NOT NULL, -- loginTitle, dashboard 등
+  context TEXT, -- 번역 컨텍스트 설명
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- 네임스페이스 내에서 키 이름 중복 방지
+  UNIQUE(namespace_id, key_name)
+);
+
+-- 3. 번역 값 테이블
+CREATE TABLE translation_values (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key_id UUID REFERENCES translation_keys(id) ON DELETE CASCADE,
+  language_code VARCHAR(5) NOT NULL CHECK (language_code IN ('ko', 'vi')),
+  translated_text TEXT NOT NULL,
+  is_auto_translated BOOLEAN DEFAULT false, -- Google Translate 자동 번역 여부
+  translation_confidence DECIMAL(3,2), -- 번역 신뢰도 (0.00-1.00)
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_by VARCHAR(100), -- 번역 작성자
+  updated_by VARCHAR(100), -- 번역 수정자
+  
+  -- 키와 언어 조합 중복 방지
+  UNIQUE(key_id, language_code)
+);
+
+-- 4. 번역 변경 이력 테이블
+CREATE TABLE translation_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key_id UUID REFERENCES translation_keys(id) ON DELETE CASCADE,
+  language_code VARCHAR(5) NOT NULL,
+  old_value TEXT,
+  new_value TEXT NOT NULL,
+  change_type VARCHAR(20) CHECK (change_type IN ('create', 'update', 'delete', 'auto_translate')),
+  changed_by VARCHAR(100) NOT NULL,
+  change_reason TEXT,
+  changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 5. 번역 캐시 테이블 (Google Translate API 캐시)
+CREATE TABLE translation_cache (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_text TEXT NOT NULL,
+  source_language VARCHAR(5) NOT NULL,
+  target_language VARCHAR(5) NOT NULL,
+  translated_text TEXT NOT NULL,
+  cache_key VARCHAR(255) UNIQUE NOT NULL, -- 해시된 캐시 키
+  confidence_score DECIMAL(3,2),
+  api_response JSONB, -- 전체 API 응답 저장
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- 캐시 효율성을 위한 인덱스
+  INDEX idx_translation_cache_key (cache_key),
+  INDEX idx_translation_cache_expires (expires_at)
+);
+
+-- 6. API 사용량 추적 테이블
+CREATE TABLE translation_api_usage (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  date DATE NOT NULL,
+  character_count INTEGER DEFAULT 0,
+  request_count INTEGER DEFAULT 0,
+  cost_estimate DECIMAL(10,4), -- USD 기준 예상 비용
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- 일별 사용량 중복 방지
+  UNIQUE(date)
+);
+
+-- =================================================================
+-- 번역 관리 인덱스 생성
+-- =================================================================
+
+CREATE INDEX idx_translation_namespaces_code ON translation_namespaces(code);
+CREATE INDEX idx_translation_namespaces_active ON translation_namespaces(is_active);
+CREATE INDEX idx_translation_keys_namespace ON translation_keys(namespace_id);
+CREATE INDEX idx_translation_keys_active ON translation_keys(is_active);
+CREATE INDEX idx_translation_values_key ON translation_values(key_id);
+CREATE INDEX idx_translation_values_language ON translation_values(language_code);
+CREATE INDEX idx_translation_values_auto ON translation_values(is_auto_translated);
+CREATE INDEX idx_translation_history_key ON translation_history(key_id);
+CREATE INDEX idx_translation_history_changed_at ON translation_history(changed_at);
+CREATE INDEX idx_translation_api_usage_date ON translation_api_usage(date);
+
+-- =================================================================
+-- 번역 관리 트리거 생성
+-- =================================================================
+
+CREATE TRIGGER update_translation_namespaces_updated_at BEFORE UPDATE ON translation_namespaces 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_translation_keys_updated_at BEFORE UPDATE ON translation_keys 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_translation_values_updated_at BEFORE UPDATE ON translation_values 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =================================================================
+-- 번역 관리 RLS 정책 설정
+-- =================================================================
+
+ALTER TABLE translation_namespaces ENABLE ROW LEVEL SECURITY;
+ALTER TABLE translation_keys ENABLE ROW LEVEL SECURITY;
+ALTER TABLE translation_values ENABLE ROW LEVEL SECURITY;
+ALTER TABLE translation_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE translation_cache ENABLE ROW LEVEL SECURITY;
+ALTER TABLE translation_api_usage ENABLE ROW LEVEL SECURITY;
+
+-- 기본 정책: 인증된 사용자는 모든 번역 데이터 조회 가능
+CREATE POLICY "Anyone can view translation_namespaces" ON translation_namespaces FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Anyone can view translation_keys" ON translation_keys FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Anyone can view translation_values" ON translation_values FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Anyone can view translation_history" ON translation_history FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Anyone can view translation_cache" ON translation_cache FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Anyone can view translation_api_usage" ON translation_api_usage FOR SELECT TO authenticated USING (true);
+
+-- 관리자만 번역 데이터 수정 가능 (추후 사용자 역할 테이블 연동)
+CREATE POLICY "Admins can insert translation_namespaces" ON translation_namespaces FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Admins can update translation_namespaces" ON translation_namespaces FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Admins can insert translation_keys" ON translation_keys FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Admins can update translation_keys" ON translation_keys FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Admins can insert translation_values" ON translation_values FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Admins can update translation_values" ON translation_values FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "System can insert translation_history" ON translation_history FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "System can manage translation_cache" ON translation_cache FOR ALL TO authenticated USING (true);
+CREATE POLICY "System can track api_usage" ON translation_api_usage FOR ALL TO authenticated USING (true);
+
+-- =================================================================
+-- 번역 관리 초기 데이터 삽입
+-- =================================================================
+
+-- 기본 네임스페이스 생성
+INSERT INTO translation_namespaces (code, name_ko, name_vi, description, display_order) VALUES
+('common', '공통', 'Chung', '공통으로 사용되는 번역', 1),
+('navigation', '내비게이션', 'Điều hướng', '메뉴 및 네비게이션 관련 번역', 2),
+('dashboard', '대시보드', 'Bảng điều khiển', '대시보드 페이지 번역', 3),
+('equipment', '설비 관리', 'Quản lý thiết bị', '설비 관리 페이지 번역', 4),
+('endmill', '앤드밀 관리', 'Quản lý dao phay', '앤드밀 관리 페이지 번역', 5),
+('inventory', '재고 관리', 'Quản lý tồn kho', '재고 관리 페이지 번역', 6),
+('camSheets', 'CAM SHEET', 'CAM SHEET', 'CAM SHEET 관리 페이지 번역', 7),
+('toolChanges', '교체 이력', 'Lịch sử thay đổi', '공구 교체 이력 페이지 번역', 8),
+('reports', '리포트', 'Báo cáo', '리포트 페이지 번역', 9),
+('settings', '설정', 'Cài đặt', '설정 페이지 번역', 10),
+('users', '사용자 관리', 'Quản lý người dùng', '사용자 관리 페이지 번역', 11),
+('auth', '인증', 'Xác thực', '로그인/인증 관련 번역', 12); 

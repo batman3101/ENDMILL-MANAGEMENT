@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import DevMockDataManager from '../../components/dev/MockDataManager'
+import { useTranslations } from '../../lib/hooks/useTranslations'
 
 export default function DashboardLayout({
   children,
@@ -11,70 +12,70 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const [language, setLanguage] = useState<'ko' | 'vi'>('ko')
+  const { currentLanguage, changeLanguage, t } = useTranslations()
 
   const menuItems = [
     {
       href: '/dashboard',
       icon: '🏠',
-      label: '대시보드',
-      description: '실시간 CNC 앤드밀 관리 현황',
+      label: t('navigation', 'dashboard'),
+      description: t('dashboard', 'subtitle'),
       active: pathname === '/dashboard'
     },
     {
       href: '/dashboard/equipment',
       icon: '🏭',
-      label: '설비 관리',
-      description: '800대 CNC 설비 현황 및 관리',
+      label: t('navigation', 'equipment'),
+      description: t('equipment', 'subtitle'),
       active: pathname === '/dashboard/equipment'
     },
     {
       href: '/dashboard/endmill',
       icon: '🔧',
-      label: '앤드밀 관리',
-      description: '앤드밀별 Tool Life 추적 및 교체 알림 관리',
+      label: t('navigation', 'endmill'),
+      description: t('endmill', 'subtitle'),
       active: pathname === '/dashboard/endmill'
     },
     {
       href: '/dashboard/tool-changes',
       icon: '🔄',
-      label: '교체 실적',
-      description: '앤드밀 교체 이력 및 실적 관리',
+      label: t('navigation', 'toolChanges'),
+      description: t('toolChanges', 'subtitle'),
       active: pathname === '/dashboard/tool-changes'
     },
     {
       href: '/dashboard/cam-sheets',
       icon: '📋',
-      label: 'CAM SHEET 관리',
-      description: 'CAM 버전별 앤드밀 정보 및 Tool Life 설정',
+      label: t('navigation', 'camSheets'),
+      description: t('camSheets', 'subtitle'),
       active: pathname === '/dashboard/cam-sheets'
     },
     {
       href: '/dashboard/inventory',
       icon: '📦',
-      label: '재고 관리',
-      description: 'QR 스캔 기반 앤드밀 입고/출고 및 재고 현황',
+      label: t('navigation', 'inventory'),
+      description: t('inventory', 'subtitle'),
       active: pathname === '/dashboard/inventory' || pathname.startsWith('/dashboard/inventory/')
     },
     {
       href: '/dashboard/reports',
       icon: '📊',
-      label: '분석 & 리포트',
-      description: '생산성 분석 및 통계 리포트',
+      label: t('navigation', 'reports'),
+      description: t('reports', 'subtitle'),
       active: pathname === '/dashboard/reports'
     },
     {
       href: '/dashboard/users',
       icon: '👥',
-      label: '사용자 관리',
-      description: '시스템 사용자 및 권한 관리',
+      label: t('navigation', 'users'),
+      description: t('users', 'subtitle'),
       active: pathname === '/dashboard/users'
     },
     {
       href: '/dashboard/settings',
       icon: '⚙️',
-      label: '설정',
-      description: '시스템 환경 설정 및 구성',
+      label: t('navigation', 'settings'),
+      description: t('settings', 'subtitle'),
       active: pathname === '/dashboard/settings'
     }
   ]
@@ -91,8 +92,8 @@ export default function DashboardLayout({
                 <span className="text-blue-800 text-lg font-bold">🏭</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold">CNC 앤드밀 관리 시스템</h1>
-                <p className="text-blue-200 text-sm">실시간 모니터링 및 관리</p>
+                <h1 className="text-xl font-bold">{t('auth', 'loginTitle')}</h1>
+                <p className="text-blue-200 text-sm">{t('dashboard', 'subtitle')}</p>
               </div>
             </div>
 
@@ -101,31 +102,31 @@ export default function DashboardLayout({
               {/* 언어 선택 */}
               <div className="flex space-x-1">
                 <button
-                  onClick={() => setLanguage('ko')}
+                  onClick={() => changeLanguage('ko')}
                   className={`px-3 py-1 text-sm rounded ${
-                    language === 'ko' 
+                    currentLanguage === 'ko' 
                       ? 'bg-blue-600 text-white' 
                       : 'text-blue-200 hover:bg-blue-700'
                   }`}
                 >
-                  한국어
+                  🇰🇷 한국어
                 </button>
                 <button
-                  onClick={() => setLanguage('vi')}
+                  onClick={() => changeLanguage('vi')}
                   className={`px-3 py-1 text-sm rounded ${
-                    language === 'vi' 
+                    currentLanguage === 'vi' 
                       ? 'bg-blue-600 text-white' 
                       : 'text-blue-200 hover:bg-blue-700'
                   }`}
                 >
-                  Tiếng Việt
+                  🇻🇳 Tiếng Việt
                 </button>
               </div>
 
               {/* 사용자 정보 */}
               <div className="text-right">
-                <p className="text-sm text-blue-100">마지막 업데이트: 2025. 6. 26. 오후 6:17:26</p>
-                <p className="text-xs text-blue-200">관리자</p>
+                <p className="text-sm text-blue-100">{t('common', 'lastUpdate')}: 2025. 6. 26. 오후 6:17:26</p>
+                <p className="text-xs text-blue-200">{t('common', 'admin')}</p>
               </div>
 
               {/* 알림 및 로그아웃 */}
@@ -134,7 +135,7 @@ export default function DashboardLayout({
                   🔔
                 </button>
                 <button className="text-sm text-blue-100 hover:text-white px-3 py-1 rounded-lg hover:bg-blue-700">
-                  로그아웃
+                  {t('auth', 'logout')}
                 </button>
               </div>
             </div>
@@ -169,10 +170,10 @@ export default function DashboardLayout({
         {/* 페이지 제목 */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">
-            {menuItems.find(item => item.active)?.label || '대시보드'}
+            {menuItems.find(item => item.active)?.label || t('navigation', 'dashboard')}
           </h1>
           <p className="text-gray-600 text-sm">
-            {menuItems.find(item => item.active)?.description || '실시간 CNC 앤드밀 관리 현황'}
+            {menuItems.find(item => item.active)?.description || t('dashboard', 'subtitle')}
           </p>
         </div>
 

@@ -81,19 +81,19 @@ Always write one test at a time, make it run, then improve structure. Always run
 
 Prefer functional programming style over imperative style in Rust. Use Option and Result combinators (map, and_then, unwrap_or, etc.) instead of pattern matching with if let or match when possible.
 
-# React-specific
+# React-specific (사용 프로그래밍 언어에 맞게 변경)
 Favor Functional Components with Hooks: Use functional components and Hooks (useState, useEffect, useMemo, etc.) over class-based components for managing state and side effects. This promotes reusability and simplifies component logic.
 Embrace Immutability: Never mutate state or props directly. Instead, use methods like setState with a new object or array, or leverage libraries like Immer to ensure state transitions are predictable and explicit.
 Component Composition: Build complex UIs by composing smaller, single-responsibility components. Use props to pass data and callbacks down the component tree ("props drilling") or employ the Context API for deeply nested data.
 Conditional Rendering: Use ternary operators or logical AND (&&) for concise conditional rendering within JSX. For more complex scenarios, abstract the logic into a separate function or variable.
 
-# Python-specific
+# Python-specific (사용 프로그래밍 언어에 맞게 변경)
 Write "Pythonic" Code: Leverage Python's built-in features and idiomatic patterns. Use list comprehensions or generator expressions instead of explicit for loops for creating lists or iterators.
 Embrace Iterators and Generators: Utilize Python's iterator protocol and create custom generators with yield to work with large datasets efficiently, processing items one at a time instead of loading everything into memory.
 Effective Use of Built-in Functions: Prefer built-in functions like map(), filter(), and functools.reduce() for operations on iterables where it enhances clarity and conciseness.
 Handle Errors Gracefully: Use try...except blocks to handle specific exceptions. Avoid broad except: clauses. The "Easier to Ask for Forgiveness than Permission" (EAFP) principle is often preferred over "Look Before You Leap" (LBYL).
 
-# Node.js-specific
+# Node.js-specific (사용 프로그래밍 언어에 맞게 변경)
 Master Asynchronous Programming: Heavily favor async/await for handling asynchronous operations to avoid "callback hell" and write cleaner, more readable code that resembles synchronous logic.
 Use Promises: Understand and utilize the Promise object and its methods (.then(), .catch(), .finally(), Promise.all(), Promise.race()) for managing asynchronous workflows effectively.
 Modular and Single-Responsibility Modules: Keep modules small and focused on a single concern. Use the require or import/export syntax to create a clear and maintainable module system.
