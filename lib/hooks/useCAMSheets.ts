@@ -1,8 +1,26 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { FileDataManager, CAMSheet } from '../data/fileDataManager'
+import { FileDataManager } from '../data/fileDataManager'
 import { INITIAL_CAM_SHEETS } from '../data/mockData'
+
+// CAM Sheet 타입 정의 (FileDataManager와 동일하게 재정의)
+export interface CAMSheet {
+  id: string
+  model: string
+  process: string
+  camVersion: string
+  versionDate: string
+  endmills: {
+    tNumber: number
+    endmillCode: string
+    endmillName: string
+    specifications: string
+    toolLife: number
+  }[]
+  createdAt: string
+  updatedAt: string
+}
 
 export interface EndmillInfo {
   tNumber: number
@@ -11,9 +29,6 @@ export interface EndmillInfo {
   specifications: string
   toolLife: number
 }
-
-// CAM Sheet를 다시 export
-export type { CAMSheet }
 
 // CAM Sheet 검색을 위한 필터 타입
 export interface CAMSheetFilter {
