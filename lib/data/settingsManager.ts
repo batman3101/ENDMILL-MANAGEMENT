@@ -110,8 +110,6 @@ export class SettingsManager {
       window.dispatchEvent(new CustomEvent('settingsUpdated', { 
         detail: this.settings 
       }))
-      
-      console.log('✅ 설정 저장 완료 & 이벤트 발생')
     } catch (error) {
       console.error('설정 저장 실패:', error)
     }
