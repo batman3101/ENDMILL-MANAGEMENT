@@ -88,13 +88,13 @@ export default function SettingsPage() {
       setTimeout(() => {
         console.log('🔍 저장 후 현재 설정값 확인:', {
           category,
-          storedInLocalStorage: localStorage.getItem('system_settings'),
+          storedInLocalStorage: localStorage.getItem('endmill_system_settings'),
           currentSettings: settings,
           formData: formData[category]
         })
         
         // 상세 분석
-        const stored = localStorage.getItem('system_settings')
+        const stored = localStorage.getItem('endmill_system_settings')
         if (stored) {
           try {
             const parsed = JSON.parse(stored)

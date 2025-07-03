@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { FileDataManager } from '../data/fileDataManager'
-import type { CAMSheet } from '../data/fileDataManager'
+import { FileDataManager, type CAMSheet } from '../data/fileDataManager'
 
 export interface EndmillInfo {
   tNumber: number

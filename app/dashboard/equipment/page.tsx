@@ -111,8 +111,8 @@ export default function EquipmentPage() {
   const debugSettings = () => {
     console.log('=== 설정 디버깅 시작 ===')
     
-    // 1. localStorage 원본 확인
-    const storedSettings = localStorage.getItem('system_settings')
+    // 1. localStorage 원본 확인 (올바른 키 사용)
+    const storedSettings = localStorage.getItem('endmill_system_settings')
     console.log('📱 localStorage 원본:', storedSettings)
     
     if (storedSettings) {
@@ -146,6 +146,11 @@ export default function EquipmentPage() {
     } catch (e) {
       console.error('🔧 SettingsManager 호출 오류:', e)
     }
+    
+    // 5. 수동 확인 명령어 제공
+    console.log('📋 수동 확인 명령어:')
+    console.log('   localStorage.getItem("endmill_system_settings")')
+    console.log('   JSON.parse(localStorage.getItem("endmill_system_settings"))')
     
     console.log('=== 설정 디버깅 끝 ===')
   }
