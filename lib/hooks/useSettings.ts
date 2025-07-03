@@ -186,6 +186,10 @@ export function useSettings(): UseSettingsReturn {
     changedBy: string = 'user',
     reason?: string
   ): Promise<void> => {
+    console.log('🔧 useSettings Hook - updateCategorySettings 호출')
+    console.log('📋 카테고리:', category)
+    console.log('📄 업데이트 데이터:', JSON.stringify(updates, null, 2))
+    
     setIsLoading(true)
     setError(null)
     setHasUnsavedChanges(true)
@@ -193,22 +197,29 @@ export function useSettings(): UseSettingsReturn {
     try {
       // API 호출 시도 (실패하면 로컬 저장소 사용)
       try {
+        console.log('🌐 API 호출 시도')
         const result = await callSettingsAPI('PUT', '/api/settings', {
           updates,
           category,
           changedBy,
           reason
         })
+        console.log('✅ API 호출 성공, 응답 데이터:', result)
         setSettings(prev => ({ ...prev, ...result.data }))
+        console.log('🔄 React state 업데이트 완료')
       } catch (apiError) {
-        console.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
+        console.warn('⚠️ API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
         settingsManager.updateCategorySettings(category, updates, changedBy, reason)
-        setSettings(settingsManager.getSettings())
+        const newSettings = settingsManager.getSettings()
+        console.log('💾 로컬 저장소에서 가져온 설정:', JSON.stringify(newSettings, null, 2))
+        setSettings(newSettings)
+        console.log('🔄 React state 업데이트 완료 (로컬)')
       }
       
       setHasUnsavedChanges(false)
     } catch (err) {
+      console.error('❌ updateCategorySettings 에러:', err)
       const errorMessage = err instanceof Error ? err.message : '설정 업데이트 실패'
       setError(errorMessage)
       throw err
