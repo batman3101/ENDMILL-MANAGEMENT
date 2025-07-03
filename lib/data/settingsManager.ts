@@ -11,6 +11,11 @@ import {
 const SETTINGS_STORAGE_KEY = 'endmill_system_settings'
 const SETTINGS_HISTORY_KEY = 'endmill_settings_history'
 
+// 전역에서 싱글톤 인스턴스 유지를 위한 타입 확장
+declare global {
+  var __settingsManagerInstance: SettingsManager | undefined
+}
+
 export class SettingsManager {
   private static instance: SettingsManager
   private settings: SystemSettings
@@ -24,8 +29,23 @@ export class SettingsManager {
   }
 
   public static getInstance(): SettingsManager {
+    // 브라우저 환경에서는 전역 객체에서 인스턴스 확인
+    if (typeof window !== 'undefined') {
+      if (!global.__settingsManagerInstance) {
+        console.log('🆕 새로운 SettingsManager 인스턴스 생성 (전역)')
+        global.__settingsManagerInstance = new SettingsManager()
+      } else {
+        console.log('♻️ 기존 SettingsManager 인스턴스 재사용 (전역)')
+      }
+      return global.__settingsManagerInstance
+    }
+    
+    // 서버 환경에서는 기존 방식 사용
     if (!SettingsManager.instance) {
+      console.log('🆕 새로운 SettingsManager 인스턴스 생성 (서버)')
       SettingsManager.instance = new SettingsManager()
+    } else {
+      console.log('♻️ 기존 SettingsManager 인스턴스 재사용 (서버)')
     }
     return SettingsManager.instance
   }
