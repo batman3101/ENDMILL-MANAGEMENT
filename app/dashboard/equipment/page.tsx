@@ -218,11 +218,6 @@ export default function EquipmentPage() {
     setIsLoading(false)
   }, [getAvailableModels, getAvailableProcesses, totalEquipmentCount, equipmentLocations, equipmentStatuses, toolPositionCount, itemsPerPage])
 
-  // 설정값 변경 감지를 위한 별도 useEffect
-  useEffect(() => {
-    console.log('📊 [Equipment] itemsPerPage 변경됨:', itemsPerPage)
-  }, [itemsPerPage])
-
   useEffect(() => {
     console.log('🏭 [Equipment] equipment settings 변경됨:', {
       totalEquipmentCount,
@@ -230,6 +225,17 @@ export default function EquipmentPage() {
       toolPositionCount
     })
   }, [totalEquipmentCount, settings.equipment.numberFormat, toolPositionCount])
+
+  // 실시간 설정 변경 감지 테스트
+  useEffect(() => {
+    console.log('⚡ [Equipment] 전체 settings 변경 감지:', {
+      timestamp: new Date().toLocaleTimeString(),
+      itemsPerPage: settings.system.itemsPerPage,
+      numberFormat: settings.equipment.numberFormat,
+      totalCount: settings.equipment.totalCount,
+      toolPositions: settings.equipment.toolPositionCount
+    })
+  }, [settings])
 
   // 필터링된 설비 목록
   const filteredEquipments = useMemo(() => {
@@ -246,6 +252,19 @@ export default function EquipmentPage() {
       return matchesSearch && matchesStatus && matchesModel
     })
   }, [equipments, searchTerm, statusFilter, modelFilter])
+
+  // 설정값 변경 감지를 위한 별도 useEffect (filteredEquipments 정의 후에 배치)
+  useEffect(() => {
+    console.log('📊 [Equipment] itemsPerPage 변경됨:', itemsPerPage)
+    console.log('🔄 [Equipment] 현재 페이지네이션 상태:', {
+      currentPage,
+      totalPages: Math.ceil(filteredEquipments.length / itemsPerPage),
+      filteredEquipmentsLength: filteredEquipments.length,
+      itemsPerPage,
+      startIndex: (currentPage - 1) * itemsPerPage,
+      endIndex: (currentPage - 1) * itemsPerPage + itemsPerPage
+    })
+  }, [itemsPerPage, currentPage, filteredEquipments])
 
   // 페이지네이션 계산
   const totalPages = Math.ceil(filteredEquipments.length / itemsPerPage)

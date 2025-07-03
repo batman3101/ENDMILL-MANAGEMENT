@@ -100,24 +100,20 @@ export class SettingsManager {
 
   // 설정 저장
   private saveSettings(): void {
+    if (typeof window === 'undefined') return
+    
     try {
-      if (typeof window !== 'undefined') {
-        console.log('🔄 설정 저장 시작:', SETTINGS_STORAGE_KEY)
-        console.log('💾 저장할 설정 데이터:', JSON.stringify(this.settings, null, 2))
-        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(this.settings))
-        console.log('✅ 설정 저장 완료')
-        
-        // 저장 확인
-        const saved = localStorage.getItem(SETTINGS_STORAGE_KEY)
-        if (saved) {
-          console.log('🔍 저장 확인: localStorage에서 다시 읽은 데이터 존재')
-        } else {
-          console.error('❌ 저장 확인 실패: localStorage에서 데이터를 찾을 수 없음')
-        }
-      }
+      const settingsJson = JSON.stringify(this.settings, null, 2)
+      localStorage.setItem(SETTINGS_STORAGE_KEY, settingsJson)
+      
+      // 커스텀 이벤트 발생으로 React Hook에서 실시간 변경 감지 가능
+      window.dispatchEvent(new CustomEvent('settingsUpdated', { 
+        detail: this.settings 
+      }))
+      
+      console.log('✅ 설정 저장 완료 & 이벤트 발생')
     } catch (error) {
       console.error('설정 저장 실패:', error)
-      throw new Error('설정을 저장할 수 없습니다.')
     }
   }
 

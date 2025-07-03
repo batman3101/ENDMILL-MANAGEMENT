@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { settingsManager } from '@/lib/data/settingsManager'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { SettingsManager } from '@/lib/data/settingsManager'
 import { 
   SystemSettings, 
   SettingsCategory, 
@@ -80,34 +80,39 @@ interface UseCategorySettingsReturn<T extends SettingsCategory> {
 
 // 메인 설정 훅
 export function useSettings(): UseSettingsReturn {
-  const [settings, setSettings] = useState<SystemSettings>(() => settingsManager.getSettings())
+  const settingsManagerRef = useRef<SettingsManager>()
+  const [settings, setSettings] = useState<SystemSettings>(() => SettingsManager.getInstance().getSettings())
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
-  // 설정 변경 감지 및 업데이트
+  // SettingsManager 인스턴스 및 초기 설정 로드
   useEffect(() => {
+    settingsManagerRef.current = SettingsManager.getInstance()
+    setSettings(settingsManagerRef.current.getSettings())
+    setIsLoading(false)
+
+    // 스토리지 변경 이벤트 리스너 (다른 탭에서 변경시)
     const handleStorageChange = () => {
-      console.log('📢 [useSettings] Storage 변경 감지, 설정 다시 로드')
-      const newSettings = settingsManager.getSettings()
-      console.log('📥 [useSettings] 새로운 설정 로드됨:', {
-        itemsPerPage: newSettings.system.itemsPerPage,
-        equipmentNumberFormat: newSettings.equipment.numberFormat,
-        equipmentTotalCount: newSettings.equipment.totalCount,
-        allSettings: newSettings
-      })
-      setSettings(newSettings)
-      setHasUnsavedChanges(false)
+      console.log('📢 스토리지 변경 감지 (다른 탭)')
+      if (settingsManagerRef.current) {
+        setSettings(settingsManagerRef.current.getSettings())
+      }
     }
 
-    // localStorage 변경 감지
-    window.addEventListener('storage', handleStorageChange)
-    
-    // 컴포넌트 마운트 시 최신 설정 로드
-    handleStorageChange()
+    // 커스텀 설정 업데이트 이벤트 리스너 (같은 탭에서 변경시)
+    const handleSettingsUpdate = (event: CustomEvent) => {
+      console.log('📢 설정 업데이트 이벤트 감지 (같은 탭)', event.detail)
+      setSettings(event.detail)
+    }
 
+    // 이벤트 리스너 등록
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('settingsUpdated', handleSettingsUpdate as EventListener)
+    
     return () => {
       window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('settingsUpdated', handleSettingsUpdate as EventListener)
     }
   }, [])
 
@@ -173,8 +178,8 @@ export function useSettings(): UseSettingsReturn {
       } catch (apiError) {
         console.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
-        settingsManager.updateSettings(updates, changedBy, reason)
-        setSettings(settingsManager.getSettings())
+        settingsManagerRef.current?.updateSettings(updates, changedBy, reason)
+        setSettings(settingsManagerRef.current?.getSettings() || settings)
       }
       
       setHasUnsavedChanges(false)
@@ -218,8 +223,8 @@ export function useSettings(): UseSettingsReturn {
       } catch (apiError) {
         console.warn('⚠️ API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
-        settingsManager.updateCategorySettings(category, updates, changedBy, reason)
-        const newSettings = settingsManager.getSettings()
+        settingsManagerRef.current?.updateCategorySettings(category, updates, changedBy, reason)
+        const newSettings = settingsManagerRef.current?.getSettings() || settings
         console.log('💾 로컬 저장소에서 가져온 설정:', JSON.stringify(newSettings, null, 2))
         setSettings(newSettings)
         console.log('🔄 React state 업데이트 완료 (로컬)')
@@ -263,8 +268,8 @@ export function useSettings(): UseSettingsReturn {
       } catch (apiError) {
         console.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
-        settingsManager.updateSetting(category, key, value, changedBy, reason)
-        setSettings(settingsManager.getSettings())
+        settingsManagerRef.current?.updateSetting(category, key, value, changedBy, reason)
+        setSettings(settingsManagerRef.current?.getSettings() || settings)
       }
       
       setHasUnsavedChanges(false)
@@ -297,8 +302,8 @@ export function useSettings(): UseSettingsReturn {
       } catch (apiError) {
         console.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
-        settingsManager.resetSettings(category, changedBy)
-        setSettings(settingsManager.getSettings())
+        settingsManagerRef.current?.resetSettings(category, changedBy)
+        setSettings(settingsManagerRef.current?.getSettings() || settings)
       }
       
       setHasUnsavedChanges(false)
@@ -313,7 +318,7 @@ export function useSettings(): UseSettingsReturn {
 
   // 설정 내보내기
   const exportSettings = useCallback((): string => {
-    return settingsManager.exportSettings()
+    return settingsManagerRef.current?.exportSettings() || ''
   }, [])
 
   // 설정 가져오기 (API 연결)
@@ -336,8 +341,8 @@ export function useSettings(): UseSettingsReturn {
       } catch (apiError) {
         console.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
-        settingsManager.importSettings(jsonData, changedBy)
-        setSettings(settingsManager.getSettings())
+        settingsManagerRef.current?.importSettings(jsonData, changedBy)
+        setSettings(settingsManagerRef.current?.getSettings() || settings)
       }
       
       setHasUnsavedChanges(false)
@@ -354,7 +359,19 @@ export function useSettings(): UseSettingsReturn {
   const validateSettings = useCallback((
     settingsToValidate?: SystemSettings
   ): SettingsValidationResult => {
-    return settingsManager.validateSettings(settingsToValidate || settings)
+    if (!settingsManagerRef.current) {
+      return {
+        isValid: false,
+        errors: [{
+          category: 'system',
+          field: 'manager',
+          message: 'Settings manager not initialized',
+          value: null
+        }],
+        warnings: []
+      }
+    }
+    return settingsManagerRef.current.validateSettings(settingsToValidate || settings)
   }, [settings])
 
   // 히스토리 조회
@@ -362,12 +379,12 @@ export function useSettings(): UseSettingsReturn {
     category?: SettingsCategory,
     limit?: number
   ): SettingsHistory[] => {
-    return settingsManager.getHistory(category, limit)
+    return settingsManagerRef.current?.getHistory(category, limit) || []
   }, [])
 
   // 히스토리 삭제
   const clearHistory = useCallback((category?: SettingsCategory): void => {
-    settingsManager.clearHistory(category)
+    settingsManagerRef.current?.clearHistory(category)
   }, [])
 
   return useMemo(() => ({
