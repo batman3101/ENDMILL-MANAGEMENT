@@ -1,12 +1,17 @@
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
+import { Suspense } from 'react'
+import DonutChart from '../../components/features/DonutChart'
+
+const LandingStatusCard = dynamic(() => import('../../components/features/LandingStatusCard'), { ssr: false })
 
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* 상단 통계 카드 그리드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* 총 CNC 설비 */}
-        <Link href="/dashboard/equipment" className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow block">
+        {/* 총 CNC 설비 - 동적 데이터 카드 */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
@@ -14,24 +19,16 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-900">총 CNC 설비</p>
-                <p className="text-xs text-blue-600 hover:text-blue-800">자세히 보기 →</p>
+                <Link href="/dashboard/equipment" className="text-xs text-blue-600 hover:text-blue-800">자세히 보기 →</Link>
               </div>
             </div>
           </div>
           <div className="text-center py-2">
-            <p className="text-2xl font-bold text-gray-900">800대</p>
-            <p className="text-xs text-gray-500">742대 가동중</p>
+            <Suspense fallback={<div className="text-2xl font-bold text-gray-900">-</div>}>
+              <LandingStatusCard />
+            </Suspense>
           </div>
-          <div className="mt-3 flex justify-between text-xs">
-            <span className="text-gray-500">16,800개</span>
-            <span className="text-gray-500">93%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-            <div className="bg-blue-600 h-2 rounded-full" style={{width: '93%'}}></div>
-          </div>
-        </Link>
-
-
+        </div>
 
         {/* 재고 부족 알림 */}
         <Link href="/dashboard/inventory" className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow block">
@@ -55,13 +52,9 @@ export default function DashboardPage() {
             <span className="text-gray-500">15<span className="text-xs">개 부족</span></span>
           </div>
           <div className="mt-2 w-16 h-16 mx-auto">
-            <div className="relative w-full h-full">
-              <div className="absolute inset-0 rounded-full bg-gray-200"></div>
-              <div className="absolute inset-0 rounded-full bg-orange-500" style={{clipPath: 'polygon(50% 0%, 100% 0%, 100% 30%, 50% 100%)'}}></div>
-              <div className="absolute inset-2 rounded-full bg-white flex items-center justify-center">
-                <span className="text-xs font-bold text-gray-900">23</span>
-              </div>
-            </div>
+            <DonutChart value={23} max={100} color="#f97316" size={64}>
+              <span className="text-xs font-bold text-gray-900">23</span>
+            </DonutChart>
           </div>
         </Link>
 
@@ -96,10 +89,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </Link>
-
-
-
-
       </div>
 
       {/* 메인 대시보드 섹션 */}
