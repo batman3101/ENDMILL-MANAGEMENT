@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import QueryProvider from '../lib/providers/QueryProvider';
 import { ToastProvider } from '../components/shared/Toast'
+import { AuthProvider } from '../lib/hooks/useAuth'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -67,9 +68,11 @@ export default function RootLayout({
         
         <main id="main-content" className="min-h-screen">
           <ToastProvider>
-            <QueryProvider>
-              {children}
-            </QueryProvider>
+            <AuthProvider>
+              <QueryProvider>
+                {children}
+              </QueryProvider>
+            </AuthProvider>
           </ToastProvider>
         </main>
         

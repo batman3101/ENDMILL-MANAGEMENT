@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import DevMockDataManager from '../../components/dev/MockDataManager'
 import { useTranslations } from '../../lib/hooks/useTranslations'
+import { useAuth } from '../../lib/hooks/useAuth'
 
 export default function DashboardLayout({
   children,
@@ -12,7 +13,37 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const { currentLanguage, changeLanguage, t } = useTranslations()
+  const { user, signOut, loading } = useAuth()
+
+  // 로그아웃 처리
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      router.push('/login')
+    } catch (error) {
+      console.error('로그아웃 오류:', error)
+    }
+  }
+
+  // 인증 확인 중 로딩 표시
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">인증 확인 중...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 인증되지 않은 사용자는 로그인 페이지로 리다이렉트
+  if (!user) {
+    router.push('/login')
+    return null
+  }
 
   const menuItems = [
     {
@@ -125,8 +156,12 @@ export default function DashboardLayout({
 
               {/* 사용자 정보 */}
               <div className="text-right">
-                <p className="text-sm text-blue-100">{t('common', 'lastUpdate')}: 2025. 6. 26. 오후 6:17:26</p>
-                <p className="text-xs text-blue-200">{t('common', 'admin')}</p>
+                <p className="text-sm text-blue-100">
+                  {user?.name || '사용자'} ({user?.position || '직위 없음'})
+                </p>
+                <p className="text-xs text-blue-200">
+                  {user?.department || '부서 없음'} · {user?.shift || 'A'}교대
+                </p>
               </div>
 
               {/* 알림 및 로그아웃 */}
@@ -134,8 +169,11 @@ export default function DashboardLayout({
                 <button className="p-2 text-blue-100 hover:bg-blue-700 rounded-lg">
                   🔔
                 </button>
-                <button className="text-sm text-blue-100 hover:text-white px-3 py-1 rounded-lg hover:bg-blue-700">
-                  {t('auth', 'logout')}
+                <button 
+                  onClick={handleLogout}
+                  className="text-sm text-blue-100 hover:text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  로그아웃
                 </button>
               </div>
             </div>

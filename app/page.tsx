@@ -35,7 +35,7 @@ export default function HomePage() {
             
             {/* 로그인 버튼 */}
             <Link
-              href="/dashboard"
+              href="/login"
               className="inline-flex items-center px-8 py-3 bg-blue-600 text-white text-lg font-medium rounded-lg hover:bg-blue-700 transition-colors"
             >
               시스템 접속
