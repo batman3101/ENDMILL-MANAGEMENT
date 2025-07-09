@@ -2,11 +2,21 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { findEndmillByCode, getAllSuppliers, EndmillMaster } from '../../../../lib/data/mockData'
+import { useInventorySearch } from '../../../../lib/hooks/useInventory'
 import { useToast } from '../../../../components/shared/Toast'
 import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
 import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
 import { useSettings } from '../../../../lib/hooks/useSettings'
+
+// 앤드밀 데이터 타입 정의
+interface EndmillData {
+  code: string
+  name: string
+  specifications: string
+  unitPrice: number
+  category?: string
+  standardLife?: number
+}
 
 interface InboundItem {
   id: string
@@ -23,10 +33,11 @@ interface InboundItem {
 export default function InboundPage() {
   const { showSuccess, showError, showWarning } = useToast()
   const confirmation = useConfirmation()
+  const { searchByCode } = useInventorySearch()
   const [isScanning, setIsScanning] = useState(false)
   const [scannedCode, setScannedCode] = useState('')
   const [inboundItems, setInboundItems] = useState<InboundItem[]>([])
-  const [endmillData, setEndmillData] = useState<EndmillMaster | null>(null)
+  const [endmillData, setEndmillData] = useState<EndmillData | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [unitPrice, setUnitPrice] = useState(0)
@@ -42,12 +53,22 @@ export default function InboundPage() {
     setErrorMessage('')
     
     // 앤드밀 데이터베이스에서 검색 (공급업체 정보 제외)
-    const foundEndmill = findEndmillByCode(code.trim().toUpperCase())
+    const foundEndmills = searchByCode(code.trim().toUpperCase())
+    const foundEndmill = foundEndmills[0]
     
     if (foundEndmill) {
-      setEndmillData(foundEndmill)
+      const endmillInfo: EndmillData = {
+        code: foundEndmill.endmill_types?.code || code,
+        name: foundEndmill.endmill_types?.description_ko || foundEndmill.endmill_types?.description_vi || '',
+        specifications: foundEndmill.endmill_types?.specifications ? JSON.stringify(foundEndmill.endmill_types.specifications) : '',
+        unitPrice: foundEndmill.endmill_types?.unit_cost || 0,
+        category: foundEndmill.endmill_types?.endmill_categories?.code || '미분류',
+        standardLife: foundEndmill.endmill_types?.standard_life || 2000
+      }
+      
+      setEndmillData(endmillInfo)
       setQuantity(1) // 수량 초기화
-      setUnitPrice(foundEndmill.unitPrice) // 기본 단가 설정 (수정 가능)
+      setUnitPrice(endmillInfo.unitPrice) // 기본 단가 설정 (수정 가능)
       setSelectedSupplier('') // 공급업체는 직접 선택
     } else {
       setEndmillData(null)
@@ -215,7 +236,7 @@ export default function InboundPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">표준 수명</label>
-                    <div className="text-sm text-gray-600">{endmillData.standardLife.toLocaleString()}회</div>
+                    <div className="text-sm text-gray-600">{endmillData.standardLife?.toLocaleString() || '2,000'}회</div>
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">사양</label>

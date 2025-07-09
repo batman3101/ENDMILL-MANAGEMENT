@@ -90,11 +90,11 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
 
       if (row['T/N'] && row.Type && row['Tool name'] && row['Tool code']) {
         const endmill: EndmillInfo = {
-          tNumber: Number(row['T/N']),
-          endmillCode: row['Tool code'],
-          endmillName: row.Type,
+          t_number: Number(row['T/N']),
+          endmill_code: row['Tool code'],
+          endmill_name: row.Type,
           specifications: row['Tool name'],
-          toolLife: Number(row['Tool life']) || 2000
+          tool_life: Number(row['Tool life']) || 2000
         }
 
         camSheetMap.get(key)!.endmills.push(endmill)
@@ -102,8 +102,22 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
     })
 
     return Array.from(camSheetMap.values()).map(sheet => ({
-      ...sheet,
-      versionDate: new Date().toISOString().split('T')[0]
+      model: sheet.model,
+      process: sheet.process,
+      cam_version: sheet.camVersion,
+      version_date: new Date().toISOString().split('T')[0],
+      cam_sheet_endmills: sheet.endmills.map((endmill: EndmillInfo) => ({
+        id: Date.now().toString() + Math.random(),
+        cam_sheet_id: '', // 나중에 서버에서 설정
+        t_number: endmill.t_number,
+        endmill_code: endmill.endmill_code,
+        endmill_name: endmill.endmill_name,
+        specifications: endmill.specifications,
+        tool_life: endmill.tool_life,
+        created_at: new Date().toISOString()
+      })),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }))
   }
 
@@ -296,15 +310,15 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h5 className="font-medium text-gray-900">
-                          {sheet.model} - {sheet.process} ({sheet.camVersion})
+                          {sheet.model} - {sheet.process} ({sheet.cam_version})
                         </h5>
                         <p className="text-sm text-gray-500">
-                          {sheet.endmills.length}개 앤드밀 등록
+                          {sheet.cam_sheet_endmills?.length || 0}개 앤드밀 등록
                         </p>
                       </div>
                     </div>
                     <div className="text-sm text-gray-600">
-                      T번호: {sheet.endmills.map(e => `T${e.tNumber.toString().padStart(2, '0')}`).join(', ')}
+                      T번호: {sheet.cam_sheet_endmills?.map((e: any) => `T${e.t_number.toString().padStart(2, '0')}`).join(', ') || '-'}
                     </div>
                   </div>
                 ))}

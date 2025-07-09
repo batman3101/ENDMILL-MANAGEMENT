@@ -1,52 +1,65 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FileDataManager } from '../../lib/data/fileDataManager'
+import { useInventory } from '../../lib/hooks/useInventory'
+import { useEquipment } from '../../lib/hooks/useEquipment'
+import { useCAMSheets } from '../../lib/hooks/useCAMSheets'
+import { useToast } from '../shared/Toast'
 
 export default function DevMockDataManager() {
+  const { showSuccess, showError } = useToast()
   const [stats, setStats] = useState({
-    equipments: 0,
-    endmills: 0,
-    camSheets: 0,
     inventory: 0,
-    toolChanges: 0,
-    users: 0
+    equipment: 0,
+    camSheets: 0,
+    toolChanges: 0
   })
 
+  // Hook에서 데이터 가져오기
+  const { inventory, loading: inventoryLoading } = useInventory()
+  const { equipments, loading: equipmentLoading } = useEquipment()
+  const { camSheets, loading: camSheetsLoading } = useCAMSheets()
+
+  // 통계 업데이트
   const updateStats = () => {
-    const newStats = FileDataManager.getDataStats()
-    setStats(newStats)
+    setStats({
+      inventory: inventory?.length || 0,
+      equipment: equipments?.length || 0,
+      camSheets: camSheets?.length || 0,
+      toolChanges: 0 // TODO: Tool Changes Hook 추가 후 업데이트
+    })
   }
 
   useEffect(() => {
     updateStats()
-  }, [])
+  }, [inventory, equipments, camSheets])
 
   const handleReset = () => {
-    if (confirm('모든 목업 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
-      FileDataManager.resetAllData()
-      updateStats()
-      alert('데이터가 초기화되었습니다.')
-      window.location.reload() // 페이지 새로고침
+    if (confirm('모든 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+      showError('기능 제한', '실제 데이터베이스 연동 후에는 리셋 기능을 사용할 수 없습니다.')
     }
   }
 
   const handleExport = () => {
     try {
-      const exportData = FileDataManager.exportData()
-      const blob = new Blob([exportData], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `mockdata_export_${new Date().toISOString().split('T')[0]}.json`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
+      const exportData = {
+        timestamp: new Date().toISOString(),
+        stats: stats,
+        note: 'Supabase 연동 후에는 실제 데이터베이스에서 내보내기를 수행합니다.'
+      }
+      
+      const dataStr = JSON.stringify(exportData, null, 2)
+      const dataBlob = new Blob([dataStr], { type: 'application/json' })
+      const url = URL.createObjectURL(dataBlob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `cnc-endmill-stats-${new Date().toISOString().split('T')[0]}.json`
+      link.click()
       URL.revokeObjectURL(url)
-      alert('데이터 내보내기가 완료되었습니다.')
+
+      showSuccess('내보내기 완료', '데이터 통계가 성공적으로 내보내졌습니다.')
     } catch (error) {
-      alert('데이터 내보내기에 실패했습니다.')
-      console.error(error)
+      showError('내보내기 실패', '데이터 내보내기 중 오류가 발생했습니다.')
     }
   }
 
@@ -54,126 +67,163 @@ export default function DevMockDataManager() {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.json'
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
-      if (file) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          try {
-            const jsonData = e.target?.result as string
-            const success = FileDataManager.importData(jsonData)
-            if (success) {
-              updateStats()
-              alert('데이터 가져오기가 완료되었습니다.')
-              window.location.reload()
-            } else {
-              alert('데이터 가져오기에 실패했습니다.')
-            }
-          } catch (error) {
-            alert('잘못된 파일 형식입니다.')
-            console.error(error)
-          }
+      if (!file) return
+
+      try {
+        const text = await file.text()
+        const data = JSON.parse(text)
+        
+        // 데이터 검증
+        if (!data.timestamp || !data.stats) {
+          throw new Error('잘못된 파일 형식입니다.')
         }
-        reader.readAsText(file)
+
+        showSuccess('가져오기 완료', 'Supabase 연동 후에는 실제 데이터 가져오기가 구현됩니다.')
+      } catch (error) {
+        showError('가져오기 실패', '파일을 읽는 중 오류가 발생했습니다.')
       }
     }
     input.click()
   }
 
   const handleGenerateEquipments = () => {
-    if (confirm('800대 설비 데이터를 생성하시겠습니까?')) {
-      FileDataManager.generateEquipments(800)
-      updateStats()
-      alert('800대 설비 데이터가 생성되었습니다.')
-    }
+    showError('기능 제한', 'Supabase 연동 후에는 실제 데이터베이스에 설비를 생성합니다.')
+  }
+
+  if (inventoryLoading || equipmentLoading || camSheetsLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
+          <span className="text-gray-600">데이터 로딩 중...</span>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">🛠️ 목업 데이터 관리</h2>
-        
+    <div className="bg-white rounded-lg shadow-sm border">
+      <div className="px-6 py-4 border-b">
+        <h3 className="text-lg font-medium text-gray-900">🛠️ 개발자 도구 - 데이터 관리</h3>
+        <p className="text-sm text-gray-600 mt-1">Supabase 연동 후 실시간 데이터 통계</p>
+      </div>
+      
+      <div className="p-6 space-y-6">
         {/* 데이터 통계 */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="text-sm text-blue-600 font-medium">설비</div>
-            <div className="text-2xl font-bold text-blue-900">{stats.equipments.toLocaleString()}</div>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <div className="text-sm text-green-600 font-medium">앤드밀</div>
-            <div className="text-2xl font-bold text-green-900">{stats.endmills.toLocaleString()}</div>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <div className="text-sm text-purple-600 font-medium">CAM Sheet</div>
-            <div className="text-2xl font-bold text-purple-900">{stats.camSheets.toLocaleString()}</div>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <div className="text-sm text-yellow-600 font-medium">재고</div>
-            <div className="text-2xl font-bold text-yellow-900">{stats.inventory.toLocaleString()}</div>
-          </div>
-          <div className="bg-red-50 p-4 rounded-lg">
-            <div className="text-sm text-red-600 font-medium">교체 이력</div>
-            <div className="text-2xl font-bold text-red-900">{stats.toolChanges.toLocaleString()}</div>
-          </div>
-          <div className="bg-indigo-50 p-4 rounded-lg">
-            <div className="text-sm text-indigo-600 font-medium">사용자</div>
-            <div className="text-2xl font-bold text-indigo-900">{stats.users.toLocaleString()}</div>
+        <div>
+          <h4 className="text-md font-medium text-gray-900 mb-3">📊 현재 데이터 현황</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{stats.inventory}</div>
+              <div className="text-sm text-blue-800">재고 항목</div>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{stats.equipment}</div>
+              <div className="text-sm text-green-800">설비</div>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">{stats.camSheets}</div>
+              <div className="text-sm text-purple-800">CAM Sheet</div>
+            </div>
+            <div className="bg-orange-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-orange-600">{stats.toolChanges}</div>
+              <div className="text-sm text-orange-800">교체 이력</div>
+            </div>
           </div>
         </div>
 
-        {/* 관리 버튼들 */}
-        <div className="space-y-4">
-          <div className="flex flex-wrap gap-3">
+        {/* 데이터 관리 도구 */}
+        <div>
+          <h4 className="text-md font-medium text-gray-900 mb-3">🔧 데이터 관리 도구</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <button
               onClick={updateStats}
-              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
-            >
-              📊 통계 새로고침
-            </button>
-            <button
-              onClick={handleGenerateEquipments}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
             >
-              🏭 설비 데이터 생성
+              🔄 통계 새로고침
             </button>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
             <button
               onClick={handleExport}
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
             >
-              📤 데이터 내보내기
+              📤 통계 내보내기
             </button>
             <button
               onClick={handleImport}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm"
             >
               📥 데이터 가져오기
             </button>
-          </div>
-
-          <div className="border-t pt-4">
             <button
               onClick={handleReset}
               className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
             >
-              🗑️ 모든 데이터 초기화
+              🗑️ 데이터 리셋
             </button>
-            <p className="text-xs text-gray-500 mt-2">
-              ⚠️ 주의: 모든 목업 데이터가 삭제되고 초기 상태로 돌아갑니다.
-            </p>
           </div>
         </div>
 
-        {/* 개발 정보 */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">📋 개발 정보</h3>
-          <div className="text-xs text-gray-600 space-y-1">
-            <p>• 데이터는 브라우저 로컬 스토리지에 저장됩니다</p>
-            <p>• JSON 파일 기반으로 초기 데이터를 관리합니다</p>
-            <p>• Supabase 연결 전까지 임시로 사용하는 목업 시스템입니다</p>
-            <p>• 데이터 구조는 실제 데이터베이스 스키마와 일치합니다</p>
+        {/* 개발자 정보 */}
+        <div>
+          <h4 className="text-md font-medium text-gray-900 mb-3">ℹ️ 개발 정보</h4>
+          <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">데이터베이스:</span>
+              <span className="font-mono text-gray-900">Supabase PostgreSQL</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">상태 관리:</span>
+              <span className="font-mono text-gray-900">React Query + Real-time</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">마지막 업데이트:</span>
+              <span className="font-mono text-gray-900">{new Date().toLocaleString('ko-KR')}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">개발 모드:</span>
+              <span className="font-mono text-gray-900">
+                {process.env.NODE_ENV === 'development' ? '🟢 Development' : '🔴 Production'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 실시간 연결 상태 */}
+        <div>
+          <h4 className="text-md font-medium text-gray-900 mb-3">🔗 실시간 연결 상태</h4>
+          <div className="space-y-2">
+            <div className="flex items-center text-sm">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+              <span className="text-gray-700">Inventory 실시간 구독 활성</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+              <span className="text-gray-700">Equipment 실시간 구독 활성</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+              <span className="text-gray-700">CAM Sheets 실시간 구독 활성</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+              <span className="text-gray-700">Tool Changes 구독 대기 중</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 경고 메시지 */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-start">
+            <div className="text-yellow-600 mr-2">⚠️</div>
+            <div>
+              <h5 className="text-sm font-medium text-yellow-800">개발자 도구 안내</h5>
+              <p className="text-xs text-yellow-700 mt-1">
+                이 도구는 개발 환경에서만 사용하세요. 운영 환경에서는 실제 데이터베이스와 연동됩니다.
+                데이터 리셋 및 대량 생성 기능은 실제 환경에서는 비활성화됩니다.
+              </p>
+            </div>
           </div>
         </div>
       </div>

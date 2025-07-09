@@ -95,13 +95,13 @@ export default function ToolChangesPage() {
     const sheet = camSheets.find(s => s.model === model && s.process === process)
     if (!sheet) return null
 
-    const endmill = sheet.endmills.find(e => e.tNumber === tNumber)
+    const endmill = (sheet.cam_sheet_endmills || []).find((e: any) => e.t_number === tNumber)
     if (!endmill) return null
 
     return {
-      endmillCode: endmill.endmillCode,
+      endmillCode: endmill.endmill_code,
       endmillName: endmill.specifications, // specifications가 실제 앤드밀 이름
-      suggestedToolLife: endmill.toolLife
+      suggestedToolLife: endmill.tool_life
     }
   }, [camSheets])
 

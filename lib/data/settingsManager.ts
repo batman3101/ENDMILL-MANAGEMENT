@@ -164,9 +164,9 @@ export class SettingsManager {
     // 설정 업데이트
     Object.keys(updates).forEach(category => {
       if (updates[category as keyof SystemSettings]) {
-        this.settings[category as keyof SystemSettings] = {
-          ...this.settings[category as keyof SystemSettings],
-          ...updates[category as keyof SystemSettings]
+        (this.settings as any)[category] = {
+          ...(this.settings as any)[category],
+          ...(updates as any)[category]
         }
       }
     })
@@ -196,7 +196,7 @@ export class SettingsManager {
     changedBy: string = 'system',
     reason?: string
   ): void {
-    const updates = { [key]: value } as Partial<SystemSettings[T]>
+    const updates = { [key]: value } as unknown as Partial<SystemSettings[T]>
     this.updateCategorySettings(category, updates, changedBy, reason)
   }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FileDataManager } from '../../../lib/data/fileDataManager';
+import { serverSupabaseService } from '../../../lib/services/supabaseService';
 import { z } from 'zod';
 
 // 재고 업데이트 스키마
@@ -28,44 +28,35 @@ export async function GET(request: NextRequest) {
     const categoryFilter = url.searchParams.get('category')
     const lowStock = url.searchParams.get('lowStock') === 'true'
 
-    let inventory = FileDataManager.getInventory()
-    const endmillMaster = FileDataManager.getEndmillMaster()
-
-    // 재고 데이터에 앤드밀 마스터 정보 조인
-    const enrichedInventory = inventory.map(item => {
-      const endmill = endmillMaster.find(e => e.code === item.endmillCode)
-      return {
-        ...item,
-        endmill: endmill ? {
-          name: endmill.name,
-          category: endmill.category,
-          specifications: endmill.specifications,
-          unitPrice: endmill.unitPrice
-        } : null
-      }
-    })
+    // Supabase에서 재고 데이터 조회 (앤드밀 타입과 카테고리 정보 포함)
+    let inventory = await serverSupabaseService.inventory.getAll()
 
     // 필터 적용
-    let filteredInventory = enrichedInventory
+    let filteredInventory = inventory
 
     if (statusFilter) {
-      filteredInventory = filteredInventory.filter(item => item.status === statusFilter)
+      filteredInventory = filteredInventory.filter(item => {
+        // 재고 상태 계산
+        const status = getStockStatus(item.current_stock, item.min_stock, item.max_stock)
+        return status === statusFilter
+      })
     }
 
     if (categoryFilter && categoryFilter !== '') {
       filteredInventory = filteredInventory.filter(item => 
-        item.endmill?.category === categoryFilter
+        item.endmill_type?.category?.code === categoryFilter
       )
     }
 
     if (lowStock) {
-      filteredInventory = filteredInventory.filter(item => 
-        item.status === 'low' || item.status === 'critical'
-      )
+      filteredInventory = filteredInventory.filter(item => {
+        const status = getStockStatus(item.current_stock, item.min_stock, item.max_stock)
+        return status === 'low' || status === 'critical'
+      })
     }
 
-    // 재고 상태별 통계 계산
-    const stats = calculateInventoryStats(enrichedInventory, endmillMaster)
+    // 재고 통계 계산
+    const stats = await serverSupabaseService.inventory.getStats()
     
     return NextResponse.json({
       data: filteredInventory,
@@ -90,45 +81,23 @@ export async function POST(request: NextRequest) {
     // 입력 데이터 검증
     const validatedData = createInventorySchema.parse(body);
     
-    const inventory = FileDataManager.getInventory()
-    const endmillMaster = FileDataManager.getEndmillMaster()
-    
-    // 앤드밀 코드 유효성 검사
-    const endmillExists = endmillMaster.find(e => e.code === validatedData.endmillCode)
-    if (!endmillExists) {
+    // 앤드밀 타입 존재 여부 확인
+    const endmillType = await serverSupabaseService.endmillType.getByCode(validatedData.endmillCode)
+    if (!endmillType) {
       return NextResponse.json(
         { error: '존재하지 않는 앤드밀 코드입니다.' },
         { status: 400 }
       );
     }
 
-    // 중복 체크
-    const exists = inventory.find(item => item.endmillCode === validatedData.endmillCode)
-    if (exists) {
-      return NextResponse.json(
-        { error: '이미 존재하는 재고 항목입니다.' },
-        { status: 400 }
-      );
-    }
-
-    // 재고 상태 계산
-    const status = getStockStatus(validatedData.currentStock, validatedData.minStock, validatedData.maxStock)
-
-    // 새 재고 항목 생성
-    const newInventory = {
-      id: `inv-${Date.now()}`,
-      endmillCode: validatedData.endmillCode,
-      currentStock: validatedData.currentStock,
-      minStock: validatedData.minStock,
-      maxStock: validatedData.maxStock,
-      status,
+    // 새 재고 항목 생성 (Supabase에서 자동으로 status가 트리거로 계산됨)
+    const newInventory = await serverSupabaseService.inventory.create({
+      endmill_type_id: endmillType.id,
+      current_stock: validatedData.currentStock,
+      min_stock: validatedData.minStock,
+      max_stock: validatedData.maxStock,
       location: validatedData.location || 'A-001',
-      lastUpdated: new Date().toISOString(),
-      suppliers: [] // 빈 배열로 초기화
-    }
-
-    const updatedInventory = [...inventory, newInventory]
-    FileDataManager.saveInventory(updatedInventory)
+    })
     
     return NextResponse.json({
       data: newInventory,
@@ -169,35 +138,13 @@ export async function PUT(request: NextRequest) {
 
     // 입력 데이터 검증
     const validatedData = updateInventorySchema.parse(updateData);
-    
-    const inventory = FileDataManager.getInventory()
-    const itemIndex = inventory.findIndex(item => item.id === id)
-    
-    if (itemIndex === -1) {
-      return NextResponse.json(
-        { error: '재고 항목을 찾을 수 없습니다.' },
-        { status: 404 }
-      );
-    }
 
-    const existingItem = inventory[itemIndex]
-
-    // 재고 상태 재계산
-    const minStock = validatedData.minStock ?? existingItem.minStock
-    const maxStock = validatedData.maxStock ?? existingItem.maxStock
-    const currentStock = validatedData.currentStock
-    const status = getStockStatus(currentStock, minStock, maxStock)
-
-    // 재고 업데이트
-    const updatedItem = {
-      ...existingItem,
-      ...validatedData,
-      status,
-      lastUpdated: new Date().toISOString()
-    }
-
-    inventory[itemIndex] = updatedItem
-    FileDataManager.saveInventory(inventory)
+    // 재고 업데이트 (Supabase 트리거가 자동으로 status 계산)
+    const updatedItem = await serverSupabaseService.inventory.updateStock(id, {
+      current_stock: validatedData.currentStock,
+      min_stock: validatedData.minStock,
+      max_stock: validatedData.maxStock,
+    })
     
     return NextResponse.json({
       data: updatedItem,

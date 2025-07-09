@@ -115,8 +115,10 @@ export class TranslationManager {
       const translations: TranslationData = {}
       
       for (const item of translationData || []) {
-        const namespace = item.namespace.code
+        const namespace = (item.namespace as any)?.code
         const key = item.key_name
+        
+        if (!namespace || !key) continue
         
         if (!translations[namespace]) {
           translations[namespace] = {}
@@ -315,6 +317,10 @@ export class TranslationManager {
         throw nsError
       }
 
+      if (!namespaceData) {
+        throw new Error('네임스페이스 데이터를 찾을 수 없습니다.')
+      }
+
       // 2. 번역 키 확인/생성
       let { data: keyData, error: keyError } = await supabase
         .from('translation_keys')
@@ -339,6 +345,10 @@ export class TranslationManager {
         keyData = newKey
       } else if (keyError) {
         throw keyError
+      }
+
+      if (!keyData) {
+        throw new Error('번역 키 데이터를 찾을 수 없습니다.')
       }
 
       // 3. 번역값 확인/업데이트

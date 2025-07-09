@@ -5,7 +5,6 @@ import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createCustomConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
 import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
-import { INITIAL_CAM_SHEETS } from '../../../lib/data/mockData'
 import { useSettings } from '../../../lib/hooks/useSettings'
 
 // 앤드밀 인스턴스 타입 정의
@@ -233,7 +232,7 @@ export default function EndmillPage() {
   const getEndmillUsageInfo = (code: string) => {
     // CAM Sheet에서 해당 코드가 포함된 모델/공정 추출
     const usedInSheets = camSheets.filter(sheet =>
-      sheet.endmills.some(e => e.endmillCode === code)
+      (sheet.cam_sheet_endmills || []).some((e: any) => e.endmill_code === code)
     )
     const usedModels = Array.from(new Set(usedInSheets.map(s => s.model)))
     const usedProcesses = Array.from(new Set(usedInSheets.map(s => s.process)))

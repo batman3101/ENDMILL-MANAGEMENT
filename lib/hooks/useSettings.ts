@@ -244,7 +244,7 @@ export function useSettings(): UseSettingsReturn {
     setHasUnsavedChanges(true)
 
     try {
-      const updates = { [key]: value } as Partial<SystemSettings[T]>
+      const updates = { [key]: value } as unknown as Partial<SystemSettings[T]>
       
       // API 호출 시도 (실패하면 로컬 저장소 사용)
       try {

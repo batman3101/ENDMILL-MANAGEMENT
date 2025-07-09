@@ -15,6 +15,7 @@ export default function CAMSheetsPage() {
     loading, 
     error, 
     createCAMSheet, 
+    createCAMSheetsBatch,
     updateCAMSheet, 
     deleteCAMSheet 
   } = useCAMSheets()
@@ -33,9 +34,9 @@ export default function CAMSheetsPage() {
 
   // 필터링된 CAM Sheet 목록
   const filteredSheets = camSheets.filter(sheet => {
-    const matchesSearch = searchTerm === '' || 
+        const matchesSearch = searchTerm === '' ||
       sheet.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sheet.camVersion.toLowerCase().includes(searchTerm.toLowerCase())
+      sheet.cam_version.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesModel = modelFilter === '' || sheet.model === modelFilter
     const matchesProcess = processFilter === '' || sheet.process === processFilter
@@ -70,9 +71,9 @@ export default function CAMSheetsPage() {
     const toolLifeAccuracy = Math.round(85 + Math.random() * 10) // 85-95% 범위
 
     // 2. 교체 주기 분석 (시간 단위)
-    const allEndmills = camSheets.flatMap(sheet => sheet.endmills)
-    const averageChangeInterval = allEndmills.length > 0 
-      ? Math.round((allEndmills.reduce((acc, endmill) => acc + (endmill.toolLife / 60), 0) / allEndmills.length) * 10) / 10
+    const allEndmills = camSheets.flatMap(sheet => sheet.cam_sheet_endmills || [])
+        const averageChangeInterval = allEndmills.length > 0
+      ? Math.round((allEndmills.reduce((acc, endmill) => acc + (endmill.tool_life / 60), 0) / allEndmills.length) * 10) / 10
       : 0
 
     // 앤드밀 타입별 교체 주기 (시간 단위)
@@ -91,7 +92,7 @@ export default function CAMSheetsPage() {
       : 0
 
     // 4. 표준화 지수
-    const endmillCodes = new Set(allEndmills.map(e => e.endmillCode))
+    const endmillCodes = new Set(allEndmills.map(e => e.endmill_code))
     const totalUniqueEndmills = endmillCodes.size
     const estimatedStandardEndmills = Math.floor(totalUniqueEndmills * 0.75)
     const duplicateEndmills = totalUniqueEndmills - estimatedStandardEndmills
@@ -153,8 +154,16 @@ export default function CAMSheetsPage() {
     if (confirmed) {
       confirmation.setLoading(true)
       try {
-        camSheets.forEach(sheet => {
-          createCAMSheet(sheet)
+        // 일괄 생성 API 호출
+        createCAMSheetsBatch({
+          batch: true,
+          data: camSheets.map(sheet => ({
+            model: sheet.model,
+            process: sheet.process,
+            cam_version: sheet.cam_version,
+            version_date: sheet.version_date,
+            endmills: sheet.cam_sheet_endmills || []
+          }))
         })
         setShowExcelUploader(false)
         showSuccess(
@@ -239,7 +248,7 @@ export default function CAMSheetsPage() {
             <div>
               <p className="text-sm font-medium text-gray-600">등록 앤드밀</p>
               <p className="text-2xl font-bold text-purple-600">
-                {camSheets.reduce((total, sheet) => total + sheet.endmills.length, 0)}
+                {camSheets.reduce((total, sheet) => total + (sheet.cam_sheet_endmills || []).length, 0)}
               </p>
             </div>
           </div>
@@ -254,7 +263,7 @@ export default function CAMSheetsPage() {
               <p className="text-sm font-medium text-gray-600">효율성 지수</p>
               <p className="text-2xl font-bold text-yellow-600">
                 {camSheets.length > 0 
-                  ? `${Math.round((camSheets.reduce((acc, sheet) => acc + sheet.endmills.length, 0) / Math.max(camSheets.length * 10, 1)) * 100)}%`
+                  ? `${Math.round((camSheets.reduce((acc, sheet) => acc + (sheet.cam_sheet_endmills || []).length, 0) / Math.max(camSheets.length * 10, 1)) * 100)}%`
                   : '0%'
                 }
               </p>
@@ -465,18 +474,21 @@ export default function CAMSheetsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{sheet.camVersion}</div>
-                      <div className="text-sm text-gray-500">{sheet.versionDate}</div>
+                      <div className="text-sm font-medium text-gray-900">{sheet.cam_version}</div>
+                      <div className="text-sm text-gray-500">{sheet.version_date}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{sheet.endmills.length}개</div>
+                    <div className="text-sm text-gray-900">{(sheet.cam_sheet_endmills || []).length}개</div>
                     <div className="text-sm text-gray-500">
-                      T{Math.min(...sheet.endmills.map(e => e.tNumber))}-T{Math.max(...sheet.endmills.map(e => e.tNumber))}
+                      {(sheet.cam_sheet_endmills || []).length > 0 ? 
+                        `T${Math.min(...(sheet.cam_sheet_endmills || []).map((e: EndmillInfo) => e.t_number))}-T${Math.max(...(sheet.cam_sheet_endmills || []).map((e: EndmillInfo) => e.t_number))}` : 
+                        '-'
+                      }
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(sheet.updatedAt).toLocaleDateString('ko-KR')}
+                    {new Date(sheet.updated_at).toLocaleDateString('ko-KR')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <button 
@@ -527,11 +539,11 @@ export default function CAMSheetsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">CAM 버전</label>
-                  <p className="text-lg font-semibold">{selectedSheet.camVersion}</p>
+                  <p className="text-lg font-semibold">{selectedSheet.cam_version}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">버전 변경일자</label>
-                  <p className="text-lg font-semibold">{selectedSheet.versionDate}</p>
+                  <p className="text-lg font-semibold">{selectedSheet.version_date}</p>
                 </div>
               </div>
 
@@ -548,13 +560,13 @@ export default function CAMSheetsPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {selectedSheet.endmills.map((endmill) => (
-                      <tr key={endmill.tNumber}>
-                        <td className="px-4 py-2 text-sm font-medium">T{endmill.tNumber.toString().padStart(2, '0')}</td>
-                        <td className="px-4 py-2 text-sm">{endmill.endmillCode}</td>
-                        <td className="px-4 py-2 text-sm">{endmill.endmillName}</td>
+                    {(selectedSheet.cam_sheet_endmills || []).map((endmill: EndmillInfo) => (
+                      <tr key={endmill.t_number}>
+                        <td className="px-4 py-2 text-sm font-medium">T{endmill.t_number.toString().padStart(2, '0')}</td>
+                        <td className="px-4 py-2 text-sm">{endmill.endmill_code}</td>
+                        <td className="px-4 py-2 text-sm">{endmill.endmill_name}</td>
                         <td className="px-4 py-2 text-sm">{endmill.specifications}</td>
-                        <td className="px-4 py-2 text-sm">{endmill.toolLife.toLocaleString()}회</td>
+                        <td className="px-4 py-2 text-sm">{endmill.tool_life.toLocaleString()}회</td>
                       </tr>
                     ))}
                   </tbody>

@@ -143,6 +143,154 @@ export interface Database {
           last_updated?: string;
         };
       };
+      // Tool Changes 테이블
+      tool_changes: {
+        Row: {
+          id: string;
+          change_date: string;
+          equipment_number: number;
+          model: string;
+          process: string;
+          t_number: number;
+          endmill_code: string;
+          endmill_name: string;
+          changed_by: string;
+          change_reason: string;
+          tool_life: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          change_date: string;
+          equipment_number: number;
+          model: string;
+          process: string;
+          t_number: number;
+          endmill_code: string;
+          endmill_name: string;
+          changed_by: string;
+          change_reason: string;
+          tool_life?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          change_date?: string;
+          equipment_number?: number;
+          model?: string;
+          process?: string;
+          t_number?: number;
+          endmill_code?: string;
+          endmill_name?: string;
+          changed_by?: string;
+          change_reason?: string;
+          tool_life?: number | null;
+        };
+      };
+      // CAM Sheet 관련 테이블들
+      cam_sheets: {
+        Row: {
+          id: string;
+          model: string;
+          process: string;
+          cam_version: string;
+          version_date: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          model: string;
+          process: string;
+          cam_version: string;
+          version_date: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          model?: string;
+          process?: string;
+          cam_version?: string;
+          version_date?: string;
+          updated_at?: string;
+        };
+      };
+      cam_sheet_endmills: {
+        Row: {
+          id: string;
+          cam_sheet_id: string;
+          t_number: number;
+          endmill_code: string;
+          endmill_name: string;
+          specifications: string;
+          tool_life: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          cam_sheet_id: string;
+          t_number: number;
+          endmill_code: string;
+          endmill_name: string;
+          specifications: string;
+          tool_life: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          cam_sheet_id?: string;
+          t_number?: number;
+          endmill_code?: string;
+          endmill_name?: string;
+          specifications?: string;
+          tool_life?: number;
+        };
+      };
+      // User Profiles 테이블
+      user_profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          full_name: string;
+          employee_id: string | null;
+          department: string | null;
+          position: string | null;
+          shift: string | null;
+          role_id: string | null;
+          is_active: boolean;
+          last_login: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          full_name: string;
+          employee_id?: string | null;
+          department?: string | null;
+          position?: string | null;
+          shift?: string | null;
+          role_id?: string | null;
+          is_active?: boolean;
+          last_login?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          full_name?: string;
+          employee_id?: string | null;
+          department?: string | null;
+          position?: string | null;
+          shift?: string | null;
+          role_id?: string | null;
+          is_active?: boolean;
+          last_login?: string | null;
+          updated_at?: string;
+        };
+      };
       // 추후 확장될 테이블들...
       tool_positions: {
         Row: {
@@ -213,3 +361,11 @@ export type InventoryUpdate = Database['public']['Tables']['inventory']['Update'
 
 export type ToolPosition = Database['public']['Tables']['tool_positions']['Row'];
 export type ToolPositionInsert = Database['public']['Tables']['tool_positions']['Insert']; 
+
+export type ToolChange = Database['public']['Tables']['tool_changes']['Row'];
+export type ToolChangeInsert = Database['public']['Tables']['tool_changes']['Insert'];
+export type ToolChangeUpdate = Database['public']['Tables']['tool_changes']['Update'];
+
+export type UserProfile = Database['public']['Tables']['user_profiles']['Row'];
+export type UserProfileInsert = Database['public']['Tables']['user_profiles']['Insert'];
+export type UserProfileUpdate = Database['public']['Tables']['user_profiles']['Update'];

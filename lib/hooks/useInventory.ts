@@ -1,10 +1,23 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { FileDataManager, Inventory, EndmillMaster } from '../data/fileDataManager'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { clientSupabaseService } from '../services/supabaseService'
+import { Database } from '../types/database'
 
-// FileDataManager에서 타입들을 가져옴
-export { Inventory, EndmillMaster } from '../data/fileDataManager'
+// Database 타입에서 가져오기
+type Inventory = Database['public']['Tables']['inventory']['Row'] & {
+  endmill_types?: Database['public']['Tables']['endmill_types']['Row'] & {
+    endmill_categories?: Database['public']['Tables']['endmill_categories']['Row']
+  }
+}
+
+type EndmillType = Database['public']['Tables']['endmill_types']['Row'] & {
+  endmill_categories?: Database['public']['Tables']['endmill_categories']['Row']
+}
+
+// 타입 export
+export type { Inventory, EndmillType }
 
 export interface InventoryFilter {
   status?: string
@@ -22,164 +35,210 @@ export interface InventoryStats {
   categoryStats: Record<string, { count: number; value: number }>
 }
 
-export interface EnrichedInventory extends Inventory {
-  endmill?: {
-    name: string
-    category: string
-    specifications: string
-    unitPrice: number
-  }
+// 재고 상태 계산
+const calculateStockStatus = (current: number, min: number, max: number): 'sufficient' | 'low' | 'critical' => {
+  if (current <= min) return 'critical'
+  if (current <= min * 1.5) return 'low'
+  return 'sufficient'
 }
 
-// 로컬 스토리지에서 재고 데이터 로드
-const loadInventoryFromStorage = (): Inventory[] => {
-  try {
-    return FileDataManager.getInventory()
-  } catch (error) {
-    console.error('재고 데이터 로드 실패:', error)
-    return []
-  }
-}
+export const useInventory = (filter?: InventoryFilter) => {
+  const queryClient = useQueryClient()
 
-// 로컬 스토리지에 재고 데이터 저장
-const saveInventoryToStorage = (inventory: Inventory[]) => {
-  try {
-    FileDataManager.saveInventory(inventory)
-  } catch (error) {
-    console.error('재고 데이터 저장 실패:', error)
-  }
-}
-
-export const useInventory = () => {
-  const [inventory, setInventory] = useState<Inventory[]>([])
-  const [endmillMaster, setEndmillMaster] = useState<EndmillMaster[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  // 초기 데이터 로드
-  useEffect(() => {
-    try {
-      const inventoryData = loadInventoryFromStorage()
-      const endmillData = FileDataManager.getEndmillMaster()
+  // 재고 데이터 조회
+  const {
+    data: inventory = [],
+    isLoading: loading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['inventory', filter],
+    queryFn: async () => {
+      const response = await fetch('/api/inventory?' + new URLSearchParams({
+        ...(filter?.status && { status: filter.status }),
+        ...(filter?.category && { category: filter.category }),
+        ...(filter?.lowStock && { lowStock: 'true' })
+      }))
       
-      setInventory(inventoryData)
-      setEndmillMaster(endmillData)
-      setLoading(false)
-    } catch (err) {
-      setError('재고 데이터를 불러오는데 실패했습니다.')
-      setLoading(false)
-    }
-  }, [])
-
-  // 재고 상태 계산
-  const calculateStockStatus = (current: number, min: number, max: number): 'sufficient' | 'low' | 'critical' => {
-    if (current <= min) return 'critical'
-    if (current <= min * 1.5) return 'low'
-    return 'sufficient'
-  }
-
-  // 재고 생성
-  const createInventory = (data: Omit<Inventory, 'id' | 'status' | 'lastUpdated'>) => {
-    const status = calculateStockStatus(data.currentStock, data.minStock, data.maxStock)
-    
-    const newInventory: Inventory = {
-      ...data,
-      id: `inv-${Date.now()}`,
-      status,
-      lastUpdated: new Date().toISOString(),
-      suppliers: data.suppliers || []
-    }
-
-    const updatedInventory = [...inventory, newInventory]
-    setInventory(updatedInventory)
-    saveInventoryToStorage(updatedInventory)
-  }
-
-  // 재고 업데이트
-  const updateInventory = (id: string, data: Partial<Omit<Inventory, 'id' | 'lastUpdated'>>) => {
-    const updatedInventory = inventory.map(item => {
-      if (item.id === id) {
-        const updatedItem = { ...item, ...data }
-        // 재고 수량이 변경되면 상태 재계산
-        if (data.currentStock !== undefined || data.minStock !== undefined || data.maxStock !== undefined) {
-          updatedItem.status = calculateStockStatus(
-            data.currentStock ?? item.currentStock,
-            data.minStock ?? item.minStock,
-            data.maxStock ?? item.maxStock
-          )
-        }
-        updatedItem.lastUpdated = new Date().toISOString()
-        return updatedItem
+      if (!response.ok) {
+        throw new Error('재고 데이터를 불러오는데 실패했습니다.')
       }
-      return item
-    })
-    setInventory(updatedInventory)
-    saveInventoryToStorage(updatedInventory)
-  }
-
-  // 재고 삭제
-  const deleteInventory = (id: string) => {
-    const updatedInventory = inventory.filter(item => item.id !== id)
-    setInventory(updatedInventory)
-    saveInventoryToStorage(updatedInventory)
-  }
-
-  // 앤드밀 정보가 포함된 재고 데이터 조회
-  const getEnrichedInventory = (): EnrichedInventory[] => {
-    return inventory.map(item => {
-      const endmill = endmillMaster.find(e => e.code === item.endmillCode)
-      return {
-        ...item,
-        endmill: endmill ? {
-          name: endmill.name,
-          category: endmill.category,
-          specifications: endmill.specifications,
-          unitPrice: endmill.unitPrice
-        } : undefined
+      
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || '재고 데이터를 불러오는데 실패했습니다.')
       }
+      
+      return result.data as Inventory[]
+    }
+  })
+
+  // 앤드밀 타입 데이터 조회
+  const {
+    data: endmillTypes = [],
+    isLoading: endmillTypesLoading
+  } = useQuery({
+    queryKey: ['endmill-types'],
+    queryFn: async () => {
+      const endmillTypesData = await clientSupabaseService.endmillType.getAll()
+      return endmillTypesData as EndmillType[]
+    }
+  })
+
+  // 실시간 구독 설정
+  useEffect(() => {
+    const subscription = clientSupabaseService.inventory.subscribeToChanges((payload) => {
+      console.log('Inventory 실시간 업데이트:', payload)
+      
+      // React Query 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ['inventory'] })
     })
-  }
+
+    return () => {
+      subscription?.unsubscribe()
+    }
+  }, [queryClient])
+
+  // 재고 생성 Mutation
+  const createMutation = useMutation({
+    mutationFn: async (data: {
+      endmill_type_id: string
+      current_stock: number
+      min_stock: number
+      max_stock: number
+      location?: string
+      suppliers?: any[]
+    }) => {
+      const response = await fetch('/api/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      
+      if (!response.ok) {
+        throw new Error('재고 생성에 실패했습니다.')
+      }
+      
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || '재고 생성에 실패했습니다.')
+      }
+      
+      return result.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    }
+  })
+
+  // 재고 업데이트 Mutation
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string } & Partial<{
+      current_stock: number
+      min_stock: number
+      max_stock: number
+      location: string
+      suppliers: any[]
+    }>) => {
+      const response = await fetch('/api/inventory', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...data })
+      })
+      
+      if (!response.ok) {
+        throw new Error('재고 업데이트에 실패했습니다.')
+      }
+      
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || '재고 업데이트에 실패했습니다.')
+      }
+      
+      return result.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    }
+  })
+
+  // 재고 삭제 Mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/inventory?id=${id}`, {
+        method: 'DELETE'
+      })
+      
+      if (!response.ok) {
+        throw new Error('재고 삭제에 실패했습니다.')
+      }
+      
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || '재고 삭제에 실패했습니다.')
+      }
+      
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    }
+  })
 
   // 필터링된 재고 조회
-  const getFilteredInventory = (filter: InventoryFilter = {}): EnrichedInventory[] => {
-    let filtered = getEnrichedInventory()
+  const getFilteredInventory = (additionalFilter: InventoryFilter = {}): Inventory[] => {
+    let filtered = inventory
 
-    if (filter.status) {
-      filtered = filtered.filter(item => item.status === filter.status)
+    if (additionalFilter.status) {
+      filtered = filtered.filter(item => {
+        const status = calculateStockStatus(item.current_stock, item.min_stock, item.max_stock)
+        return status === additionalFilter.status
+      })
     }
 
-    if (filter.category && filter.category !== '') {
-      filtered = filtered.filter(item => item.endmill?.category === filter.category)
+    if (additionalFilter.category && additionalFilter.category !== '') {
+      filtered = filtered.filter(item => 
+        item.endmill_types?.endmill_categories?.code === additionalFilter.category
+      )
     }
 
-    if (filter.lowStock) {
-      filtered = filtered.filter(item => item.status === 'low' || item.status === 'critical')
+    if (additionalFilter.lowStock) {
+      filtered = filtered.filter(item => {
+        const status = calculateStockStatus(item.current_stock, item.min_stock, item.max_stock)
+        return status === 'low' || status === 'critical'
+      })
     }
 
     return filtered
   }
 
   // 재고 통계 계산
-  const getInventoryStats = (filtered?: EnrichedInventory[]): InventoryStats => {
-    const data = filtered || getEnrichedInventory()
+  const getInventoryStats = (filtered?: Inventory[]): InventoryStats => {
+    const data = filtered || inventory
     
     const totalItems = data.length
     const totalValue = data.reduce((sum, item) => 
-      sum + (item.currentStock * (item.endmill?.unitPrice || 0)), 0)
+      sum + (item.current_stock * (item.endmill_types?.unit_cost || 0)), 0)
     
-    const criticalItems = data.filter(item => item.status === 'critical').length
-    const lowStockItems = data.filter(item => item.status === 'low').length
-    const sufficientItems = data.filter(item => item.status === 'sufficient').length
+    const statusCounts = data.reduce((acc, item) => {
+      const status = calculateStockStatus(item.current_stock, item.min_stock, item.max_stock)
+      acc[status] = (acc[status] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    
+    const criticalItems = statusCounts.critical || 0
+    const lowStockItems = statusCounts.low || 0
+    const sufficientItems = statusCounts.sufficient || 0
     
     // 카테고리별 통계
     const categoryStats = data.reduce((acc: Record<string, { count: number; value: number }>, item) => {
-      if (item.endmill?.category) {
-        const category = item.endmill.category
+      const category = item.endmill_types?.endmill_categories?.code
+      if (category) {
         if (!acc[category]) {
           acc[category] = { count: 0, value: 0 }
         }
-        acc[category].count += item.currentStock
-        acc[category].value += item.currentStock * (item.endmill.unitPrice || 0)
+        acc[category].count += item.current_stock
+        acc[category].value += item.current_stock * (item.endmill_types?.unit_cost || 0)
       }
       return acc
     }, {})
@@ -197,47 +256,62 @@ export const useInventory = () => {
 
   // 사용 가능한 카테고리 목록
   const getAvailableCategories = () => {
-    return [...new Set(endmillMaster.map(e => e.category))].sort()
+    return Array.from(new Set(endmillTypes.map(e => e.endmill_categories?.code).filter(Boolean))).sort()
   }
 
-  // 앤드밀 마스터 데이터 조회
+  // 앤드밀 타입 데이터 조회 (호환성을 위해)
   const getEndmillMasterData = () => {
-    return endmillMaster
+    return endmillTypes.map(type => ({
+      code: type.code,
+      name: type.description_ko || type.description_vi || '',
+      category: type.endmill_categories?.code || '',
+      specifications: type.specifications ? JSON.stringify(type.specifications) : '',
+      unitPrice: type.unit_cost || 0
+    }))
   }
 
   return {
     inventory,
-    endmillMaster,
-    loading,
-    error,
-    createInventory,
-    updateInventory,
-    deleteInventory,
-    getEnrichedInventory,
+    endmillTypes,
+    loading: loading || endmillTypesLoading,
+    error: error?.message || null,
+    refetch,
+    createInventory: createMutation.mutate,
+    updateInventory: updateMutation.mutate,
+    deleteInventory: deleteMutation.mutate,
     getFilteredInventory,
     getInventoryStats,
     getAvailableCategories,
-    getEndmillMasterData
+    getEndmillMasterData,
+    // Mutation 상태들
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending
   }
 }
 
-// 재고 알림 Hook
 export const useInventoryAlerts = () => {
-  const { getEnrichedInventory } = useInventory()
+  const { inventory } = useInventory()
 
   const getCriticalItems = () => {
-    return getEnrichedInventory().filter(item => item.status === 'critical')
+    return inventory.filter(item => 
+      calculateStockStatus(item.current_stock, item.min_stock, item.max_stock) === 'critical'
+    )
   }
 
   const getLowStockItems = () => {
-    return getEnrichedInventory().filter(item => item.status === 'low')
+    return inventory.filter(item => 
+      calculateStockStatus(item.current_stock, item.min_stock, item.max_stock) === 'low'
+    )
   }
 
   const getAlertCount = () => {
-    const enriched = getEnrichedInventory()
+    const critical = getCriticalItems().length
+    const low = getLowStockItems().length
     return {
-      critical: enriched.filter(item => item.status === 'critical').length,
-      low: enriched.filter(item => item.status === 'low').length
+      critical,
+      low,
+      total: critical + low
     }
   }
 
@@ -248,26 +322,25 @@ export const useInventoryAlerts = () => {
   }
 }
 
-// 재고 검색 Hook
 export const useInventorySearch = () => {
-  const { getEnrichedInventory } = useInventory()
+  const { inventory, endmillTypes } = useInventory()
 
   const searchByCode = (code: string) => {
-    return getEnrichedInventory().filter(item =>
-      item.endmillCode.toLowerCase().includes(code.toLowerCase())
+    return inventory.filter(item => 
+      item.endmill_types?.code.toLowerCase().includes(code.toLowerCase())
     )
   }
 
   const searchByName = (name: string) => {
-    return getEnrichedInventory().filter(item =>
-      item.endmill?.name.toLowerCase().includes(name.toLowerCase()) ||
-      item.endmill?.specifications.toLowerCase().includes(name.toLowerCase())
+    return inventory.filter(item => 
+      (item.endmill_types?.description_ko?.toLowerCase().includes(name.toLowerCase()) ||
+       item.endmill_types?.description_vi?.toLowerCase().includes(name.toLowerCase()))
     )
   }
 
   const searchByCategory = (category: string) => {
-    return getEnrichedInventory().filter(item =>
-      item.endmill?.category === category
+    return inventory.filter(item => 
+      item.endmill_types?.endmill_categories?.code === category
     )
   }
 

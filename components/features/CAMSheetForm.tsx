@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { findEndmillByCode } from '../../lib/data/mockData'
+import { useInventorySearch } from '../../lib/hooks/useInventory'
 import { useToast } from '../shared/Toast'
 
 interface EndmillInfo {
@@ -28,6 +28,7 @@ interface CAMSheetFormProps {
 
 export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMSheetFormProps) {
   const { showSuccess, showError, showWarning } = useToast()
+  const { searchByCode } = useInventorySearch()
 
   const [formData, setFormData] = useState<CAMSheetFormData>({
     model: initialData?.model || '',
@@ -55,20 +56,25 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
     setAutoLoadedInfo(null)
 
     if (code.trim()) {
-      const foundEndmill = findEndmillByCode(code.trim().toUpperCase())
+      const foundEndmills = searchByCode(code.trim().toUpperCase())
+      const foundEndmill = foundEndmills[0] // 첫 번째 결과 사용
       
       if (foundEndmill) {
         // 자동으로 이름과 사양 설정, Tool Life는 기본값 유지 (수동 입력 가능)
+        const specifications = foundEndmill.endmill_types?.specifications 
+          ? JSON.stringify(foundEndmill.endmill_types.specifications) 
+          : ''
+        
         setNewEndmill(prev => ({
           ...prev,
-          endmillCode: foundEndmill.code,
-          endmillName: foundEndmill.name,
-          specifications: foundEndmill.specifications,
+          endmillCode: foundEndmill.endmill_types?.code || code,
+          endmillName: foundEndmill.endmill_types?.description_ko || foundEndmill.endmill_types?.description_vi || '',
+          specifications: specifications,
           // toolLife는 기존 값 유지 (수동 입력)
         }))
         setAutoLoadedInfo({
-          name: foundEndmill.name,
-          specifications: foundEndmill.specifications
+          name: foundEndmill.endmill_types?.description_ko || foundEndmill.endmill_types?.description_vi || '',
+          specifications: specifications
         })
       } else {
         // 앤드밀 코드가 없으면 기존 정보 초기화

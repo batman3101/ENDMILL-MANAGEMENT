@@ -2,7 +2,18 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { findEndmillByCode, EndmillMaster } from '../../../../lib/data/mockData'
+import { useInventorySearch } from '../../../../lib/hooks/useInventory'
+
+// 앤드밀 데이터 타입 정의
+interface EndmillData {
+  code: string
+  name: string
+  specifications: string
+  currentStock: number
+  unitPrice: number
+  category?: string
+  standardLife?: number
+}
 import { useToast } from '../../../../components/shared/Toast'
 import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
 import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
@@ -25,10 +36,11 @@ interface OutboundItem {
 export default function OutboundPage() {
   const { showSuccess, showError, showWarning } = useToast()
   const confirmation = useConfirmation()
+  const { searchByCode } = useInventorySearch()
   const [isScanning, setIsScanning] = useState(false)
   const [scannedCode, setScannedCode] = useState('')
   const [outboundItems, setOutboundItems] = useState<OutboundItem[]>([])
-  const [endmillData, setEndmillData] = useState<EndmillMaster | null>(null)
+  const [endmillData, setEndmillData] = useState<EndmillData | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [equipmentNumber, setEquipmentNumber] = useState('')
   const [tNumber, setTNumber] = useState(1)
@@ -45,10 +57,21 @@ export default function OutboundPage() {
     setErrorMessage('')
     
     // 앤드밀 데이터베이스에서 검색
-    const foundEndmill = findEndmillByCode(code.trim().toUpperCase())
+    const foundEndmills = searchByCode(code.trim().toUpperCase())
+    const foundEndmill = foundEndmills[0]
     
     if (foundEndmill) {
-      setEndmillData(foundEndmill)
+      const endmillInfo: EndmillData = {
+        code: foundEndmill.endmill_types?.code || code,
+        name: foundEndmill.endmill_types?.description_ko || foundEndmill.endmill_types?.description_vi || '',
+        specifications: foundEndmill.endmill_types?.specifications ? JSON.stringify(foundEndmill.endmill_types.specifications) : '',
+        currentStock: foundEndmill.current_stock,
+        unitPrice: foundEndmill.endmill_types?.unit_cost || 0,
+        category: foundEndmill.endmill_types?.endmill_categories?.code || '미분류',
+        standardLife: foundEndmill.endmill_types?.standard_life || 2000
+      }
+      
+      setEndmillData(endmillInfo)
       setQuantity(1) // 수량 초기화
     } else {
       setEndmillData(null)
@@ -224,7 +247,7 @@ export default function OutboundPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">표준 수명</label>
-                    <div className="text-sm text-gray-600">{endmillData.standardLife.toLocaleString()}회</div>
+                    <div className="text-sm text-gray-600">{endmillData.standardLife?.toLocaleString() || '2,000'}회</div>
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">사양</label>

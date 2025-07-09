@@ -163,9 +163,9 @@ export default function UsersPage() {
 
     setIsSubmitting(true)
     try {
-      const updatedUser = updateUser(selectedUser.id, editFormData)
+      const updatedUser = await updateUser(selectedUser.id, editFormData)
       if (updatedUser) {
-        showSuccess('수정 완료', `${updatedUser.name}의 정보가 성공적으로 수정되었습니다.`)
+        showSuccess('수정 완료', `${updatedUser?.name || '사용자'}의 정보가 성공적으로 수정되었습니다.`)
         setShowEditModal(false)
         setSelectedUser(null)
         setEditFormData({})
@@ -196,11 +196,15 @@ export default function UsersPage() {
     })
 
     if (confirmed) {
-      const success = deleteUser(user.id)
-      if (success) {
-        showSuccess('삭제 완료', `${user.name} 사용자가 성공적으로 삭제되었습니다.`)
-      } else {
-        showError('삭제 실패', '사용자 삭제에 실패했습니다.')
+      try {
+        const success = await deleteUser(user.id)
+        if (success) {
+          showSuccess('삭제 완료', `${user.name} 사용자가 성공적으로 삭제되었습니다.`)
+        } else {
+          showError('삭제 실패', '사용자 삭제에 실패했습니다.')
+        }
+      } catch (error) {
+        showError('삭제 실패', '사용자 삭제 중 오류가 발생했습니다.')
       }
     }
   }
@@ -231,7 +235,7 @@ export default function UsersPage() {
 
     setIsSubmitting(true)
     try {
-      const newUser = createUser({
+      const newUser = await createUser({
         ...addFormData,
         createdBy: 'admin' // 실제로는 현재 로그인한 사용자 ID
       })
@@ -268,11 +272,15 @@ export default function UsersPage() {
     })
 
     if (confirmed) {
-      const updatedUser = toggleUserStatus(user.id)
-      if (updatedUser) {
-        showSuccess(`${action} 완료`, `${user.name} 사용자가 ${action}되었습니다.`)
-      } else {
-        showError(`${action} 실패`, `사용자 ${action}에 실패했습니다.`)
+      try {
+        const updatedUser = await toggleUserStatus(user.id)
+        if (updatedUser) {
+          showSuccess(`${action} 완료`, `${user.name} 사용자가 ${action}되었습니다.`)
+        } else {
+          showError(`${action} 실패`, `사용자 ${action}에 실패했습니다.`)
+        }
+      } catch (error) {
+        showError(`${action} 실패`, `사용자 ${action} 중 오류가 발생했습니다.`)
       }
     }
   }
@@ -885,7 +893,7 @@ export default function UsersPage() {
                           <td key={module} className="px-4 py-4 text-center border-r border-gray-200">
                             <div className="flex flex-wrap justify-center gap-1">
                               {actions.length > 0 ? (
-                                actions.map(action => (
+                                actions.map((action: string) => (
                                   <span 
                                     key={action}
                                     className="inline-flex items-center justify-center w-6 h-6 text-xs bg-green-100 text-green-600 rounded-full"
@@ -943,7 +951,7 @@ export default function UsersPage() {
                 {Object.keys(roles[0]?.permissions || {}).slice(0, 5).map(module => {
                   const accessCount = filteredUsers.filter(user => {
                     const role = getUserRole(user.roleId)
-                    return role?.permissions[module as keyof typeof role.permissions]?.length > 0
+                    return role && role.permissions && role.permissions[module as keyof typeof role.permissions]?.length > 0
                   }).length
                   const percentage = Math.round((accessCount / filteredUsers.length) * 100)
                   
@@ -1090,7 +1098,7 @@ export default function UsersPage() {
                         onClick={() => {
                           // 권한 상세보기 (현재는 간단한 알림으로 대체)
                           alert(`${role.name} 권한 상세:\n\n${Object.entries(role.permissions).map(([module, actions]) => 
-                            `${getModuleDisplayName(module)}: ${actions.length > 0 ? actions.map(a => getActionDisplayName(a)).join(', ') : '권한 없음'}`
+                            `${getModuleDisplayName(module)}: ${actions.length > 0 ? actions.map((a: string) => getActionDisplayName(a)).join(', ') : '권한 없음'}`
                           ).join('\n')}`)
                         }}
                         className="px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 transition-colors"
@@ -2117,7 +2125,7 @@ export default function UsersPage() {
                       <div key={module} className="text-xs">
                         <span className="font-medium">{getModuleDisplayName(module)}:</span>
                         <div className="ml-2 text-gray-600">
-                          {actions.length > 0 ? actions.map(action => getActionDisplayName(action)).join(', ') : '권한 없음'}
+                          {actions.length > 0 ? actions.map((action: string) => getActionDisplayName(action)).join(', ') : '권한 없음'}
                         </div>
                       </div>
                     ))}

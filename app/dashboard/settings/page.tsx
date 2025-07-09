@@ -67,7 +67,7 @@ export default function SettingsPage() {
     error, 
     hasUnsavedChanges 
   } = useSettings()
-  const { showSuccess, showError } = useToast()
+  const { showSuccess, showError, showInfo } = useToast()
   
   // 임시 폼 상태 (각 탭별로)
   const [formData, setFormData] = useState(settings)
@@ -1355,8 +1355,8 @@ export default function SettingsPage() {
                             페이지당 항목 수
                           </label>
                           <select
-                            value={formData.ui?.itemsPerPage || 20}
-                            onChange={(e) => updateFormData('ui', 'itemsPerPage', parseInt(e.target.value))}
+                            value={formData.system?.itemsPerPage || 20}
+                            onChange={(e) => updateFormData('system', 'itemsPerPage', parseInt(e.target.value))}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
                             <option value={10}>10개</option>
@@ -1370,8 +1370,8 @@ export default function SettingsPage() {
                             자동 새로고침 간격 (초)
                           </label>
                           <select
-                            value={formData.ui?.refreshInterval || 30}
-                            onChange={(e) => updateFormData('ui', 'refreshInterval', parseInt(e.target.value))}
+                            value={formData.ui?.dashboard?.refreshInterval || 30}
+                            onChange={(e) => updateFormData('ui', 'dashboard', {...formData.ui?.dashboard, refreshInterval: parseInt(e.target.value)})}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
                             <option value={0}>비활성화</option>
@@ -1409,71 +1409,59 @@ export default function SettingsPage() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            메인 색상
+                            사이드바 상태
                           </label>
                           <select
-                            value={formData.ui?.primaryColor || 'blue'}
-                            onChange={(e) => updateFormData('ui', 'primaryColor', e.target.value)}
+                            value={formData.ui?.sidebarCollapsed ? 'collapsed' : 'expanded'}
+                            onChange={(e) => updateFormData('ui', 'sidebarCollapsed', e.target.value === 'collapsed')}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            <option value="blue">파란색</option>
-                            <option value="green">녹색</option>
-                            <option value="purple">보라색</option>
-                            <option value="orange">주황색</option>
+                            <option value="expanded">확장됨</option>
+                            <option value="collapsed">접힘</option>
                           </select>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* 기타 UI 설정 */}
+                  {/* 알림 위치 설정 */}
                   <div className="bg-white border border-gray-200 rounded-lg">
                     <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">⚙️ 기타 UI 설정</h3>
-                      <p className="text-sm text-gray-600">사용성 개선을 위한 기타 설정</p>
+                      <h3 className="text-lg font-medium text-gray-900">🔔 알림 설정</h3>
+                      <p className="text-sm text-gray-600">알림 표시 위치 및 지속시간 설정</p>
                     </div>
-                    <div className="p-6 space-y-4">
-                      <div className="flex items-center justify-between">
+                    <div className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                          <p className="text-sm font-medium text-gray-700">애니메이션 효과</p>
-                          <p className="text-xs text-gray-500">페이지 전환 시 애니메이션 효과 사용</p>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            알림 위치
+                          </label>
+                          <select
+                            value={formData.ui?.notifications?.position || 'top-right'}
+                            onChange={(e) => updateFormData('ui', 'notifications', {...formData.ui?.notifications, position: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="top-right">우측 상단</option>
+                            <option value="top-left">좌측 상단</option>
+                            <option value="bottom-right">우측 하단</option>
+                            <option value="bottom-left">좌측 하단</option>
+                          </select>
                         </div>
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={formData.ui?.animations !== false}
-                            onChange={(e) => updateFormData('ui', 'animations', e.target.checked)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                        </label>
-                      </div>
-                      <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-700">사운드 효과</p>
-                          <p className="text-xs text-gray-500">알림 및 액션에 대한 사운드 효과</p>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            알림 지속시간 (초)
+                          </label>
+                          <select
+                            value={formData.ui?.notifications?.duration || 5}
+                            onChange={(e) => updateFormData('ui', 'notifications', {...formData.ui?.notifications, duration: parseInt(e.target.value)})}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value={3}>3초</option>
+                            <option value={5}>5초</option>
+                            <option value={10}>10초</option>
+                            <option value={0}>수동으로 닫기</option>
+                          </select>
                         </div>
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={formData.ui?.sounds || false}
-                            onChange={(e) => updateFormData('ui', 'sounds', e.target.checked)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                        </label>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">확대/축소 지원</p>
-                          <p className="text-xs text-gray-500">브라우저 확대/축소 최적화</p>
-                        </div>
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={formData.ui?.zoomSupport !== false}
-                            onChange={(e) => updateFormData('ui', 'zoomSupport', e.target.checked)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                        </label>
                       </div>
                     </div>
                   </div>
@@ -1512,14 +1500,14 @@ export default function SettingsPage() {
                     <div className="p-6 space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-700">브라우저 알림</p>
-                          <p className="text-xs text-gray-500">웹 브라우저 푸시 알림 사용</p>
+                          <p className="text-sm font-medium text-gray-700">실시간 알림</p>
+                          <p className="text-xs text-gray-500">웹 브라우저 실시간 알림 사용</p>
                         </div>
                         <label className="flex items-center">
                           <input
                             type="checkbox"
-                            checked={formData.notifications?.browserNotifications !== false}
-                            onChange={(e) => updateFormData('notifications', 'browserNotifications', e.target.checked)}
+                            checked={formData.notifications?.realtime?.enabled !== false}
+                            onChange={(e) => updateFormData('notifications', 'realtime', {...formData.notifications?.realtime, enabled: e.target.checked})}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                           />
                         </label>
@@ -1532,22 +1520,8 @@ export default function SettingsPage() {
                         <label className="flex items-center">
                           <input
                             type="checkbox"
-                            checked={formData.notifications?.emailNotifications || false}
-                            onChange={(e) => updateFormData('notifications', 'emailNotifications', e.target.checked)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                        </label>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">SMS 알림</p>
-                          <p className="text-xs text-gray-500">긴급 상황 발생 시 SMS 전송</p>
-                        </div>
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={formData.notifications?.smsNotifications || false}
-                            onChange={(e) => updateFormData('notifications', 'smsNotifications', e.target.checked)}
+                            checked={formData.notifications?.email?.enabled || false}
+                            onChange={(e) => updateFormData('notifications', 'email', {...formData.notifications?.email, enabled: e.target.checked})}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                           />
                         </label>
@@ -1563,13 +1537,11 @@ export default function SettingsPage() {
                     </div>
                     <div className="p-6">
                       <div className="space-y-6">
-                        {(formData.notifications?.types || [
-                          { type: 'tool_change_warning', name: '앤드밀 교체 경고', enabled: true, urgency: 'medium' },
-                          { type: 'tool_change_critical', name: '앤드밀 교체 필수', enabled: true, urgency: 'high' },
-                          { type: 'inventory_low', name: '재고 부족', enabled: true, urgency: 'medium' },
-                          { type: 'inventory_critical', name: '재고 위험', enabled: true, urgency: 'high' },
-                          { type: 'equipment_error', name: '설비 오류', enabled: true, urgency: 'high' },
-                          { type: 'system_maintenance', name: '시스템 점검', enabled: true, urgency: 'low' }
+                        {(formData.notifications?.realtime?.types || [
+                          { type: 'tool_change', enabled: true, priority: 'medium', channels: ['ui'] },
+                          { type: 'inventory_low', enabled: true, priority: 'high', channels: ['ui', 'email'] },
+                          { type: 'equipment_status', enabled: true, priority: 'high', channels: ['ui'] },
+                          { type: 'system', enabled: true, priority: 'low', channels: ['ui'] }
                         ]).map((notifType, index) => (
                           <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                             <div className="flex-1">
@@ -1579,31 +1551,36 @@ export default function SettingsPage() {
                                     type="checkbox"
                                     checked={notifType.enabled}
                                     onChange={(e) => {
-                                      const newTypes = [...(formData.notifications?.types || [])]
+                                      const newTypes = [...(formData.notifications?.realtime?.types || [])]
                                       newTypes[index] = { ...newTypes[index], enabled: e.target.checked }
-                                      updateFormData('notifications', 'types', newTypes)
+                                      updateFormData('notifications', 'realtime', {...formData.notifications?.realtime, types: newTypes})
                                     }}
                                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                   />
-                                  <span className="ml-2 font-medium text-gray-700">{notifType.name}</span>
+                                  <span className="ml-2 font-medium text-gray-700">
+                                    {notifType.type === 'tool_change' ? '앤드밀 교체' :
+                                     notifType.type === 'inventory_low' ? '재고 부족' :
+                                     notifType.type === 'equipment_status' ? '설비 상태' :
+                                     notifType.type === 'system' ? '시스템' : notifType.type}
+                                  </span>
                                 </label>
                                 <span className={`px-2 py-1 text-xs rounded-full ${
-                                  notifType.urgency === 'high' ? 'bg-red-100 text-red-800' :
-                                  notifType.urgency === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                  notifType.priority === 'high' ? 'bg-red-100 text-red-800' :
+                                  notifType.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                                   'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {notifType.urgency === 'high' ? '긴급' : 
-                                   notifType.urgency === 'medium' ? '보통' : '낮음'}
+                                  {notifType.priority === 'high' ? '긴급' : 
+                                   notifType.priority === 'medium' ? '보통' : '낮음'}
                                 </span>
                               </div>
                             </div>
                             <div className="ml-4">
                               <select
-                                value={notifType.urgency}
+                                value={notifType.priority}
                                 onChange={(e) => {
-                                  const newTypes = [...(formData.notifications?.types || [])]
-                                  newTypes[index] = { ...newTypes[index], urgency: e.target.value }
-                                  updateFormData('notifications', 'types', newTypes)
+                                  const newTypes = [...(formData.notifications?.realtime?.types || [])]
+                                  newTypes[index] = { ...newTypes[index], priority: e.target.value as 'low' | 'medium' | 'high' }
+                                  updateFormData('notifications', 'realtime', {...formData.notifications?.realtime, types: newTypes})
                                 }}
                                 className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 disabled={!notifType.enabled}
@@ -1633,25 +1610,24 @@ export default function SettingsPage() {
                           </label>
                           <input
                             type="time"
-                            value={formData.notifications?.dailyReportTime || '18:00'}
-                            onChange={(e) => updateFormData('notifications', 'dailyReportTime', e.target.value)}
+                            value={formData.notifications?.scheduling?.dailyReport || '18:00'}
+                            onChange={(e) => updateFormData('notifications', 'scheduling', {...formData.notifications?.scheduling, dailyReport: e.target.value})}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            알림 검사 간격 (분)
+                            주간 리포트 전송 요일
                           </label>
                           <select
-                            value={formData.notifications?.checkInterval || 5}
-                            onChange={(e) => updateFormData('notifications', 'checkInterval', parseInt(e.target.value))}
+                            value={formData.notifications?.scheduling?.weeklyReport || 'sunday'}
+                            onChange={(e) => updateFormData('notifications', 'scheduling', {...formData.notifications?.scheduling, weeklyReport: e.target.value})}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            <option value={1}>1분</option>
-                            <option value={5}>5분</option>
-                            <option value={10}>10분</option>
-                            <option value={30}>30분</option>
-                            <option value={60}>1시간</option>
+                            <option value="sunday">일요일</option>
+                            <option value="monday">월요일</option>
+                            <option value="friday">금요일</option>
+                            <option value="saturday">토요일</option>
                           </select>
                         </div>
                       </div>

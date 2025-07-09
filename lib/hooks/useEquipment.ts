@@ -1,10 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { FileDataManager, Equipment } from '../data/fileDataManager'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { clientSupabaseService } from '../services/supabaseService'
+import { Database } from '../types/database'
 
-// FileDataManager에서 Equipment 타입을 가져옴
-export { Equipment } from '../data/fileDataManager'
+// Database 타입에서 가져오기
+type Equipment = Database['public']['Tables']['equipments']['Row']
+
+// 타입 export
+export type { Equipment }
 
 export interface EquipmentFilter {
   status?: string
@@ -19,83 +24,146 @@ export interface EquipmentStats {
   setup: number
 }
 
-// 로컬 스토리지에서 설비 데이터 로드
-const loadEquipmentsFromStorage = (): Equipment[] => {
-  try {
-    return FileDataManager.getEquipments()
-  } catch (error) {
-    console.error('설비 데이터 로드 실패:', error)
-    return []
-  }
-}
+export const useEquipment = (filter?: EquipmentFilter) => {
+  const queryClient = useQueryClient()
 
-// 로컬 스토리지에 설비 데이터 저장
-const saveEquipmentsToStorage = (equipments: Equipment[]) => {
-  try {
-    FileDataManager.saveEquipments(equipments)
-  } catch (error) {
-    console.error('설비 데이터 저장 실패:', error)
-  }
-}
-
-export const useEquipment = () => {
-  const [equipments, setEquipments] = useState<Equipment[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  // 초기 데이터 로드
-  useEffect(() => {
-    try {
-      let data = loadEquipmentsFromStorage()
+  // 설비 데이터 조회
+  const {
+    data: equipments = [],
+    isLoading: loading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['equipment', filter],
+    queryFn: async () => {
+      const response = await fetch('/api/equipment?' + new URLSearchParams({
+        ...(filter?.status && { status: filter.status }),
+        ...(filter?.location && { location: filter.location }),
+        ...(filter?.model && { model: filter.model })
+      }))
       
-      // 설비가 없으면 자동 생성
-      if (data.length === 0) {
-        data = FileDataManager.generateEquipments(800)
+      if (!response.ok) {
+        throw new Error('설비 데이터를 불러오는데 실패했습니다.')
       }
       
-      setEquipments(data)
-      setLoading(false)
-    } catch (err) {
-      setError('설비 데이터를 불러오는데 실패했습니다.')
-      setLoading(false)
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || '설비 데이터를 불러오는데 실패했습니다.')
+      }
+      
+      return result.data as Equipment[]
     }
-  }, [])
+  })
 
-  // 설비 생성
-  const createEquipment = (data: Omit<Equipment, 'id' | 'lastMaintenance'>) => {
-    const newEquipment: Equipment = {
-      ...data,
-      id: `eq-${Date.now()}`,
-      lastMaintenance: new Date().toISOString().split('T')[0]
+  // 실시간 구독 설정
+  useEffect(() => {
+    const subscription = clientSupabaseService.equipment.subscribeToChanges((payload) => {
+      console.log('Equipment 실시간 업데이트:', payload)
+      
+      // React Query 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ['equipment'] })
+    })
+
+    return () => {
+      subscription?.unsubscribe()
     }
+  }, [queryClient])
 
-    const updatedEquipments = [...equipments, newEquipment]
-    setEquipments(updatedEquipments)
-    saveEquipmentsToStorage(updatedEquipments)
-  }
+  // 설비 생성 Mutation
+  const createMutation = useMutation({
+    mutationFn: async (data: {
+      equipment_number: number
+      model_code: string
+      status?: string
+      location?: string
+      current_model?: string
+      process?: string
+      tool_positions?: any
+    }) => {
+      const response = await fetch('/api/equipment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      
+      if (!response.ok) {
+        throw new Error('설비 생성에 실패했습니다.')
+      }
+      
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || '설비 생성에 실패했습니다.')
+      }
+      
+      return result.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment'] })
+    }
+  })
 
-  // 설비 업데이트
-  const updateEquipment = (id: string, data: Partial<Omit<Equipment, 'id'>>) => {
-    const updatedEquipments = equipments.map(eq => 
-      eq.id === id ? { ...eq, ...data } : eq
-    )
-    setEquipments(updatedEquipments)
-    saveEquipmentsToStorage(updatedEquipments)
-  }
+  // 설비 업데이트 Mutation
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string } & Partial<{
+      equipment_number: number
+      model_code: string
+      status: string
+      location: string
+      current_model: string
+      process: string
+      tool_positions: any
+    }>) => {
+      const response = await fetch('/api/equipment', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...data })
+      })
+      
+      if (!response.ok) {
+        throw new Error('설비 업데이트에 실패했습니다.')
+      }
+      
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || '설비 업데이트에 실패했습니다.')
+      }
+      
+      return result.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment'] })
+    }
+  })
 
-  // 설비 삭제
-  const deleteEquipment = (id: string) => {
-    const updatedEquipments = equipments.filter(eq => eq.id !== id)
-    setEquipments(updatedEquipments)
-    saveEquipmentsToStorage(updatedEquipments)
-  }
+  // 설비 삭제 Mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/equipment?id=${id}`, {
+        method: 'DELETE'
+      })
+      
+      if (!response.ok) {
+        throw new Error('설비 삭제에 실패했습니다.')
+      }
+      
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || '설비 삭제에 실패했습니다.')
+      }
+      
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment'] })
+    }
+  })
 
   // 필터링된 설비 조회
-  const getFilteredEquipments = (filter: EquipmentFilter = {}) => {
+  const getFilteredEquipments = (additionalFilter: EquipmentFilter = {}) => {
     return equipments.filter(eq => {
-      if (filter.status && eq.status !== filter.status) return false
-      if (filter.location && eq.location !== filter.location) return false
-      if (filter.model && eq.currentModel !== filter.model) return false
+      if (additionalFilter.status && eq.status !== additionalFilter.status) return false
+      if (additionalFilter.location && eq.location !== additionalFilter.location) return false
+      if (additionalFilter.model && eq.model_code !== additionalFilter.model) return false
       return true
     })
   }
@@ -105,20 +173,20 @@ export const useEquipment = () => {
     const data = filtered || equipments
     return {
       total: data.length,
-      active: data.filter(eq => eq.status === '가동중').length,
-      maintenance: data.filter(eq => eq.status === '점검중').length,
-      setup: data.filter(eq => eq.status === '셋업중').length,
+      active: data.filter(eq => eq.status === 'active').length,
+      maintenance: data.filter(eq => eq.status === 'maintenance').length,
+      setup: data.filter(eq => eq.status === 'offline').length,
     }
   }
 
-  // 사용 가능한 모델 목록
+  // 사용 가능한 모델 목록 (하드코딩된 값들)
   const getAvailableModels = () => {
-    return FileDataManager.getModels()
+    return ['PA1', 'PA2', 'PS', 'B7', 'Q7']
   }
 
-  // 사용 가능한 공정 목록
+  // 사용 가능한 공정 목록 (하드코딩된 값들)
   const getAvailableProcesses = () => {
-    return FileDataManager.getProcesses()
+    return ['CNC1', 'CNC2', 'CNC2-1']
   }
 
   // 사용 가능한 위치 목록
@@ -126,26 +194,31 @@ export const useEquipment = () => {
     return ['A동', 'B동']
   }
 
-  // 대량 설비 생성 (개발용)
-  const generateEquipments = (count: number = 800) => {
-    const generated = FileDataManager.generateEquipments(count)
-    setEquipments(generated)
-    return generated
+  // 대량 설비 생성 (개발용) - 실제로는 API 호출하지 않음
+  const generateEquipments = async (count: number = 800) => {
+    // 실제 구현에서는 서버에서 대량 생성하거나 배치로 생성해야 함
+    console.log(`${count}대의 설비 생성은 서버에서 처리되어야 합니다.`)
+    return []
   }
 
   return {
     equipments,
     loading,
-    error,
-    createEquipment,
-    updateEquipment,
-    deleteEquipment,
+    error: error?.message || null,
+    refetch,
+    createEquipment: createMutation.mutate,
+    updateEquipment: updateMutation.mutate,
+    deleteEquipment: deleteMutation.mutate,
     getFilteredEquipments,
     getEquipmentStats,
     getAvailableModels,
     getAvailableProcesses,
     getAvailableLocations,
-    generateEquipments
+    generateEquipments,
+    // Mutation 상태들
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending
   }
 }
 
@@ -153,20 +226,20 @@ export const useEquipment = () => {
 export const useEquipmentStatus = () => {
   const { updateEquipment } = useEquipment()
 
-  const changeStatus = (id: string, status: Equipment['status']) => {
-    updateEquipment(id, { status })
+  const changeStatus = (id: string, status: string) => {
+    updateEquipment({ id, status })
   }
 
-  const changeModel = (id: string, currentModel: string, process?: string) => {
-    updateEquipment(id, { currentModel, ...(process && { process }) })
+  const changeModel = (id: string, current_model: string, process?: string) => {
+    updateEquipment({ id, current_model, ...(process && { process }) })
   }
 
   const resetToolPositions = (id: string) => {
-    updateEquipment(id, { toolPositions: { used: 0, total: 21 } })
+    updateEquipment({ id, tool_positions: { used: 0, total: 21 } })
   }
 
   const updateToolPositions = (id: string, used: number) => {
-    updateEquipment(id, { toolPositions: { used, total: 21 } })
+    updateEquipment({ id, tool_positions: { used, total: 21 } })
   }
 
   return {
@@ -183,20 +256,19 @@ export const useEquipmentSearch = () => {
 
   const searchByNumber = (equipmentNumber: string) => {
     return equipments.find(eq => 
-      eq.equipmentNumber.toLowerCase().includes(equipmentNumber.toLowerCase())
+      eq.equipment_number.toString().includes(equipmentNumber)
     )
   }
 
-  const searchByModel = (model: string) => {
-    return equipments.filter(eq => 
-      eq.currentModel.toLowerCase().includes(model.toLowerCase())
+    const searchByModel = (model: string) => {
+    return equipments.filter(eq =>
+      eq.model_code?.toLowerCase().includes(model.toLowerCase())
     )
   }
 
-  const searchByProcess = (process: string) => {
-    return equipments.filter(eq => 
-      eq.process.toLowerCase().includes(process.toLowerCase())
-    )
+    const searchByProcess = (process: string) => {
+    // TODO: 프로세스 검색은 별도 테이블 조인 필요
+    return equipments.filter(eq => true) // 임시로 모든 설비 반환
   }
 
   return {

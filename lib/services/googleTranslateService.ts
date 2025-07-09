@@ -98,7 +98,7 @@ export class GoogleTranslateService {
 
     try {
       // 간단한 번역 요청으로 API 키 테스트
-      const response = await fetch(`${this.baseUrl}?key=${keyToTest}`, {
+      const response = await fetch(`${this.baseUrlV2}?key=${keyToTest}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -297,7 +297,7 @@ export class GoogleTranslateService {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
+      const response = await fetch(`${this.baseUrlV2}?key=${this.apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -401,7 +401,9 @@ export class GoogleTranslateService {
     if (this.cache.size >= 1000) {
       // 오래된 항목부터 삭제
       const firstKey = this.cache.keys().next().value
-      this.cache.delete(firstKey)
+      if (firstKey) {
+        this.cache.delete(firstKey)
+      }
     }
 
     // 캐시 시간 추가
