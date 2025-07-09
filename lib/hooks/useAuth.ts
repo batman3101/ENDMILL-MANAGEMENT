@@ -2,14 +2,9 @@
 
 import React, { useState, useEffect, createContext, useContext } from 'react'
 import type { ReactNode } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../supabase/client'
 import { useToast } from '../../components/shared/Toast'
-
-// Supabase 클라이언트 초기화
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { TempAuthService, TempSessionManager } from '../data/tempAuth'
 
 // 사용자 타입 정의
 interface User {
@@ -106,24 +101,47 @@ export function AuthProvider(props: { children: ReactNode }) {
     try {
       setLoading(true)
       
+      // 먼저 Supabase 로그인 시도
+      console.log('🔐 Supabase 로그인 시도...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
 
       if (error) {
-        let errorMessage = '로그인에 실패했습니다.'
+        console.warn('⚠️ Supabase 로그인 실패, 임시 인증 시도...', error.message);
         
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.'
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = '이메일 인증이 완료되지 않았습니다.'
+        // Supabase 로그인 실패 시 임시 인증 시스템 사용
+        const tempResult = await TempAuthService.signIn(email, password);
+        
+        if (tempResult.success && tempResult.user) {
+          console.log('✅ 임시 인증 성공');
+          setUser({
+            id: tempResult.user.id,
+            email: tempResult.user.email,
+            name: tempResult.user.name,
+            department: tempResult.user.department,
+            position: tempResult.user.position,
+            shift: tempResult.user.shift,
+            role: tempResult.user.role
+          });
+          
+          showSuccess('로그인 성공', `${tempResult.user.name}님, 환영합니다! (임시 모드)`);
+          return { success: true };
         } else {
-          errorMessage = error.message
+          let errorMessage = '로그인에 실패했습니다.'
+          
+          if (error.message.includes('Invalid login credentials')) {
+            errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.'
+          } else if (error.message.includes('Email not confirmed')) {
+            errorMessage = '이메일 인증이 완료되지 않았습니다.'
+          } else {
+            errorMessage = error.message
+          }
+          
+          showError('로그인 실패', errorMessage)
+          return { success: false, error: errorMessage }
         }
-        
-        showError('로그인 실패', errorMessage)
-        return { success: false, error: errorMessage }
       }
 
       if (data.user) {
@@ -143,6 +161,27 @@ export function AuthProvider(props: { children: ReactNode }) {
 
       return { success: false, error: '로그인에 실패했습니다.' }
     } catch (error) {
+      console.error('로그인 오류:', error);
+      
+      // 네트워크 오류 등의 경우 임시 인증 시도
+      const tempResult = await TempAuthService.signIn(email, password);
+      
+      if (tempResult.success && tempResult.user) {
+        console.log('✅ 오류 시 임시 인증 성공');
+        setUser({
+          id: tempResult.user.id,
+          email: tempResult.user.email,
+          name: tempResult.user.name,
+          department: tempResult.user.department,
+          position: tempResult.user.position,
+          shift: tempResult.user.shift,
+          role: tempResult.user.role
+        });
+        
+        showSuccess('로그인 성공', `${tempResult.user.name}님, 환영합니다! (임시 모드)`);
+        return { success: true };
+      }
+      
       const errorMessage = '로그인 중 오류가 발생했습니다.'
       showError('로그인 실패', errorMessage)
       return { success: false, error: errorMessage }

@@ -16,6 +16,17 @@ export interface TempUser {
 const tempUsers: TempUser[] = [
   {
     id: 'admin-001',
+    email: 'zetooo1972@gmail.com',
+    name: '시스템 소유자',
+    role: 'system_admin',
+    department: '최고경영진',
+    position: '시스템 소유자',
+    shift: 'A',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'admin-002',
     email: 'admin@almustech.com',
     name: '시스템 관리자',
     role: 'system_admin',
@@ -26,7 +37,7 @@ const tempUsers: TempUser[] = [
     createdAt: new Date().toISOString(),
   },
   {
-    id: 'admin-002',
+    id: 'admin-003',
     email: 'manager@almustech.com',
     name: '공구관리실장',
     role: 'admin',
@@ -40,6 +51,7 @@ const tempUsers: TempUser[] = [
 
 // 임시 비밀번호 (실제로는 해시화되어야 함)
 const tempPasswords: Record<string, string> = {
+  'zetooo1972@gmail.com': 'youkillme-1',
   'admin@almustech.com': 'admin123',
   'manager@almustech.com': 'manager123'
 }
