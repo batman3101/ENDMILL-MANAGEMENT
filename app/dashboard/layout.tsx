@@ -232,6 +232,10 @@ export default function DashboardLayout({
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => {
+                    console.log('🔗 네비게이션 클릭:', item.href, item.label)
+                    console.log('🔗 현재 pathname:', pathname)
+                  }}
                   className={`flex items-center space-x-2 px-4 py-3 whitespace-nowrap transition-colors ${
                     item.active
                       ? 'bg-blue-600 text-white border-b-2 border-white'

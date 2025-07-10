@@ -1,357 +1,90 @@
-import Link from 'next/link'
-import dynamic from 'next/dynamic'
-import { Suspense } from 'react'
+'use client'
+
+import { usePathname } from 'next/navigation'
+import LandingStatusCard from '../../components/features/LandingStatusCard'
 import DonutChart from '../../components/features/DonutChart'
 
-const LandingStatusCard = dynamic(() => import('../../components/features/LandingStatusCard'), { ssr: false })
-
 export default function DashboardPage() {
+  const pathname = usePathname()
+  
+  console.log('📍 대시보드 페이지 로드됨, pathname:', pathname)
+
   return (
     <div className="space-y-6">
-      {/* 상단 통계 카드 그리드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* 총 CNC 설비 - 동적 데이터 카드 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-blue-600 text-lg">🏭</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">총 CNC 설비</p>
-                <Link href="/dashboard/equipment" className="text-xs text-blue-600 hover:text-blue-800">자세히 보기 →</Link>
-              </div>
-            </div>
-          </div>
-          <div className="text-center py-2">
-            <Suspense fallback={<div className="text-2xl font-bold text-gray-900">-</div>}>
-              <LandingStatusCard />
-            </Suspense>
-          </div>
-        </div>
+      {/* 디버깅 정보 */}
+      <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+        <p className="font-bold">🔧 디버깅 모드</p>
+        <p>현재 경로: {pathname}</p>
+        <p>페이지 로드 시간: {new Date().toLocaleTimeString()}</p>
+      </div>
 
-        {/* 재고 부족 알림 */}
-        <Link href="/dashboard/inventory" className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow block">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-orange-600 text-lg">📦</span>
+      {/* 상태 카드 섹션 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <LandingStatusCard />
+      </div>
+
+      {/* 차트 및 통계 섹션 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Tool Life 분석 */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Tool Life 현황</h3>
+          <div className="flex items-center justify-center">
+            <DonutChart value={75} max={100} color="#10b981" size={120}>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">75%</div>
+                <div className="text-sm text-gray-500">평균 효율</div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">재고 부족</p>
-                <p className="text-xs text-orange-600 hover:text-orange-800">자세히 보기 →</p>
-              </div>
-            </div>
-          </div>
-          <div className="text-center py-2">
-            <p className="text-2xl font-bold text-orange-600">23개</p>
-            <p className="text-xs text-gray-500">타입 부족</p>
-          </div>
-          <div className="mt-3 flex justify-between text-xs">
-            <span className="text-gray-500">8<span className="text-xs">개 위험</span></span>
-            <span className="text-gray-500">15<span className="text-xs">개 부족</span></span>
-          </div>
-          <div className="mt-2 w-16 h-16 mx-auto">
-            <DonutChart value={23} max={100} color="#f97316" size={64}>
-              <span className="text-xs font-bold text-gray-900">23</span>
             </DonutChart>
           </div>
-        </Link>
-
-        {/* 오늘 교체 완료 */}
-        <Link href="/dashboard/tool-changes" className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow block">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-green-600 text-lg">🔧</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">오늘 교체</p>
-                <p className="text-xs text-green-600 hover:text-green-800">자세히 보기 →</p>
-              </div>
-            </div>
-          </div>
-          <div className="text-center py-2">
-            <p className="text-2xl font-bold text-gray-900">67<span className="text-sm text-gray-500">개</span></p>
-            <p className="text-xs text-gray-500">완료</p>
-          </div>
-          <div className="mt-3 flex justify-between text-xs">
-            <span className="text-gray-500">목표 50<span className="text-xs">개</span></span>
-            <span className="text-gray-500">134<span className="text-xs">%</span></span>
-          </div>
-          <div className="mt-2 w-16 h-16 mx-auto">
-            <div className="relative w-full h-full">
-              <div className="absolute inset-0 rounded-full bg-gray-200"></div>
-              <div className="absolute inset-0 rounded-full bg-green-500" style={{clipPath: 'polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%)'}}></div>
-              <div className="absolute inset-2 rounded-full bg-white flex items-center justify-center">
-                <span className="text-xs font-bold text-gray-900">67</span>
-              </div>
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      {/* 메인 대시보드 섹션 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 설비 가동 현황 */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">🏭 설비 가동 현황</h2>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-6 mb-6">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">93%</p>
-              <p className="text-sm text-gray-500">설비 가동률</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-yellow-600">🔄 미가동 사유</p>
-              <p className="text-sm text-gray-500 mt-1">모델 교체중</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-red-600">🔧 미가동 사유</p>
-              <p className="text-sm text-gray-500 mt-1">설비 점검중</p>
-            </div>
-          </div>
-
-          {/* 시간별 차트 */}
-          <div className="flex items-end space-x-2 h-32 mb-4">
-            {[75, 85, 92, 88, 95, 78, 82, 90, 85, 88, 92, 87, 85, 89].map((height, index) => (
-              <div key={index} className="flex-1 bg-gray-200 rounded-sm relative">
-                <div 
-                  className="bg-blue-500 rounded-sm w-full absolute bottom-0" 
-                  style={{height: `${height}%`}}
-                ></div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>9시</span>
-            <span>10시</span>
-            <span>11시</span>
-            <span>12시</span>
-            <span>13시</span>
-            <span>14시</span>
-            <span>15시</span>
-          </div>
         </div>
 
-        {/* 재고 부족 현황 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">📦 재고 부족 현황</h2>
-            <Link href="/dashboard/inventory" className="text-xs text-blue-600 hover:text-blue-800">자세히 보기 →</Link>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">AT002 BALL 6mm</p>
-                  <p className="text-xs text-gray-500">현재고 5개 / 최소재고 15개</p>
-                </div>
+        {/* 설비 가동률 */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">설비 가동률</h3>
+          <div className="flex items-center justify-center">
+            <DonutChart value={680} max={800} color="#3b82f6" size={120}>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">680</div>
+                <div className="text-sm text-gray-500">/ 800대</div>
               </div>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">AT003 T-CUT 8mm</p>
-                  <p className="text-xs text-gray-500">현재고 8개 / 최소재고 20개</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <p className="text-sm font-medium text-gray-900 mb-3">재고 부족 현황</p>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">부족 타입</span>
-                  <span className="font-medium text-red-600">23개</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">긴급 발주</span>
-                  <span className="font-medium text-orange-600">8개</span>
-                </div>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                <div className="bg-red-500 h-2 rounded-full" style={{width: '35%'}}></div>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="text-sm font-medium text-gray-900 mb-2">📦 AT002 BALL 6mm 재고 부족</p>
-              <p className="text-xs text-gray-500">현재고 5개 / 최소재고 15개</p>
-            </div>
+            </DonutChart>
           </div>
         </div>
       </div>
 
-      {/* 하단 위젯 섹션 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
-        {/* 앤드밀 재고 관리 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">📦 앤드밀 재고</h2>
-            <Link href="/dashboard/inventory" className="text-xs text-blue-600 hover:text-blue-800">자세히 보기 →</Link>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">총 재고량</span>
-              <span className="text-sm font-medium">1,247개</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">부족 타입</span>
-              <span className="text-sm font-medium text-red-600">23개</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">발주 대기</span>
-              <span className="text-sm font-medium text-orange-600">8개</span>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center text-sm">
-              <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">AT002 BALL 6mm 재고부족</span>
-            </div>
-            <div className="flex items-center text-sm mt-2">
-              <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">AT003 T-CUT 8mm 재고부족</span>
-            </div>
-          </div>
+      {/* 알림 및 이벤트 */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900">최근 알림</h3>
         </div>
-
-        {/* 교체 작업 현황 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">🔧 교체 작업</h2>
-            <Link href="/dashboard/tool-changes" className="text-xs text-blue-600 hover:text-blue-800">자세히 보기 →</Link>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">오늘 완료</span>
-              <span className="text-sm font-medium text-green-600">67개</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">예정 교체</span>
-              <span className="text-sm font-medium text-orange-600">156개</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">달성률</span>
-              <span className="text-sm font-medium">134%</span>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <div className="flex space-x-1">
-              {[...Array(10)].map((_, i) => (
-                <div key={i} className="w-2 h-12 bg-gray-200 rounded-sm">
-                  <div 
-                    className="bg-green-600 rounded-sm w-full" 
-                    style={{height: `${60 + Math.random() * 40}%`}}
-                  ></div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-                      <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex items-center text-sm">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                <span className="text-gray-600">설비 교체 작업 완료</span>
-              </div>
-              <div className="flex items-center text-sm mt-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                <span className="text-gray-600">오늘 목표 달성</span>
-              </div>
-            </div>
-        </div>
-
-        {/* CNC 설비 현황 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">🏭 CNC 설비</h2>
-            <Link href="/dashboard/equipment" className="text-xs text-blue-600 hover:text-blue-800">자세히 보기 →</Link>
-          </div>
-          
-          <div className="text-center mb-4">
-            <div className="w-20 h-20 mx-auto mb-3 relative">
-              <div className="absolute inset-0 rounded-full bg-gray-200"></div>
-              <div className="absolute inset-0 rounded-full bg-blue-600" style={{clipPath: 'polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%)'}}></div>
-              <div className="absolute inset-3 rounded-full bg-white flex items-center justify-center">
-                <span className="text-sm font-bold text-gray-900">93%</span>
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">800대</p>
-            <p className="text-sm text-gray-500">총 CNC 설비</p>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">가동 중</span>
-              <span className="font-medium text-green-600">742대</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">가동률</span>
-              <span className="font-medium">93%</span>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center text-sm">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">C001 가동 중</span>
-            </div>
-            <div className="flex items-center text-sm mt-2">
-              <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">C156 대기상태</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 실시간 알림 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">🔔 실시간 알림</h2>
-            <Link href="/dashboard/reports" className="text-xs text-blue-600 hover:text-blue-800">전체 보기 →</Link>
-          </div>
-          
+        <div className="px-6 py-4">
           <div className="space-y-3">
             <div className="flex items-center p-3 bg-red-50 rounded-lg">
-              <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">C156 설비 점검 필요</p>
-                <p className="text-xs text-gray-500">2분 전</p>
+              <div className="flex-shrink-0">
+                <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-900">긴급 교체 필요</p>
+                <p className="text-sm text-gray-500">C045 설비 T12 앤드밀 수명 종료</p>
               </div>
             </div>
-            
-            <div className="flex items-center p-3 bg-orange-50 rounded-lg">
-              <div className="w-2 h-2 bg-orange-500 rounded-full mr-3"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">AT002 재고 부족</p>
-                <p className="text-xs text-gray-500">12분 전</p>
+            <div className="flex items-center p-3 bg-yellow-50 rounded-lg">
+              <div className="flex-shrink-0">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-900">재고 부족</p>
+                <p className="text-sm text-gray-500">EM-001 앤드밀 재고가 최소 수준 이하</p>
               </div>
             </div>
-            
-            <div className="flex items-center p-3 bg-green-50 rounded-lg">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">C001 정상 가동 중</p>
-                <p className="text-xs text-gray-500">23분 전</p>
+            <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+              <div className="flex-shrink-0">
+                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
               </div>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="text-center">
-              <Link href="/dashboard/reports" className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                알림 히스토리 보기
-              </Link>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-900">정기 점검</p>
+                <p className="text-sm text-gray-500">A동 설비 정기 점검 완료</p>
+              </div>
             </div>
           </div>
         </div>
