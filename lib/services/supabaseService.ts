@@ -4,19 +4,53 @@ import { Database } from '../types/database'
 // Supabase 클라이언트 타입
 type SupabaseClient = ReturnType<typeof createClient<Database>>
 
+// 클라이언트용 환경변수 검증 함수
+function validateClientEnvironmentVariables() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL 환경변수가 설정되지 않았습니다.')
+  }
+
+  if (!supabaseAnonKey) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY 환경변수가 설정되지 않았습니다.')
+  }
+
+  return {
+    supabaseUrl,
+    supabaseAnonKey
+  }
+}
+
+// 서버용 환경변수 검증 함수
+function validateServerEnvironmentVariables() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL 환경변수가 설정되지 않았습니다.')
+  }
+
+  if (!supabaseServiceKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY 환경변수가 설정되지 않았습니다.')
+  }
+
+  return {
+    supabaseUrl,
+    supabaseServiceKey
+  }
+}
+
 // 기본 Supabase 클라이언트 생성
 export const createSupabaseClient = (): SupabaseClient => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  
-  return createClient<Database>(supabaseUrl, supabaseKey)
+  const { supabaseUrl, supabaseAnonKey } = validateClientEnvironmentVariables()
+  return createClient<Database>(supabaseUrl, supabaseAnonKey)
 }
 
 // 서버용 Supabase 클라이언트 생성 (Service Role Key 사용)
 export const createServerSupabaseClient = (): SupabaseClient => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  
+  const { supabaseUrl, supabaseServiceKey } = validateServerEnvironmentVariables()
   return createClient<Database>(supabaseUrl, supabaseServiceKey)
 }
 
@@ -31,7 +65,7 @@ export class EquipmentService {
   // 전체 설비 조회
   async getAll() {
     const { data, error } = await this.supabase
-      .from('equipments')
+      .from('equipment')
       .select('*')
       .order('equipment_number')
 
@@ -42,7 +76,7 @@ export class EquipmentService {
   // 설비 상태별 조회
   async getByStatus(status: 'active' | 'maintenance' | 'offline') {
     const { data, error } = await this.supabase
-      .from('equipments')
+      .from('equipment')
       .select('*')
       .eq('status', status)
 
@@ -51,9 +85,9 @@ export class EquipmentService {
   }
 
   // 설비 생성
-  async create(equipment: Database['public']['Tables']['equipments']['Insert']) {
+  async create(equipment: Database['public']['Tables']['equipment']['Insert']) {
     const { data, error } = await this.supabase
-      .from('equipments')
+      .from('equipment')
       .insert(equipment)
       .select()
       .single()
@@ -63,9 +97,9 @@ export class EquipmentService {
   }
 
   // 설비 업데이트
-  async update(id: string, updates: Database['public']['Tables']['equipments']['Update']) {
+  async update(id: string, updates: Database['public']['Tables']['equipment']['Update']) {
     const { data, error } = await this.supabase
-      .from('equipments')
+      .from('equipment')
       .update(updates)
       .eq('id', id)
       .select()
@@ -78,7 +112,7 @@ export class EquipmentService {
   // 설비 삭제
   async delete(id: string) {
     const { error } = await this.supabase
-      .from('equipments')
+      .from('equipment')
       .delete()
       .eq('id', id)
 
@@ -88,7 +122,7 @@ export class EquipmentService {
   // 설비 통계
   async getStats() {
     const { data, error } = await this.supabase
-      .from('equipments')
+      .from('equipment')
       .select('status')
 
     if (error) throw error
@@ -111,7 +145,7 @@ export class EquipmentService {
     return this.supabase
       .channel('equipment_changes')
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'equipments' }, 
+        { event: '*', schema: 'public', table: 'equipment' }, 
         callback
       )
       .subscribe()
@@ -654,4 +688,8 @@ export class SupabaseService {
 // 기본 인스턴스
 export const supabaseService = new SupabaseService()
 export const clientSupabaseService = new SupabaseService(false) // 클라이언트용 명시적 export
-export const serverSupabaseService = new SupabaseService(true) 
+
+// 서버용 인스턴스는 서버 환경에서만 생성
+export const serverSupabaseService = typeof window === 'undefined' 
+  ? new SupabaseService(true)
+  : new SupabaseService(false) // 브라우저에서는 클라이언트 버전 사용 
