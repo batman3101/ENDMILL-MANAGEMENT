@@ -75,6 +75,8 @@ export default function DashboardLayout({
     }
   }
 
+  // 임시로 인증 확인 비활성화
+  /*
   // 인증 확인 중 로딩 표시
   if (loading) {
     return (
@@ -91,6 +93,15 @@ export default function DashboardLayout({
   if (!user) {
     router.push('/login')
     return null
+  }
+  */
+
+  // 임시 더미 사용자 정보
+  const dummyUser = {
+    name: '테스트 사용자',
+    position: '시스템 관리자',
+    department: '종합관리실',
+    shift: 'A'
   }
 
   const menuItems = [
@@ -190,10 +201,10 @@ export default function DashboardLayout({
               {/* 사용자 정보 */}
               <div className="text-right">
                 <p className="text-sm text-blue-100">
-                  {user?.name || '사용자'} ({user?.position || '직위 없음'})
+                  {dummyUser?.name || '사용자'} ({dummyUser?.position || '직위 없음'})
                 </p>
                 <p className="text-xs text-blue-200">
-                  {user?.department || '부서 없음'} · {user?.shift || 'A'}교대
+                  {dummyUser?.department || '부서 없음'} · {dummyUser?.shift || 'A'}교대
                 </p>
               </div>
 
