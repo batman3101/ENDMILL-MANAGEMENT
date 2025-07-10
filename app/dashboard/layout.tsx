@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import DevMockDataManager from '../../components/dev/MockDataManager'
-import { useTranslations } from '../../lib/hooks/useTranslations'
+// import { useTranslations } from '../../lib/hooks/useTranslations'
 import { useAuth } from '../../lib/hooks/useAuth'
 
 export default function DashboardLayout({
@@ -14,8 +14,56 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { currentLanguage, changeLanguage, t } = useTranslations()
+  // const { currentLanguage, changeLanguage, t } = useTranslations()
   const { user, signOut, loading } = useAuth()
+
+  // 임시로 하드코딩된 번역 함수
+  const t = (namespace: string, key: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      auth: {
+        loginTitle: 'CNC 앤드밀 관리 시스템'
+      },
+      navigation: {
+        dashboard: '대시보드',
+        equipment: '설비 관리',
+        endmill: '앤드밀 관리',
+        toolChanges: '교체 실적',
+        camSheets: 'CAM SHEET 관리',
+        inventory: '재고 관리',
+        reports: '분석 & 리포트',
+        users: '사용자 관리',
+        settings: '설정'
+      },
+      dashboard: {
+        subtitle: '실시간 CNC 앤드밀 관리 현황'
+      },
+      equipment: {
+        subtitle: '지시한 보기'
+      },
+      endmill: {
+        subtitle: '지시한 보기'
+      },
+      toolChanges: {
+        subtitle: '지시한 보기'
+      },
+      camSheets: {
+        subtitle: '지시한 보기'
+      },
+      inventory: {
+        subtitle: '지시한 보기'
+      },
+      reports: {
+        subtitle: '지시한 보기'
+      },
+      users: {
+        subtitle: '지시한 보기'
+      },
+      settings: {
+        subtitle: '지시한 보기'
+      }
+    }
+    return translations[namespace]?.[key] || key
+  }
 
   // 로그아웃 처리
   const handleLogout = async () => {
@@ -130,27 +178,12 @@ export default function DashboardLayout({
 
             {/* 우측 영역 - 언어선택, 알림, 로그아웃 */}
             <div className="flex items-center space-x-6">
-              {/* 언어 선택 */}
+              {/* 언어 선택 (임시 비활성화) */}
               <div className="flex space-x-1">
                 <button
-                  onClick={() => changeLanguage('ko')}
-                  className={`px-3 py-1 text-sm rounded ${
-                    currentLanguage === 'ko' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'text-blue-200 hover:bg-blue-700'
-                  }`}
+                  className="px-3 py-1 text-sm rounded bg-blue-600 text-white"
                 >
                   🇰🇷 한국어
-                </button>
-                <button
-                  onClick={() => changeLanguage('vi')}
-                  className={`px-3 py-1 text-sm rounded ${
-                    currentLanguage === 'vi' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'text-blue-200 hover:bg-blue-700'
-                  }`}
-                >
-                  🇻🇳 Tiếng Việt
                 </button>
               </div>
 
