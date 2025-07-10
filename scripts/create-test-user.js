@@ -169,8 +169,7 @@ async function createTestUser() {
         const { error: profileError } = await supabase
           .from('user_profiles')
           .upsert({
-            id: authData.user.id,
-            email: userData.email,
+            user_id: authData.user.id,
             name: userData.name,
             employee_id: userData.employeeId,
             department: userData.department,
@@ -209,7 +208,6 @@ async function createTestUser() {
     const { data: profiles, error: profilesError } = await supabase
       .from('user_profiles')
       .select(`
-        email,
         name,
         employee_id,
         department,
@@ -227,7 +225,7 @@ async function createTestUser() {
     } else {
       console.log(`✅ 프로필 정보 조회 성공 (${profiles.length}명)`);
       profiles.forEach(profile => {
-        console.log(`   - ${profile.name} (${profile.email})`);
+        console.log(`   - ${profile.name}`);
         console.log(`     사번: ${profile.employee_id}, 부서: ${profile.department}`);
         console.log(`     역할: ${profile.user_roles?.name || '미설정'}, 교대: ${profile.shift}`);
         console.log(`     상태: ${profile.is_active ? '활성' : '비활성'}\n`);

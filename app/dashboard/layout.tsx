@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
-import DevMockDataManager from '../../components/dev/MockDataManager'
 // import { useTranslations } from '../../lib/hooks/useTranslations'
 import { useAuth } from '../../lib/hooks/useAuth'
 
@@ -75,8 +74,6 @@ export default function DashboardLayout({
     }
   }
 
-  // 임시로 인증 확인 비활성화
-  /*
   // 인증 확인 중 로딩 표시
   if (loading) {
     return (
@@ -93,15 +90,6 @@ export default function DashboardLayout({
   if (!user) {
     router.push('/login')
     return null
-  }
-  */
-
-  // 임시 더미 사용자 정보
-  const dummyUser = {
-    name: '테스트 사용자',
-    position: '시스템 관리자',
-    department: '종합관리실',
-    shift: 'A'
   }
 
   const menuItems = [
@@ -201,10 +189,10 @@ export default function DashboardLayout({
               {/* 사용자 정보 */}
               <div className="text-right">
                 <p className="text-sm text-blue-100">
-                  {dummyUser?.name || '사용자'} ({dummyUser?.position || '직위 없음'})
+                  {user?.name || '사용자'} ({user?.position || '직위 없음'})
                 </p>
                 <p className="text-xs text-blue-200">
-                  {dummyUser?.department || '부서 없음'} · {dummyUser?.shift || 'A'}교대
+                  {user?.department || '부서 없음'} · {user?.shift || 'A'}교대
                 </p>
               </div>
 
@@ -232,12 +220,6 @@ export default function DashboardLayout({
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={(e) => {
-                    console.log('🔗 네비게이션 클릭:', item.href, item.label)
-                    console.log('🔗 현재 pathname:', pathname)
-                    // 클릭이 처리되는지 확인
-                    console.log('🔗 클릭 이벤트:', e.type)
-                  }}
                   className={`flex items-center space-x-2 px-4 py-3 whitespace-nowrap transition-colors ${
                     item.active
                       ? 'bg-blue-600 text-white border-b-2 border-white'
@@ -270,9 +252,6 @@ export default function DashboardLayout({
           {children}
         </div>
       </main>
-
-      {/* 개발자 도구 */}
-      <DevMockDataManager />
     </div>
   )
 } 
