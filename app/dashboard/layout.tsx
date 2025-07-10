@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 // import { useTranslations } from '../../lib/hooks/useTranslations'
 import { useAuth } from '../../lib/hooks/useAuth'
 
@@ -15,6 +15,17 @@ export default function DashboardLayout({
   const router = useRouter()
   // const { currentLanguage, changeLanguage, t } = useTranslations()
   const { user, signOut, loading } = useAuth()
+  const [currentTime, setCurrentTime] = useState<string>('')
+
+  // 실시간 시계
+  useEffect(() => {
+    const updateTime = () => {
+      setCurrentTime(new Date().toLocaleTimeString('ko-KR'))
+    }
+    updateTime()
+    const timer = setInterval(updateTime, 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   // 임시로 하드코딩된 번역 함수
   const t = (namespace: string, key: string) => {
@@ -175,7 +186,7 @@ export default function DashboardLayout({
               </div>
             </div>
 
-            {/* 우측 영역 - 언어선택, 알림, 로그아웃 */}
+            {/* 우측 영역 - 언어선택, 시계, 사용자 정보, 알림, 로그아웃 */}
             <div className="flex items-center space-x-6">
               {/* 언어 선택 (임시 비활성화) */}
               <div className="flex space-x-1">
@@ -184,6 +195,17 @@ export default function DashboardLayout({
                 >
                   🇰🇷 한국어
                 </button>
+              </div>
+
+              {/* 실시간 시계 */}
+              <div className="bg-blue-700 rounded-lg px-4 py-2 border border-blue-600">
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg">⏰</span>
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-white">{currentTime || '로딩 중...'}</p>
+                    <p className="text-xs text-blue-200">{new Date().toLocaleDateString('ko-KR')}</p>
+                  </div>
+                </div>
               </div>
 
               {/* 사용자 정보 */}
