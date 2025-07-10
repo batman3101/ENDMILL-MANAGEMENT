@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useInventory } from '../../lib/hooks/useInventory'
 import { useEquipment } from '../../lib/hooks/useEquipment'
 import { useCAMSheets } from '../../lib/hooks/useCAMSheets'
@@ -20,19 +20,19 @@ export default function DevMockDataManager() {
   const { equipments, loading: equipmentLoading } = useEquipment()
   const { camSheets, loading: camSheetsLoading } = useCAMSheets()
 
-  // 통계 업데이트
-  const updateStats = () => {
+  // 통계 업데이트 - useCallback으로 메모이제이션
+  const updateStats = useCallback(() => {
     setStats({
       inventory: inventory?.length || 0,
       equipment: equipments?.length || 0,
       camSheets: camSheets?.length || 0,
       toolChanges: 0 // TODO: Tool Changes Hook 추가 후 업데이트
     })
-  }
+  }, [inventory, equipments, camSheets])
 
   useEffect(() => {
     updateStats()
-  }, [inventory, equipments, camSheets])
+  }, [updateStats])
 
   const handleReset = () => {
     if (confirm('모든 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
