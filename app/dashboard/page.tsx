@@ -1,21 +1,40 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import LandingStatusCard from '../../components/features/LandingStatusCard'
 import DonutChart from '../../components/features/DonutChart'
 
 export default function DashboardPage() {
   const pathname = usePathname()
+  const [currentTime, setCurrentTime] = useState<string>('')
+  const [isClient, setIsClient] = useState(false)
   
-  console.log('📍 대시보드 페이지 로드됨, pathname:', pathname)
+  useEffect(() => {
+    setIsClient(true)
+    setCurrentTime(new Date().toLocaleTimeString())
+    
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString())
+    }, 1000)
+    
+    return () => clearInterval(timer)
+  }, [])
+  
+  useEffect(() => {
+    if (isClient) {
+      console.log('📍 대시보드 페이지 로드됨, pathname:', pathname)
+    }
+  }, [pathname, isClient])
 
   return (
     <div className="space-y-6">
-      {/* 디버깅 정보 */}
+      {/* 디버깅 정보 - hydration 안전하게 처리 */}
       <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
         <p className="font-bold">🔧 디버깅 모드</p>
         <p>현재 경로: {pathname}</p>
-        <p>페이지 로드 시간: {new Date().toLocaleTimeString()}</p>
+        <p>페이지 로드 시간: {isClient ? currentTime : '로딩 중...'}</p>
+        <p>클라이언트 상태: {isClient ? '활성' : '초기화 중'}</p>
       </div>
 
       {/* 상태 카드 섹션 */}

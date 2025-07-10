@@ -2,12 +2,30 @@
 
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 
 export default function TestNavPage() {
   const router = useRouter()
   const pathname = usePathname()
+  const [currentTime, setCurrentTime] = useState<string>('')
+  const [isClient, setIsClient] = useState(false)
 
-  console.log('🧪 테스트 페이지 로드됨, pathname:', pathname)
+  useEffect(() => {
+    setIsClient(true)
+    setCurrentTime(new Date().toLocaleTimeString())
+    
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString())
+    }, 1000)
+    
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    if (isClient) {
+      console.log('🧪 테스트 페이지 로드됨, pathname:', pathname)
+    }
+  }, [pathname, isClient])
 
   const handleButtonClick = () => {
     console.log('🔥 버튼 클릭! 프로그램적 네비게이션 시도...')
@@ -26,7 +44,8 @@ export default function TestNavPage() {
         <div className="space-y-4">
           <div className="p-4 bg-blue-50 rounded">
             <p><strong>현재 경로:</strong> {pathname}</p>
-            <p><strong>시간:</strong> {new Date().toLocaleTimeString()}</p>
+            <p><strong>시간:</strong> {isClient ? currentTime : '로딩 중...'}</p>
+            <p><strong>클라이언트 상태:</strong> {isClient ? '활성' : '초기화 중'}</p>
           </div>
 
           <div className="space-y-2">
