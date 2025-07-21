@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
+import { Database } from '../../../../lib/types/database'
 import { z } from 'zod'
 
 // 로그인 요청 스키마
@@ -29,21 +29,13 @@ export async function POST(request: NextRequest) {
     const { email, password } = validationResult.data
 
     // Supabase 클라이언트 생성
-    const cookieStore = cookies()
-    const supabase = createServerClient(
+    const supabase = createClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options })
-          },
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
         },
       }
     )

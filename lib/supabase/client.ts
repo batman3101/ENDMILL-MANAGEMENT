@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/database';
 
 // 하드코딩된 fallback 값들 (환경변수 로드 실패 시 사용)
-const FALLBACK_SUPABASE_URL = 'https://nzbhybxssbvbqwxzjrcmt.supabase.co';
-const FALLBACK_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56Ymh5Ynhzc2J2YnF3eHpqcmNtdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzM0Njc3ODYzLCJleHAiOjIwNTAyNTM4NjN9.eQGz9v-LPUy4hllmrI0NRUJVSk52CQnJWnWgJQYoJD8';
+const FALLBACK_SUPABASE_URL = 'https://npprskxlqbgmbksrnpnr.supabase.co';
+const FALLBACK_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wcHJza3hscWJnbWJrc3JucG5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwMjQ0MDMsImV4cCI6MjA2NzYwMDQwM30.8ZXH5u2mtv7e4I1YXg5_wjQ2nfPdFwWaAeYmMp6kINg';
 
 // 환경변수를 안전하게 가져오는 함수
 const getSupabaseUrl = (): string => {
@@ -65,7 +65,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 // 서버사이드용 클라이언트 (서비스 역할 키 사용)
 export const createServerClient = () => {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56Ymh5Ynhzc2J2YnF3eHpqcmNtdCIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJpYXQiOjE3MzQ2Nzc4NjMsImV4cCI6MjA1MDI1Mzg2M30.PGxWtNBGjN8hdKPO9FLTXcElf1L5WX7UDBHQZ2FhJGo';
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wcHJza3hscWJnbWJrc3JucG5yIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjAyNDQwMywiZXhwIjoyMDY3NjAwNDAzfQ.vx1nqnzIttN3KoCyxVT9UlguJ1cuEOAwpPd3Jaoa4ek';
   
   return createClient<Database>(supabaseUrl, serviceRoleKey, {
     auth: {
