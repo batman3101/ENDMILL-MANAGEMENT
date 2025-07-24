@@ -151,6 +151,8 @@ export function AuthProvider(props: { children: ReactNode }) {
               role: tempUser.role,
               language: 'ko'
             })
+            // 임시 세션 저장 확인
+            TempSessionManager.saveSession(tempUser)
           } else {
             setUser(null)
             setSession(null)
@@ -183,6 +185,8 @@ export function AuthProvider(props: { children: ReactNode }) {
               role: tempUser.role,
               language: 'ko'
             })
+            // 임시 세션 저장 확인
+            TempSessionManager.saveSession(tempUser)
           } else {
             setUser(null)
             setSession(null)
@@ -205,6 +209,8 @@ export function AuthProvider(props: { children: ReactNode }) {
                 role: tempUser.role,
                 language: 'ko'
               })
+              // 임시 세션 저장 확인
+              TempSessionManager.saveSession(tempUser)
             } else {
               setUser(null)
               setSession(null)

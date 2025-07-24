@@ -90,7 +90,16 @@ export default function DashboardLayout({
   // 인증되지 않은 사용자는 로그인 페이지로 리다이렉트
   useEffect(() => {
     if (!loading && !user) {
-      window.location.href = '/login'
+      console.log('🔄 리다이렉트 조건 확인:', { loading, user: !!user })
+      // 한 번만 리다이렉트하도록 플래그 사용
+      const hasRedirected = sessionStorage.getItem('dashboard_redirect')
+      if (!hasRedirected) {
+        sessionStorage.setItem('dashboard_redirect', 'true')
+        window.location.href = '/login'
+      }
+    } else if (user) {
+      // 사용자가 있으면 리다이렉트 플래그 제거
+      sessionStorage.removeItem('dashboard_redirect')
     }
   }, [user, loading])
 
