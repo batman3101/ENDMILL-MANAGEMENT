@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 // import { useTranslations } from '../../lib/hooks/useTranslations'
 import { useAuth } from '../../lib/hooks/useAuth'
+import { usePermissions } from '../../lib/hooks/usePermissions'
 
 export default function DashboardLayout({
   children,
@@ -15,6 +16,7 @@ export default function DashboardLayout({
   const router = useRouter()
   // const { currentLanguage, changeLanguage, t } = useTranslations()
   const { user, signOut, loading } = useAuth()
+  const { canAccessPage, isAdmin } = usePermissions()
   const [currentTime, setCurrentTime] = useState<string>('')
 
   // 실시간 시계
@@ -85,6 +87,13 @@ export default function DashboardLayout({
     }
   }
 
+  // 인증되지 않은 사용자는 로그인 페이지로 리다이렉트
+  useEffect(() => {
+    if (!loading && !user) {
+      window.location.href = '/login'
+    }
+  }, [user, loading])
+
   // 인증 확인 중 로딩 표시
   if (loading) {
     return (
@@ -97,77 +106,93 @@ export default function DashboardLayout({
     )
   }
 
-  // 인증되지 않은 사용자는 로그인 페이지로 리다이렉트
   if (!user) {
-    router.push('/login')
     return null
   }
 
-  const menuItems = [
+  const allMenuItems = [
     {
       href: '/dashboard',
       icon: '🏠',
       label: t('navigation', 'dashboard'),
       description: t('dashboard', 'subtitle'),
-      active: pathname === '/dashboard'
+      active: pathname === '/dashboard',
+      requiresPermission: false
     },
     {
       href: '/dashboard/equipment',
       icon: '🏭',
       label: t('navigation', 'equipment'),
       description: t('equipment', 'subtitle'),
-      active: pathname === '/dashboard/equipment'
+      active: pathname === '/dashboard/equipment',
+      requiresPermission: false
     },
     {
       href: '/dashboard/endmill',
       icon: '🔧',
       label: t('navigation', 'endmill'),
       description: t('endmill', 'subtitle'),
-      active: pathname === '/dashboard/endmill'
+      active: pathname === '/dashboard/endmill',
+      requiresPermission: false
     },
     {
       href: '/dashboard/tool-changes',
       icon: '🔄',
       label: t('navigation', 'toolChanges'),
       description: t('toolChanges', 'subtitle'),
-      active: pathname === '/dashboard/tool-changes'
+      active: pathname === '/dashboard/tool-changes',
+      requiresPermission: false
     },
     {
       href: '/dashboard/cam-sheets',
       icon: '📋',
       label: t('navigation', 'camSheets'),
       description: t('camSheets', 'subtitle'),
-      active: pathname === '/dashboard/cam-sheets'
+      active: pathname === '/dashboard/cam-sheets',
+      requiresPermission: false
     },
     {
       href: '/dashboard/inventory',
       icon: '📦',
       label: t('navigation', 'inventory'),
       description: t('inventory', 'subtitle'),
-      active: pathname === '/dashboard/inventory' || pathname.startsWith('/dashboard/inventory/')
+      active: pathname === '/dashboard/inventory' || pathname.startsWith('/dashboard/inventory/'),
+      requiresPermission: false
     },
     {
       href: '/dashboard/reports',
       icon: '📊',
       label: t('navigation', 'reports'),
       description: t('reports', 'subtitle'),
-      active: pathname === '/dashboard/reports'
+      active: pathname === '/dashboard/reports',
+      requiresPermission: false
     },
     {
       href: '/dashboard/users',
       icon: '👥',
       label: t('navigation', 'users'),
       description: t('users', 'subtitle'),
-      active: pathname === '/dashboard/users'
+      active: pathname === '/dashboard/users',
+      requiresPermission: true,
+      adminOnly: true
     },
     {
       href: '/dashboard/settings',
       icon: '⚙️',
       label: t('navigation', 'settings'),
       description: t('settings', 'subtitle'),
-      active: pathname === '/dashboard/settings'
+      active: pathname === '/dashboard/settings',
+      requiresPermission: true,
+      adminOnly: true
     }
   ]
+
+  // 권한에 따라 메뉴 아이템 필터링
+  const menuItems = allMenuItems.filter(item => {
+    if (!item.requiresPermission) return true
+    if (item.adminOnly) return isAdmin()
+    return canAccessPage(item.href)
+  })
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -209,25 +234,40 @@ export default function DashboardLayout({
               </div>
 
               {/* 사용자 정보 */}
-              <div className="text-right">
-                <p className="text-sm text-blue-100">
-                  {user?.name || '사용자'} ({user?.position || '직위 없음'})
-                </p>
-                <p className="text-xs text-blue-200">
-                  {user?.department || '부서 없음'} · {user?.shift || 'A'}교대
-                </p>
+              <div className="relative group">
+                <button className="text-right hover:bg-blue-700 rounded-lg p-2 transition-colors">
+                  <p className="text-sm text-blue-100">
+                    {user?.name || '사용자'} ({user?.position || '직위 없음'})
+                  </p>
+                  <p className="text-xs text-blue-200">
+                    {user?.department || '부서 없음'} · {user?.shift || 'A'}교대
+                  </p>
+                </button>
+                
+                {/* 드롭다운 메뉴 */}
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  <Link
+                    href="/dashboard/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                  >
+                    <span>👤</span>
+                    <span>프로필 관리</span>
+                  </Link>
+                  <div className="border-t border-gray-100"></div>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                  >
+                    <span>🚪</span>
+                    <span>로그아웃</span>
+                  </button>
+                </div>
               </div>
 
-              {/* 알림 및 로그아웃 */}
+              {/* 알림 */}
               <div className="flex items-center space-x-2">
                 <button className="p-2 text-blue-100 hover:bg-blue-700 rounded-lg">
                   🔔
-                </button>
-                <button 
-                  onClick={handleLogout}
-                  className="text-sm text-blue-100 hover:text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  로그아웃
                 </button>
               </div>
             </div>
@@ -276,4 +316,4 @@ export default function DashboardLayout({
       </main>
     </div>
   )
-} 
+}

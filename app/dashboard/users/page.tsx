@@ -6,8 +6,17 @@ import { User, UserRole } from '../../../lib/types/users'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
+import { AdminGuard } from '../../../components/auth/PermissionGuard'
 
 export default function UsersPage() {
+  return (
+    <AdminGuard>
+      <UsersPageContent />
+    </AdminGuard>
+  )
+}
+
+function UsersPageContent() {
   const { 
     getUserStats, 
     getFilteredUsers, 
@@ -2270,4 +2279,4 @@ export default function UsersPage() {
       )}
     </div>
   )
-} 
+}

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google-cloud/translate": "^9.1.0",
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.3",
     "@tailwindcss/forms": "^0.5.10",

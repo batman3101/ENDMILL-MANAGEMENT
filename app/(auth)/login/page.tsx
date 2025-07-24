@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useAuth } from '../../../lib/hooks/useAuth'
@@ -10,31 +10,45 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const { signIn, isAuthenticated, loading: authLoading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  // URL에서 redirect 파라미터 가져오기
+  const redirectTo = searchParams.get('redirect') || '/dashboard'
 
-  // 이미 로그인된 사용자는 대시보드로 리다이렉트
+  // 이미 로그인된 사용자는 적절한 페이지로 리다이렉트
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      router.push('/dashboard')
+      const targetPath = redirectTo.startsWith('/') ? redirectTo : '/dashboard'
+      router.push(targetPath)
     }
-  }, [isAuthenticated, authLoading, router])
+  }, [isAuthenticated, authLoading, router, redirectTo])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!email || !password) {
+      setError('이메일과 비밀번호를 입력해주세요.')
       return
     }
 
     setLoading(true)
+    setError('')
+    
     try {
       const result = await signIn(email, password)
       if (result.success) {
-        router.push('/dashboard')
+        // 로그인 성공 시 원래 가려던 페이지 또는 대시보드로 이동
+        const targetPath = redirectTo.startsWith('/') ? redirectTo : '/dashboard'
+        router.push(targetPath)
+      } else {
+        setError(result.error || '로그인에 실패했습니다.')
       }
     } catch (error) {
       console.error('로그인 오류:', error)
+      setError('로그인 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)
     }
@@ -73,6 +87,21 @@ export default function LoginPage() {
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-800">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="space-y-3">
             <div>
               <label htmlFor="email-address" className="sr-only">
@@ -85,7 +114,10 @@ export default function LoginPage() {
                 autoComplete="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (error) setError('') // 입력 시 오류 메시지 제거
+                }}
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="이메일 주소"
                 disabled={loading}
@@ -102,7 +134,10 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                  if (error) setError('') // 입력 시 오류 메시지 제거
+                }}
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="비밀번호"
                 disabled={loading}
@@ -127,7 +162,13 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="text-center space-y-2">
+            <Link 
+              href="/forgot-password"
+              className="text-sm text-blue-600 hover:text-blue-500 font-medium"
+            >
+              비밀번호를 잊으셨나요?
+            </Link>
             <p className="text-sm text-gray-600">
               계정이 없으신가요?{' '}
               <span className="font-medium text-gray-500">
@@ -136,7 +177,7 @@ export default function LoginPage() {
             </p>
             <Link 
               href="/"
-              className="mt-2 inline-block text-sm text-blue-600 hover:text-blue-500"
+              className="inline-block text-sm text-blue-600 hover:text-blue-500"
             >
               ← 메인으로 돌아가기
             </Link>
@@ -145,4 +186,4 @@ export default function LoginPage() {
       </div>
     </div>
   )
-} 
+}

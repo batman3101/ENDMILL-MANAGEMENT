@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import LandingStatusCard from '../../components/features/LandingStatusCard'
 import DonutChart from '../../components/features/DonutChart'
 import { useSettings } from '../../lib/hooks/useSettings'
+import { usePermissions } from '../../lib/hooks/usePermissions'
+import { PermissionGuard } from '../../components/auth/PermissionGuard'
 import { 
   useDashboard, 
   formatVND, 
@@ -13,6 +15,20 @@ import {
 } from '../../lib/hooks/useDashboard'
 
 export default function DashboardPage() {
+  // 권한 확인
+  const { canAccessPage } = usePermissions()
+  
+  // 대시보드 접근 권한 확인
+  if (!canAccessPage('/dashboard')) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">접근 권한이 없습니다</h2>
+          <p className="text-gray-600">대시보드에 접근할 권한이 없습니다.</p>
+        </div>
+      </div>
+    )
+  }
   const { getSetting } = useSettings()
   const { data, isLoading, error, refreshData, lastRefresh } = useDashboard(30000) // 30초마다 업데이트
 
@@ -407,4 +423,4 @@ export default function DashboardPage() {
       </div>
     </div>
   )
-} 
+}

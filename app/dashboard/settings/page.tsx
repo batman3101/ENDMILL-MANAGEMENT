@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSettings } from '../../../lib/hooks/useSettings'
 import { SettingsCategory } from '../../../lib/types/settings'
 import { useToast } from '../../../components/shared/Toast'
+import { AdminGuard } from '../../../components/auth/PermissionGuard'
 
 // 설정 탭 정의
 const SETTINGS_TABS = [
@@ -58,6 +59,14 @@ const SETTINGS_TABS = [
 ]
 
 export default function SettingsPage() {
+  return (
+    <AdminGuard>
+      <SettingsPageContent />
+    </AdminGuard>
+  )
+}
+
+function SettingsPageContent() {
   const [activeTab, setActiveTab] = useState<SettingsCategory>('system')
   const { 
     settings, 
@@ -2339,4 +2348,4 @@ export default function SettingsPage() {
       )}
     </div>
   )
-} 
+}
