@@ -42,13 +42,13 @@ export default function EndmillDetailPage() {
           tolerance: specs.tolerance || '',
           helix: specs.helix_angle || specs.helix || '',
           qualityGrade: 'A', // 기본값
-          currentStock: foundEndmill.current_stock,
-          minStock: foundEndmill.min_stock,
-          maxStock: foundEndmill.max_stock,
+          currentStock: foundEndmill.current_stock || 0,
+          minStock: foundEndmill.min_stock || 0,
+          maxStock: foundEndmill.max_stock || 0,
           unitPrice: foundEndmill.endmill_types?.unit_cost || 0,
           standardLife: foundEndmill.endmill_types?.standard_life || 0,
-          stockStatus: foundEndmill.current_stock <= foundEndmill.min_stock ? 'critical' : 
-                      foundEndmill.current_stock <= foundEndmill.min_stock * 1.5 ? 'low' : 'sufficient',
+          stockStatus: (foundEndmill.current_stock || 0) <= (foundEndmill.min_stock || 0) ? 'critical' : 
+                      (foundEndmill.current_stock || 0) <= (foundEndmill.min_stock || 0) * 1.5 ? 'low' : 'sufficient',
           supplier: '기본 공급업체', // 기본값
           // 가짜 데이터 (실제로는 별도 테이블에서 가져와야 함)
           totalUsageCount: 1250,
@@ -62,10 +62,10 @@ export default function EndmillDetailPage() {
             {
               supplierName: '베트남 공급업체 A',
               unitPrice: foundEndmill.endmill_types?.unit_cost || 125000,
-              currentStock: foundEndmill.current_stock,
+              currentStock: foundEndmill.current_stock || 0,
               minOrderQuantity: 50,
               leadTime: 14,
-              stockStatus: foundEndmill.current_stock <= foundEndmill.min_stock ? 'critical' : 'sufficient',
+              stockStatus: (foundEndmill.current_stock || 0) <= (foundEndmill.min_stock || 0) ? 'critical' : 'sufficient',
               lastOrderDate: '2024-11-15',
               averageDeliveryTime: 12,
               qualityRating: 4.2,
@@ -96,7 +96,7 @@ export default function EndmillDetailPage() {
             }
           ],
           predictedNextChange: '2024-12-25',
-          recommendedStock: Math.ceil(foundEndmill.min_stock * 1.5),
+          recommendedStock: Math.ceil((foundEndmill.min_stock || 0) * 1.5),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           isActive: true,
@@ -775,4 +775,4 @@ export default function EndmillDetailPage() {
       </div>
     </div>
   )
-} 
+}

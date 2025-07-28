@@ -74,7 +74,7 @@ export class EquipmentService {
   }
 
   // 설비 상태별 조회
-  async getByStatus(status: 'active' | 'maintenance' | 'offline') {
+  async getByStatus(status: '가동중' | '점검중' | '셋업중') {
     const { data, error } = await this.supabase
       .from('equipment')
       .select('*')
@@ -128,15 +128,17 @@ export class EquipmentService {
     if (error) throw error
 
     const stats = data.reduce((acc, equipment) => {
-      acc[equipment.status] = (acc[equipment.status] || 0) + 1
+      if (equipment.status) {
+        acc[equipment.status] = (acc[equipment.status] || 0) + 1
+      }
       return acc
     }, {} as Record<string, number>)
 
     return {
       total: data.length,
-      active: stats.active || 0,
-      maintenance: stats.maintenance || 0,
-      offline: stats.offline || 0
+      active: stats['가동중'] || 0,
+      maintenance: stats['점검중'] || 0,
+      offline: stats['셋업중'] || 0
     }
   }
 
@@ -365,10 +367,10 @@ export class InventoryService {
     if (error) throw error
 
     const totalItems = data.length
-    const criticalItems = data.filter(item => item.current_stock <= item.min_stock).length
+    const criticalItems = data.filter(item => (item.current_stock || 0) <= (item.min_stock || 0)).length
     const lowItems = data.filter(item => 
-      item.current_stock > item.min_stock && 
-      item.current_stock <= item.min_stock * 1.5
+      (item.current_stock || 0) > (item.min_stock || 0) && 
+      (item.current_stock || 0) <= (item.min_stock || 0) * 1.5
     ).length
     const sufficientItems = totalItems - criticalItems - lowItems
 
@@ -692,4 +694,4 @@ export const clientSupabaseService = new SupabaseService(false) // 클라이언�
 // 서버용 인스턴스는 서버 환경에서만 생성
 export const serverSupabaseService = typeof window === 'undefined' 
   ? new SupabaseService(true)
-  : new SupabaseService(false) // 브라우저에서는 클라이언트 버전 사용 
+  : new SupabaseService(false) // 브라우저에서는 클라이언트 버전 사용

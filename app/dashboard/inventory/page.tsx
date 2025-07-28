@@ -84,7 +84,7 @@ export default function InventoryPage() {
     if (!searchTerm) return filteredInventory
     
     return filteredInventory.filter(item => 
-      item.endmill_types?.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.endmill_types?.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.endmill_types?.description_ko?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.endmill_types?.description_vi?.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -118,10 +118,10 @@ export default function InventoryPage() {
         name: item.endmill_types?.description_ko || item.endmill_types?.description_vi || '',
         category: item.endmill_types?.endmill_categories?.code || '',
         specifications: item.endmill_types?.specifications ? JSON.stringify(item.endmill_types.specifications) : '',
-        totalCurrentStock: item.current_stock,
-        minStock: item.min_stock,
-        maxStock: item.max_stock,
-        overallStatus: calculateStockStatus(item.current_stock, item.min_stock, item.max_stock),
+        totalCurrentStock: item.current_stock || 0,
+        minStock: item.min_stock || 0,
+        maxStock: item.max_stock || 0,
+        overallStatus: calculateStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0),
         unitPrice: item.endmill_types?.unit_cost || 0,
         isFirstRow: true,
         rowSpan: 1
@@ -1232,4 +1232,4 @@ export default function InventoryPage() {
       )}
     </div>
   )
-} 
+}

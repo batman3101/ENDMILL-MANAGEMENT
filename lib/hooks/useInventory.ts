@@ -191,7 +191,7 @@ export const useInventory = (filter?: InventoryFilter) => {
 
     if (additionalFilter.status) {
       filtered = filtered.filter(item => {
-        const status = calculateStockStatus(item.current_stock, item.min_stock, item.max_stock)
+        const status = calculateStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0)
         return status === additionalFilter.status
       })
     }
@@ -204,7 +204,7 @@ export const useInventory = (filter?: InventoryFilter) => {
 
     if (additionalFilter.lowStock) {
       filtered = filtered.filter(item => {
-        const status = calculateStockStatus(item.current_stock, item.min_stock, item.max_stock)
+        const status = calculateStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0)
         return status === 'low' || status === 'critical'
       })
     }
@@ -218,10 +218,10 @@ export const useInventory = (filter?: InventoryFilter) => {
     
     const totalItems = data.length
     const totalValue = data.reduce((sum, item) => 
-      sum + (item.current_stock * (item.endmill_types?.unit_cost || 0)), 0)
+      sum + ((item.current_stock || 0) * (item.endmill_types?.unit_cost || 0)), 0)
     
     const statusCounts = data.reduce((acc, item) => {
-      const status = calculateStockStatus(item.current_stock, item.min_stock, item.max_stock)
+      const status = calculateStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0)
       acc[status] = (acc[status] || 0) + 1
       return acc
     }, {} as Record<string, number>)
@@ -237,8 +237,8 @@ export const useInventory = (filter?: InventoryFilter) => {
         if (!acc[category]) {
           acc[category] = { count: 0, value: 0 }
         }
-        acc[category].count += item.current_stock
-        acc[category].value += item.current_stock * (item.endmill_types?.unit_cost || 0)
+        acc[category].count += (item.current_stock || 0)
+        acc[category].value += (item.current_stock || 0) * (item.endmill_types?.unit_cost || 0)
       }
       return acc
     }, {})
@@ -263,7 +263,7 @@ export const useInventory = (filter?: InventoryFilter) => {
   const getEndmillMasterData = () => {
     return endmillTypes.map(type => ({
       code: type.code,
-      name: type.description_ko || type.description_vi || '',
+      name: type.name || '',
       category: type.endmill_categories?.code || '',
       specifications: type.specifications ? JSON.stringify(type.specifications) : '',
       unitPrice: type.unit_cost || 0
@@ -295,13 +295,13 @@ export const useInventoryAlerts = () => {
 
   const getCriticalItems = () => {
     return inventory.filter(item => 
-      calculateStockStatus(item.current_stock, item.min_stock, item.max_stock) === 'critical'
+      calculateStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0) === 'critical'
     )
   }
 
   const getLowStockItems = () => {
     return inventory.filter(item => 
-      calculateStockStatus(item.current_stock, item.min_stock, item.max_stock) === 'low'
+      calculateStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0) === 'low'
     )
   }
 
@@ -333,8 +333,7 @@ export const useInventorySearch = () => {
 
   const searchByName = (name: string) => {
     return inventory.filter(item => 
-      (item.endmill_types?.description_ko?.toLowerCase().includes(name.toLowerCase()) ||
-       item.endmill_types?.description_vi?.toLowerCase().includes(name.toLowerCase()))
+      item.endmill_types?.name?.toLowerCase().includes(name.toLowerCase())
     )
   }
 
@@ -349,4 +348,4 @@ export const useInventorySearch = () => {
     searchByName,
     searchByCategory
   }
-} 
+}

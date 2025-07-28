@@ -14,16 +14,12 @@ const nextConfig = {
       },
     ],
   },
-  // 다국어 지원
-  i18n: {
-    locales: ['ko', 'vi'],
-    defaultLocale: 'ko',
-    localeDetection: false,
-  },
+  // 다국어 지원은 App Router에서 별도 처리
   // 성능 최적화
   compress: true,
   poweredByHeader: false,
   generateEtags: false,
+
   // PWA 및 보안 헤더
   async headers() {
     return [
@@ -57,4 +53,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig; 
+module.exports = nextConfig;

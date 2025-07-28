@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     follow: false,
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: '/favicon.svg',
     apple: '/apple-touch-icon.png',
   },
   manifest: '/manifest.webmanifest',
@@ -84,4 +84,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-} 
+}

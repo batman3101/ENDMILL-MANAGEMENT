@@ -146,8 +146,8 @@ export async function middleware(request: NextRequest) {
         .eq('is_active', true)
         .single()
 
-      if (profile?.user_roles?.type) {
-        userRole = profile.user_roles.type
+      if (profile?.user_roles && !Array.isArray(profile.user_roles) && typeof profile.user_roles === 'object' && profile.user_roles !== null && 'type' in profile.user_roles) {
+        userRole = (profile.user_roles as { type: string }).type
       }
     } catch (profileError) {
       console.error('프로필 조회 오류:', profileError)

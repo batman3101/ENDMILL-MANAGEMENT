@@ -258,10 +258,10 @@ export const useEndmillSearch = () => {
             process: sheet.process,
             endmill: {
               t_number: endmill.t_number,
-              endmill_code: endmill.endmill_code,
+              endmill_code: endmill.endmill_code || '',
               endmill_name: endmill.endmill_name || '',
               specifications: endmill.specifications || '',
-              tool_life: endmill.tool_life
+              tool_life: endmill.tool_life || 0
             }
           })
         })
@@ -284,10 +284,10 @@ export const useEndmillSearch = () => {
       process: sheet.process,
       endmill: {
         t_number: endmill.t_number,
-        endmill_code: endmill.endmill_code,
+        endmill_code: endmill.endmill_code || '',
         endmill_name: endmill.endmill_name || '',
         specifications: endmill.specifications || '',
-        tool_life: endmill.tool_life
+        tool_life: endmill.tool_life || 0
       }
     }
   }
@@ -298,7 +298,7 @@ export const useEndmillSearch = () => {
     
     camSheets.forEach(sheet => {
       sheet.cam_sheet_endmills
-        ?.filter(endmill => endmill.endmill_code.toLowerCase().includes(endmillCode.toLowerCase()))
+        ?.filter(endmill => endmill.endmill_code?.toLowerCase().includes(endmillCode.toLowerCase()))
         .forEach(endmill => {
           results.push({
             camSheetId: sheet.id,
@@ -306,10 +306,10 @@ export const useEndmillSearch = () => {
             process: sheet.process,
             endmill: {
               t_number: endmill.t_number,
-              endmill_code: endmill.endmill_code,
+              endmill_code: endmill.endmill_code || '',
               endmill_name: endmill.endmill_name || '',
               specifications: endmill.specifications || '',
-              tool_life: endmill.tool_life
+              tool_life: endmill.tool_life || 0
             }
           })
         })
@@ -326,7 +326,7 @@ export const useEndmillSearch = () => {
     camSheets.forEach(sheet => {
       sheet.cam_sheet_endmills?.forEach(endmill => {
         if (
-          endmill.endmill_code.toLowerCase().includes(queryLower) ||
+          endmill.endmill_code?.toLowerCase().includes(queryLower) ||
           endmill.endmill_name?.toLowerCase().includes(queryLower) ||
           endmill.specifications?.toLowerCase().includes(queryLower)
         ) {
@@ -336,10 +336,10 @@ export const useEndmillSearch = () => {
             process: sheet.process,
             endmill: {
               t_number: endmill.t_number,
-              endmill_code: endmill.endmill_code,
+              endmill_code: endmill.endmill_code || '',
               endmill_name: endmill.endmill_name || '',
               specifications: endmill.specifications || '',
-              tool_life: endmill.tool_life
+              tool_life: endmill.tool_life || 0
             }
           })
         }
@@ -391,4 +391,4 @@ export const useToolChangeAutoComplete = () => {
     autoFillEndmillInfo,
     getAutoCompleteSuggestions
   }
-} 
+}

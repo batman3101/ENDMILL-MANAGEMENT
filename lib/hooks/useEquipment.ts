@@ -6,7 +6,7 @@ import { clientSupabaseService } from '../services/supabaseService'
 import { Database } from '../types/database'
 
 // Database 타입에서 가져오기
-type Equipment = Database['public']['Tables']['equipments']['Row']
+type Equipment = Database['public']['Tables']['equipment']['Row']
 
 // 타입 export
 export type { Equipment }
@@ -173,9 +173,9 @@ export const useEquipment = (filter?: EquipmentFilter) => {
     const data = filtered || equipments
     return {
       total: data.length,
-      active: data.filter(eq => eq.status === 'active').length,
-      maintenance: data.filter(eq => eq.status === 'maintenance').length,
-      setup: data.filter(eq => eq.status === 'offline').length,
+      active: data.filter(eq => eq.status === '가동중').length,
+      maintenance: data.filter(eq => eq.status === '점검중').length,
+      setup: data.filter(eq => eq.status === '셋업중').length,
     }
   }
 
@@ -276,4 +276,4 @@ export const useEquipmentSearch = () => {
     searchByModel,
     searchByProcess
   }
-} 
+}

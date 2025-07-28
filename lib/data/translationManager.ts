@@ -76,35 +76,36 @@ export class TranslationManager {
    */
   private async loadTranslationsFromDB(): Promise<void> {
     try {
-      // 1. 네임스페이스 조회
-      const { data: namespaces, error: nsError } = await supabase
-        .from('translation_namespaces')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order')
+      // 1. 네임스페이스 조회 (translations 테이블에서 고유한 네임스페이스 추출)
+      const { data: namespaceData, error: nsError } = await supabase
+        .from('translations')
+        .select('namespace')
+        .not('namespace', 'is', null)
 
       if (nsError) {
         console.error('네임스페이스 조회 실패:', nsError)
         throw nsError
       }
 
+      // 고유한 네임스페이스 목록 생성
+       const namespaceSet = new Set<string>()
+       namespaceData?.forEach(item => {
+         if (item.namespace) {
+           namespaceSet.add(item.namespace)
+         }
+       })
+       const uniqueNamespaces = Array.from(namespaceSet)
+
       // 2. 번역 키와 값 조회
       const { data: translationData, error: translationError } = await supabase
-        .from('translation_keys')
+        .from('translations')
         .select(`
           id,
-          key_name,
-          context,
-          is_active,
-          namespace:translation_namespaces!inner(code),
-          translation_values!inner(
-            language_code,
-            translation_text,
-            is_auto_translated
-          )
+          namespace,
+          key,
+          language,
+          value
         `)
-        .eq('is_active', true)
-        .eq('translation_namespaces.is_active', true)
 
       if (translationError) {
         console.error('번역 데이터 조회 실패:', translationError)
@@ -115,10 +116,12 @@ export class TranslationManager {
       const translations: TranslationData = {}
       
       for (const item of translationData || []) {
-        const namespace = (item.namespace as any)?.code
-        const key = item.key_name
+        const namespace = item.namespace
+        const key = item.key
+        const language = item.language
+        const value = item.value
         
-        if (!namespace || !key) continue
+        if (!namespace || !key || !language) continue
         
         if (!translations[namespace]) {
           translations[namespace] = {}
@@ -128,11 +131,7 @@ export class TranslationManager {
           translations[namespace][key] = { ko: '', vi: '' }
         }
         
-        // 번역값 설정
-        for (const value of item.translation_values) {
-          const language = value.language_code as SupportedLanguage
-          translations[namespace][key][language] = value.translation_text
-        }
+        translations[namespace][key][language] = value || ''
       }
 
       // 4. 기본 데이터와 병합
@@ -290,102 +289,53 @@ export class TranslationManager {
     changedBy: string = 'system'
   ): Promise<void> {
     try {
-      // 1. 네임스페이스 확인/생성
-      let { data: namespaceData, error: nsError } = await supabase
-        .from('translation_namespaces')
-        .select('id')
-        .eq('code', namespace)
+      // 1. 번역 레코드 확인
+      const { data: existingRecord, error: findError } = await supabase
+        .from('translations')
+        .select('*')
+        .eq('namespace', namespace)
+        .eq('key', key)
+        .eq('language', language)
         .single()
 
-      if (nsError && nsError.code === 'PGRST116') {
-        // 네임스페이스가 없으면 생성
-        const { data: newNamespace, error: createNsError } = await supabase
-          .from('translation_namespaces')
+      if (findError && findError.code !== 'PGRST116') {
+        throw new Error(`번역 레코드 조회 실패: ${findError.message}`)
+      }
+
+      let translationId: string
+      let oldValue = ''
+
+      if (!existingRecord) {
+        // 새 번역 레코드 생성
+        const { data: newRecord, error: createError } = await supabase
+          .from('translations')
           .insert({
-            code: namespace,
-            name_ko: namespace,
-            name_vi: namespace,
-            is_active: true,
-            display_order: 0
+            namespace,
+            key,
+            language,
+            value
           })
-          .select('id')
+          .select()
           .single()
 
-        if (createNsError) throw createNsError
-        namespaceData = newNamespace
-      } else if (nsError) {
-        throw nsError
-      }
+        if (createError) {
+          throw new Error(`번역 레코드 생성 실패: ${createError.message}`)
+        }
 
-      if (!namespaceData) {
-        throw new Error('네임스페이스 데이터를 찾을 수 없습니다.')
-      }
-
-      // 2. 번역 키 확인/생성
-      let { data: keyData, error: keyError } = await supabase
-        .from('translation_keys')
-        .select('id')
-        .eq('namespace_id', namespaceData.id)
-        .eq('key_name', key)
-        .single()
-
-      if (keyError && keyError.code === 'PGRST116') {
-        // 키가 없으면 생성
-        const { data: newKey, error: createKeyError } = await supabase
-          .from('translation_keys')
-          .insert({
-            namespace_id: namespaceData.id,
-            key_name: key,
-            is_active: true
-          })
-          .select('id')
-          .single()
-
-        if (createKeyError) throw createKeyError
-        keyData = newKey
-      } else if (keyError) {
-        throw keyError
-      }
-
-      if (!keyData) {
-        throw new Error('번역 키 데이터를 찾을 수 없습니다.')
-      }
-
-      // 3. 번역값 확인/업데이트
-      const { data: existingValue } = await supabase
-        .from('translation_values')
-        .select('translation_text')
-        .eq('key_id', keyData.id)
-        .eq('language_code', language)
-        .single()
-
-      const oldValue = existingValue?.translation_text || ''
-
-      if (existingValue) {
-        // 업데이트
-        const { error: updateError } = await supabase
-          .from('translation_values')
-          .update({
-            translation_text: value,
-            is_auto_translated: false,
-            updated_at: new Date().toISOString()
-          })
-          .eq('key_id', keyData.id)
-          .eq('language_code', language)
-
-        if (updateError) throw updateError
+        translationId = newRecord.id
       } else {
-        // 새로 생성
-        const { error: insertError } = await supabase
-          .from('translation_values')
-          .insert({
-            key_id: keyData.id,
-            language_code: language,
-            translation_text: value,
-            is_auto_translated: false
-          })
+        translationId = existingRecord.id
+        oldValue = existingRecord.value || ''
+        
+        // 번역값 업데이트
+        const { error: updateError } = await supabase
+          .from('translations')
+          .update({ value })
+          .eq('id', translationId)
 
-        if (insertError) throw insertError
+        if (updateError) {
+          throw new Error(`번역 업데이트 실패: ${updateError.message}`)
+        }
       }
 
       // 4. 히스토리 기록
@@ -465,21 +415,20 @@ export class TranslationManager {
     try {
       // 키 ID 조회
       const { data: keyData } = await supabase
-        .from('translation_keys')
-        .select(`
-          id,
-          namespace:translation_namespaces!inner(code)
-        `)
-        .eq('translation_namespaces.code', namespace)
-        .eq('key_name', key)
+        .from('translations')
+        .select('id')
+        .eq('namespace', namespace)
+        .eq('key', key)
         .single()
 
       if (keyData) {
         await supabase
           .from('translation_history')
           .insert({
-            key_id: keyData.id,
-            language_code: language,
+            translation_id: keyData.id,
+            namespace: namespace,
+            key: key,
+            language: language,
             old_value: oldValue,
             new_value: newValue,
             change_type: changeType,
@@ -687,4 +636,4 @@ export class TranslationManager {
     this.history = []
     this.saveHistory()
   }
-} 
+}

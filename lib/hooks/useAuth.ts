@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { supabase } from '../supabase/client'
 import { useToast } from '../../components/shared/Toast'
 import { TempAuthService, TempSessionManager } from '../data/tempAuth'
-import type { User, Session } from '@supabase/supabase-js'
+import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
 
 // 사용자 타입 정의
 interface User {
@@ -46,36 +46,82 @@ export function AuthProvider(props: { children: ReactNode }) {
   const [lastActivity, setLastActivity] = useState<Date>(new Date())
   const { showSuccess, showError, showWarning } = useToast()
 
+  // 세션 새로고침 함수 (useCallback으로 메모이제이션)
+  const refreshSession = React.useCallback(async (): Promise<void> => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession()
+      if (error) {
+        console.error('세션 새로고침 오류:', error)
+      } else if (data.session) {
+        setSession(data.session)
+      }
+    } catch (error) {
+      console.error('세션 새로고침 오류:', error)
+    }
+  }, [])
+
+  // 로그아웃 함수 (useCallback으로 메모이제이션)
+  const signOut = React.useCallback(async (): Promise<void> => {
+    try {
+      setLoading(true)
+      
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('Supabase 로그아웃 오류:', error)
+      }
+      
+      // 임시 인증 로그아웃
+      TempAuthService.signOut()
+      
+      setUser(null)
+      setSession(null)
+      showSuccess('로그아웃 완료', '안전하게 로그아웃되었습니다.')
+    } catch (error) {
+      console.error('로그아웃 오류:', error)
+      showError('로그아웃 실패', '로그아웃 중 오류가 발생했습니다.')
+    } finally {
+       setLoading(false)
+     }
+   }, [showSuccess, showError])
+
+  // 세션 만료 처리 함수 (useCallback으로 메모이제이션)
+  const handleSessionExpired = React.useCallback(async () => {
+    showError('세션 만료', '세션이 만료되어 로그아웃됩니다.')
+    await signOut()
+    window.location.href = '/login?expired=true'
+  }, [showError, signOut])
+
   // 세션 만료 확인 및 자동 갱신
   useEffect(() => {
+    if (!session?.expires_at) return
+    
     const checkSessionExpiry = () => {
-      if (session?.expires_at) {
-        const expiresAt = new Date(session.expires_at * 1000)
-        const now = new Date()
-        const timeUntilExpiry = expiresAt.getTime() - now.getTime()
-        const fiveMinutes = 5 * 60 * 1000 // 5분
-        
-        setSessionExpiresAt(expiresAt)
-        
-        // 5분 전에 경고 표시
-        if (timeUntilExpiry <= fiveMinutes && timeUntilExpiry > 0) {
-          if (!isSessionExpiring) {
-            setIsSessionExpiring(true)
-            showWarning('세션 만료 경고', '세션이 곧 만료됩니다. 계속 사용하시겠습니까?')
-          }
-        } else {
-          setIsSessionExpiring(false)
+      const expiresAt = new Date((session.expires_at ?? 0) * 1000)
+      const now = new Date()
+      const timeUntilExpiry = expiresAt.getTime() - now.getTime()
+      const fiveMinutes = 5 * 60 * 1000 // 5분
+      
+      setSessionExpiresAt(expiresAt)
+      
+      // 5분 전에 경고 표시
+      if (timeUntilExpiry <= fiveMinutes && timeUntilExpiry > 0) {
+        if (!isSessionExpiring) {
+          setIsSessionExpiring(true)
+          showWarning('세션 만료 경고', '세션이 곧 만료됩니다. 계속 사용하시겠습니까?')
         }
-        
-        // 자동 토큰 갱신 (만료 10분 전)
-        if (timeUntilExpiry <= 10 * 60 * 1000 && timeUntilExpiry > 0) {
-          refreshSession()
-        }
-        
-        // 세션 만료 시 자동 로그아웃
-        if (timeUntilExpiry <= 0) {
-          handleSessionExpired()
-        }
+      } else {
+        setIsSessionExpiring(false)
+      }
+      
+      // 자동 토큰 갱신 (만료 10분 전)
+      if (timeUntilExpiry <= 10 * 60 * 1000 && timeUntilExpiry > 0) {
+        refreshSession()
+      }
+      
+      // 세션 만료 시 자동 로그아웃
+      if (timeUntilExpiry <= 0) {
+        handleSessionExpired()
       }
     }
     
@@ -83,7 +129,7 @@ export function AuthProvider(props: { children: ReactNode }) {
     checkSessionExpiry() // 즉시 확인
     
     return () => clearInterval(interval)
-  }, [session, isSessionExpiring])
+  }, [session?.expires_at, isSessionExpiring, refreshSession, handleSessionExpired, showWarning])
   
   // 사용자 활동 감지
   useEffect(() => {
@@ -106,13 +152,15 @@ export function AuthProvider(props: { children: ReactNode }) {
   
   // 비활성 상태에서 세션 연장
   useEffect(() => {
+    if (!session) return
+    
     const extendSession = () => {
       const now = new Date()
       const timeSinceActivity = now.getTime() - lastActivity.getTime()
       const thirtyMinutes = 30 * 60 * 1000 // 30분
       
       // 30분 이내 활동이 있었고 세션이 있으면 연장
-      if (timeSinceActivity < thirtyMinutes && session) {
+      if (timeSinceActivity < thirtyMinutes) {
         refreshSession()
       }
     }
@@ -120,20 +168,20 @@ export function AuthProvider(props: { children: ReactNode }) {
     const interval = setInterval(extendSession, 15 * 60 * 1000) // 15분마다 확인
     
     return () => clearInterval(interval)
-  }, [lastActivity, session])
+  }, [lastActivity, session, refreshSession])
   
-  // 세션 만료 처리
-  const handleSessionExpired = async () => {
-    showError('세션 만료', '세션이 만료되어 로그아웃됩니다.')
-    await signOut()
-    window.location.href = '/login?expired=true'
-  }
+  // 중복 함수 제거 (이미 위에서 useCallback으로 정의됨)
 
   useEffect(() => {
+    let mounted = true
+    
     // 초기 세션 상태 확인
     const checkSession = async () => {
       try {
+        console.log('🔍 세션 확인 시작...')
         const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (!mounted) return
         
         if (error) {
           console.error('세션 확인 오류:', error)
@@ -158,6 +206,7 @@ export function AuthProvider(props: { children: ReactNode }) {
             setSession(null)
           }
         } else if (session?.user) {
+          console.log('✅ Supabase 세션 발견:', session.user.email)
           setSession(session)
           // 사용자 프로필 정보 조회
           const userProfile = {
@@ -167,14 +216,20 @@ export function AuthProvider(props: { children: ReactNode }) {
             department: session.user.user_metadata?.department || '',
             position: session.user.user_metadata?.position || '',
             shift: session.user.user_metadata?.shift || '',
-            role: session.user.user_metadata?.role || 'user'
+            role: session.user.user_metadata?.role || 'user',
+            language: session.user.user_metadata?.language || 'ko'
           }
           setUser(userProfile)
         } else {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('❌ Supabase 세션 없음, 임시 인증 확인...')
+          }
           // Supabase 세션이 없을 때 임시 인증 확인
           const tempUser = TempSessionManager.getCurrentUser()
           if (tempUser) {
-            console.log('✅ 임시 세션 발견')
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ 임시 세션 발견')
+            }
             setUser({
               id: tempUser.id,
               email: tempUser.email,
@@ -188,6 +243,9 @@ export function AuthProvider(props: { children: ReactNode }) {
             // 임시 세션 저장 확인
             TempSessionManager.saveSession(tempUser)
           } else {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('❌ 임시 세션도 없음')
+            }
             setUser(null)
             setSession(null)
           }
@@ -197,8 +255,10 @@ export function AuthProvider(props: { children: ReactNode }) {
           // 오류 발생 시에도 임시 인증 확인
           try {
             const tempUser = TempSessionManager.getCurrentUser()
-            if (tempUser) {
-              console.log('✅ 오류 시 임시 세션 발견')
+            if (tempUser && mounted) {
+              if (process.env.NODE_ENV === 'development') {
+                console.log('✅ 오류 시 임시 세션 발견')
+              }
               setUser({
                 id: tempUser.id,
                 email: tempUser.email,
@@ -211,17 +271,24 @@ export function AuthProvider(props: { children: ReactNode }) {
               })
               // 임시 세션 저장 확인
               TempSessionManager.saveSession(tempUser)
-            } else {
+            } else if (mounted) {
               setUser(null)
               setSession(null)
             }
           } catch (tempError) {
             console.error('임시 세션 확인 오류:', tempError)
-            setUser(null)
-            setSession(null)
+            if (mounted) {
+              setUser(null)
+              setSession(null)
+            }
           }
       } finally {
-        setLoading(false)
+        if (mounted) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ 세션 확인 완료, loading 해제')
+          }
+          setLoading(false)
+        }
       }
     }
 
@@ -230,7 +297,11 @@ export function AuthProvider(props: { children: ReactNode }) {
     // 인증 상태 변경 리스너
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email)
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔄 Auth state changed:', event, session?.user?.email)
+        }
+        
+        if (!mounted) return
         
         if (event === 'SIGNED_IN' && session) {
           setSession(session)
@@ -245,38 +316,29 @@ export function AuthProvider(props: { children: ReactNode }) {
             language: session.user.user_metadata?.language || 'ko'
           }
           setUser(userProfile)
+          setLoading(false)
         } else if (event === 'SIGNED_OUT') {
           setSession(null)
           setUser(null)
+          setLoading(false)
         } else if (event === 'TOKEN_REFRESHED' && session) {
           setSession(session)
           setIsSessionExpiring(false) // 토큰 갱신 시 만료 경고 해제
+          setLoading(false)
         }
-        setLoading(false)
       }
     )
 
     return () => {
+      mounted = false
       subscription?.unsubscribe()
     }
   }, [])
 
-  // 세션 새로고침 함수
-  const refreshSession = async (): Promise<void> => {
-    try {
-      const { data, error } = await supabase.auth.refreshSession()
-      if (error) {
-        console.error('세션 새로고침 오류:', error)
-      } else if (data.session) {
-        setSession(data.session)
-      }
-    } catch (error) {
-      console.error('세션 새로고침 오류:', error)
-    }
-  }
+  // 중복 함수 제거 (이미 위에서 useCallback으로 정의됨)
 
-  // 로그인 함수
-  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  // 로그인 함수 (useCallback으로 메모이제이션)
+  const signIn = React.useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setLoading(true)
       
@@ -299,24 +361,32 @@ export function AuthProvider(props: { children: ReactNode }) {
           return { success: true }
         }
       } catch (apiError) {
-        console.log('API 로그인 실패, Supabase 직접 시도:', apiError)
+        if (process.env.NODE_ENV === 'development') {
+          console.log('API 로그인 실패, Supabase 직접 시도:', apiError)
+        }
       }
       
       // API 실패 시 Supabase 직접 로그인 시도
-      console.log('🔐 Supabase 로그인 시도...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔐 Supabase 로그인 시도...');
+      }
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
 
       if (error) {
-        console.warn('⚠️ Supabase 로그인 실패, 임시 인증 시도...', error.message);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Supabase 로그인 실패, 임시 인증 시도...', error.message);
+        }
         
         // Supabase 로그인 실패 시 임시 인증 시스템 사용
         const tempResult = await TempAuthService.signIn(email, password);
         
         if (tempResult.success && tempResult.user) {
-          console.log('✅ 임시 인증 성공');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ 임시 인증 성공');
+          }
           setUser({
             id: tempResult.user.id,
             email: tempResult.user.email,
@@ -371,7 +441,9 @@ export function AuthProvider(props: { children: ReactNode }) {
       const tempResult = await TempAuthService.signIn(email, password);
       
       if (tempResult.success && tempResult.user) {
-        console.log('✅ 오류 시 임시 인증 성공');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ 오류 시 임시 인증 성공');
+        }
         setUser({
           id: tempResult.user.id,
           email: tempResult.user.email,
@@ -393,32 +465,9 @@ export function AuthProvider(props: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [refreshSession, showSuccess, showError])
 
-  // 로그아웃 함수
-  const signOut = async (): Promise<void> => {
-    try {
-      setLoading(true)
-      
-      const { error } = await supabase.auth.signOut()
-      
-      if (error) {
-        console.error('Supabase 로그아웃 오류:', error)
-      }
-      
-      // 임시 인증 로그아웃
-      TempAuthService.logout()
-      
-      setUser(null)
-      setSession(null)
-      showSuccess('로그아웃 완료', '안전하게 로그아웃되었습니다.')
-    } catch (error) {
-      console.error('로그아웃 오류:', error)
-      showError('로그아웃 실패', '로그아웃 중 오류가 발생했습니다.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // 중복 함수 제거 (이미 위에서 useCallback으로 정의됨)
 
   const contextValue: AuthContextType = {
     user,

@@ -248,7 +248,7 @@ export default function CAMSheetsPage() {
             <div>
               <p className="text-sm font-medium text-gray-600">등록 앤드밀</p>
               <p className="text-2xl font-bold text-purple-600">
-                {camSheets.reduce((total, sheet) => total + (sheet.cam_sheet_endmills || []).length, 0)}
+                {camSheets.reduce((total, sheet) => total + (sheet.cam_sheet_endmills?.length || 0), 0)}
               </p>
             </div>
           </div>
@@ -263,7 +263,7 @@ export default function CAMSheetsPage() {
               <p className="text-sm font-medium text-gray-600">효율성 지수</p>
               <p className="text-2xl font-bold text-yellow-600">
                 {camSheets.length > 0 
-                  ? `${Math.round((camSheets.reduce((acc, sheet) => acc + (sheet.cam_sheet_endmills || []).length, 0) / Math.max(camSheets.length * 10, 1)) * 100)}%`
+                  ? `${Math.round((camSheets.reduce((acc, sheet) => acc + (sheet.cam_sheet_endmills?.length || 0), 0) / Math.max(camSheets.length * 10, 1)) * 100)}%`
                   : '0%'
                 }
               </p>
@@ -605,4 +605,4 @@ export default function CAMSheetsPage() {
       )}
     </div>
   )
-} 
+}
