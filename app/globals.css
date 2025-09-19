@@ -40,4 +40,67 @@
   .status-critical {
     @apply bg-red-100 text-red-800;
   }
+
+  /* 네비게이션 애니메이션 */
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .animate-slideInUp {
+    animation: slideInUp 0.4s ease-out;
+  }
+
+  .animate-fadeInScale {
+    animation: fadeInScale 0.3s ease-out;
+  }
+}
+
+@layer utilities {
+  /* 커스텀 애니메이션 정의 */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* 네비게이션 로딩 오버레이 애니메이션 */
+  @keyframes backdropBlur {
+    from {
+      backdrop-filter: blur(0px);
+      background-color: rgba(255, 255, 255, 0);
+    }
+    to {
+      backdrop-filter: blur(4px);
+      background-color: rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  .animate-backdropBlur {
+    animation: backdropBlur 0.2s ease-out;
+  }
 } 

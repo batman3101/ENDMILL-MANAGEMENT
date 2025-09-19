@@ -1,17 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import LandingStatusCard from '../../components/features/LandingStatusCard'
 import DonutChart from '../../components/features/DonutChart'
 import { useSettings } from '../../lib/hooks/useSettings'
 import { usePermissions } from '../../lib/hooks/usePermissions'
 import { PermissionGuard } from '../../components/auth/PermissionGuard'
-import { 
-  useDashboard, 
-  formatVND, 
-  formatNumber, 
-  getTrendIcon, 
-  getTrendColor 
+import { useRealtime, useMultiTableRealtime } from '../../lib/hooks/useRealtime'
+import {
+  useDashboard,
+  formatVND,
+  formatNumber,
+  getTrendIcon,
+  getTrendColor
 } from '../../lib/hooks/useDashboard'
 
 export default function DashboardPage() {
@@ -30,7 +31,56 @@ export default function DashboardPage() {
     )
   }
   const { getSetting } = useSettings()
-  const { data, isLoading, error, refreshData, lastRefresh } = useDashboard(30000) // 30초마다 업데이트
+  const { data, isLoading, error, refreshData, lastRefresh } = useDashboard(60000) // 60초마다 업데이트
+
+  // 실시간 연동 설정 (throttled refresh)
+  const [realtimeData, setRealtimeData] = useState<any>(null)
+  const lastRefreshTimeRef = useRef<number>(0)
+
+  // Throttled refresh function to prevent excessive API calls
+  const throttledRefresh = useCallback(() => {
+    const now = Date.now()
+    if (now - lastRefreshTimeRef.current > 5000) { // 최소 5초 간격
+      lastRefreshTimeRef.current = now
+      refreshData()
+    }
+  }, [refreshData])
+
+  // Memoize the callbacks to prevent dependency changes
+  const realtimeCallbacks = useMemo(() => ({
+    tool_changes: {
+      onInsert: (payload: any) => {
+        console.log('🔧 새로운 공구 교체:', payload)
+        throttledRefresh() // 제한된 새로고침
+      },
+      onUpdate: (payload: any) => {
+        console.log('🔧 공구 교체 업데이트:', payload)
+        throttledRefresh()
+      }
+    },
+    inventory_transactions: {
+      onInsert: (payload: any) => {
+        console.log('📦 새로운 재고 거래:', payload)
+        throttledRefresh()
+      }
+    },
+    notifications: {
+      onInsert: (payload: any) => {
+        console.log('🔔 새로운 알림:', payload)
+        // 실시간 알림 표시 로직 추가 가능
+      }
+    },
+    activity_logs: {
+      onInsert: (payload: any) => {
+        console.log('📋 새로운 활동 로그:', payload)
+      }
+    }
+  }), [throttledRefresh])
+
+  const { connections, errors, isAllConnected } = useMultiTableRealtime(
+    ['tool_changes', 'inventory_transactions', 'notifications', 'activity_logs'],
+    realtimeCallbacks
+  )
 
   // 설정에서 값 가져오기
   const totalEquipments = getSetting('equipment', 'totalCount')
@@ -53,9 +103,35 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fadeIn">
       {/* 상단 4개 카드 */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {isLoading && (
+          <>
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 animate-pulse">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="h-5 bg-gray-200 rounded w-24"></div>
+                  <div className="h-4 bg-gray-200 rounded w-12"></div>
+                </div>
+                <div className="flex items-center justify-center">
+                  <div className="w-32 h-32 bg-gray-200 rounded-full"></div>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  {[...Array(3)].map((_, j) => (
+                    <div key={j} className="text-center">
+                      <div className="h-3 bg-gray-200 rounded mb-1 w-8 mx-auto"></div>
+                      <div className="h-4 bg-gray-200 rounded w-10 mx-auto"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+        {!isLoading && (
+          <>
+
         {/* Tool Life 현황 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-6">
@@ -64,14 +140,14 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center justify-center">
             <DonutChart 
-              value={data?.equipment?.toolLifeEfficiency || 75} 
+              value={data?.equipment?.toolLifeEfficiency || 0} 
               max={100} 
               color="#10b981" 
               size={120}
             >
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-900">
-                  {data?.equipment?.toolLifeEfficiency || 75}%
+                  {data?.equipment?.toolLifeEfficiency || 0}%
                 </div>
                 <div className="text-xs text-gray-500">평균 효율</div>
               </div>
@@ -101,20 +177,20 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center justify-center">
             <DonutChart 
-              value={data?.equipment?.active || 680} 
-              max={data?.equipment?.total || 800} 
+              value={data?.equipment?.active || 0} 
+              max={data?.equipment?.total || 1} 
               color="#3b82f6" 
               size={120}
             >
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-900">
-                  {data?.equipment?.active || 680}
+                  {data?.equipment?.active || 0}
                 </div>
                 <div className="text-xs text-gray-500">
-                  / {data?.equipment?.total || 800}대
+                  / {data?.equipment?.total || 0}대
                 </div>
                 <div className="text-xs text-blue-600 mt-1">
-                  {data?.equipment?.operatingRate || 85}% 가동
+                  {data?.equipment?.operatingRate || 0}% 가동
                 </div>
               </div>
             </DonutChart>
@@ -123,19 +199,19 @@ export default function DashboardPage() {
             <div>
               <p className="text-xs text-gray-500">가동중</p>
               <p className="text-sm font-semibold text-blue-600">
-                {data?.equipment?.active || 680}대
+                {data?.equipment?.active || 0}대
               </p>
             </div>
             <div>
               <p className="text-xs text-gray-500">점검중</p>
               <p className="text-sm font-semibold text-amber-600">
-                {data?.equipment?.maintenance || 85}대
+                {data?.equipment?.maintenance || 0}대
               </p>
             </div>
             <div>
               <p className="text-xs text-gray-500">셋업중</p>
               <p className="text-sm font-semibold text-purple-600">
-                {data?.equipment?.setup || 35}대
+                {data?.equipment?.setup || 0}대
               </p>
             </div>
           </div>
@@ -155,7 +231,7 @@ export default function DashboardPage() {
                 <span className="text-sm font-medium text-gray-700">정상</span>
               </div>
               <span className="text-lg font-bold text-green-600">
-                {data?.inventory?.sufficient || 145}개
+                {data?.inventory?.sufficient || 0}개
               </span>
             </div>
             
@@ -166,7 +242,7 @@ export default function DashboardPage() {
                 <span className="text-sm font-medium text-gray-700">부족</span>
               </div>
               <span className="text-lg font-bold text-yellow-600">
-                {data?.inventory?.low || 28}개
+                {data?.inventory?.low || 0}개
               </span>
             </div>
             
@@ -177,7 +253,7 @@ export default function DashboardPage() {
                 <span className="text-sm font-medium text-gray-700">위험</span>
               </div>
               <span className="text-lg font-bold text-red-600">
-                {data?.inventory?.critical || 12}개
+                {data?.inventory?.critical || 0}개
               </span>
             </div>
           </div>
@@ -198,28 +274,30 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-3">
               <div className="text-xs text-gray-500">
-                전달 (5월): {formatVND(data?.costAnalysis?.lastMonth || 125680000)}
+                전달: {formatVND(data?.costAnalysis?.lastMonth || 0)}
               </div>
               <div className="text-xs text-gray-500">
-                이번달 (6월 1-27일): {formatVND(data?.costAnalysis?.currentMonth || 98450000)}
+                이번달: {formatVND(data?.costAnalysis?.currentMonth || 0)}
               </div>
               <div className={`text-sm font-semibold ${
-                (data?.costAnalysis?.savings || -27230000) >= 0 ? 'text-green-600' : 'text-red-600'
+                (data?.costAnalysis?.savings || 0) >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
-                절감액: {formatVND(data?.costAnalysis?.savings || -27230000)} 
-                ({data?.costAnalysis?.savingsPercent || -21.7}%)
+                절감액: {formatVND(data?.costAnalysis?.savings || 0)}
+                ({data?.costAnalysis?.savingsPercent || 0}%)
               </div>
               <div className="mt-3 h-2 bg-gray-200 rounded">
                 <div 
                   className="h-2 bg-blue-500 rounded transition-all duration-300"
                   style={{ 
-                    width: `${Math.min(100, Math.abs((data?.costAnalysis?.currentMonth || 98450000) / (data?.costAnalysis?.lastMonth || 125680000) * 100))}%` 
+                    width: `${Math.min(100, Math.abs((data?.costAnalysis?.currentMonth || 0) / (data?.costAnalysis?.lastMonth || 1) * 100))}%` 
                   }}
                 ></div>
               </div>
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
 
       {/* 하단 4개 카드 */}
@@ -238,12 +316,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {(data?.frequencyAnalysis || [
-                { series: 'PA', count: 45, avgInterval: 2.1 },
-                { series: 'PS', count: 38, avgInterval: 1.8 },
-                { series: 'B7', count: 52, avgInterval: 2.5 },
-                { series: 'Q7', count: 29, avgInterval: 1.6 }
-              ]).slice(0, 4).map((item, index) => (
+              {(data?.frequencyAnalysis || []).slice(0, 4).map((item, index) => (
                 <div key={index} className="flex justify-between items-center text-sm">
                   <span className="text-gray-700">{item.series} 시리즈:</span>
                   <div className="text-right">
@@ -270,12 +343,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {(data?.lifespanAnalysis || [
-                { category: 'FLAT', avgLife: 850, variance: 120 },
-                { category: 'BALL', avgLife: 720, variance: 95 },
-                { category: 'T-CUT', avgLife: 680, variance: 140 },
-                { category: 'DRILL', avgLife: 450, variance: 80 }
-              ]).slice(0, 4).map((item, index) => (
+              {(data?.lifespanAnalysis || []).slice(0, 4).map((item, index) => (
                 <div key={index} className="flex justify-between items-center text-sm">
                   <span className="text-gray-700">{item.category}:</span>
                   <div className="text-right">
@@ -302,12 +370,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {(data?.modelCostAnalysis || [
-                { series: 'PA', cost: 35680000, percentage: 36 },
-                { series: 'PS', cost: 28420000, percentage: 29 },
-                { series: 'B7', cost: 22150000, percentage: 22 },
-                { series: 'Q7', cost: 12200000, percentage: 13 }
-              ]).slice(0, 4).map((item, index) => (
+              {(data?.modelCostAnalysis || []).slice(0, 4).map((item, index) => (
                 <div key={index} className="flex justify-between items-center text-sm">
                   <span className="text-gray-700">{item.series} 시리즈:</span>
                   <div className="text-right">
@@ -328,14 +391,14 @@ export default function DashboardPage() {
           </div>
           <div className="text-center">
             <p className="text-3xl font-bold text-blue-600">
-              {data?.toolChanges?.today || 127}
+              {data?.toolChanges?.today || 0}
             </p>
             <p className="text-sm text-gray-500">개 교체 완료</p>
             <div className="mt-3 flex justify-between text-xs">
               <span className={`${getTrendColor(data?.toolChanges?.trend || '+8')}`}>
-                {getTrendIcon(data?.toolChanges?.trend || '+8')} 전일 대비 {data?.toolChanges?.trend || '+8'}
+                {getTrendIcon(data?.toolChanges?.trend || '0')} 전일 대비 {data?.toolChanges?.trend || '0'}
               </span>
-              <span className="text-gray-500">목표: {data?.toolChanges?.target || 130}개</span>
+              <span className="text-gray-500">목표: {data?.toolChanges?.target || 0}개</span>
             </div>
           </div>
         </div>
@@ -345,9 +408,17 @@ export default function DashboardPage() {
       <div className="bg-white rounded-xl shadow-lg border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-800">실시간 알림</h3>
-          <span className="text-sm text-gray-500">
-            최근 업데이트: {lastRefresh ? lastRefresh.toLocaleTimeString('ko-KR') : '로딩 중...'} ({new Date().toLocaleDateString('ko-KR')})
-          </span>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className={`w-2 h-2 rounded-full ${isAllConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+              <span className={`text-xs font-medium ${isAllConnected ? 'text-green-600' : 'text-red-600'}`}>
+                {isAllConnected ? '실시간 연결됨' : '연결 중...'}
+              </span>
+            </div>
+            <span className="text-sm text-gray-500">
+              최근 업데이트: {lastRefresh ? lastRefresh.toLocaleTimeString('ko-KR') : '로딩 중...'} ({new Date().toLocaleDateString('ko-KR')})
+            </span>
+          </div>
         </div>
         <div className="px-6 py-4">
           <div className="space-y-3">

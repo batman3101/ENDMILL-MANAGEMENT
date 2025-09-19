@@ -459,6 +459,68 @@ export class ToolChangeService {
     return data
   }
 
+  // 필터링된 교체 이력 조회
+  async getFiltered(filters: {
+    equipmentNumber?: number
+    endmillType?: string
+    searchTerm?: string
+    startDate?: string
+    endDate?: string
+    limit?: number
+    offset?: number
+  }) {
+    let query = this.supabase
+      .from('tool_changes')
+      .select(`
+        *,
+        equipment:equipment(*),
+        endmill_type:endmill_types(*),
+        user:user_profiles(name, employee_id)
+      `)
+
+    // 설비 번호 필터
+    if (filters.equipmentNumber) {
+      query = query.eq('equipment_number', filters.equipmentNumber)
+    }
+
+    // 엔드밀 타입 필터
+    if (filters.endmillType) {
+      query = query.eq('endmill_type_id', filters.endmillType)
+    }
+
+    // 날짜 범위 필터
+    if (filters.startDate) {
+      query = query.gte('change_date', filters.startDate)
+    }
+    if (filters.endDate) {
+      query = query.lte('change_date', filters.endDate)
+    }
+
+    // 검색어 필터 (설비명, 엔드밀 코드, 사용자명으로 검색)
+    if (filters.searchTerm) {
+      query = query.or(`
+        equipment.name.ilike.%${filters.searchTerm}%,
+        endmill_code.ilike.%${filters.searchTerm}%,
+        user.name.ilike.%${filters.searchTerm}%,
+        notes.ilike.%${filters.searchTerm}%
+      `)
+    }
+
+    query = query.order('change_date', { ascending: false })
+
+    // 페이지네이션
+    if (filters.limit) {
+      query = query.limit(filters.limit)
+    }
+    if (filters.offset) {
+      query = query.range(filters.offset, filters.offset + (filters.limit || 50) - 1)
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+    return data
+  }
+
   // 교체 이력 업데이트
   async update(id: string, updates: Database['public']['Tables']['tool_changes']['Update']) {
     const { data, error } = await this.supabase
@@ -487,6 +549,50 @@ export class ToolChangeService {
 
     if (error) throw error
     return data
+  }
+
+  // 필터링된 교체 이력 개수 조회
+  async getCount(filters: {
+    equipmentNumber?: number
+    endmillType?: string
+    searchTerm?: string
+    startDate?: string
+    endDate?: string
+  }) {
+    let query = this.supabase
+      .from('tool_changes')
+      .select('*', { count: 'exact', head: true })
+
+    // 설비 번호 필터
+    if (filters.equipmentNumber) {
+      query = query.eq('equipment_number', filters.equipmentNumber)
+    }
+
+    // 엔드밀 타입 필터
+    if (filters.endmillType) {
+      query = query.eq('endmill_type_id', filters.endmillType)
+    }
+
+    // 날짜 범위 필터
+    if (filters.startDate) {
+      query = query.gte('change_date', filters.startDate)
+    }
+    if (filters.endDate) {
+      query = query.lte('change_date', filters.endDate)
+    }
+
+    // 검색어 필터 - 단순화 (복잡한 OR 조건 제거)
+    if (filters.searchTerm) {
+      query = query.or(`
+        endmill_code.ilike.%${filters.searchTerm}%,
+        notes.ilike.%${filters.searchTerm}%
+      `)
+    }
+
+    const { count, error } = await query
+
+    if (error) throw error
+    return count || 0
   }
 
   // 실시간 구독

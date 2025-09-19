@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import QueryProvider from '../lib/providers/QueryProvider';
+import { I18nProvider } from '../lib/providers/I18nProvider';
 import { ToastProvider } from '../components/shared/Toast'
 import { AuthProvider } from '../lib/hooks/useAuth'
 
@@ -67,13 +68,15 @@ export default function RootLayout({
         </a>
         
         <main id="main-content" className="min-h-screen">
-          <ToastProvider>
-            <AuthProvider>
-              <QueryProvider>
-                {children}
-              </QueryProvider>
-            </AuthProvider>
-          </ToastProvider>
+          <I18nProvider>
+            <ToastProvider>
+              <AuthProvider>
+                <QueryProvider>
+                  {children}
+                </QueryProvider>
+              </AuthProvider>
+            </ToastProvider>
+          </I18nProvider>
         </main>
         
         {/* Toast 알림을 위한 컨테이너 */}

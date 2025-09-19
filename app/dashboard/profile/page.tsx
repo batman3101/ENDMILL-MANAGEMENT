@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/hooks/useAuth'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useToast } from '../../../components/shared/Toast'
-import PermissionGuard from '../../../components/auth/PermissionGuard'
+import { PermissionGuard } from '../../../components/auth/PermissionGuard'
 
 interface ProfileFormData {
   name: string
@@ -188,7 +188,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <PermissionGuard requiresPermission="profile_management">
+    <PermissionGuard>
       <div className="max-w-4xl mx-auto p-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">

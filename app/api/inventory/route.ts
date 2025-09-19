@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
     const stats = await serverSupabaseService.inventory.getStats()
     
     return NextResponse.json({
+      success: true,
       data: filteredInventory,
       count: filteredInventory.length,
       stats
@@ -67,7 +68,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('재고 API 에러:', error);
     return NextResponse.json(
-      { error: '서버 에러가 발생했습니다.' },
+      {
+        success: false,
+        error: '서버 에러가 발생했습니다.'
+      },
       { status: 500 }
     );
   }
@@ -85,7 +89,10 @@ export async function POST(request: NextRequest) {
     const endmillType = await serverSupabaseService.endmillType.getByCode(validatedData.endmillCode)
     if (!endmillType) {
       return NextResponse.json(
-        { error: '존재하지 않는 앤드밀 코드입니다.' },
+        {
+          success: false,
+          error: '존재하지 않는 앤드밀 코드입니다.'
+        },
         { status: 400 }
       );
     }
@@ -107,9 +114,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { 
+        {
+          success: false,
           error: '입력 데이터가 올바르지 않습니다.',
-          details: error.errors,
+          details: error.errors
         },
         { status: 400 }
       );
@@ -117,7 +125,10 @@ export async function POST(request: NextRequest) {
     
     console.error('재고 생성 API 에러:', error);
     return NextResponse.json(
-      { error: '서버 에러가 발생했습니다.' },
+      {
+        success: false,
+        error: '서버 에러가 발생했습니다.'
+      },
       { status: 500 }
     );
   }
@@ -131,7 +142,10 @@ export async function PUT(request: NextRequest) {
     
     if (!id) {
       return NextResponse.json(
-        { error: '재고 ID가 필요합니다.' },
+        {
+          success: false,
+          error: '재고 ID가 필요합니다.'
+        },
         { status: 400 }
       );
     }
@@ -154,9 +168,10 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { 
+        {
+          success: false,
           error: '입력 데이터가 올바르지 않습니다.',
-          details: error.errors,
+          details: error.errors
         },
         { status: 400 }
       );
@@ -164,7 +179,10 @@ export async function PUT(request: NextRequest) {
     
     console.error('재고 업데이트 API 에러:', error);
     return NextResponse.json(
-      { error: '서버 에러가 발생했습니다.' },
+      {
+        success: false,
+        error: '서버 에러가 발생했습니다.'
+      },
       { status: 500 }
     );
   }

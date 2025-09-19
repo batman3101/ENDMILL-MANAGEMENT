@@ -7,8 +7,8 @@ import { Database } from '../types/database'
 
 // Database 타입에서 가져오기
 type Inventory = Database['public']['Tables']['inventory']['Row'] & {
-  endmill_types?: Database['public']['Tables']['endmill_types']['Row'] & {
-    endmill_categories?: Database['public']['Tables']['endmill_categories']['Row']
+  endmill_type?: Database['public']['Tables']['endmill_types']['Row'] & {
+    category?: Database['public']['Tables']['endmill_categories']['Row']
   }
 }
 
@@ -65,11 +65,14 @@ export const useInventory = (filter?: InventoryFilter) => {
       }
       
       const result = await response.json()
-      if (!result.success) {
+
+      // API 응답이 { data: [], count: number, stats: {} } 형태인 경우와
+      // { success: true, data: [] } 형태인 경우 모두 처리
+      if (result.success === false) {
         throw new Error(result.error || '재고 데이터를 불러오는데 실패했습니다.')
       }
-      
-      return result.data as Inventory[]
+
+      return (result.data || result) as Inventory[]
     }
   })
 

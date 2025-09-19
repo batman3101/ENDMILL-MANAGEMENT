@@ -126,7 +126,7 @@ export default function CAMSheetsPage() {
         insights.processAccuracy[a] > insights.processAccuracy[b] ? a : b
       )
     : 'CNC1'
-  const bestProcess = [bestProcessKey, insights.processAccuracy[bestProcessKey] || 85]
+  const bestProcess = [bestProcessKey, insights.processAccuracy[bestProcessKey] || 0]
 
   // CAM Sheet 생성 처리
   const handleCreateCAMSheet = async (data: any) => {

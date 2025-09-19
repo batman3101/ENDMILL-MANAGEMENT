@@ -6,87 +6,99 @@ import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createSaveConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useSettings } from '../../../lib/hooks/useSettings'
-
-// 교체 실적 데이터 타입
-interface ToolChange {
-  id: string
-  changeDate: string
-  equipmentNumber: string
-  productionModel: string
-  process: string
-  tNumber: number
-  endmillCode: string
-  endmillName: string
-  changedBy: string
-  changeReason: string
-  toolLife?: number
-  createdAt: string
-}
-
-// 샘플 데이터
-const sampleData: ToolChange[] = [
-  {
-    id: '1',
-    changeDate: '2024-01-26 14:30',
-    equipmentNumber: 'C001',
-    productionModel: 'PA-001',
-    process: 'CNC2',
-    tNumber: 15,
-    endmillCode: 'AT001',
-    endmillName: 'FLAT 12mm 4날',
-    changedBy: '김작업자',
-    changeReason: 'Tool Life 종료',
-    toolLife: 2350,
-    createdAt: '2024-01-26T14:30:00'
-  },
-  {
-    id: '2',
-    changeDate: '2024-01-26 16:15',
-    equipmentNumber: 'C042',
-    productionModel: 'PB-025',
-    process: 'CNC2-1',
-    tNumber: 3,
-    endmillCode: 'AT002',
-    endmillName: 'BALL 6mm 2날',
-    changedBy: '박기사',
-    changeReason: '파손',
-    toolLife: 1850,
-    createdAt: '2024-01-26T16:15:00'
-  },
-  {
-    id: '3',
-    changeDate: '2024-01-26 18:45',
-    equipmentNumber: 'C156',
-    productionModel: 'PA-002',
-    process: 'CNC1',
-    tNumber: 8,
-    endmillCode: 'AT003',
-    endmillName: 'T-CUT 8mm 3날',
-    changedBy: '이작업자',
-    changeReason: 'Tool Life 종료',
-    toolLife: 2720,
-    createdAt: '2024-01-26T18:45:00'
-  }
-]
+import { useToolChanges, type ToolChange, type ToolChangeFilters } from '../../../lib/hooks/useToolChanges'
 
 export default function ToolChangesPage() {
   const { showSuccess, showError, showWarning } = useToast()
   const { camSheets, getAvailableModels, getAvailableProcesses } = useCAMSheets()
   const confirmation = useConfirmation()
+
+  // 필터 상태
+  const [filters, setFilters] = useState<ToolChangeFilters>({})
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedEquipment, setSelectedEquipment] = useState<string>('')
+  const [selectedEndmillType, setSelectedEndmillType] = useState<string>('')
+  const [dateRange, setDateRange] = useState({ start: '', end: '' })
+
+  // 실제 Supabase 데이터 훅 사용
+  const {
+    toolChanges,
+    isLoading,
+    error: toolChangesError,
+    refreshData,
+    loadMore,
+    hasMore,
+    totalCount
+  } = useToolChanges(filters)
+
+  // 폼 상태
   const [showAddForm, setShowAddForm] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingItem, setEditingItem] = useState<ToolChange | null>(null)
-  const [toolChanges, setToolChanges] = useState<ToolChange[]>(sampleData)
   const [availableModels, setAvailableModels] = useState<string[]>([])
   const [availableProcesses, setAvailableProcesses] = useState<string[]>([])
   const [isManualEndmillInput, setIsManualEndmillInput] = useState(false)
   const [isEditManualEndmillInput, setIsEditManualEndmillInput] = useState(false)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
   
   // 설정에서 값 가져오기
   const { settings } = useSettings()
   const toolChangesReasons = settings.toolChanges.reasons
   const tNumberRange = settings.toolChanges.tNumberRange
+
+  // 필터 업데이트 함수들
+  const updateFilters = useCallback(() => {
+    const newFilters: ToolChangeFilters = {
+      limit: itemsPerPage,
+      offset: (currentPage - 1) * itemsPerPage
+    }
+
+    if (searchTerm.trim()) {
+      newFilters.searchTerm = searchTerm.trim()
+    }
+
+    if (selectedEquipment) {
+      newFilters.equipmentNumber = parseInt(selectedEquipment)
+    }
+
+    if (selectedEndmillType) {
+      newFilters.endmillType = selectedEndmillType
+    }
+
+    if (dateRange.start) {
+      newFilters.startDate = dateRange.start
+    }
+
+    if (dateRange.end) {
+      newFilters.endDate = dateRange.end
+    }
+
+    setFilters(newFilters)
+  }, [searchTerm, selectedEquipment, selectedEndmillType, dateRange, currentPage])
+
+  // 필터 초기화
+  const resetFilters = useCallback(() => {
+    setSearchTerm('')
+    setSelectedEquipment('')
+    setSelectedEndmillType('')
+    setDateRange({ start: '', end: '' })
+    setCurrentPage(1)
+    setFilters({ limit: itemsPerPage })
+  }, [])
+
+  // 필터 변경시 페이지 리셋과 필터 업데이트를 하나의 useEffect로 통합
+  useEffect(() => {
+    // 필터 변경시 첫 페이지로 리셋
+    if (currentPage !== 1) {
+      setCurrentPage(1)
+      return // 페이지가 변경되면 다음 렌더링에서 필터 업데이트
+    }
+
+    // 페이지가 1이거나 currentPage 상태가 업데이트된 후 필터 업데이트
+    updateFilters()
+  }, [searchTerm, selectedEquipment, selectedEndmillType, dateRange.start, dateRange.end, currentPage, updateFilters])
 
   // 앤드밀 정보 자동 입력 함수
   const autoFillEndmillInfo = useCallback((model: string, process: string, tNumber: number) => {
@@ -124,7 +136,7 @@ export default function ToolChangesPage() {
   }
 
   const [formData, setFormData] = useState({
-    changeDate: getCurrentDateTime(),
+    change_date: getCurrentDateTime(),
     equipmentNumber: '',
     productionModel: '',
     process: '',
@@ -143,50 +155,44 @@ export default function ToolChangesPage() {
 
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (추가 폼)
   useEffect(() => {
-    if (formData.productionModel && formData.process && formData.tNumber) {
+    if (formData.productionModel && formData.process && formData.tNumber && !isManualEndmillInput) {
       const endmillInfo = autoFillEndmillInfo(formData.productionModel, formData.process, formData.tNumber)
-      
+
       if (endmillInfo) {
         setFormData(prev => ({
           ...prev,
           endmillCode: endmillInfo.endmillCode,
           endmillName: endmillInfo.endmillName
         }))
-        setIsManualEndmillInput(false)
       } else {
         // CAM SHEET에서 찾을 수 없는 경우 빈 값으로 초기화
-        if (!isManualEndmillInput) {
-          setFormData(prev => ({
-            ...prev,
-            endmillCode: '',
-            endmillName: ''
-          }))
-        }
+        setFormData(prev => ({
+          ...prev,
+          endmillCode: '',
+          endmillName: ''
+        }))
       }
     }
   }, [formData.productionModel, formData.process, formData.tNumber, isManualEndmillInput, autoFillEndmillInfo])
 
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (수정 모달)
   useEffect(() => {
-    if (editingItem && editingItem.productionModel && editingItem.process && editingItem.tNumber) {
+    if (editingItem && editingItem.productionModel && editingItem.process && editingItem.tNumber && !isEditManualEndmillInput) {
       const endmillInfo = autoFillEndmillInfo(editingItem.productionModel, editingItem.process, editingItem.tNumber)
-      
+
       if (endmillInfo) {
         setEditingItem(prev => prev ? ({
           ...prev,
           endmillCode: endmillInfo.endmillCode,
           endmillName: endmillInfo.endmillName
         }) : null)
-        setIsEditManualEndmillInput(false)
       } else {
-        // CAM SHEET에서 찾을 수 없는 경우 수동 입력 모드가 아니면 빈 값으로 초기화
-        if (!isEditManualEndmillInput && editingItem) {
-          setEditingItem(prev => prev ? ({
-            ...prev,
-            endmillCode: '',
-            endmillName: ''
-          }) : null)
-        }
+        // CAM SHEET에서 찾을 수 없는 경우 빈 값으로 초기화
+        setEditingItem(prev => prev ? ({
+          ...prev,
+          endmillCode: '',
+          endmillName: ''
+        }) : null)
       }
     }
   }, [editingItem?.productionModel, editingItem?.process, editingItem?.tNumber, isEditManualEndmillInput, autoFillEndmillInfo])
@@ -201,7 +207,7 @@ export default function ToolChangesPage() {
     if (confirmed) {
       const newToolChange: ToolChange = {
         id: Date.now().toString(),
-        changeDate: getCurrentDateTime(), // 저장 시점의 현재 시간으로 업데이트
+        change_date: getCurrentDateTime(), // 저장 시점의 현재 시간으로 업데이트
         equipmentNumber: formData.equipmentNumber,
         productionModel: formData.productionModel,
         process: formData.process,
@@ -214,9 +220,10 @@ export default function ToolChangesPage() {
         createdAt: new Date().toISOString()
       }
       
-      setToolChanges([newToolChange, ...toolChanges])
+      // 데이터 새로고침
+      await refreshData()
       setShowAddForm(false)
-      
+
       showSuccess(
         '교체 실적 등록 완료',
         `${formData.equipmentNumber} T${formData.tNumber.toString().padStart(2, '0')} 교체 실적이 등록되었습니다.`
@@ -224,7 +231,7 @@ export default function ToolChangesPage() {
       
       // 폼 초기화
       setFormData({
-        changeDate: getCurrentDateTime(),
+        change_date: getCurrentDateTime(),
         equipmentNumber: '',
         productionModel: '',
         process: '',
@@ -280,11 +287,9 @@ export default function ToolChangesPage() {
     )
 
     if (confirmed) {
-      const updatedChanges = toolChanges.map(change => 
-        change.id === editingItem.id ? editingItem : change
-      )
-      
-      setToolChanges(updatedChanges)
+      // API 호출하여 수정 처리 (나중에 구현 예정)
+      // 여기서는 데이터 새로고침만 수행
+      await refreshData()
       setShowEditModal(false)
       setEditingItem(null)
       setIsEditManualEndmillInput(false) // 수동 입력 모드 초기화
@@ -310,8 +315,9 @@ export default function ToolChangesPage() {
     )
 
     if (confirmed) {
-      const updatedChanges = toolChanges.filter(change => change.id !== item.id)
-      setToolChanges(updatedChanges)
+      // API 호출하여 삭제 처리 (나중에 구현 예정)
+      // 여기서는 데이터 새로고침만 수행
+      await refreshData()
       setDeletingItemId(null)
       showSuccess(
         '삭제 완료', 
@@ -331,7 +337,7 @@ export default function ToolChangesPage() {
             </div>
             <div>
               <p className="text-xs font-medium text-gray-600">오늘 교체</p>
-              <p className="text-xl font-bold text-blue-600">{toolChanges.filter(tc => tc.changeDate.startsWith(getTodayDate())).length}</p>
+              <p className="text-xl font-bold text-blue-600">{toolChanges.filter(tc => tc.change_date?.startsWith(getTodayDate())).length}</p>
             </div>
           </div>
         </div>
@@ -408,7 +414,7 @@ export default function ToolChangesPage() {
 
         {(() => {
           // 오늘 교체 데이터만 필터링
-          const todayChanges = toolChanges.filter(tc => tc.changeDate.startsWith(getTodayDate()))
+          const todayChanges = toolChanges.filter(tc => tc.change_date?.startsWith(getTodayDate()))
           
           // 모델별 교체 수량 계산
           const modelCounts = todayChanges.reduce((acc: Record<string, number>, tc) => {
@@ -439,7 +445,7 @@ export default function ToolChangesPage() {
 
         {(() => {
           // 오늘 교체 데이터만 필터링
-          const todayChanges = toolChanges.filter(tc => tc.changeDate.startsWith(getTodayDate()))
+          const todayChanges = toolChanges.filter(tc => tc.change_date?.startsWith(getTodayDate()))
           
           // 공정별 교체 수량 계산
           const processCounts = todayChanges.reduce((acc: Record<string, number>, tc) => {
@@ -479,7 +485,7 @@ export default function ToolChangesPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">교체일자</label>
                 <input
                   type="text"
-                  value={formData.changeDate}
+                  value={formData.change_date}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
                   readOnly
                 />
@@ -687,32 +693,84 @@ export default function ToolChangesPage() {
 
       {/* 버튼 및 필터 */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="flex gap-4 flex-1">
-            <input
-              type="text"
-              placeholder="설비번호, 앤드밀 코드 검색..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <select className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">모든 공정</option>
-              <option value="CNC1">CNC1</option>
-              <option value="CNC2">CNC2</option>
-              <option value="CNC2-1">CNC2-1</option>
-            </select>
-            <select className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">모든 사유</option>
-              {toolChangesReasons.map(reason => (
-                <option key={reason} value={reason}>{reason}</option>
-              ))}
-            </select>
+        <div className="flex flex-col gap-4">
+          {/* 첫 번째 줄: 검색, 설비, 사유 필터 */}
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex gap-4 flex-1">
+              <input
+                type="text"
+                placeholder="설비번호, 앤드밀 코드, 사용자명 검색..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <select
+                value={selectedEquipment}
+                onChange={(e) => setSelectedEquipment(e.target.value)}
+                className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">모든 설비</option>
+                <option value="1">C001</option>
+                <option value="2">C002</option>
+                <option value="3">C003</option>
+                <option value="4">C004</option>
+                <option value="5">C005</option>
+              </select>
+              <select
+                value={selectedEndmillType}
+                onChange={(e) => setSelectedEndmillType(e.target.value)}
+                className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">모든 엔드밀</option>
+                {/* TODO: 실제 endmill_types 데이터로 교체 필요 */}
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={resetFilters}
+                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+              >
+                필터 초기화
+              </button>
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                + 교체 기록 추가
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            + 교체 기록 추가
-          </button>
+
+          {/* 두 번째 줄: 날짜 필터 */}
+          <div className="flex gap-4 items-center">
+            <label className="text-sm font-medium text-gray-700">기간:</label>
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-gray-500">~</span>
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            {/* 에러 및 로딩 상태 표시 */}
+            {toolChangesError && (
+              <div className="text-red-600 text-sm">
+                오류: {toolChangesError}
+              </div>
+            )}
+            {isLoading && (
+              <div className="flex items-center text-blue-600 text-sm">
+                <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mr-2"></div>
+                로딩 중...
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -761,47 +819,53 @@ export default function ToolChangesPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {toolChanges.map((change) => {
-                const toolLifeStatus = getToolLifeStatus(change.toolLife || 0)
+              {toolChanges.length > 0 ? toolChanges.map((change) => {
+                const toolLifeStatus = getToolLifeStatus(change.old_life_hours || 0)
+                const formattedDate = new Date(change.change_date).toLocaleString('ko-KR')
+
                 return (
                   <tr key={change.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{change.changeDate}</div>
+                      <div className="text-sm text-gray-900">{formattedDate}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{change.equipmentNumber}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {change.equipment?.name || (change.equipment_number ? `C${change.equipment_number.toString().padStart(3, '0')}` : '-')}
+                      </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{change.productionModel}</div>
+                      <div className="text-sm text-gray-900">-</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{change.process}</div>
+                      <div className="text-sm text-gray-900">-</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">T{change.tNumber.toString().padStart(2, '0')}</div>
+                      <div className="text-sm font-medium text-gray-900">-</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{change.endmillCode}</div>
+                      <div className="text-sm font-medium text-gray-900">{change.endmill_code}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{change.endmillName}</div>
+                      <div className="text-sm text-gray-900">
+                        {change.endmill_type?.name || change.endmill_type?.code || '-'}
+                      </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{change.changedBy}</div>
+                      <div className="text-sm text-gray-900">{change.user?.name || '-'}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getReasonBadge(change.changeReason)}`}>
-                        {change.changeReason}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getReasonBadge(change.reason)}`}>
+                        {change.reason}
                       </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className={`text-sm font-medium ${toolLifeStatus.color}`}>
-                        {change.toolLife?.toLocaleString()}회
+                        {change.old_life_hours?.toLocaleString()}시간
                       </div>
                       <div className="text-xs text-gray-500">{toolLifeStatus.status}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <button 
+                      <button
                         onClick={() => handleEdit(change)}
                         className="text-blue-600 hover:text-blue-800 mr-3"
                       >
@@ -820,10 +884,86 @@ export default function ToolChangesPage() {
                     </td>
                   </tr>
                 )
-              })}
+              }) : (
+                <tr>
+                  <td colSpan={11} className="px-4 py-8 text-center text-gray-500">
+                    {isLoading ? (
+                      <div className="flex items-center justify-center">
+                        <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mr-2"></div>
+                        데이터를 불러오는 중...
+                      </div>
+                    ) : (
+                      '교체 실적 데이터가 없습니다.'
+                    )}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* 페이지네이션 */}
+        {toolChanges.length > 0 && (
+          <div className="px-6 py-4 border-t bg-gray-50">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                전체 {totalCount || toolChanges.length}개 중 {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalCount || toolChanges.length)}개 표시
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1 || isLoading}
+                  className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  이전
+                </button>
+                <div className="flex items-center space-x-1">
+                  {(() => {
+                    const totalPages = Math.ceil((totalCount || toolChanges.length) / itemsPerPage)
+                    const pageNumbers = []
+                    const maxVisiblePages = 5
+
+                    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+                    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+                    if (endPage - startPage < maxVisiblePages - 1) {
+                      startPage = Math.max(1, endPage - maxVisiblePages + 1)
+                    }
+
+                    for (let i = startPage; i <= endPage; i++) {
+                      pageNumbers.push(
+                        <button
+                          key={i}
+                          onClick={() => setCurrentPage(i)}
+                          disabled={isLoading}
+                          className={`px-3 py-1 text-sm font-medium rounded-md ${
+                            currentPage === i
+                              ? 'bg-blue-600 text-white'
+                              : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          {i}
+                        </button>
+                      )
+                    }
+
+                    return pageNumbers
+                  })()}
+                </div>
+                <button
+                  onClick={() => setCurrentPage(prev => {
+                    const totalPages = Math.ceil((totalCount || toolChanges.length) / itemsPerPage)
+                    return Math.min(prev + 1, totalPages)
+                  })}
+                  disabled={!hasMore || isLoading}
+                  className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  다음
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 수정 모달 */}
@@ -848,8 +988,8 @@ export default function ToolChangesPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">교체일자</label>
                     <input
                       type="text"
-                      value={editingItem.changeDate}
-                      onChange={(e) => setEditingItem({...editingItem, changeDate: e.target.value})}
+                      value={editingItem.change_date}
+                      onChange={(e) => setEditingItem({...editingItem, change_date: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />

@@ -350,8 +350,7 @@ export class SupabaseService {
 ### 번역 시스템
 - **데이터베이스 기반**: translations 테이블
 - **네임스페이스 분리**: 기능별 번역 그룹
-- **자동 번역**: Google Translate API 연동
-- **번역 이력**: 변경 추적
+- **번역 라이브러리리**: react-i18next
 
 ### 번역 관리
 - **실시간 업데이트**: 번역 변경 즉시 반영

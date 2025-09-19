@@ -5,32 +5,43 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const equipmentNumber = searchParams.get('equipment_number')
+    const endmillType = searchParams.get('endmill_type')
+    const searchTerm = searchParams.get('search')
+    const startDate = searchParams.get('start_date')
+    const endDate = searchParams.get('end_date')
     const limit = searchParams.get('limit')
     const offset = searchParams.get('offset')
 
-    let toolChanges
-    if (equipmentNumber) {
-      toolChanges = await serverSupabaseService.toolChange.getByEquipment(
-        parseInt(equipmentNumber),
-        limit ? parseInt(limit) : undefined,
-        offset ? parseInt(offset) : undefined
-      )
-    } else {
-      toolChanges = await serverSupabaseService.toolChange.getAll(
-        limit ? parseInt(limit) : undefined
-      )
-    }
+    const result = await serverSupabaseService.toolChange.getFiltered({
+      equipmentNumber: equipmentNumber ? parseInt(equipmentNumber) : undefined,
+      endmillType,
+      searchTerm,
+      startDate,
+      endDate,
+      limit: limit ? parseInt(limit) : undefined,
+      offset: offset ? parseInt(offset) : undefined
+    })
+
+    // totalCount를 별도로 가져오기
+    const countResult = await serverSupabaseService.toolChange.getCount({
+      equipmentNumber: equipmentNumber ? parseInt(equipmentNumber) : undefined,
+      endmillType,
+      searchTerm,
+      startDate,
+      endDate
+    })
 
     return NextResponse.json({
       success: true,
-      data: toolChanges
+      data: result,
+      totalCount: countResult || 0
     })
   } catch (error) {
     console.error('Error fetching tool changes:', error)
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch tool changes' 
+      {
+        success: false,
+        error: 'Failed to fetch tool changes'
       },
       { status: 500 }
     )

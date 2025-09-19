@@ -7,6 +7,7 @@ import { useToast } from '../../../components/shared/Toast'
 import StatusChangeDropdown from '../../../components/shared/StatusChangeDropdown'
 import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
 import { useSettings } from '../../../lib/hooks/useSettings'
+import PageLoadingIndicator, { SkeletonCard, SkeletonTableRow } from '../../../components/shared/PageLoadingIndicator'
 
 // 로컬 상태용 타입 정의
 interface Equipment {
@@ -295,26 +296,78 @@ export default function EquipmentPage() {
     setAddFormData(prev => ({
       ...prev,
       equipmentNumber: generateNextEquipmentNumber(),
-      location: (equipmentLocations[0] || 'A동') as 'A동' | 'B동',
-      status: (equipmentStatuses[0]?.code || equipmentStatuses[0]?.name || equipmentStatuses[0] || '가동중') as Equipment['status'],
-      currentModel: getAvailableModels[0] || 'PA1',
-      process: getAvailableProcesses[0] || 'CNC1'
+      location: (equipmentLocations[0]) as 'A동' | 'B동',
+      status: (equipmentStatuses[0]?.code || equipmentStatuses[0]?.name || equipmentStatuses[0]) as Equipment['status'],
+      currentModel: getAvailableModels[0],
+      process: getAvailableProcesses[0]
     }))
     setShowAddModal(true)
   }
 
-  // 로딩 중일 때 - 중복 디스크립션 제거
+  // 로딩 중일 때 - 개선된 스켈레톤 UI
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">🏭</span>
-            </div>
-            <p className="text-gray-600">설비 데이터를 불러오는 중...</p>
-          </div>
+        {/* 상단 카드 스켈레톤 */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <SkeletonCard key={i} className="p-4">
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-gray-200 rounded-lg mr-3"></div>
+                <div className="flex-1">
+                  <div className="h-3 bg-gray-200 rounded mb-2 w-16"></div>
+                  <div className="h-5 bg-gray-200 rounded w-12"></div>
+                </div>
+              </div>
+            </SkeletonCard>
+          ))}
         </div>
+
+        {/* 차트 스켈레톤 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[...Array(2)].map((_, i) => (
+            <SkeletonCard key={i} className="p-6">
+              <div className="h-5 bg-gray-200 rounded mb-4 w-32"></div>
+              <div className="space-y-3">
+                {[...Array(3)].map((_, j) => (
+                  <div key={j} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <div className="w-24 h-10 bg-gray-200 rounded-lg mr-3"></div>
+                      <div>
+                        <div className="h-4 bg-gray-200 rounded mb-1 w-20"></div>
+                        <div className="h-3 bg-gray-200 rounded w-24"></div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="h-5 bg-gray-200 rounded mb-1 w-8"></div>
+                      <div className="h-3 bg-gray-200 rounded w-6"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SkeletonCard>
+          ))}
+        </div>
+
+        {/* 테이블 스켈레톤 */}
+        <SkeletonCard className="overflow-hidden">
+          <div className="px-6 py-4 border-b animate-pulse">
+            <div className="h-5 bg-gray-200 rounded w-32 mb-1"></div>
+            <div className="h-3 bg-gray-200 rounded w-48"></div>
+          </div>
+          <div className="p-6">
+            {[...Array(5)].map((_, i) => (
+              <SkeletonTableRow key={i} columns={7} />
+            ))}
+          </div>
+        </SkeletonCard>
+
+        {/* 로딩 인디케이터 */}
+        <PageLoadingIndicator
+          message="설비 데이터를 불러오는 중..."
+          subMessage="잠시만 기다려주세요"
+          size="md"
+        />
       </div>
     )
   }
@@ -324,7 +377,7 @@ export default function EquipmentPage() {
   const availableProcesses = getAvailableProcesses
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fadeIn">
 
       {/* 상단 설비 상태 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

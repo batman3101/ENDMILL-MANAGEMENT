@@ -83,12 +83,19 @@ export default function InventoryPage() {
   const searchFilteredInventory = useMemo(() => {
     if (!searchTerm) return filteredInventory
     
-    return filteredInventory.filter(item => 
-      item.endmill_types?.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.endmill_types?.description_ko?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.endmill_types?.description_vi?.toLowerCase().includes(searchTerm.toLowerCase())
+    return filteredInventory.filter(item =>
+      item.endmill_type?.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.endmill_type?.description_ko?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.endmill_type?.description_vi?.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [filteredInventory, searchTerm])
+
+  // 재고 상태 계산 함수
+  const calculateStockStatus = (current: number, min: number, max: number): 'sufficient' | 'low' | 'critical' => {
+    if (current <= min) return 'critical'
+    if (current <= min * 1.5) return 'low'
+    return 'sufficient'
+  }
 
   // 테이블 렌더링을 위한 플랫 데이터 생성
   const flattenedData = useMemo(() => {
@@ -109,34 +116,27 @@ export default function InventoryPage() {
       isFirstRow: boolean
       rowSpan: number
     }> = []
-    
+
     searchFilteredInventory.forEach(item => {
       // 기본 정보 (공급업체 정보가 없는 경우)
       result.push({
         itemId: item.id,
-        code: item.endmill_types?.code || '',
-        name: item.endmill_types?.description_ko || item.endmill_types?.description_vi || '',
-        category: item.endmill_types?.endmill_categories?.code || '',
-        specifications: item.endmill_types?.specifications ? JSON.stringify(item.endmill_types.specifications) : '',
+        code: item.endmill_type?.code || '',
+        name: item.endmill_type?.description_ko || item.endmill_type?.description_vi || '',
+        category: item.endmill_type?.category?.code || '',
+        specifications: item.endmill_type?.specifications ? JSON.stringify(item.endmill_type.specifications) : '',
         totalCurrentStock: item.current_stock || 0,
         minStock: item.min_stock || 0,
         maxStock: item.max_stock || 0,
         overallStatus: calculateStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0),
-        unitPrice: item.endmill_types?.unit_cost || 0,
+        unitPrice: item.endmill_type?.unit_cost || 0,
         isFirstRow: true,
         rowSpan: 1
       })
     })
-    
+
     return result
   }, [searchFilteredInventory])
-
-  // 재고 상태 계산 함수
-  const calculateStockStatus = (current: number, min: number, max: number): 'sufficient' | 'low' | 'critical' => {
-    if (current <= min) return 'critical'
-    if (current <= min * 1.5) return 'low'
-    return 'sufficient'
-  }
 
   // 통계 계산
   const stats = getInventoryStats(searchFilteredInventory)

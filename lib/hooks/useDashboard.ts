@@ -111,15 +111,39 @@ export const useDashboard = (refreshInterval: number = 30000): UseDashboardRetur
     fetchDashboardData()
   }, [fetchDashboardData])
 
-  // 주기적 데이터 업데이트
+  // 주기적 데이터 업데이트 (페이지가 보일 때만)
   useEffect(() => {
     if (refreshInterval <= 0) return
 
-    const interval = setInterval(() => {
-      fetchDashboardData()
-    }, refreshInterval)
+    let interval: NodeJS.Timeout | null = null
 
-    return () => clearInterval(interval)
+    const startPolling = () => {
+      if (interval) clearInterval(interval)
+      interval = setInterval(() => {
+        if (!document.hidden) { // 페이지가 활성 상태일 때만 폴링
+          fetchDashboardData()
+        }
+      }, refreshInterval)
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (interval) {
+          clearInterval(interval)
+          interval = null
+        }
+      } else {
+        startPolling()
+      }
+    }
+
+    startPolling()
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      if (interval) clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [fetchDashboardData, refreshInterval])
 
   return {
