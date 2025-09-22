@@ -46,12 +46,13 @@ export default function DashboardLayout({
     }
   }
 
-  // 인증되지 않은 사용자는 로그인 페이지로 리다이렉트
+  // 인증되지 않은 사용자는 로그인 페이지로 리다이렉트 (현재 경로 유지)
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/')
+      const currentPath = pathname
+      router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
     }
-  }, [user, loading, router])
+  }, [user, loading, router, pathname])
 
   // 인증 확인 중 로딩 표시
   if (loading) {

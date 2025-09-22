@@ -1,86 +1,16 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createStatusChangeConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
 import StatusChangeDropdown from '../../../components/shared/StatusChangeDropdown'
 import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
 import { useSettings } from '../../../lib/hooks/useSettings'
+import { useEquipment, useEquipmentStatus } from '../../../lib/hooks/useEquipment'
 import PageLoadingIndicator, { SkeletonCard, SkeletonTableRow } from '../../../components/shared/PageLoadingIndicator'
 
-// 로컬 상태용 타입 정의
-interface Equipment {
-  id: string
-  equipmentNumber: string // C001-C800
-  location: 'A동' | 'B동'
-  status: '가동중' | '점검중' | '셋업중'
-  currentModel: string // 현재 생산 모델
-  process: string // CNC1, CNC2, CNC2-1 등
-  toolPositions: {
-    used: number
-    total: number
-  }
-  lastMaintenance: string
-}
-
-// StatusTransition 인터페이스 제거됨 (StatusChangeDropdown 컴포넌트로 이동)
-
-// 설비 데이터 생성 함수 - 설정값 기반으로 수정
-const generateEquipmentData = (
-  availableModels: string[], 
-  availableProcesses: string[],
-  totalCount: number,
-  locations: string[],
-  statuses: any[],
-  toolTotal: number
-): Equipment[] => {
-  const equipments: Equipment[] = []
-  // CAM Sheet에서 실제 모델/공정 데이터가 없으면 기본값 사용
-  const models = availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']
-  const processes = availableProcesses.length > 0 ? availableProcesses : ['CNC1', 'CNC2', 'CNC2-1']
-  const validLocations = locations.length > 0 ? locations : ['A동', 'B동']
-  const validStatuses = statuses.length > 0 ? statuses.map(s => s.code || s.name || s) : ['가동중', '점검중', '셋업중']
-  
-  for (let i = 1; i <= totalCount; i++) {
-    const equipmentNumber = `C${i.toString().padStart(3, '0')}`
-    const location = validLocations[Math.floor((i - 1) / Math.ceil(totalCount / validLocations.length))]
-    const currentModel = models[Math.floor(Math.random() * models.length)]
-    const process = processes[Math.floor(Math.random() * processes.length)]
-    
-    // 상태 분포: 가동중 70%, 점검중 20%, 셋업중 10%
-    let status: any
-    const rand = Math.random()
-    if (rand < 0.7) status = validStatuses[0] || '가동중'
-    else if (rand < 0.9) status = validStatuses[1] || '점검중'
-    else status = validStatuses[2] || '셋업중'
-    
-    // 앤드밀 사용량: 점검중이면 0, 나머지는 툴 포지션의 70-100%
-    const isUnderMaintenance = status === '점검중' || status === 'maintenance'
-    const used = isUnderMaintenance ? 0 : Math.floor(Math.random() * (toolTotal * 0.3)) + Math.floor(toolTotal * 0.7)
-    
-    // 마지막 점검일
-    const lastMaintenanceDate = new Date()
-    lastMaintenanceDate.setDate(lastMaintenanceDate.getDate() - Math.floor(Math.random() * 30))
-    
-    equipments.push({
-      id: i.toString(),
-      equipmentNumber,
-      location: location as 'A동' | 'B동',
-      status: status as '가동중' | '점검중' | '셋업중',
-      currentModel,
-      process,
-      toolPositions: { used, total: toolTotal },
-      lastMaintenance: lastMaintenanceDate.toISOString().split('T')[0]
-    })
-  }
-  
-  return equipments
-}
-
 export default function EquipmentPage() {
-  const [equipments, setEquipments] = useState<Equipment[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [modelFilter, setModelFilter] = useState('')
@@ -88,12 +18,26 @@ export default function EquipmentPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const confirmation = useConfirmation()
   const { showSuccess, showError } = useToast()
-  
+
+  // Supabase에서 실제 데이터 가져오기
+  const {
+    equipments,
+    loading: isLoading,
+    error: dataError,
+    createEquipment,
+    updateEquipment,
+    getEquipmentStats,
+    getAvailableModels,
+    getAvailableProcesses,
+    getAvailableLocations
+  } = useEquipment()
+
+  const { changeStatus } = useEquipmentStatus()
+
   // 설정에서 값 가져오기
   const { settings, updateCategorySettings } = useSettings()
   const itemsPerPage = settings.system.itemsPerPage
-  const totalEquipmentCount = settings.equipment.totalCount
-  const equipmentLocations = settings.equipment.locations
+  const equipmentLocations = getAvailableLocations()
   const equipmentStatuses = settings.equipment.statuses
   const toolPositionCount = settings.equipment.toolPositionCount
 
@@ -108,37 +52,26 @@ export default function EquipmentPage() {
     process: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
-  // CAM Sheet 데이터 가져오기
-  const { camSheets, getAvailableModels, getAvailableProcesses } = useCAMSheets()
 
-  // 클라이언트 사이드에서만 데이터 로드 - 설정 데이터 기반으로 생성
-  useEffect(() => {
-    setEquipments(generateEquipmentData(
-      getAvailableModels, 
-      getAvailableProcesses,
-      totalEquipmentCount,
-      equipmentLocations,
-      equipmentStatuses,
-      toolPositionCount
-    ))
-    setIsLoading(false)
-  }, [getAvailableModels, getAvailableProcesses, totalEquipmentCount, equipmentLocations, equipmentStatuses, toolPositionCount, itemsPerPage])
+  // CAM Sheet 데이터 가져오기
+  const { camSheets } = useCAMSheets()
+  const availableModels = getAvailableModels()
+  const availableProcesses = getAvailableProcesses()
 
 
 
   // 필터링된 설비 목록
   const filteredEquipments = useMemo(() => {
     return equipments.filter(equipment => {
-      const matchesSearch = searchTerm === '' || 
-        equipment.equipmentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        equipment.currentModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        equipment.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        equipment.process.toLowerCase().includes(searchTerm.toLowerCase())
-      
+      const matchesSearch = searchTerm === '' ||
+        equipment.equipment_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        equipment.current_model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        equipment.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        equipment.process?.toLowerCase().includes(searchTerm.toLowerCase())
+
       const matchesStatus = statusFilter === '' || equipment.status === statusFilter
-      const matchesModel = modelFilter === '' || equipment.currentModel === modelFilter
-      
+      const matchesModel = modelFilter === '' || equipment.current_model === modelFilter
+
       return matchesSearch && matchesStatus && matchesModel
     })
   }, [equipments, searchTerm, statusFilter, modelFilter])
@@ -191,25 +124,23 @@ export default function EquipmentPage() {
   // 상태 관련 함수들은 StatusChangeDropdown 컴포넌트로 이동됨
 
   // 설비 상태 변경
-  const handleStatusChange = async (equipmentId: string, newStatus: Equipment['status']) => {
+  const handleStatusChange = async (equipmentId: string, newStatus: string) => {
     const equipment = equipments.find(eq => eq.id === equipmentId)
     if (!equipment) return
 
     const confirmed = await confirmation.showConfirmation(
       createStatusChangeConfirmation(
-        equipment.equipmentNumber,
-        equipment.status,
+        equipment.equipment_number,
+        equipment.status || '',
         newStatus
       )
     )
 
     if (confirmed) {
-      setEquipments(prev => prev.map(eq => 
-        eq.id === equipmentId ? { ...eq, status: newStatus } : eq
-      ))
+      changeStatus(equipmentId, newStatus)
       showSuccess(
         '상태 변경 완료',
-        `${equipment.equipmentNumber}의 상태가 ${newStatus}(으)로 변경되었습니다.`
+        `${equipment.equipment_number}의 상태가 ${newStatus}(으)로 변경되었습니다.`
       )
     }
   }
@@ -234,32 +165,17 @@ export default function EquipmentPage() {
     }
 
     setIsSubmitting(true)
-    
+
     try {
-      const response = await fetch('/api/equipment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          equipmentNumber: addFormData.equipmentNumber,
-          location: addFormData.location,
-          status: addFormData.status,
-          currentModel: addFormData.currentModel,
-          process: addFormData.process,
-        }),
+      createEquipment({
+        equipment_number: parseInt(addFormData.equipmentNumber.replace('C', '')),
+        model_code: addFormData.currentModel,
+        location: addFormData.location,
+        status: addFormData.status,
+        current_model: addFormData.currentModel,
+        process: addFormData.process,
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || '설비 추가에 실패했습니다.')
-      }
-
-      const result = await response.json()
-      
-      // 새로운 설비를 로컬 상태에 추가
-      setEquipments(prev => [...prev, result.data])
-      
       // 폼 초기화
       setAddFormData({
         equipmentNumber: '',
@@ -268,10 +184,10 @@ export default function EquipmentPage() {
         currentModel: '',
         process: ''
       })
-      
+
       setShowAddModal(false)
-      showSuccess('설비 추가 완료', `설비 ${result.data.equipmentNumber}가 성공적으로 추가되었습니다.`)
-      
+      showSuccess('설비 추가 완료', `설비 ${addFormData.equipmentNumber}가 성공적으로 추가되었습니다.`)
+
     } catch (error) {
       console.error('설비 추가 에러:', error)
       showError('설비 추가 실패', error instanceof Error ? error.message : '설비 추가 중 오류가 발생했습니다.')
@@ -282,10 +198,10 @@ export default function EquipmentPage() {
 
   // 설비 번호 자동 생성
   const generateNextEquipmentNumber = () => {
-    const existingNumbers = equipments.map(eq => 
-      parseInt(eq.equipmentNumber.replace('C', ''))
+    const existingNumbers = equipments.map(eq =>
+      parseInt(eq.equipment_number?.replace('C', '') || '0')
     ).filter(num => !isNaN(num))
-    
+
     const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0
     const nextNumber = maxNumber + 1
     return `C${nextNumber.toString().padStart(3, '0')}`
@@ -297,11 +213,49 @@ export default function EquipmentPage() {
       ...prev,
       equipmentNumber: generateNextEquipmentNumber(),
       location: (equipmentLocations[0]) as 'A동' | 'B동',
-      status: (equipmentStatuses[0]?.code || equipmentStatuses[0]?.name || equipmentStatuses[0]) as Equipment['status'],
-      currentModel: getAvailableModels[0],
-      process: getAvailableProcesses[0]
+      status: (equipmentStatuses[0]?.code || equipmentStatuses[0]?.name || equipmentStatuses[0] || '가동중') as '가동중' | '점검중' | '셋업중',
+      currentModel: availableModels[0] || '',
+      process: availableProcesses[0] || ''
     }))
     setShowAddModal(true)
+  }
+
+  // 데이터 없음 아르면 메시지 표시
+  if (!isLoading && equipments.length === 0 && !dataError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-4xl mb-4">📊</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">표시할 설비 데이터가 없습니다</h3>
+          <p className="text-gray-500 mb-4">데이터베이스에 설비 정보가 등록되어 있지 않습니다.</p>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            첫 번째 설비 추가
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // 에러 상태일 때
+  if (dataError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">데이터 로드 오류</h3>
+          <p className="text-gray-500 mb-4">{dataError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    )
   }
 
   // 로딩 중일 때 - 개선된 스켈레톤 UI
@@ -372,9 +326,8 @@ export default function EquipmentPage() {
     )
   }
 
-  // CAM Sheet에서 실제 모델/공정 목록 가져오기 (메모이제이션된 값)
-  const availableModels = getAvailableModels
-  const availableProcesses = getAvailableProcesses
+  // 설비 통계
+  const equipmentStats = getEquipmentStats()
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -388,7 +341,7 @@ export default function EquipmentPage() {
             </div>
             <div>
               <p className="text-sm text-gray-600">총 설비</p>
-              <p className="text-xl font-bold text-gray-900">{equipments.length}대</p>
+              <p className="text-xl font-bold text-gray-900">{equipmentStats.total}대</p>
             </div>
           </div>
         </div>
@@ -401,7 +354,7 @@ export default function EquipmentPage() {
             <div>
               <p className="text-sm text-gray-600">가동설비</p>
               <p className="text-xl font-bold text-green-600">
-                {equipments.filter(eq => eq.status === '가동중').length}대
+                {equipmentStats.active}대
               </p>
             </div>
           </div>
@@ -415,7 +368,7 @@ export default function EquipmentPage() {
             <div>
               <p className="text-sm text-gray-600">점검중</p>
               <p className="text-xl font-bold text-red-600">
-                {equipments.filter(eq => eq.status === '점검중').length}대
+                {equipmentStats.maintenance}대
               </p>
             </div>
           </div>
@@ -429,7 +382,7 @@ export default function EquipmentPage() {
             <div>
               <p className="text-sm text-gray-600">셋업중</p>
               <p className="text-xl font-bold text-orange-600">
-                {equipments.filter(eq => eq.status === '셋업중').length}대
+                {equipmentStats.setup}대
               </p>
             </div>
           </div>
@@ -632,13 +585,13 @@ export default function EquipmentPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center">
                         <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{width: `${(equipment.toolPositions.used / equipment.toolPositions.total) * 100}%`}}
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{width: '0%'}}
                           ></div>
                         </div>
                         <span className="text-sm">
-                          {equipment.toolPositions.used}/{equipment.toolPositions.total}
+                          0/{equipment.tool_position_count || 21}
                         </span>
                       </div>
                     </td>
@@ -648,9 +601,9 @@ export default function EquipmentPage() {
                       <div className="flex items-center gap-2">
                         {/* 상태 변경 드롭다운 */}
                         <StatusChangeDropdown
-                          currentStatus={equipment.status}
+                          currentStatus={equipment.status || ''}
                           equipmentId={equipment.id}
-                          equipmentNumber={equipment.equipmentNumber}
+                          equipmentNumber={equipment.equipment_number}
                           onStatusChange={handleStatusChange}
                         />
                       </div>

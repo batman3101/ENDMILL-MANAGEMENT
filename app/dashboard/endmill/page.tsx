@@ -1,11 +1,16 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createCustomConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
 import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
 import { useSettings } from '../../../lib/hooks/useSettings'
+import EndmillExcelUploader from '../../../components/features/EndmillExcelUploader'
+import EndmillForm from '../../../components/features/EndmillForm'
+import EndmillSupplierPrices from '../../../components/features/EndmillSupplierPrices'
+import { downloadEndmillTemplate } from '../../../lib/utils/endmillExcelTemplate'
 
 // 앤드밀 인스턴스 타입 정의
 interface EndmillInstance {
@@ -24,66 +29,10 @@ interface EndmillInstance {
   lastMaintenance: string
 }
 
-// 앤드밀 데이터 생성 함수 - 설정값 기반
-const generateEndmillData = (
-  totalEquipments: number,
-  toolPositions: number,
-  availableCategories: string[],
-  availableLocations: string[]
-): EndmillInstance[] => {
-  const categories = availableCategories.length > 0 ? availableCategories : ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL']
-  const processes = ['CNC1', 'CNC2', 'CNC2-1']
-  const locations = availableLocations.length > 0 ? availableLocations : ['A동', 'B동']
-  const items: EndmillInstance[] = []
-  
-  // 설비 수 * 툴 포지션 수 = 총 앤드밀 개수
-  const totalEndmills = totalEquipments * toolPositions
-  for (let i = 1; i <= totalEndmills; i++) {
-    const equipmentNum = Math.floor((i - 1) / toolPositions) + 1
-    const equipment = `C${equipmentNum.toString().padStart(3, '0')}`
-    const position = `T${(((i - 1) % toolPositions) + 1).toString().padStart(2, '0')}`
-    const category = categories[Math.floor(Math.random() * categories.length)]
-    const process = processes[Math.floor(Math.random() * processes.length)]
-    
-    const totalLife = 1500 + Math.floor(Math.random() * 1500) // 1500-3000
-    const currentLife = Math.floor(Math.random() * totalLife)
-    
-    // 상태 결정
-    let status: 'new' | 'active' | 'warning' | 'critical'
-    const lifePercentage = (currentLife / totalLife) * 100
-    if (lifePercentage < 10) status = 'critical'
-    else if (lifePercentage < 30) status = 'warning'
-    else if (currentLife === 0) status = 'new'
-    else status = 'active'
-    
-    // 설치일과 마지막 정비일
-    const installDate = new Date()
-    installDate.setDate(installDate.getDate() - Math.floor(Math.random() * 180))
-    
-    const lastMaintenance = new Date()
-    lastMaintenance.setDate(lastMaintenance.getDate() - Math.floor(Math.random() * 30))
-    
-    items.push({
-      id: i.toString(),
-      code: `AT${(Math.floor(Math.random() * 100) + 1).toString().padStart(3, '0')}`,
-      name: `${category} ${6 + Math.floor(Math.random() * 15)}mm ${2 + Math.floor(Math.random() * 4)}날`,
-      category,
-      equipment,
-      location: locations[Math.floor((equipmentNum - 1) / Math.ceil(totalEquipments / locations.length))],
-      process,
-      position,
-      currentLife,
-      totalLife,
-      status,
-      installDate: installDate.toISOString().split('T')[0],
-      lastMaintenance: lastMaintenance.toISOString().split('T')[0]
-    })
-  }
-  
-  return items.sort((a, b) => a.equipment.localeCompare(b.equipment) || a.position.localeCompare(b.position))
-}
+// 실제 데이터베이스에서 앤드밀 인스턴스 데이터를 가져오는 함수로 교체 예정
 
 export default function EndmillPage() {
+  const queryClient = useQueryClient()
   const [endmills, setEndmills] = useState<EndmillInstance[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -96,6 +45,8 @@ export default function EndmillPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const { camSheets } = useCAMSheets()
   const [selectedEndmill, setSelectedEndmill] = useState<EndmillInstance | null>(null)
+  const [showExcelUploader, setShowExcelUploader] = useState(false)
+  const [showEndmillForm, setShowEndmillForm] = useState(false)
   
   // 설정에서 값 가져오기
   const { settings } = useSettings()
@@ -105,16 +56,21 @@ export default function EndmillPage() {
   const totalEquipmentCount = settings.equipment.totalCount
   const toolPositionCount = settings.equipment.toolPositionCount
 
-  // 클라이언트 사이드에서만 데이터 로드 - 설정값 기반
+  // 실제 데이터베이스에서 데이터 로드 및 URL 파라미터 처리
   useEffect(() => {
-    setEndmills(generateEndmillData(
-      totalEquipmentCount,
-      toolPositionCount,
-      categories,
-      equipmentLocations
-    ))
+    // URL 파라미터에서 검색어 추출
+    const urlParams = new URLSearchParams(window.location.search)
+    const searchParam = urlParams.get('search')
+    if (searchParam) {
+      setSearchTerm(searchParam)
+      // URL 파라미터를 제거하여 깔끔하게 유지
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+
+    // Mock 데이터 대신 빈 배열로 초기화
+    setEndmills([])
     setIsLoading(false)
-  }, [totalEquipmentCount, toolPositionCount, categories, equipmentLocations])
+  }, [])
 
   // 필터링된 앤드밀 목록
   const filteredEndmills = useMemo(() => {
@@ -178,7 +134,7 @@ export default function EndmillPage() {
       active: endmills.filter(item => item.status === 'active').length,
       warning: endmills.filter(item => item.status === 'warning').length,
       critical: endmills.filter(item => item.status === 'critical').length,
-      todayReplaced: Math.floor(Math.random() * 50) + 10 // 임시로 랜덤 값
+      todayReplaced: 0 // 실제 교체 기록에서 계산 예정
     }
   }, [endmills])
 
@@ -311,6 +267,34 @@ export default function EndmillPage() {
     }
   }
 
+  // 템플릿 다운로드 핸들러
+  const handleDownloadTemplate = () => {
+    const result = downloadEndmillTemplate()
+    if (result.success) {
+      showSuccess('템플릿 다운로드', `${result.fileName} 파일이 다운로드되었습니다.`)
+    } else {
+      showError('다운로드 실패', result.error || '템플릿 다운로드 중 오류가 발생했습니다.')
+    }
+  }
+
+  // 엑셀 업로드 성공 핸들러
+  const handleUploadSuccess = (data: any[]) => {
+    showSuccess('업로드 완료', '엔드밀 데이터가 성공적으로 등록되었습니다.')
+    // CAM Sheet 데이터 새로고침 (일괄 등록 시 CAM Sheet도 생성되므로)
+    queryClient.invalidateQueries({ queryKey: ['cam-sheets'] })
+    // 엔드밀 데이터 새로고침
+    queryClient.invalidateQueries({ queryKey: ['endmills'] })
+  }
+
+  // 개별 등록 성공 핸들러
+  const handleCreateSuccess = (data: any) => {
+    showSuccess('등록 완료', '엔드밀이 성공적으로 등록되었습니다.')
+    // CAM Sheet 데이터 새로고침 (엔드밀 등록 시 CAM Sheet도 생성되므로)
+    queryClient.invalidateQueries({ queryKey: ['cam-sheets'] })
+    // 엔드밀 데이터 새로고침
+    queryClient.invalidateQueries({ queryKey: ['endmills'] })
+  }
+
   // 로딩 중일 때
   if (isLoading) {
     return (
@@ -332,8 +316,30 @@ export default function EndmillPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-gray-600">앤드밀 별 모델, 설비, 공정의 사용 현황</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <p className="text-gray-600">앤드밀 별 모델, 설비, 공정의 사용 현황</p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowEndmillForm(true)}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+          >
+            ➕ 신규 엔드밀 등록
+          </button>
+          <button
+            onClick={handleDownloadTemplate}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          >
+            📥 엑셀 템플릿 다운로드
+          </button>
+          <button
+            onClick={() => setShowExcelUploader(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+          >
+            📤 엔드밀 일괄 등록
+          </button>
+        </div>
       </div>
 
       {/* 필터 및 검색 */}
@@ -562,11 +568,22 @@ export default function EndmillPage() {
         )}
       </div>
 
+      {/* 데이터가 없거나 검색 결과가 없을 때 */}
+      {endmills.length === 0 && !isLoading && (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
+            <span className="text-2xl">🔧</span>
+          </div>
+          <p className="text-lg text-gray-600 mb-2">표시할 앤드밀 데이터가 없습니다</p>
+          <p className="text-sm text-gray-500">앤드밀 마스터 데이터를 등록하거나 데이터베이스 설정을 확인해주세요.</p>
+        </div>
+      )}
+
       {/* 검색 결과가 없을 때 */}
-      {sortedEndmills.length === 0 && (
+      {endmills.length > 0 && sortedEndmills.length === 0 && (
         <div className="text-center py-8">
           <p className="text-gray-500">검색 조건에 맞는 앤드밀이 없습니다.</p>
-          <button 
+          <button
             onClick={() => {
               setSearchTerm('')
               setStatusFilter('')
@@ -659,9 +676,33 @@ export default function EndmillPage() {
                   <div className="text-sm text-gray-900">{selectedEndmill.process}</div>
                 </div>
               </div>
+
+              {/* 공급업체별 가격 정보 */}
+              <div className="border-t pt-6">
+                <EndmillSupplierPrices
+                  endmillId={selectedEndmill.id}
+                  endmillCode={selectedEndmill.code}
+                />
+              </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* 개별 등록 모달 */}
+      {showEndmillForm && (
+        <EndmillForm
+          onSuccess={handleCreateSuccess}
+          onClose={() => setShowEndmillForm(false)}
+        />
+      )}
+
+      {/* 엑셀 업로더 모달 */}
+      {showExcelUploader && (
+        <EndmillExcelUploader
+          onUploadSuccess={handleUploadSuccess}
+          onClose={() => setShowExcelUploader(false)}
+        />
       )}
     </div>
   )

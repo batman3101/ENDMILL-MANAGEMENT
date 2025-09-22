@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import * as XLSX from 'xlsx'
-import { CAMSheet, EndmillInfo } from '../../lib/hooks/useCAMSheets'
+import { CAMSheet, EndmillInfo, useCAMSheets } from '../../lib/hooks/useCAMSheets'
 import { downloadExcelTemplate, validateExcelData } from '../../lib/utils/excelTemplate'
 
 interface ExcelUploaderProps {
@@ -13,20 +13,22 @@ interface ExcelUploaderProps {
 interface ExcelRow {
   Model?: string
   Process?: string
-  'Cam version'?: string
-  'T/N'?: number
-  Type?: string
-  'Tool name'?: string
-  'Tool life'?: number
-  'Tool code'?: string
+  'CAM Version'?: string
+  'T Number'?: number
+  'Endmill Code'?: string
+  'Endmill Name'?: string
+  'Specifications'?: string
+  'Tool Life'?: number
 }
 
 export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderProps) {
+  const { camSheets } = useCAMSheets() // 기존 CAM Sheet 데이터 가져오기
   const [isDragOver, setIsDragOver] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [previewData, setPreviewData] = useState<any[]>([])
   const [parsedCAMSheets, setParsedCAMSheets] = useState<Omit<CAMSheet, 'id' | 'createdAt' | 'updatedAt'>[]>([])
   const [validationResult, setValidationResult] = useState<{ isValid: boolean; errors: string[]; warnings: string[] } | null>(null)
+  const [duplicateInfo, setDuplicateInfo] = useState<{ duplicates: string[]; newSheets: any[] } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileUpload = async (file: File) => {
@@ -36,7 +38,7 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
     }
 
     setIsProcessing(true)
-    
+
     try {
       const buffer = await file.arrayBuffer()
       const workbook = XLSX.read(buffer, { type: 'buffer' })
@@ -46,16 +48,37 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
 
       setPreviewData(jsonData.slice(0, 10)) // 처음 10개 행만 미리보기
 
-      // 데이터 검증
-      const validation = validateExcelData(jsonData)
+      // 검증 옵션 가져오기
+      const validationOptionsResponse = await fetch('/api/settings/validation')
+      let validationOptions = {}
+
+      if (validationOptionsResponse.ok) {
+        const validationData = await validationOptionsResponse.json()
+        if (validationData.success) {
+          validationOptions = {
+            validProcesses: validationData.data.processes,
+            validModels: validationData.data.models
+          }
+        }
+      }
+
+      // 데이터 검증 (동적)
+      const validation = await validateExcelData(jsonData, validationOptions)
       setValidationResult(validation)
 
-      // 검증이 통과한 경우에만 데이터 변환
+      // 검증이 통과한 경우에만 데이터 변환 및 중복 체크
       if (validation.isValid) {
         const convertedData = convertExcelToCAMSheets(jsonData)
-        setParsedCAMSheets(convertedData)
+
+        // 중복 체크 수행
+        const duplicateCheck = checkForDuplicates(convertedData)
+        setDuplicateInfo(duplicateCheck)
+
+        // 중복되지 않은 새로운 CAM Sheet만 설정
+        setParsedCAMSheets(duplicateCheck.newSheets)
       } else {
         setParsedCAMSheets([])
+        setDuplicateInfo(null)
       }
       
     } catch (error) {
@@ -64,6 +87,29 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
     }
     
     setIsProcessing(false)
+  }
+
+  // 중복 CAM Sheet 체크 함수
+  const checkForDuplicates = (newData: any[]) => {
+    const duplicates: string[] = []
+    const newSheets: any[] = []
+
+    newData.forEach(sheet => {
+      const key = `${sheet.model}-${sheet.process}-${sheet.cam_version}`
+      const isDuplicate = camSheets.some(existing =>
+        existing.model === sheet.model &&
+        existing.process === sheet.process &&
+        existing.cam_version === sheet.cam_version
+      )
+
+      if (isDuplicate) {
+        duplicates.push(key)
+      } else {
+        newSheets.push(sheet)
+      }
+    })
+
+    return { duplicates, newSheets }
   }
 
   const convertExcelToCAMSheets = (data: ExcelRow[]): Omit<CAMSheet, 'id' | 'createdAt' | 'updatedAt'>[] => {
@@ -75,26 +121,26 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
     }>()
 
     data.forEach(row => {
-      if (!row.Model || !row.Process || !row['Cam version']) return
+      if (!row.Model || !row.Process || !row['CAM Version']) return
 
-      const key = `${row.Model}-${row.Process}-${row['Cam version']}`
-      
+      const key = `${row.Model}-${row.Process}-${row['CAM Version']}`
+
       if (!camSheetMap.has(key)) {
         camSheetMap.set(key, {
           model: row.Model,
           process: row.Process,
-          camVersion: row['Cam version'],
+          camVersion: row['CAM Version'],
           endmills: []
         })
       }
 
-      if (row['T/N'] && row.Type && row['Tool name'] && row['Tool code']) {
+      if (row['T Number'] && row['Endmill Code'] && row['Endmill Name']) {
         const endmill: EndmillInfo = {
-          t_number: Number(row['T/N']),
-          endmill_code: row['Tool code'],
-          endmill_name: row.Type,
-          specifications: row['Tool name'],
-          tool_life: Number(row['Tool life']) || 2000
+          t_number: Number(row['T Number']),
+          endmill_code: row['Endmill Code'],
+          endmill_name: row['Endmill Name'],
+          specifications: row['Specifications'] || '',
+          tool_life: Number(row['Tool Life']) || 2000
         }
 
         camSheetMap.get(key)!.endmills.push(endmill)
@@ -223,12 +269,12 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
               <div className="grid grid-cols-2 gap-2">
                 <div><code className="bg-blue-200 px-1 rounded">Model</code> - 모델명</div>
                 <div><code className="bg-blue-200 px-1 rounded">Process</code> - 공정</div>
-                <div><code className="bg-blue-200 px-1 rounded">Cam version</code> - CAM 버전</div>
-                <div><code className="bg-blue-200 px-1 rounded">T/N</code> - T번호</div>
-                <div><code className="bg-blue-200 px-1 rounded">Type</code> - 앤드밀 타입</div>
-                <div><code className="bg-blue-200 px-1 rounded">Tool name</code> - 앤드밀 이름</div>
-                <div><code className="bg-blue-200 px-1 rounded">Tool life</code> - Tool Life</div>
-                <div><code className="bg-blue-200 px-1 rounded">Tool code</code> - 앤드밀 코드</div>
+                <div><code className="bg-blue-200 px-1 rounded">CAM Version</code> - CAM 버전</div>
+                <div><code className="bg-blue-200 px-1 rounded">T Number</code> - T번호</div>
+                <div><code className="bg-blue-200 px-1 rounded">Endmill Code</code> - 앤드밀 코드</div>
+                <div><code className="bg-blue-200 px-1 rounded">Endmill Name</code> - 앤드밀 타입</div>
+                <div><code className="bg-blue-200 px-1 rounded">Specifications</code> - 앤드밀 상세사양</div>
+                <div><code className="bg-blue-200 px-1 rounded">Tool Life</code> - Tool Life</div>
               </div>
             </div>
           </div>
@@ -246,7 +292,7 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
                   </ul>
                 </div>
               )}
-              
+
               {validationResult.warnings.length > 0 && (
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
                   <h4 className="font-medium text-yellow-900 mb-2">⚠️ 경고 ({validationResult.warnings.length}개)</h4>
@@ -257,11 +303,54 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
                   </ul>
                 </div>
               )}
-              
+
               {validationResult.isValid && (
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg mb-4">
                   <h4 className="font-medium text-green-900">✅ 검증 통과</h4>
-                  <p className="text-sm text-green-800">데이터가 올바른 형식입니다. 변환을 진행합니다.</p>
+                  <p className="text-sm text-green-800">데이터가 올바른 형식입니다. 중복 확인을 진행합니다.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 중복 확인 결과 */}
+          {duplicateInfo && (
+            <div className="mt-6">
+              {duplicateInfo.duplicates.length > 0 && (
+                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg mb-4">
+                  <h4 className="font-medium text-orange-900 mb-2">
+                    🔄 중복 CAM Sheet 발견 ({duplicateInfo.duplicates.length}개)
+                  </h4>
+                  <p className="text-sm text-orange-800 mb-2">
+                    다음 CAM Sheet들은 이미 등록되어 있어 제외됩니다:
+                  </p>
+                  <ul className="text-sm text-orange-800 space-y-1">
+                    {duplicateInfo.duplicates.map((duplicate, index) => (
+                      <li key={index}>• {duplicate}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {duplicateInfo.newSheets.length > 0 && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                  <h4 className="font-medium text-blue-900">
+                    ✨ 새로 등록될 CAM Sheet ({duplicateInfo.newSheets.length}개)
+                  </h4>
+                  <p className="text-sm text-blue-800">
+                    기존 데이터는 유지되고 새로운 CAM Sheet만 추가됩니다.
+                  </p>
+                </div>
+              )}
+
+              {duplicateInfo.newSheets.length === 0 && duplicateInfo.duplicates.length > 0 && (
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg mb-4">
+                  <h4 className="font-medium text-gray-900">
+                    ℹ️ 새로 등록될 CAM Sheet가 없습니다
+                  </h4>
+                  <p className="text-sm text-gray-700">
+                    업로드된 모든 CAM Sheet가 이미 등록되어 있습니다.
+                  </p>
                 </div>
               )}
             </div>
@@ -339,7 +428,10 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
                 onClick={handleImport}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
               >
-                {parsedCAMSheets.length}개 CAM Sheet 등록
+                {parsedCAMSheets.length}개 새로운 CAM Sheet 등록
+                {duplicateInfo?.duplicates && duplicateInfo.duplicates.length > 0 &&
+                  ` (${duplicateInfo.duplicates.length}개 중복 제외)`
+                }
               </button>
             )}
           </div>

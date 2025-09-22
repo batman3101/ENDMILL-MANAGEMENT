@@ -99,54 +99,12 @@ export default function ReportsPage() {
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">최근 생성된 리포트</h2>
         </div>
-        <div className="divide-y divide-gray-200">
-          <div className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                📊
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">2024년 1월 월간 리포트</p>
-                <p className="text-sm text-gray-500">2024-02-01 생성 • 총 156건의 교체 기록</p>
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              <button className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded">다운로드</button>
-              <button className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded">보기</button>
-            </div>
+        <div className="p-8 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
+            <span className="text-2xl">📊</span>
           </div>
-
-          <div className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                💰
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">PA1 모델 비용 분석 리포트</p>
-                <p className="text-sm text-gray-500">2024-01-28 생성 • 절약된 비용: 2,350,000 VND</p>
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              <button className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded">다운로드</button>
-              <button className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded">보기</button>
-            </div>
-          </div>
-
-          <div className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                ⏱️
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Tool Life 성능 분석</p>
-                <p className="text-sm text-gray-500">2024-01-25 생성 • 평균 수명: 2,340회</p>
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              <button className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded">다운로드</button>
-              <button className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded">보기</button>
-            </div>
-          </div>
+          <p className="text-lg text-gray-600 mb-2">생성된 리포트가 없습니다</p>
+          <p className="text-sm text-gray-500">위에서 리포트 설정 후 '리포트 생성' 버튼을 클릭하여 새 리포트를 생성하세요.</p>
         </div>
       </div>
     </div>

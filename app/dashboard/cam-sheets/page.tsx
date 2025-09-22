@@ -24,25 +24,64 @@ export default function CAMSheetsPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [showExcelUploader, setShowExcelUploader] = useState(false)
   const [selectedSheet, setSelectedSheet] = useState<CAMSheet | null>(null)
+  const [editingSheet, setEditingSheet] = useState<CAMSheet | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [modelFilter, setModelFilter] = useState('')
   const [processFilter, setProcessFilter] = useState('')
+  const [sortField, setSortField] = useState<'model' | 'process' | 'cam_version' | 'endmillCount' | 'updated_at'>('updated_at')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
   // 설정에서 값 가져오기
   const { settings } = useSettings()
   const availableProcesses = settings.equipment.processes
 
-  // 필터링된 CAM Sheet 목록
-  const filteredSheets = camSheets.filter(sheet => {
-        const matchesSearch = searchTerm === '' ||
-      sheet.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sheet.cam_version.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesModel = modelFilter === '' || sheet.model === modelFilter
-    const matchesProcess = processFilter === '' || sheet.process === processFilter
-    
-    return matchesSearch && matchesModel && matchesProcess
-  })
+  // 필터링 및 정렬된 CAM Sheet 목록
+  const filteredSheets = camSheets
+    .filter(sheet => {
+      const matchesSearch = searchTerm === '' ||
+        sheet.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sheet.cam_version.toLowerCase().includes(searchTerm.toLowerCase())
+
+      const matchesModel = modelFilter === '' || sheet.model === modelFilter
+      const matchesProcess = processFilter === '' || sheet.process === processFilter
+
+      return matchesSearch && matchesModel && matchesProcess
+    })
+    .sort((a, b) => {
+      let aVal: any
+      let bVal: any
+
+      switch(sortField) {
+        case 'model':
+          aVal = a.model
+          bVal = b.model
+          break
+        case 'process':
+          aVal = a.process
+          bVal = b.process
+          break
+        case 'cam_version':
+          aVal = a.cam_version
+          bVal = b.cam_version
+          break
+        case 'endmillCount':
+          aVal = (a.cam_sheet_endmills || a.endmills || []).length
+          bVal = (b.cam_sheet_endmills || b.endmills || []).length
+          break
+        case 'updated_at':
+          aVal = new Date(a.updated_at).getTime()
+          bVal = new Date(b.updated_at).getTime()
+          break
+        default:
+          return 0
+      }
+
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : -1
+      } else {
+        return aVal < bVal ? 1 : -1
+      }
+    })
 
   // 인사이트 데이터 계산
   const calculateInsights = () => {
@@ -67,8 +106,8 @@ export default function CAMSheetsPage() {
       }
     }
 
-    // 1. Tool Life 예측 정확도 (샘플 계산)
-    const toolLifeAccuracy = Math.round(85 + Math.random() * 10) // 85-95% 범위
+    // 1. Tool Life 예측 정확도 (실제 계산 필요)
+    const toolLifeAccuracy = 90 // 기본값으로 설정
 
     // 2. 교체 주기 분석 (시간 단위)
     const allEndmills = camSheets.flatMap(sheet => sheet.cam_sheet_endmills || [])
@@ -76,18 +115,18 @@ export default function CAMSheetsPage() {
       ? Math.round((allEndmills.reduce((acc, endmill) => acc + (endmill.tool_life / 60), 0) / allEndmills.length) * 10) / 10
       : 0
 
-    // 앤드밀 타입별 교체 주기 (시간 단위)
+    // 앤드밀 타입별 교체 주기 (실제 계산 필요)
     const endmillTypeIntervals = {
-      FLAT: Math.round((32 + Math.random() * 8) * 10) / 10,
-      BALL: Math.round((28 + Math.random() * 6) * 10) / 10,
-      'T-CUT': Math.round((35 + Math.random() * 10) * 10) / 10
+      FLAT: 35.0,
+      BALL: 30.0,
+      'T-CUT': 40.0
     }
 
-    // 3. 재고 연동률
+    // 3. 재고 연동률 (실제 재고 데이터와 연동 필요)
     const totalRegisteredEndmills = allEndmills.length
-    const securedEndmills = Math.floor(totalRegisteredEndmills * (0.88 + Math.random() * 0.08))
+    const securedEndmills = Math.floor(totalRegisteredEndmills * 0.90) // 90% 기본값
     const shortageEndmills = totalRegisteredEndmills - securedEndmills
-    const inventoryLinkage = totalRegisteredEndmills > 0 
+    const inventoryLinkage = totalRegisteredEndmills > 0
       ? Math.round((securedEndmills / totalRegisteredEndmills) * 100)
       : 0
 
@@ -100,11 +139,11 @@ export default function CAMSheetsPage() {
       ? Math.round((estimatedStandardEndmills / totalUniqueEndmills) * 100)
       : 0
 
-    // 공정별 정확도
+    // 공정별 정확도 (실제 계산 필요)
     const processAccuracy = {
-      'CNC1': Math.round(85 + Math.random() * 8),
-      'CNC2': Math.round(90 + Math.random() * 8),
-      'CNC2-1': Math.round(82 + Math.random() * 8)
+      'CNC1': 88,
+      'CNC2': 92,
+      'CNC2-1': 85
     }
 
     return {
@@ -127,6 +166,16 @@ export default function CAMSheetsPage() {
       )
     : 'CNC1'
   const bestProcess = [bestProcessKey, insights.processAccuracy[bestProcessKey] || 0]
+
+  // 정렬 처리
+  const handleSort = (field: 'model' | 'process' | 'cam_version' | 'endmillCount' | 'updated_at') => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+  }
 
   // CAM Sheet 생성 처리
   const handleCreateCAMSheet = async (data: any) => {
@@ -178,15 +227,37 @@ export default function CAMSheetsPage() {
     }
   }
 
+  // CAM Sheet 수정 처리
+  const handleUpdateCAMSheet = async (data: any) => {
+    if (!editingSheet) return
+
+    const confirmed = await confirmation.showConfirmation(
+      createSaveConfirmation(`${data.model} - ${data.process} CAM Sheet 수정`)
+    )
+
+    if (confirmed) {
+      updateCAMSheet({
+        id: editingSheet.id,
+        model: data.model,
+        process: data.process,
+        cam_version: data.camVersion || data.cam_version,
+        version_date: data.versionDate || data.version_date,
+        endmills: data.endmills
+      })
+      setEditingSheet(null)
+      showSuccess('수정 완료', 'CAM Sheet가 성공적으로 수정되었습니다.')
+    }
+  }
+
   // CAM Sheet 삭제
   const handleDelete = async (id: string) => {
     const targetSheet = camSheets.find(sheet => sheet.id === id)
     if (!targetSheet) return
-    
+
     const confirmed = await confirmation.showConfirmation(
       createDeleteConfirmation(`${targetSheet.model} - ${targetSheet.process} CAM Sheet`)
     )
-    
+
     if (confirmed) {
       deleteCAMSheet(id)
       showSuccess('삭제 완료', 'CAM Sheet가 성공적으로 삭제되었습니다.')
@@ -436,27 +507,81 @@ export default function CAMSheetsPage() {
 
       {/* CAM Sheet 목록 */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b">
+        <div className="px-6 py-4 border-b flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">CAM Sheet 목록</h2>
+          <div className="text-sm text-gray-500">
+            총 {filteredSheets.length}개
+            {sortField && (
+              <span className="ml-2 text-blue-600">
+                ({
+                  sortField === 'model' ? '모델' :
+                  sortField === 'process' ? '공정' :
+                  sortField === 'cam_version' ? 'CAM 버전' :
+                  sortField === 'endmillCount' ? '앤드밀 개수' :
+                  '마지막 수정'
+                } {sortOrder === 'asc' ? '오름차순' : '내림차순'})
+              </span>
+            )}
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  모델
+                  <button
+                    onClick={() => handleSort('model')}
+                    className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+                  >
+                    모델
+                    <span className={`transition-colors ${sortField === 'model' ? 'text-blue-600' : 'text-gray-400'}`}>
+                      {sortField === 'model' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}
+                    </span>
+                  </button>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  공정
+                  <button
+                    onClick={() => handleSort('process')}
+                    className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+                  >
+                    공정
+                    <span className={`transition-colors ${sortField === 'process' ? 'text-blue-600' : 'text-gray-400'}`}>
+                      {sortField === 'process' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}
+                    </span>
+                  </button>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  CAM 버전
+                  <button
+                    onClick={() => handleSort('cam_version')}
+                    className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+                  >
+                    CAM 버전
+                    <span className={`transition-colors ${sortField === 'cam_version' ? 'text-blue-600' : 'text-gray-400'}`}>
+                      {sortField === 'cam_version' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}
+                    </span>
+                  </button>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  등록 앤드밀
+                  <button
+                    onClick={() => handleSort('endmillCount')}
+                    className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+                  >
+                    등록 앤드밀
+                    <span className={`transition-colors ${sortField === 'endmillCount' ? 'text-blue-600' : 'text-gray-400'}`}>
+                      {sortField === 'endmillCount' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}
+                    </span>
+                  </button>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  마지막 수정
+                  <button
+                    onClick={() => handleSort('updated_at')}
+                    className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+                  >
+                    마지막 수정
+                    <span className={`transition-colors ${sortField === 'updated_at' ? 'text-blue-600' : 'text-gray-400'}`}>
+                      {sortField === 'updated_at' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}
+                    </span>
+                  </button>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   작업
@@ -497,7 +622,12 @@ export default function CAMSheetsPage() {
                     >
                       상세
                     </button>
-                    <button className="text-green-600 hover:text-green-800 mr-3">수정</button>
+                    <button
+                      onClick={() => setEditingSheet(sheet)}
+                      className="text-green-600 hover:text-green-800 mr-3"
+                    >
+                      수정
+                    </button>
                     <button 
                       onClick={() => handleDelete(sheet.id)}
                       className="text-red-600 hover:text-red-800"
@@ -554,19 +684,43 @@ export default function CAMSheetsPage() {
                     <tr>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">T번호</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">앤드밀 코드</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">앤드밀 이름</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">사용 현황</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tool Life</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {(selectedSheet.cam_sheet_endmills || []).map((endmill: EndmillInfo) => (
-                      <tr key={endmill.t_number}>
+                      <tr key={endmill.t_number} className="hover:bg-gray-50">
                         <td className="px-4 py-2 text-sm font-medium">T{endmill.t_number.toString().padStart(2, '0')}</td>
-                        <td className="px-4 py-2 text-sm">{endmill.endmill_code}</td>
+                        <td className="px-4 py-2 text-sm">
+                          <button
+                            onClick={() => {
+                              // 엔드밀 관리 페이지로 이동하면서 해당 엔드밀 검색
+                              const url = `/dashboard/endmill?search=${encodeURIComponent(endmill.endmill_code)}`
+                              window.location.href = url
+                            }}
+                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            {endmill.endmill_code}
+                          </button>
+                        </td>
                         <td className="px-4 py-2 text-sm">{endmill.endmill_name}</td>
-                        <td className="px-4 py-2 text-sm">{endmill.specifications}</td>
-                        <td className="px-4 py-2 text-sm">{endmill.tool_life.toLocaleString()}회</td>
+                        <td className="px-4 py-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              활성
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              현재 모델: {selectedSheet.model}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2 text-sm">
+                          <span className="font-medium text-green-600">
+                            {endmill.tool_life.toLocaleString()}회
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -590,6 +744,27 @@ export default function CAMSheetsPage() {
         <CAMSheetForm
           onSubmit={handleCreateCAMSheet}
           onCancel={() => setShowAddForm(false)}
+        />
+      )}
+
+      {/* CAM Sheet 수정 폼 */}
+      {editingSheet && (
+        <CAMSheetForm
+          onSubmit={handleUpdateCAMSheet}
+          onCancel={() => setEditingSheet(null)}
+          initialData={{
+            model: editingSheet.model,
+            process: editingSheet.process,
+            camVersion: editingSheet.cam_version,
+            versionDate: editingSheet.version_date,
+            endmills: (editingSheet.cam_sheet_endmills || editingSheet.endmills || []).map((endmill: any) => ({
+              tNumber: endmill.t_number,
+              endmillCode: endmill.endmill_code,
+              endmillName: endmill.endmill_name,
+              specifications: endmill.specifications || '',
+              toolLife: endmill.tool_life
+            }))
+          }}
         />
       )}
 

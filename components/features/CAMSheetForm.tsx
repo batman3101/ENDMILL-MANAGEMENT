@@ -151,7 +151,12 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
     }
 
     onSubmit(formData)
-    showSuccess('CAM Sheet 저장', '새로운 CAM Sheet가 성공적으로 등록되었습니다.')
+    showSuccess(
+      initialData ? 'CAM Sheet 수정 완료' : 'CAM Sheet 저장',
+      initialData
+        ? 'CAM Sheet가 성공적으로 수정되었습니다.'
+        : '새로운 CAM Sheet가 성공적으로 등록되었습니다.'
+    )
   }
 
   return (
@@ -159,7 +164,9 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
       <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">CAM Sheet 등록</h3>
+            <h3 className="text-lg font-medium">
+              {initialData ? 'CAM Sheet 수정' : 'CAM Sheet 등록'}
+            </h3>
             <button 
               onClick={onCancel}
               className="text-gray-400 hover:text-gray-600"
@@ -377,7 +384,7 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              저장
+              {initialData ? '수정' : '저장'}
             </button>
           </div>
         </form>

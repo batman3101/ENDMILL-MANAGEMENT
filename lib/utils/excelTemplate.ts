@@ -5,32 +5,32 @@ export const EXCEL_TEMPLATE_DATA = [
   {
     'Model': 'NPA1',
     'Process': 'CNC2',
-    'Cam version': 'VE30',
-    'T/N': 1,
-    'Type': 'DRILL',
-    'Tool name': 'D2 DR',
-    'Tool life': 2000,
-    'Tool code': 'AT002'
-  },
-  {
-    'Model': 'NPA1',
-    'Process': 'CNC2', 
-    'Cam version': 'VE30',
-    'T/N': 2,
-    'Type': 'FLAT',
-    'Tool name': 'D8x18FL FLAT EM',
-    'Tool life': 1000,
-    'Tool code': 'AT003'
+    'CAM Version': 'VE30',
+    'T Number': 1,
+    'Endmill Code': 'AT002',
+    'Endmill Name': 'DRILL',
+    'Specifications': 'D2 DR',
+    'Tool Life': 2000
   },
   {
     'Model': 'NPA1',
     'Process': 'CNC2',
-    'Cam version': 'VE30', 
-    'T/N': 3,
-    'Type': 'FLAT',
-    'Tool name': 'D6x13FL FLAT EM',
-    'Tool life': 2000,
-    'Tool code': 'AT004'
+    'CAM Version': 'VE30',
+    'T Number': 2,
+    'Endmill Code': 'AT003',
+    'Endmill Name': 'FLAT',
+    'Specifications': 'D8x18FL FLAT EM',
+    'Tool Life': 1000
+  },
+  {
+    'Model': 'NPA1',
+    'Process': 'CNC2',
+    'CAM Version': 'VE30',
+    'T Number': 3,
+    'Endmill Code': 'AT004',
+    'Endmill Name': 'FLAT',
+    'Specifications': 'D6x13FL FLAT EM',
+    'Tool Life': 2000
   }
 ]
 
@@ -46,12 +46,12 @@ export const downloadExcelTemplate = () => {
   const colWidths = [
     { wch: 12 }, // Model
     { wch: 12 }, // Process
-    { wch:15 }, // Cam version
-    { wch: 8 },  // T/N
-    { wch: 12 }, // Type
-    { wch: 25 }, // Tool name
-    { wch: 12 }, // Tool life
-    { wch: 12 }  // Tool code
+    { wch: 15 }, // CAM Version
+    { wch: 10 }, // T Number
+    { wch: 15 }, // Endmill Code
+    { wch: 15 }, // Endmill Name
+    { wch: 25 }, // Specifications
+    { wch: 12 }  // Tool Life
   ]
   worksheet['!cols'] = colWidths
   
@@ -67,58 +67,68 @@ export const downloadExcelTemplate = () => {
 }
 
 // 엑셀 데이터 검증 함수
-export const validateExcelData = (data: any[]): {
+export const validateExcelData = async (data: any[], validationOptions?: {
+  validProcesses?: string[]
+  validModels?: string[]
+}): Promise<{
   isValid: boolean
   errors: string[]
   warnings: string[]
-} => {
+}> => {
   const errors: string[] = []
   const warnings: string[] = []
-  
+
   if (!data || data.length === 0) {
     errors.push('데이터가 없습니다.')
     return { isValid: false, errors, warnings }
   }
-  
+
+  // 동적 검증 옵션이 없으면 기본값 사용
+  const validProcesses = validationOptions?.validProcesses || ['CNC1', 'CNC2', 'CNC2-1']
+  const validModels = validationOptions?.validModels || ['PA1', 'PA2', 'PS', 'B7', 'Q7']
+
   // 필수 컬럼 확인
-  const requiredColumns = ['Model', 'Process', 'Cam version', 'T/N', 'Type', 'Tool name', 'Tool code']
+  const requiredColumns = ['Model', 'Process', 'CAM Version', 'T Number', 'Endmill Code', 'Endmill Name']
   const firstRow = data[0]
   const missingColumns = requiredColumns.filter(col => !(col in firstRow))
-  
+
   if (missingColumns.length > 0) {
     errors.push(`필수 컬럼이 누락되었습니다: ${missingColumns.join(', ')}`)
   }
-  
+
   // 데이터 유효성 검사
   data.forEach((row, index) => {
     const rowNum = index + 2 // 엑셀의 행 번호 (헤더 포함)
-    
+
     // 필수 필드 체크
     if (!row.Model) errors.push(`${rowNum}행: Model이 비어있습니다.`)
     if (!row.Process) errors.push(`${rowNum}행: Process가 비어있습니다.`)
-    if (!row['Cam version']) errors.push(`${rowNum}행: Cam version이 비어있습니다.`)
-    if (!row['T/N']) errors.push(`${rowNum}행: T/N이 비어있습니다.`)
-    if (!row.Type) errors.push(`${rowNum}행: Type이 비어있습니다.`)
-    if (!row['Tool name']) errors.push(`${rowNum}행: Tool name이 비어있습니다.`)
-    if (!row['Tool code']) errors.push(`${rowNum}행: Tool code가 비어있습니다.`)
-    
-    // T/N 범위 체크
-    if (row['T/N'] && (row['T/N'] < 1 || row['T/N'] > 21)) {
-      errors.push(`${rowNum}행: T/N은 1-21 범위여야 합니다. (현재: ${row['T/N']})`)
+    if (!row['CAM Version']) errors.push(`${rowNum}행: CAM Version이 비어있습니다.`)
+    if (!row['T Number']) errors.push(`${rowNum}행: T Number가 비어있습니다.`)
+    if (!row['Endmill Code']) errors.push(`${rowNum}행: Endmill Code가 비어있습니다.`)
+    if (!row['Endmill Name']) errors.push(`${rowNum}행: Endmill Name이 비어있습니다.`)
+
+    // T Number 범위 체크
+    if (row['T Number'] && (row['T Number'] < 1 || row['T Number'] > 21)) {
+      errors.push(`${rowNum}행: T Number는 1-21 범위여야 합니다. (현재: ${row['T Number']})`)
     }
-    
+
     // Tool Life 체크
-    if (row['Tool life'] && row['Tool life'] < 0) {
-      warnings.push(`${rowNum}행: Tool Life가 음수입니다. (${row['Tool life']})`)
+    if (row['Tool Life'] && row['Tool Life'] < 0) {
+      warnings.push(`${rowNum}행: Tool Life가 음수입니다. (${row['Tool Life']})`)
     }
-    
-    // Process 값 체크
-    const validProcesses = ['CNC1', 'CNC2', 'CNC2-1', 'CNC1', 'CNC2']
+
+    // Process 값 체크 (동적)
     if (row.Process && !validProcesses.includes(row.Process)) {
-      warnings.push(`${rowNum}행: Process 값을 확인해주세요. (${row.Process})`)
+      warnings.push(`${rowNum}행: Process 값을 확인해주세요. (${row.Process}) - 유효한 값: ${validProcesses.join(', ')}`)
+    }
+
+    // Model 값 체크 (동적)
+    if (row.Model && !validModels.includes(row.Model)) {
+      warnings.push(`${rowNum}행: Model 값을 확인해주세요. (${row.Model}) - 유효한 값: ${validModels.join(', ')}`)
     }
   })
-  
+
   return {
     isValid: errors.length === 0,
     errors,
@@ -215,19 +225,26 @@ export const downloadEndmillMasterTemplate = () => {
 }
 
 // 앤드밀 마스터 데이터 검증
-export const validateEndmillMasterData = (data: any[]): {
+export const validateEndmillMasterData = async (data: any[], validationOptions?: {
+  validCategories?: string[]
+  validSuppliers?: string[]
+}): Promise<{
   isValid: boolean
   errors: string[]
   warnings: string[]
   validData: any[]
-} => {
+}> => {
   const errors: string[] = []
   const warnings: string[] = []
   const validData: any[] = []
 
+  // 동적 검증 옵션이 없으면 기본값 사용
+  const validCategories = validationOptions?.validCategories || ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL']
+  const validSuppliers = validationOptions?.validSuppliers || ['Kyocera', 'Mitsubishi', 'Sandvik', 'OSG', 'YG-1', 'Guhring']
+
   // 필수 컬럼 검증
   const requiredColumns = [
-    '앤드밀코드', 'Type', '카테고리', '앤드밀이름', '직경(mm)', 
+    '앤드밀코드', 'Type', '카테고리', '앤드밀이름', '직경(mm)',
     '날수', '코팅', '소재', '표준수명', '최소재고', '최대재고'
   ]
 
@@ -246,7 +263,7 @@ export const validateEndmillMasterData = (data: any[]): {
   // 데이터 행별 검증
   data.forEach((row, index) => {
     const rowNumber = index + 2 // 엑셀 행 번호 (헤더 포함)
-    
+
     // 필수 필드 검증
     if (!row['앤드밀코드'] || row['앤드밀코드'].toString().trim() === '') {
       errors.push(`${rowNumber}행: 앤드밀 코드가 필요합니다.`)
@@ -258,10 +275,9 @@ export const validateEndmillMasterData = (data: any[]): {
       return
     }
 
-    // 카테고리 검증
-    const validCategories = ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL']
+    // 카테고리 검증 (동적)
     if (!validCategories.includes(row['카테고리'])) {
-      errors.push(`${rowNumber}행: 카테고리는 ${validCategories.join(', ')} 중 하나여야 합니다.`)
+      errors.push(`${rowNumber}행: 카테고리는 ${validCategories.join(', ')} 중 하나여야 합니다. (현재: ${row['카테고리']})`)
       return
     }
 
@@ -293,13 +309,21 @@ export const validateEndmillMasterData = (data: any[]): {
       warnings.push(`${rowNumber}행: 품질등급은 ${validGrades.join(', ')} 중 하나여야 합니다.`)
     }
 
-    // 공급업체 단가 검증
+    // 공급업체 검증 (동적)
     for (let i = 1; i <= 3; i++) {
       const supplierField = `공급업체${i}`
       const priceField = `공급업체${i}단가(VND)`
-      
-      if (row[supplierField] && (!row[priceField] || isNaN(Number(row[priceField])) || Number(row[priceField]) <= 0)) {
-        warnings.push(`${rowNumber}행: ${supplierField}가 있으면 ${priceField}도 양수로 입력해야 합니다.`)
+
+      if (row[supplierField]) {
+        // 공급업체명 검증
+        if (!validSuppliers.includes(row[supplierField])) {
+          warnings.push(`${rowNumber}행: ${supplierField} 값을 확인해주세요. (${row[supplierField]}) - 유효한 값: ${validSuppliers.join(', ')}`)
+        }
+
+        // 단가 검증
+        if (!row[priceField] || isNaN(Number(row[priceField])) || Number(row[priceField]) <= 0) {
+          warnings.push(`${rowNumber}행: ${supplierField}가 있으면 ${priceField}도 양수로 입력해야 합니다.`)
+        }
       }
     }
 

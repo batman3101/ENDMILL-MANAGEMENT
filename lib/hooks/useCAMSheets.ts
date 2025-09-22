@@ -8,6 +8,7 @@ import { Database } from '../types/database'
 // Database 타입에서 가져오기
 type CAMSheet = Database['public']['Tables']['cam_sheets']['Row'] & {
   cam_sheet_endmills?: Database['public']['Tables']['cam_sheet_endmills']['Row'][]
+  endmills?: Database['public']['Tables']['cam_sheet_endmills']['Row'][] // API에서 반환하는 구조 지원
 }
 
 // 타입 export
@@ -61,8 +62,18 @@ export const useCAMSheets = (filter?: CAMSheetFilter) => {
       if (!result.success) {
         throw new Error(result.error || 'CAM Sheet 데이터를 불러오는데 실패했습니다.')
       }
-      
-      return result.data as CAMSheet[]
+
+      console.log('CAM Sheet API 응답 데이터:', result.data)
+
+      // 데이터 정규화: endmills 필드를 cam_sheet_endmills로 매핑
+      const normalizedData = result.data.map((sheet: any) => ({
+        ...sheet,
+        cam_sheet_endmills: sheet.endmills || sheet.cam_sheet_endmills || []
+      }))
+
+      console.log('정규화된 CAM Sheet 데이터:', normalizedData)
+
+      return normalizedData as CAMSheet[]
     }
   })
 

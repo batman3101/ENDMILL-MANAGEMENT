@@ -73,7 +73,9 @@ export function AuthProvider(props: { children: ReactNode }) {
       
       // 임시 인증 로그아웃
       TempAuthService.signOut()
-      
+      // 임시 세션 제거
+      TempSessionManager.clearSession()
+
       setUser(null)
       setSession(null)
       showSuccess('로그아웃 완료', '안전하게 로그아웃되었습니다.')
@@ -174,34 +176,36 @@ export function AuthProvider(props: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true
-    
+
     // 초기 세션 상태 확인
     const checkSession = async () => {
       try {
-        console.log('🔍 세션 확인 시작...')
+        // 우선 임시 세션 확인으로 빠른 응답
+        const tempUser = TempSessionManager.getCurrentUser()
+        if (tempUser && mounted) {
+          console.log('✅ 임시 세션으로 즉시 로그인 상태 복원')
+          setUser({
+            id: tempUser.id,
+            email: tempUser.email,
+            name: tempUser.name,
+            department: tempUser.department,
+            position: tempUser.position,
+            shift: tempUser.shift,
+            role: tempUser.role,
+            language: 'ko'
+          })
+          setLoading(false) // 임시 세션으로 우선 로딩 해제
+        }
+
+        console.log('🔍 Supabase 세션 확인 시작...')
         const { data: { session }, error } = await supabase.auth.getSession()
-        
+
         if (!mounted) return
-        
+
         if (error) {
           console.error('세션 확인 오류:', error)
-          // Supabase 세션 확인 실패 시 임시 인증 확인
-          const tempUser = TempSessionManager.getCurrentUser()
-          if (tempUser) {
-            console.log('✅ 임시 세션 발견')
-            setUser({
-              id: tempUser.id,
-              email: tempUser.email,
-              name: tempUser.name,
-              department: tempUser.department,
-              position: tempUser.position,
-              shift: tempUser.shift,
-              role: tempUser.role,
-              language: 'ko'
-            })
-            // 임시 세션 저장 확인
-            TempSessionManager.saveSession(tempUser)
-          } else {
+          // Supabase 세션 확인 실패 시 임시 인증만 사용
+          if (!tempUser) {
             setUser(null)
             setSession(null)
           }
@@ -220,57 +224,40 @@ export function AuthProvider(props: { children: ReactNode }) {
             language: session.user.user_metadata?.language || 'ko'
           }
           setUser(userProfile)
-        } else {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('❌ Supabase 세션 없음, 임시 인증 확인...')
-          }
-          // Supabase 세션이 없을 때 임시 인증 확인
-          const tempUser = TempSessionManager.getCurrentUser()
-          if (tempUser) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('✅ 임시 세션 발견')
-            }
-            setUser({
-              id: tempUser.id,
-              email: tempUser.email,
-              name: tempUser.name,
-              department: tempUser.department,
-              position: tempUser.position,
-              shift: tempUser.shift,
-              role: tempUser.role,
-              language: 'ko'
-            })
-            // 임시 세션 저장 확인
-            TempSessionManager.saveSession(tempUser)
-          } else {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('❌ 임시 세션도 없음')
-            }
-            setUser(null)
-            setSession(null)
-          }
+          // Supabase 세션이 있으면 임시 세션도 업데이트
+          TempSessionManager.saveSession({
+            id: userProfile.id,
+            email: userProfile.email,
+            name: userProfile.name || '',
+            department: userProfile.department || '',
+            position: userProfile.position || '',
+            shift: userProfile.shift || '',
+            role: userProfile.role || 'user'
+          })
+        } else if (!tempUser) {
+          // Supabase 세션도 없고 임시 세션도 없는 경우만 null 설정
+          console.log('❌ 모든 세션 없음')
+          setUser(null)
+          setSession(null)
         }
       } catch (error) {
-          console.error('세션 확인 오류:', error)
-          // 오류 발생 시에도 임시 인증 확인
+        console.error('세션 확인 오류:', error)
+        // 오류 발생 시에도 임시 인증 확인
+        if (!tempUser) {
           try {
-            const tempUser = TempSessionManager.getCurrentUser()
-            if (tempUser && mounted) {
-              if (process.env.NODE_ENV === 'development') {
-                console.log('✅ 오류 시 임시 세션 발견')
-              }
+            const tempUserFallback = TempSessionManager.getCurrentUser()
+            if (tempUserFallback && mounted) {
+              console.log('✅ 오류 시 임시 세션 발견')
               setUser({
-                id: tempUser.id,
-                email: tempUser.email,
-                name: tempUser.name,
-                department: tempUser.department,
-                position: tempUser.position,
-                shift: tempUser.shift,
-                role: tempUser.role,
+                id: tempUserFallback.id,
+                email: tempUserFallback.email,
+                name: tempUserFallback.name,
+                department: tempUserFallback.department,
+                position: tempUserFallback.position,
+                shift: tempUserFallback.shift,
+                role: tempUserFallback.role,
                 language: 'ko'
               })
-              // 임시 세션 저장 확인
-              TempSessionManager.saveSession(tempUser)
             } else if (mounted) {
               setUser(null)
               setSession(null)
@@ -282,11 +269,10 @@ export function AuthProvider(props: { children: ReactNode }) {
               setSession(null)
             }
           }
+        }
       } finally {
         if (mounted) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ 세션 확인 완료, loading 해제')
-          }
+          console.log('✅ 세션 확인 완료, loading 해제')
           setLoading(false)
         }
       }
@@ -356,6 +342,16 @@ export function AuthProvider(props: { children: ReactNode }) {
 
         if (result.success && result.user) {
           setUser(result.user)
+          // 임시 세션 저장
+          TempSessionManager.saveSession({
+            id: result.user.id,
+            email: result.user.email,
+            name: result.user.name || '',
+            department: result.user.department || '',
+            position: result.user.position || '',
+            shift: result.user.shift || '',
+            role: result.user.role || 'user'
+          })
           await refreshSession()
           showSuccess('로그인 성공', `${result.user.name}님, 환영합니다!`)
           return { success: true }
@@ -429,6 +425,16 @@ export function AuthProvider(props: { children: ReactNode }) {
           language: data.user.user_metadata?.language || 'ko'
         }
         setUser(userProfile)
+        // 임시 세션 저장
+        TempSessionManager.saveSession({
+          id: userProfile.id,
+          email: userProfile.email,
+          name: userProfile.name || '',
+          department: userProfile.department || '',
+          position: userProfile.position || '',
+          shift: userProfile.shift || '',
+          role: userProfile.role || 'user'
+        })
         showSuccess('로그인 성공', `${userProfile.name || '사용자'}님, 환영합니다!`)
         return { success: true }
       }
