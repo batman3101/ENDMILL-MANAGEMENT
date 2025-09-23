@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import * as XLSX from 'xlsx'
 import { validateEndmillExcelData, convertToEndmillDBFormat } from '../../lib/utils/endmillExcelTemplate'
 import { useToast } from '../shared/Toast'
@@ -18,24 +18,46 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { showSuccess, showError, showWarning } = useToast()
 
-  // 카테고리 매핑 (실제로는 DB에서 가져와야 함)
-  const categoryMap = {
-    'FLAT': '85f4f7ba-4de0-49b6-88fc-287b9aa0b11c',
-    'BALL': '37b12c7e-cadc-4cff-aa03-03758b019df0',
-    'T-CUT': '12274d39-846f-42ad-abd3-e7d09bc92130',
-    'C-CUT': 'ad5d6fca-2793-4cf2-ac3b-439e41b30299',
-    'REAMER': 'cba76a21-b768-4072-a7d5-79b769b9c683',
-    'DRILL': 'd5dc475d-927b-4ba6-b9bf-94dd4f3fdb7b',
-    'BULL_NOSE': 'new-uuid-for-bull-nose',
-    'SPECIAL': 'new-uuid-for-special'
-  }
+  // DB에서 동적으로 가져올 매핑 데이터
+  const [categoryMap, setCategoryMap] = useState<Record<string, string>>({})
+  const [supplierMap, setSupplierMap] = useState<Record<string, string>>({})
 
-  // 공급업체 매핑 (실제로는 DB에서 가져와야 함)
-  const supplierMap = {
-    'TOOLEX': 'toolex-uuid-12345',
-    'FULLANDI': 'fullandi-uuid-67890',
-    'ATH': 'ath-uuid-abcdef',
-    'KEOSANG': 'keosang-uuid-fedcba'
+  // 컴포넌트 마운트 시 매핑 데이터 로드
+  useEffect(() => {
+    loadMappingData()
+  }, [])
+
+  const loadMappingData = async () => {
+    try {
+      // 카테고리 매핑 로드
+      const categoryResponse = await fetch('/api/endmill/categories')
+      if (categoryResponse.ok) {
+        const categoryData = await categoryResponse.json()
+        if (categoryData.success) {
+          const catMap: Record<string, string> = {}
+          categoryData.data.forEach((cat: any) => {
+            catMap[cat.code] = cat.id
+          })
+          setCategoryMap(catMap)
+        }
+      }
+
+      // 공급업체 매핑 로드
+      const supplierResponse = await fetch('/api/suppliers')
+      if (supplierResponse.ok) {
+        const supplierData = await supplierResponse.json()
+        if (supplierData.success) {
+          const supMap: Record<string, string> = {}
+          supplierData.data.forEach((sup: any) => {
+            supMap[sup.code] = sup.id
+          })
+          setSupplierMap(supMap)
+        }
+      }
+    } catch (error) {
+      console.error('매핑 데이터 로드 실패:', error)
+      showError('데이터 로드 실패', '카테고리 및 공급업체 정보를 불러오는데 실패했습니다.')
+    }
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {

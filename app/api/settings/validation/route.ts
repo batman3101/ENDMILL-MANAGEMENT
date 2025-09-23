@@ -10,12 +10,12 @@ const supabase = createClient<Database>(
 
 export async function GET(request: NextRequest) {
   try {
-    // 검증에 필요한 모든 옵션들을 병렬로 조회
+    // 실제 DB 테이블에서 데이터를 병렬로 조회
     const [categoriesData, suppliersData, processesData, modelsData] = await Promise.all([
-      getEndmillCategories(),
-      getSuppliers(),
-      getProcesses(),
-      getModels()
+      getEndmillCategoriesFromDB(),
+      getSuppliersFromDB(),
+      getProcessesFromSettings(),
+      getModelsFromSettings()
     ])
 
     return NextResponse.json({
@@ -39,40 +39,39 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 엔드밀 카테고리 조회 (app_settings에서)
-async function getEndmillCategories() {
+// 엔드밀 카테고리 조회 (endmill_categories 테이블에서)
+async function getEndmillCategoriesFromDB() {
   const { data, error } = await supabase
-    .from('app_settings')
-    .select('value')
-    .eq('key', 'inventory.categories')
-    .single()
+    .from('endmill_categories')
+    .select('code')
+    .order('code')
 
-  if (error || !data) {
-    // 기본값 반환
-    return ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL', 'BULL_NOSE', 'SPECIAL']
+  if (error) {
+    console.error('Error fetching endmill categories:', error)
+    return []
   }
 
-  return data.value || ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL', 'BULL_NOSE', 'SPECIAL']
+  return data?.map(item => item.code) || []
 }
 
-// 공급업체 조회 (app_settings에서)
-async function getSuppliers() {
+// 공급업체 조회 (suppliers 테이블에서)
+async function getSuppliersFromDB() {
   const { data, error } = await supabase
-    .from('app_settings')
-    .select('value')
-    .eq('key', 'inventory.suppliers')
-    .single()
+    .from('suppliers')
+    .select('code')
+    .eq('is_active', true)
+    .order('code')
 
-  if (error || !data) {
-    // 기본값 반환
-    return ['TOOLEX', 'FULLANDI', 'ATH', 'KEOSANG']
+  if (error) {
+    console.error('Error fetching suppliers:', error)
+    return []
   }
 
-  return data.value || ['TOOLEX', 'FULLANDI', 'ATH', 'KEOSANG']
+  return data?.map(item => item.code) || []
 }
 
 // 프로세스 목록 조회 (app_settings에서)
-async function getProcesses() {
+async function getProcessesFromSettings() {
   const { data, error } = await supabase
     .from('app_settings')
     .select('value')
@@ -88,7 +87,7 @@ async function getProcesses() {
 }
 
 // 모델 목록 조회 (app_settings에서)
-async function getModels() {
+async function getModelsFromSettings() {
   const { data, error } = await supabase
     .from('app_settings')
     .select('value')
@@ -97,8 +96,8 @@ async function getModels() {
 
   if (error || !data) {
     // 기본값 반환
-    return ['PA1', 'PA2', 'PS', 'B7', 'Q7']
+    return ['PA1', 'R13']
   }
 
-  return data.value || ['PA1', 'PA2', 'PS', 'B7', 'Q7']
+  return data.value || ['PA1', 'R13']
 }

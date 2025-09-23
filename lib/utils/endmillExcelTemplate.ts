@@ -14,13 +14,13 @@ export interface EndmillExcelRow {
   'T Number': number
 }
 
-// 엔드밀 템플릿 데이터
+// 엔드밀 템플릿 데이터 (실제 DB 값 사용)
 export const endmillTemplateData: EndmillExcelRow[] = [
   {
     'Endmill Code': 'EM-F-6',
     'Category': 'FLAT',
     'Name': 'FLAT 6mm 2날',
-    'Supplier': 'TOOLEX',
+    'Supplier': 'SUP001',
     'Unit Cost': 25000,
     'Standard Life': 800,
     'Model': 'PA1',
@@ -32,7 +32,7 @@ export const endmillTemplateData: EndmillExcelRow[] = [
     'Endmill Code': 'EM-B-8',
     'Category': 'BALL',
     'Name': 'BALL 8mm 2날',
-    'Supplier': 'FULLANDI',
+    'Supplier': 'SUP002',
     'Unit Cost': 32000,
     'Standard Life': 600,
     'Model': 'R13',
@@ -44,7 +44,7 @@ export const endmillTemplateData: EndmillExcelRow[] = [
     'Endmill Code': 'EM-T-10',
     'Category': 'T-CUT',
     'Name': 'T-CUT 10mm',
-    'Supplier': 'ATH',
+    'Supplier': 'KORLOY',
     'Unit Cost': 45000,
     'Standard Life': 400,
     'Model': 'PA1',
@@ -68,33 +68,34 @@ export const endmillRequiredColumns = [
   'T Number'
 ]
 
-// 유효한 카테고리 목록 (기본값, validation API에서 최신값 가져옴)
+// 기본값 (validation API 실패 시 폴백용) - 실제 DB에서 가져온 값들
 export const validCategories = [
-  'FLAT',
   'BALL',
-  'T-CUT',
   'C-CUT',
-  'REAMER',
   'DRILL',
-  'BULL_NOSE',
-  'SPECIAL'
+  'FLAT',
+  'REAMER',
+  'T-CUT'
 ]
 
-// 유효한 공급업체 목록 (기본값, validation API에서 최신값 가져옴)
 export const validSuppliers = [
-  'TOOLEX',
-  'FULLANDI',
-  'ATH',
-  'KEOSANG'
+  'ISCAR',
+  'KORLOY',
+  'SUP001',
+  'SUP002',
+  'SUP003',
+  'SUP004',
+  'SUP005',
+  'TAEGUTEC',
+  'YAMAWA',
+  'YGT'
 ]
 
-// 유효한 모델 목록 (기본값, validation API에서 최신값 가져옴)
 export const validModels = [
   'PA1',
   'R13'
 ]
 
-// 유효한 프로세스 목록 (기본값, validation API에서 최신값 가져옴)
 export const validProcesses = [
   'CNC1',
   'CNC2',
@@ -131,9 +132,9 @@ export const downloadEndmillTemplate = () => {
     // 가이드 시트 생성
     const guideData = [
       { 'Column': 'Endmill Code', 'Description': '엔드밀 코드 (예: EM-F-12)', 'Required': 'Yes', 'Example': 'EM-F-6' },
-      { 'Column': 'Category', 'Description': '카테고리', 'Required': 'Yes', 'Example': 'FLAT, BALL, T-CUT, C-CUT, REAMER, DRILL, BULL_NOSE, SPECIAL' },
+      { 'Column': 'Category', 'Description': '카테고리', 'Required': 'Yes', 'Example': 'FLAT, BALL, T-CUT, C-CUT, REAMER, DRILL' },
       { 'Column': 'Name', 'Description': '엔드밀 이름', 'Required': 'Yes', 'Example': 'FLAT 6mm 2날' },
-      { 'Column': 'Supplier', 'Description': '공급업체 코드', 'Required': 'Yes', 'Example': 'TOOLEX, FULLANDI, ATH, KEOSANG' },
+      { 'Column': 'Supplier', 'Description': '공급업체 코드', 'Required': 'Yes', 'Example': 'SUP001, SUP002, KORLOY, TAEGUTEC' },
       { 'Column': 'Unit Cost', 'Description': '단가 (원)', 'Required': 'Yes', 'Example': '25000' },
       { 'Column': 'Standard Life', 'Description': '표준 수명 (회)', 'Required': 'Yes', 'Example': '800' },
       { 'Column': 'Model', 'Description': '장비 모델', 'Required': 'Yes', 'Example': 'PA1, R13' },
