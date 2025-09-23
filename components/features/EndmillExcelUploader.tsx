@@ -25,16 +25,17 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
     'T-CUT': '12274d39-846f-42ad-abd3-e7d09bc92130',
     'C-CUT': 'ad5d6fca-2793-4cf2-ac3b-439e41b30299',
     'REAMER': 'cba76a21-b768-4072-a7d5-79b769b9c683',
-    'DRILL': 'd5dc475d-927b-4ba6-b9bf-94dd4f3fdb7b'
+    'DRILL': 'd5dc475d-927b-4ba6-b9bf-94dd4f3fdb7b',
+    'BULL_NOSE': 'new-uuid-for-bull-nose',
+    'SPECIAL': 'new-uuid-for-special'
   }
 
   // 공급업체 매핑 (실제로는 DB에서 가져와야 함)
   const supplierMap = {
-    'TAEGUTEC': 'ed43a6b5-8c0e-4b31-9d02-5c7a9f1e4d88',
-    'KORLOY': 'f9a1b2c3-4d5e-6f7g-8h9i-0j1k2l3m4n5o',
-    'YG1': 'a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6',
-    'ISCAR': 'b2c3d4e5-f6g7-8h9i-0j1k-l2m3n4o5p6q7',
-    'YAMAWA': 'c3d4e5f6-g7h8-9i0j-1k2l-m3n4o5p6q7r8'
+    'TOOLEX': 'toolex-uuid-12345',
+    'FULLANDI': 'fullandi-uuid-67890',
+    'ATH': 'ath-uuid-abcdef',
+    'KEOSANG': 'keosang-uuid-fedcba'
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,7 +76,7 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
     setLoading(true)
     try {
       const rawData = await parseExcelFile(file)
-      const validation = validateEndmillExcelData(rawData)
+      const validation = await validateEndmillExcelData(rawData)
       setValidationResult(validation)
 
       if (validation.isValid) {

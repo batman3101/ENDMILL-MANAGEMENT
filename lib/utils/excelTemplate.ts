@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx'
 // 엑셀 템플릿 데이터
 export const EXCEL_TEMPLATE_DATA = [
   {
-    'Model': 'NPA1',
+    'Model': 'PA1',
     'Process': 'CNC2',
     'CAM Version': 'VE30',
     'T Number': 1,
@@ -13,7 +13,7 @@ export const EXCEL_TEMPLATE_DATA = [
     'Tool Life': 2000
   },
   {
-    'Model': 'NPA1',
+    'Model': 'PA1',
     'Process': 'CNC2',
     'CAM Version': 'VE30',
     'T Number': 2,
@@ -23,7 +23,7 @@ export const EXCEL_TEMPLATE_DATA = [
     'Tool Life': 1000
   },
   {
-    'Model': 'NPA1',
+    'Model': 'PA1',
     'Process': 'CNC2',
     'CAM Version': 'VE30',
     'T Number': 3,
@@ -239,8 +239,8 @@ export const validateEndmillMasterData = async (data: any[], validationOptions?:
   const validData: any[] = []
 
   // 동적 검증 옵션이 없으면 기본값 사용
-  const validCategories = validationOptions?.validCategories || ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL']
-  const validSuppliers = validationOptions?.validSuppliers || ['Kyocera', 'Mitsubishi', 'Sandvik', 'OSG', 'YG-1', 'Guhring']
+  const validCategories = validationOptions?.validCategories || ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL', 'BULL_NOSE', 'SPECIAL']
+  const validSuppliers = validationOptions?.validSuppliers || ['TOOLEX', 'FULLANDI', 'ATH', 'KEOSANG']
 
   // 필수 컬럼 검증
   const requiredColumns = [

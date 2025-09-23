@@ -39,27 +39,36 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 엔드밀 카테고리 조회
+// 엔드밀 카테고리 조회 (app_settings에서)
 async function getEndmillCategories() {
   const { data, error } = await supabase
-    .from('endmill_categories')
-    .select('code, name_ko, name_vi')
-    .order('code')
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'inventory.categories')
+    .single()
 
-  if (error) throw error
-  return data?.map(item => item.code) || ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL']
+  if (error || !data) {
+    // 기본값 반환
+    return ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL', 'BULL_NOSE', 'SPECIAL']
+  }
+
+  return data.value || ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL', 'BULL_NOSE', 'SPECIAL']
 }
 
-// 공급업체 조회
+// 공급업체 조회 (app_settings에서)
 async function getSuppliers() {
   const { data, error } = await supabase
-    .from('suppliers')
-    .select('code, name')
-    .eq('is_active', true)
-    .order('name')
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'inventory.suppliers')
+    .single()
 
-  if (error) throw error
-  return data?.map(item => item.name) || ['Kyocera', 'Mitsubishi', 'Sandvik', 'OSG', 'YG-1', 'Guhring']
+  if (error || !data) {
+    // 기본값 반환
+    return ['TOOLEX', 'FULLANDI', 'ATH', 'KEOSANG']
+  }
+
+  return data.value || ['TOOLEX', 'FULLANDI', 'ATH', 'KEOSANG']
 }
 
 // 프로세스 목록 조회 (app_settings에서)

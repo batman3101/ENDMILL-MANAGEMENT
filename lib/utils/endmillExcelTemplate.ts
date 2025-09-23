@@ -20,11 +20,11 @@ export const endmillTemplateData: EndmillExcelRow[] = [
     'Endmill Code': 'EM-F-6',
     'Category': 'FLAT',
     'Name': 'FLAT 6mm 2날',
-    'Supplier': 'TAEGUTEC',
+    'Supplier': 'TOOLEX',
     'Unit Cost': 25000,
     'Standard Life': 800,
     'Model': 'PA1',
-    'Process': '거친가공',
+    'Process': 'CNC1',
     'Tool Life': 750,
     'T Number': 1
   },
@@ -32,11 +32,11 @@ export const endmillTemplateData: EndmillExcelRow[] = [
     'Endmill Code': 'EM-B-8',
     'Category': 'BALL',
     'Name': 'BALL 8mm 2날',
-    'Supplier': 'KORLOY',
+    'Supplier': 'FULLANDI',
     'Unit Cost': 32000,
     'Standard Life': 600,
-    'Model': 'PA2',
-    'Process': '정밀가공',
+    'Model': 'R13',
+    'Process': 'CNC2',
     'Tool Life': 580,
     'T Number': 2
   },
@@ -44,11 +44,11 @@ export const endmillTemplateData: EndmillExcelRow[] = [
     'Endmill Code': 'EM-T-10',
     'Category': 'T-CUT',
     'Name': 'T-CUT 10mm',
-    'Supplier': 'YG1',
+    'Supplier': 'ATH',
     'Unit Cost': 45000,
     'Standard Life': 400,
-    'Model': 'PS',
-    'Process': '마감가공',
+    'Model': 'PA1',
+    'Process': 'CNC2-1',
     'Tool Life': 420,
     'T Number': 3
   }
@@ -68,42 +68,37 @@ export const endmillRequiredColumns = [
   'T Number'
 ]
 
-// 유효한 카테고리 목록
+// 유효한 카테고리 목록 (기본값, validation API에서 최신값 가져옴)
 export const validCategories = [
   'FLAT',
   'BALL',
   'T-CUT',
   'C-CUT',
   'REAMER',
-  'DRILL'
+  'DRILL',
+  'BULL_NOSE',
+  'SPECIAL'
 ]
 
-// 유효한 공급업체 목록
+// 유효한 공급업체 목록 (기본값, validation API에서 최신값 가져옴)
 export const validSuppliers = [
-  'TAEGUTEC',
-  'KORLOY',
-  'YG1',
-  'ISCAR',
-  'YAMAWA'
+  'TOOLEX',
+  'FULLANDI',
+  'ATH',
+  'KEOSANG'
 ]
 
-// 유효한 모델 목록
+// 유효한 모델 목록 (기본값, validation API에서 최신값 가져옴)
 export const validModels = [
   'PA1',
-  'PA2',
-  'PS',
-  'B7',
-  'Q7'
+  'R13'
 ]
 
-// 유효한 프로세스 목록
+// 유효한 프로세스 목록 (기본값, validation API에서 최신값 가져옴)
 export const validProcesses = [
-  '거친가공',
-  '중간가공',
-  '정밀가공',
-  '마감가공',
-  '드릴링',
-  '탭핑'
+  'CNC1',
+  'CNC2',
+  'CNC2-1'
 ]
 
 // 엔드밀 엑셀 템플릿 다운로드 함수
@@ -136,13 +131,13 @@ export const downloadEndmillTemplate = () => {
     // 가이드 시트 생성
     const guideData = [
       { 'Column': 'Endmill Code', 'Description': '엔드밀 코드 (예: EM-F-12)', 'Required': 'Yes', 'Example': 'EM-F-6' },
-      { 'Column': 'Category', 'Description': '카테고리', 'Required': 'Yes', 'Example': 'FLAT, BALL, T-CUT, C-CUT, REAMER, DRILL' },
+      { 'Column': 'Category', 'Description': '카테고리', 'Required': 'Yes', 'Example': 'FLAT, BALL, T-CUT, C-CUT, REAMER, DRILL, BULL_NOSE, SPECIAL' },
       { 'Column': 'Name', 'Description': '엔드밀 이름', 'Required': 'Yes', 'Example': 'FLAT 6mm 2날' },
-      { 'Column': 'Supplier', 'Description': '공급업체 코드', 'Required': 'Yes', 'Example': 'TAEGUTEC, KORLOY, YG1, ISCAR, YAMAWA' },
+      { 'Column': 'Supplier', 'Description': '공급업체 코드', 'Required': 'Yes', 'Example': 'TOOLEX, FULLANDI, ATH, KEOSANG' },
       { 'Column': 'Unit Cost', 'Description': '단가 (원)', 'Required': 'Yes', 'Example': '25000' },
       { 'Column': 'Standard Life', 'Description': '표준 수명 (회)', 'Required': 'Yes', 'Example': '800' },
-      { 'Column': 'Model', 'Description': '장비 모델', 'Required': 'Yes', 'Example': 'PA1, PA2, PS, B7, Q7' },
-      { 'Column': 'Process', 'Description': '가공 프로세스', 'Required': 'Yes', 'Example': '거친가공, 정밀가공, 마감가공' },
+      { 'Column': 'Model', 'Description': '장비 모델', 'Required': 'Yes', 'Example': 'PA1, R13' },
+      { 'Column': 'Process', 'Description': '가공 프로세스', 'Required': 'Yes', 'Example': 'CNC1, CNC2, CNC2-1' },
       { 'Column': 'Tool Life', 'Description': '모델/프로세스별 수명 (회)', 'Required': 'Yes', 'Example': '750' },
       { 'Column': 'T Number', 'Description': '툴 포지션 번호', 'Required': 'Yes', 'Example': '1' }
     ]
@@ -169,7 +164,7 @@ export const downloadEndmillTemplate = () => {
 }
 
 // 엔드밀 엑셀 데이터 유효성 검사 함수
-export const validateEndmillExcelData = (data: any[]) => {
+export const validateEndmillExcelData = async (data: any[]) => {
   const errors: string[] = []
   const warnings: string[] = []
   const validData: any[] = []
@@ -181,6 +176,31 @@ export const validateEndmillExcelData = (data: any[]) => {
       warnings: [],
       validData: []
     }
+  }
+
+  // validation API에서 유효한 값들 가져오기
+  let validationOptions = {
+    categories: validCategories,
+    suppliers: validSuppliers,
+    models: validModels,
+    processes: validProcesses
+  }
+
+  try {
+    const response = await fetch('/api/settings/validation')
+    if (response.ok) {
+      const result = await response.json()
+      if (result.success) {
+        validationOptions = {
+          categories: result.data.categories || validCategories,
+          suppliers: result.data.suppliers || validSuppliers,
+          models: result.data.models || validModels,
+          processes: result.data.processes || validProcesses
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('validation API 호출 실패, 기본값 사용:', error)
   }
 
   // 첫 번째 행의 컬럼 확인
@@ -203,20 +223,20 @@ export const validateEndmillExcelData = (data: any[]) => {
       rowErrors.push(`${rowNumber}행: Endmill Code가 누락되었거나 잘못되었습니다.`)
     }
 
-    if (!row['Category'] || !validCategories.includes(row['Category'])) {
-      rowErrors.push(`${rowNumber}행: Category는 다음 중 하나여야 합니다: ${validCategories.join(', ')}`)
+    if (!row['Category'] || !validationOptions.categories.includes(row['Category'])) {
+      rowErrors.push(`${rowNumber}행: Category는 다음 중 하나여야 합니다: ${validationOptions.categories.join(', ')}`)
     }
 
-    if (!row['Supplier'] || !validSuppliers.includes(row['Supplier'])) {
-      rowErrors.push(`${rowNumber}행: Supplier는 다음 중 하나여야 합니다: ${validSuppliers.join(', ')}`)
+    if (!row['Supplier'] || !validationOptions.suppliers.includes(row['Supplier'])) {
+      rowErrors.push(`${rowNumber}행: Supplier는 다음 중 하나여야 합니다: ${validationOptions.suppliers.join(', ')}`)
     }
 
-    if (!row['Model'] || !validModels.includes(row['Model'])) {
-      rowErrors.push(`${rowNumber}행: Model은 다음 중 하나여야 합니다: ${validModels.join(', ')}`)
+    if (!row['Model'] || !validationOptions.models.includes(row['Model'])) {
+      rowErrors.push(`${rowNumber}행: Model은 다음 중 하나여야 합니다: ${validationOptions.models.join(', ')}`)
     }
 
-    if (!row['Process'] || !validProcesses.includes(row['Process'])) {
-      rowErrors.push(`${rowNumber}행: Process는 다음 중 하나여야 합니다: ${validProcesses.join(', ')}`)
+    if (!row['Process'] || !validationOptions.processes.includes(row['Process'])) {
+      rowErrors.push(`${rowNumber}행: Process는 다음 중 하나여야 합니다: ${validationOptions.processes.join(', ')}`)
     }
 
     if (!row['Name'] || typeof row['Name'] !== 'string') {

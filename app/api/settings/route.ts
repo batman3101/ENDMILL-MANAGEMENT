@@ -57,19 +57,26 @@ export async function GET(request: NextRequest) {
     // 설정 조회 (DB 우선, 실패시 로컬)
     try {
       const { data: dbSettings, error } = await supabase
-        .from('system_settings')
-        .select('category, key, value')
-        .order('category, key')
+        .from('app_settings')
+        .select('key, value')
+        .order('key')
 
       if (!error && dbSettings && dbSettings.length > 0) {
         // DB 데이터를 SystemSettings 형태로 변환
         const settings: any = {}
-        
+
         dbSettings.forEach(setting => {
-          if (!settings[setting.category]) {
-            settings[setting.category] = {}
+          // key 형식: "category.key" (예: "equipment.models")
+          const keyParts = setting.key.split('.')
+          if (keyParts.length >= 2) {
+            const category = keyParts[0]
+            const settingKey = keyParts.slice(1).join('.')
+
+            if (!settings[category]) {
+              settings[category] = {}
+            }
+            settings[category][settingKey] = setting.value
           }
-          settings[setting.category][setting.key] = setting.value
         })
 
         // 기본값과 병합
@@ -132,32 +139,39 @@ async function saveSettingsToDB(settings: any, category?: string, changedBy: str
   const promises: Promise<any>[] = []
   const historyPromises: Promise<any>[] = []
 
+  // 카테고리별 업데이트인 경우 해당 카테고리의 기존 설정을 먼저 삭제
+  if (category) {
+    await supabase
+      .from('app_settings')
+      .delete()
+      .like('key', `${category}.%`)
+  }
+
   const settingsToSave = category ? { [category]: settings } : settings
 
   for (const [cat, catSettings] of Object.entries(settingsToSave)) {
     if (typeof catSettings === 'object' && catSettings !== null) {
       for (const [key, value] of Object.entries(catSettings as Record<string, any>)) {
-        // 설정 저장/업데이트
+        // 설정 저장/업데이트 (app_settings 테이블 사용)
         promises.push(
           supabase
-            .from('system_settings')
+            .from('app_settings')
             .upsert({
-              category: cat,
-              key: key,
+              key: `${cat}.${key}`,
               value: value,
-              updated_by: changedBy,
+              description: `${cat} - ${key} 설정`,
               updated_at: new Date().toISOString()
             })
             .select()
         )
 
-        // 히스토리 기록
+        // 히스토리 기록 (app_settings 기반)
         historyPromises.push(
           supabase
             .from('settings_history')
             .insert({
               category: cat,
-              key: key,
+              key: `${cat}.${key}`,
               new_value: value,
               changed_by: changedBy,
               changed_at: new Date().toISOString(),
@@ -171,7 +185,7 @@ async function saveSettingsToDB(settings: any, category?: string, changedBy: str
   // 모든 설정 저장
   const results = await Promise.allSettled(promises)
   const historyResults = await Promise.allSettled(historyPromises)
-  
+
   const errors = results.filter(r => r.status === 'rejected')
   if (errors.length > 0) {
     console.error('DB 저장 실패:', errors)
@@ -255,16 +269,61 @@ export async function PUT(request: NextRequest) {
       settingsManager.updateSettings(updates, changedBy, reason)
     }
 
-    const updatedSettings = category 
+    // DB에서 최신 데이터를 조회해서 반환
+    try {
+      const { data: dbSettings, error } = await supabase
+        .from('app_settings')
+        .select('key, value')
+        .order('key')
+
+      if (!error && dbSettings && dbSettings.length > 0) {
+        // DB 데이터를 SystemSettings 형태로 변환
+        const settings: any = {}
+
+        dbSettings.forEach(setting => {
+          const keyParts = setting.key.split('.')
+          if (keyParts.length >= 2) {
+            const cat = keyParts[0]
+            const settingKey = keyParts.slice(1).join('.')
+
+            if (!settings[cat]) {
+              settings[cat] = {}
+            }
+            settings[cat][settingKey] = setting.value
+          }
+        })
+
+        // 기본값과 병합
+        const defaultSettings = settingsManager.getSettings()
+        const mergedSettings = { ...defaultSettings, ...settings }
+
+        const updatedSettings = category
+          ? mergedSettings[category] || defaultSettings[category]
+          : mergedSettings
+
+        return NextResponse.json({
+          success: true,
+          data: category ? { [category]: updatedSettings } : updatedSettings,
+          message: category
+            ? `${category} 카테고리 설정이 데이터베이스에 저장되었습니다.`
+            : '설정이 데이터베이스에 저장되었습니다.'
+        })
+      }
+    } catch (dbError) {
+      console.warn('DB 조회 실패, 로컬 설정 반환:', dbError)
+    }
+
+    // 폴백: 로컬 설정 반환
+    const updatedSettings = category
       ? settingsManager.getCategorySettings(category)
       : settingsManager.getSettings()
 
     return NextResponse.json({
       success: true,
       data: category ? { [category]: updatedSettings } : updatedSettings,
-      message: category 
-        ? `${category} 카테고리 설정이 데이터베이스에 저장되었습니다.`
-        : '설정이 데이터베이스에 저장되었습니다.'
+      message: category
+        ? `${category} 카테고리 설정이 저장되었습니다. (로컬)`
+        : '설정이 저장되었습니다. (로컬)'
     })
 
   } catch (error) {

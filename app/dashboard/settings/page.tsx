@@ -482,14 +482,14 @@ function SettingsPageContent() {
                     </div>
                     <div className="p-6">
                       <div className="space-y-4">
-                        {(formData.equipment?.locations || ['A동', 'B동']).map((location, index) => (
+                        {(Array.isArray(formData.equipment?.locations) ? formData.equipment.locations : ['A동', 'B동']).map((location, index) => (
                           <div key={index} className="flex items-center space-x-3">
                             <div className="flex-1">
                               <input
                                 type="text"
                                 value={location}
                                 onChange={(e) => {
-                                  const newLocations = [...(formData.equipment?.locations || [])]
+                                  const newLocations = [...(Array.isArray(formData.equipment?.locations) ? formData.equipment.locations : ['A동', 'B동'])]
                                   newLocations[index] = e.target.value
                                   updateFormData('equipment', 'locations', newLocations)
                                 }}
@@ -499,7 +499,7 @@ function SettingsPageContent() {
                             </div>
                             <button
                               onClick={() => {
-                                const newLocations = [...(formData.equipment?.locations || [])]
+                                const newLocations = [...(Array.isArray(formData.equipment?.locations) ? formData.equipment.locations : ['A동', 'B동'])]
                                 newLocations.splice(index, 1)
                                 updateFormData('equipment', 'locations', newLocations)
                               }}
@@ -512,7 +512,8 @@ function SettingsPageContent() {
                         ))}
                         <button
                           onClick={() => {
-                            const newLocations = [...(formData.equipment?.locations || []), '새 위치']
+                            const currentLocations = Array.isArray(formData.equipment?.locations) ? formData.equipment.locations : ['A동', 'B동']
+                            const newLocations = [...currentLocations, '새 위치']
                             updateFormData('equipment', 'locations', newLocations)
                           }}
                           className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
@@ -531,14 +532,14 @@ function SettingsPageContent() {
                     </div>
                     <div className="p-6">
                       <div className="space-y-4">
-                        {(formData.equipment?.models || ['PA1', 'PA2', 'PS', 'B7', 'Q7']).map((model, index) => (
+                        {(Array.isArray(formData.equipment?.models) ? formData.equipment.models : ['PA1', 'PA2', 'PS', 'B7', 'Q7']).map((model, index) => (
                           <div key={index} className="flex items-center space-x-3">
                             <div className="flex-1">
                               <input
                                 type="text"
                                 value={model}
                                 onChange={(e) => {
-                                  const newModels = [...(formData.equipment?.models || [])]
+                                  const newModels = [...(Array.isArray(formData.equipment?.models) ? formData.equipment.models : ['PA1', 'PA2', 'PS', 'B7', 'Q7'])]
                                   newModels[index] = e.target.value
                                   updateFormData('equipment', 'models', newModels)
                                 }}
@@ -548,7 +549,7 @@ function SettingsPageContent() {
                             </div>
                             <button
                               onClick={() => {
-                                const newModels = [...(formData.equipment?.models || [])]
+                                const newModels = [...(Array.isArray(formData.equipment?.models) ? formData.equipment.models : ['PA1', 'PA2', 'PS', 'B7', 'Q7'])]
                                 newModels.splice(index, 1)
                                 updateFormData('equipment', 'models', newModels)
                               }}
@@ -561,7 +562,8 @@ function SettingsPageContent() {
                         ))}
                         <button
                           onClick={() => {
-                            const newModels = [...(formData.equipment?.models || []), '새 모델']
+                            const currentModels = Array.isArray(formData.equipment?.models) ? formData.equipment.models : ['PA1', 'PA2', 'PS', 'B7', 'Q7']
+                            const newModels = [...currentModels, '새 모델']
                             updateFormData('equipment', 'models', newModels)
                           }}
                           className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
@@ -580,14 +582,14 @@ function SettingsPageContent() {
                     </div>
                     <div className="p-6">
                       <div className="space-y-4">
-                        {(formData.equipment?.processes || ['CNC1', 'CNC2', 'CNC2-1']).map((process, index) => (
+                        {(Array.isArray(formData.equipment?.processes) ? formData.equipment.processes : ['CNC1', 'CNC2', 'CNC2-1']).map((process, index) => (
                           <div key={index} className="flex items-center space-x-3">
                             <div className="flex-1">
                               <input
                                 type="text"
                                 value={process}
                                 onChange={(e) => {
-                                  const newProcesses = [...(formData.equipment?.processes || [])]
+                                  const newProcesses = [...(Array.isArray(formData.equipment?.processes) ? formData.equipment.processes : ['CNC1', 'CNC2', 'CNC2-1'])]
                                   newProcesses[index] = e.target.value
                                   updateFormData('equipment', 'processes', newProcesses)
                                 }}
@@ -597,7 +599,7 @@ function SettingsPageContent() {
                             </div>
                             <button
                               onClick={() => {
-                                const newProcesses = [...(formData.equipment?.processes || [])]
+                                const newProcesses = [...(Array.isArray(formData.equipment?.processes) ? formData.equipment.processes : ['CNC1', 'CNC2', 'CNC2-1'])]
                                 newProcesses.splice(index, 1)
                                 updateFormData('equipment', 'processes', newProcesses)
                               }}
@@ -610,7 +612,8 @@ function SettingsPageContent() {
                         ))}
                         <button
                           onClick={() => {
-                            const newProcesses = [...(formData.equipment?.processes || []), '새 공정']
+                            const currentProcesses = Array.isArray(formData.equipment?.processes) ? formData.equipment.processes : ['CNC1', 'CNC2', 'CNC2-1']
+                            const newProcesses = [...currentProcesses, '새 공정']
                             updateFormData('equipment', 'processes', newProcesses)
                           }}
                           className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
@@ -761,7 +764,7 @@ function SettingsPageContent() {
                     </div>
                     <div className="p-6">
                       <div className="space-y-4">
-                        {(formData.inventory?.categories || ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL']).map((category, index) => (
+                        {(Array.isArray(formData.inventory?.categories) ? formData.inventory.categories : ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL']).map((category, index) => (
                           <div key={index} className="flex items-center space-x-3">
                             <div className="flex-1">
                               <input
@@ -791,7 +794,10 @@ function SettingsPageContent() {
                         ))}
                         <button
                           onClick={() => {
-                            const newCategories = [...(formData.inventory?.categories || []), '새 카테고리']
+                            const currentCategories = Array.isArray(formData.inventory?.categories)
+                              ? formData.inventory.categories
+                              : ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL']
+                            const newCategories = [...currentCategories, '새 카테고리']
                             updateFormData('inventory', 'categories', newCategories)
                           }}
                           className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
@@ -810,7 +816,7 @@ function SettingsPageContent() {
                     </div>
                     <div className="p-6">
                       <div className="space-y-4">
-                        {(formData.inventory?.suppliers || ['Kyocera', 'Mitsubishi', 'Sandvik', 'OSG', 'YG-1', 'Guhring']).map((supplier, index) => (
+                        {(Array.isArray(formData.inventory?.suppliers) ? formData.inventory.suppliers : ['Kyocera', 'Mitsubishi', 'Sandvik', 'OSG', 'YG-1', 'Guhring']).map((supplier, index) => (
                           <div key={index} className="flex items-center space-x-3">
                             <div className="flex-1">
                               <input
@@ -840,7 +846,10 @@ function SettingsPageContent() {
                         ))}
                         <button
                           onClick={() => {
-                            const newSuppliers = [...(formData.inventory?.suppliers || []), '새 공급업체']
+                            const currentSuppliers = Array.isArray(formData.inventory?.suppliers)
+                              ? formData.inventory.suppliers
+                              : ['Kyocera', 'Mitsubishi', 'Sandvik', 'OSG', 'YG-1', 'Guhring']
+                            const newSuppliers = [...currentSuppliers, '새 공급업체']
                             updateFormData('inventory', 'suppliers', newSuppliers)
                           }}
                           className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
@@ -959,7 +968,7 @@ function SettingsPageContent() {
                     </div>
                     <div className="p-6">
                       <div className="space-y-4">
-                        {(formData.toolChanges?.reasons || ['정상 수명', '파손', '마모', '품질 불량', '기타']).map((reason, index) => (
+                        {(Array.isArray(formData.toolChanges?.reasons) ? formData.toolChanges.reasons : ['정상 수명', '파손', '마모', '품질 불량', '기타']).map((reason, index) => (
                           <div key={index} className="flex items-center space-x-3">
                             <div className="flex-1">
                               <input
@@ -1077,7 +1086,7 @@ function SettingsPageContent() {
                     </div>
                     <div className="p-6">
                       <div className="space-y-4">
-                        {(formData.organization?.departments || ['종합 관리실', '공구 관리실', '기술팀']).map((department, index) => (
+                        {(Array.isArray(formData.organization?.departments) ? formData.organization.departments : ['종합 관리실', '공구 관리실', '기술팀']).map((department, index) => (
                           <div key={index} className="flex items-center space-x-3">
                             <div className="flex-1">
                               <input
@@ -1126,7 +1135,7 @@ function SettingsPageContent() {
                     </div>
                     <div className="p-6">
                       <div className="space-y-4">
-                        {(formData.organization?.shifts || ['A', 'B']).map((shift, index) => (
+                        {(Array.isArray(formData.organization?.shifts) ? formData.organization.shifts : ['A', 'B']).map((shift, index) => (
                           <div key={index} className="flex items-center space-x-3">
                             <div className="flex-1">
                               <input
@@ -1175,11 +1184,14 @@ function SettingsPageContent() {
                     </div>
                     <div className="p-6">
                       <div className="space-y-6">
-                        {(formData.organization?.roles || [
-                          { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
-                          { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
-                          { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
-                        ]).map((role, index) => (
+                        {(Array.isArray(formData.organization?.roles)
+                          ? formData.organization.roles
+                          : [
+                              { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
+                              { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
+                              { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
+                            ]
+                        ).map((role, index) => (
                           <div key={index} className="p-4 border border-gray-200 rounded-lg">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                               <div>
@@ -1190,7 +1202,14 @@ function SettingsPageContent() {
                                   type="text"
                                   value={role.code}
                                   onChange={(e) => {
-                                    const newRoles = [...(formData.organization?.roles || [])]
+                                    const currentRoles = Array.isArray(formData.organization?.roles)
+                                      ? formData.organization.roles
+                                      : [
+                                          { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
+                                          { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
+                                          { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
+                                        ]
+                                    const newRoles = [...currentRoles]
                                     newRoles[index] = { ...newRoles[index], code: e.target.value }
                                     updateFormData('organization', 'roles', newRoles)
                                   }}
@@ -1206,7 +1225,14 @@ function SettingsPageContent() {
                                   type="text"
                                   value={role.name}
                                   onChange={(e) => {
-                                    const newRoles = [...(formData.organization?.roles || [])]
+                                    const currentRoles = Array.isArray(formData.organization?.roles)
+                                      ? formData.organization.roles
+                                      : [
+                                          { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
+                                          { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
+                                          { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
+                                        ]
+                                    const newRoles = [...currentRoles]
                                     newRoles[index] = { ...newRoles[index], name: e.target.value }
                                     updateFormData('organization', 'roles', newRoles)
                                   }}
@@ -1220,7 +1246,14 @@ function SettingsPageContent() {
                                     type="checkbox"
                                     checked={role.isActive}
                                     onChange={(e) => {
-                                      const newRoles = [...(formData.organization?.roles || [])]
+                                      const currentRoles = Array.isArray(formData.organization?.roles)
+                                        ? formData.organization.roles
+                                        : [
+                                            { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
+                                            { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
+                                            { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
+                                          ]
+                                      const newRoles = [...currentRoles]
                                       newRoles[index] = { ...newRoles[index], isActive: e.target.checked }
                                       updateFormData('organization', 'roles', newRoles)
                                     }}
@@ -1238,9 +1271,16 @@ function SettingsPageContent() {
                                 type="text"
                                 value={role.permissions.join(', ')}
                                 onChange={(e) => {
-                                  const newRoles = [...(formData.organization?.roles || [])]
-                                  newRoles[index] = { 
-                                    ...newRoles[index], 
+                                  const currentRoles = Array.isArray(formData.organization?.roles)
+                                    ? formData.organization.roles
+                                    : [
+                                        { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
+                                        { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
+                                        { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
+                                      ]
+                                  const newRoles = [...currentRoles]
+                                  newRoles[index] = {
+                                    ...newRoles[index],
                                     permissions: e.target.value.split(',').map(p => p.trim()).filter(p => p)
                                   }
                                   updateFormData('organization', 'roles', newRoles)
@@ -1252,12 +1292,21 @@ function SettingsPageContent() {
                             <div className="flex justify-end mt-4">
                               <button
                                 onClick={() => {
-                                  const newRoles = [...(formData.organization?.roles || [])]
+                                  const currentRoles = Array.isArray(formData.organization?.roles)
+                                    ? formData.organization.roles
+                                    : [
+                                        { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
+                                        { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
+                                        { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
+                                      ]
+                                  const newRoles = [...currentRoles]
                                   newRoles.splice(index, 1)
                                   updateFormData('organization', 'roles', newRoles)
                                 }}
                                 className="px-3 py-1 bg-red-500 text-white text-sm rounded-md hover:bg-red-600"
-                                disabled={(formData.organization?.roles || []).length <= 1}
+                                disabled={(Array.isArray(formData.organization?.roles)
+                                  ? formData.organization.roles
+                                  : []).length <= 1}
                               >
                                 역할 삭제
                               </button>
@@ -1266,7 +1315,14 @@ function SettingsPageContent() {
                         ))}
                         <button
                           onClick={() => {
-                            const newRoles = [...(formData.organization?.roles || []), {
+                            const currentRoles = Array.isArray(formData.organization?.roles)
+                              ? formData.organization.roles
+                              : [
+                                  { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
+                                  { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
+                                  { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
+                                ]
+                            const newRoles = [...currentRoles, {
                               code: 'new_role',
                               name: '새 역할',
                               permissions: ['읽기'],
@@ -1299,7 +1355,7 @@ function SettingsPageContent() {
                             onChange={(e) => updateFormData('organization', 'defaultRole', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            {(formData.organization?.roles || []).map(role => (
+                            {(Array.isArray(formData.organization?.roles) ? formData.organization.roles : []).map(role => (
                               <option key={role.code} value={role.code}>
                                 {role.name} ({role.code})
                               </option>
@@ -1311,11 +1367,11 @@ function SettingsPageContent() {
                             기본 교대
                           </label>
                           <select
-                            value={formData.organization?.defaultShift || 'A'}
+                            value={formData.organization?.defaultShift || formData.organization?.shifts?.default || 'A'}
                             onChange={(e) => updateFormData('organization', 'defaultShift', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            {(formData.organization?.shifts || []).map(shift => (
+                            {(Array.isArray(formData.organization?.shifts?.values) ? formData.organization.shifts.values : ['A', 'B']).map(shift => (
                               <option key={shift} value={shift}>
                                 {shift}교대
                               </option>

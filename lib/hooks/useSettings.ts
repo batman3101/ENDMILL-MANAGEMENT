@@ -91,8 +91,46 @@ export function useSettings(): UseSettingsReturn {
   // SettingsManager 인스턴스 및 초기 설정 로드
   useEffect(() => {
     settingsManagerRef.current = SettingsManager.getInstance()
-    setSettings(settingsManagerRef.current.getSettings())
-    setIsLoading(false)
+
+    // API에서 최신 설정을 로드
+    const loadInitialSettings = async () => {
+      setIsLoading(true)
+      try {
+        const result = await callSettingsAPI('GET', '/api/settings')
+        if (result.success && result.data) {
+          // API 응답 데이터를 올바르게 병합
+          const mergedSettings = { ...result.data }
+
+          // 중첩된 카테고리 데이터가 있으면 상위 레벨로 병합
+          Object.keys(mergedSettings).forEach(category => {
+            if (mergedSettings[category] && typeof mergedSettings[category] === 'object') {
+              // 카테고리 내부에 같은 이름의 중첩 객체가 있으면 병합
+              if (mergedSettings[category][category]) {
+                mergedSettings[category] = {
+                  ...mergedSettings[category],
+                  ...mergedSettings[category][category]
+                }
+                // 중첩된 객체 제거
+                delete mergedSettings[category][category]
+              }
+            }
+          })
+
+          setSettings(mergedSettings)
+        } else {
+          // API 실패 시 로컬 설정 사용
+          setSettings(settingsManagerRef.current.getSettings())
+        }
+      } catch (error) {
+        console.warn('API에서 설정 로드 실패, 로컬 설정 사용:', error)
+        // 폴백: 로컬 설정 사용
+        setSettings(settingsManagerRef.current.getSettings())
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadInitialSettings()
 
     // 스토리지 변경 이벤트 리스너 (다른 탭에서 변경시)
     const handleStorageChange = () => {
@@ -109,7 +147,7 @@ export function useSettings(): UseSettingsReturn {
     // 이벤트 리스너 등록
     window.addEventListener('storage', handleStorageChange)
     window.addEventListener('settingsUpdated', handleSettingsUpdate as EventListener)
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('settingsUpdated', handleSettingsUpdate as EventListener)
