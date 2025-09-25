@@ -7,15 +7,21 @@ import { useToast } from '../../../components/shared/Toast'
 import StatusChangeDropdown from '../../../components/shared/StatusChangeDropdown'
 import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
 import { useSettings } from '../../../lib/hooks/useSettings'
-import { useEquipment, useEquipmentStatus } from '../../../lib/hooks/useEquipment'
+import { useEquipment, useEquipmentStatus, Equipment } from '../../../lib/hooks/useEquipment'
 import PageLoadingIndicator, { SkeletonCard, SkeletonTableRow } from '../../../components/shared/PageLoadingIndicator'
+import EquipmentExcelUploader from '../../../components/features/EquipmentExcelUploader'
 
 export default function EquipmentPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [modelFilter, setModelFilter] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [sortField, setSortField] = useState<'equipment_number' | 'location' | 'status' | 'current_model' | 'process'>('equipment_number')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editEquipment, setEditEquipment] = useState<any>(null)
   const confirmation = useConfirmation()
   const { showSuccess, showError } = useToast()
 
@@ -24,6 +30,7 @@ export default function EquipmentPage() {
     equipments,
     loading: isLoading,
     error: dataError,
+    refetch,
     createEquipment,
     updateEquipment,
     getEquipmentStats,
@@ -36,7 +43,7 @@ export default function EquipmentPage() {
 
   // 설정에서 값 가져오기
   const { settings, updateCategorySettings } = useSettings()
-  const itemsPerPage = settings.system.itemsPerPage
+  const itemsPerPage = 20 // 20대씩 고정 표시
   const equipmentLocations = getAvailableLocations()
   const equipmentStatuses = settings.equipment.statuses
   const toolPositionCount = settings.equipment.toolPositionCount
@@ -54,15 +61,17 @@ export default function EquipmentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // CAM Sheet 데이터 가져오기
-  const { camSheets } = useCAMSheets()
-  const availableModels = getAvailableModels()
-  const availableProcesses = getAvailableProcesses()
+  const { camSheets, getAvailableModels: getCamSheetModels, getAvailableProcesses: getCamSheetProcesses } = useCAMSheets()
+  const availableModels = getCamSheetModels // CAM Sheet에서 등록된 모델 사용
+  const availableProcesses = getCamSheetProcesses // CAM Sheet에서 등록된 공정 사용
+  const equipmentAvailableModels = getAvailableModels() // equipment hook의 모델 (기본값용)
+  const equipmentAvailableProcesses = getAvailableProcesses() // equipment hook의 공정 (기본값용)
 
 
 
-  // 필터링된 설비 목록
+  // 필터링 및 정렬된 설비 목록
   const filteredEquipments = useMemo(() => {
-    return equipments.filter(equipment => {
+    let filtered = equipments.filter(equipment => {
       const matchesSearch = searchTerm === '' ||
         equipment.equipment_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         equipment.current_model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -74,7 +83,25 @@ export default function EquipmentPage() {
 
       return matchesSearch && matchesStatus && matchesModel
     })
-  }, [equipments, searchTerm, statusFilter, modelFilter])
+
+    // 정렬 적용
+    filtered.sort((a, b) => {
+      let aValue: any = a[sortField]
+      let bValue: any = b[sortField]
+
+      // 설비번호 정렬 시 숫자로 변환
+      if (sortField === 'equipment_number') {
+        aValue = parseInt(a.equipment_number?.toString() || '0')
+        bValue = parseInt(b.equipment_number?.toString() || '0')
+      }
+
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+
+    return filtered
+  }, [equipments, searchTerm, statusFilter, modelFilter, sortField, sortOrder])
 
 
 
@@ -89,10 +116,10 @@ export default function EquipmentPage() {
     setCurrentPage(1)
   }
 
-  // 필터 상태 변경 시 첫 페이지로 이동
+  // 필터나 정렬 상태 변경 시 첫 페이지로 이동
   useMemo(() => {
     resetToFirstPage()
-  }, [searchTerm, statusFilter, modelFilter])
+  }, [searchTerm, statusFilter, modelFilter, sortField, sortOrder])
 
   // 상태별 색상
   const getStatusBadge = (status: Equipment['status']) => {
@@ -199,21 +226,65 @@ export default function EquipmentPage() {
   // 설비 번호 자동 생성
   const generateNextEquipmentNumber = () => {
     const existingNumbers = equipments.map(eq =>
-      parseInt(eq.equipment_number?.replace('C', '') || '0')
+      parseInt(eq.equipment_number?.toString() || '0')
     ).filter(num => !isNaN(num))
 
     const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0
     const nextNumber = maxNumber + 1
-    return `C${nextNumber.toString().padStart(3, '0')}`
+    return nextNumber.toString()
+  }
+
+  // 정렬 토글 함수
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+  }
+
+
+  const handleUpdateEquipment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editEquipment) return
+
+    try {
+      updateEquipment({
+        id: editEquipment.id,
+        location: editEquipment.location,
+        status: editEquipment.status,
+        current_model: editEquipment.current_model,
+        process: editEquipment.process
+      })
+
+      setShowEditModal(false)
+      showSuccess('설비 수정 완료', `설비 C${editEquipment.equipment_number?.toString().padStart(3, '0')}이(가) 수정되었습니다.`)
+    } catch (error) {
+      showError('설비 수정 실패', error instanceof Error ? error.message : '설비 수정 중 오류가 발생했습니다.')
+    }
+  }
+
+  // 설비 편집 모달 열기
+  const handleOpenEditModal = (equipment: any) => {
+    setEditEquipment({
+      ...equipment,
+      equipmentNumber: `C${equipment.equipment_number?.toString().padStart(3, '0')}`
+    })
+    setShowEditModal(true)
   }
 
   // 설비 추가 모달 열기
   const handleOpenAddModal = () => {
+    const defaultStatus = equipmentStatuses && equipmentStatuses.length > 0
+      ? (equipmentStatuses[0]?.code || equipmentStatuses[0]?.name || equipmentStatuses[0] || '가동중')
+      : '가동중'
+
     setAddFormData(prev => ({
       ...prev,
       equipmentNumber: generateNextEquipmentNumber(),
-      location: (equipmentLocations[0]) as 'A동' | 'B동',
-      status: (equipmentStatuses[0]?.code || equipmentStatuses[0]?.name || equipmentStatuses[0] || '가동중') as '가동중' | '점검중' | '셋업중',
+      location: (equipmentLocations && equipmentLocations.length > 0 ? equipmentLocations[0] : 'A동') as 'A동' | 'B동',
+      status: defaultStatus as '가동중' | '점검중' | '셋업중',
       currentModel: availableModels[0] || '',
       process: availableProcesses[0] || ''
     }))
@@ -223,18 +294,188 @@ export default function EquipmentPage() {
   // 데이터 없음 아르면 메시지 표시
   if (!isLoading && equipments.length === 0 && !dataError) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="text-4xl mb-4">📊</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">표시할 설비 데이터가 없습니다</h3>
-          <p className="text-gray-500 mb-4">데이터베이스에 설비 정보가 등록되어 있지 않습니다.</p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            첫 번째 설비 추가
-          </button>
+      <div className="space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="text-4xl mb-4">📊</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">표시할 설비 데이터가 없습니다</h3>
+            <p className="text-gray-500 mb-4">데이터베이스에 설비 정보가 등록되어 있지 않습니다.</p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={handleOpenAddModal}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                + 개별 설비 추가
+              </button>
+              <button
+                onClick={() => setShowBulkUploadModal(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                📄 일괄 설비 추가
+              </button>
+            </div>
+          </div>
         </div>
+
+        {/* 설비 추가 모달 - 완전한 기능 구현 */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
+              <div className="px-6 py-4 border-b">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-900">새 설비 추가</h3>
+                  <button
+                    onClick={() => setShowAddModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                    disabled={isSubmitting}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              <form onSubmit={handleAddEquipment} className="p-6 space-y-4">
+                {/* 설비번호 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    설비번호 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={addFormData.equipmentNumber}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, equipmentNumber: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="예: C001"
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
+
+                {/* 위치 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    위치 <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={addFormData.location}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, location: e.target.value as any }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmitting}
+                    required
+                  >
+                    {equipmentLocations && equipmentLocations.length > 0
+                      ? equipmentLocations.map(location => (
+                          <option key={location} value={location}>{location}</option>
+                        ))
+                      : [
+                          <option key="A동" value="A동">A동</option>,
+                          <option key="B동" value="B동">B동</option>
+                        ]
+                    }
+                  </select>
+                </div>
+
+                {/* 초기 상태 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    초기 상태 <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={addFormData.status}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, status: e.target.value as Equipment['status'] }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmitting}
+                    required
+                  >
+                    {equipmentStatuses && equipmentStatuses.length > 0
+                      ? equipmentStatuses.map((status, index) => (
+                          <option key={String(status.code || status.name || status || index)} value={String(status.code || status.name || status)}>
+                            {String(status.name || status)}
+                          </option>
+                        ))
+                      : [
+                          <option key="가동중" value="가동중">가동중</option>,
+                          <option key="점검중" value="점검중">점검중</option>,
+                          <option key="셋업중" value="셋업중">셋업중</option>
+                        ]
+                    }
+                  </select>
+                </div>
+
+                {/* 모델 선택 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    생산 모델 <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={addFormData.currentModel}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, currentModel: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmitting}
+                    required
+                  >
+                    <option value="">모델 선택</option>
+                    {(availableModels.length > 0 ? availableModels : equipmentAvailableModels).map(model => (
+                      <option key={model} value={model}>{model}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 공정 선택 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    공정 <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={addFormData.process}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, process: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmitting}
+                    required
+                  >
+                    <option value="">공정 선택</option>
+                    {(availableProcesses.length > 0 ? availableProcesses : equipmentAvailableProcesses).map(process => (
+                      <option key={process} value={process}>{process}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 버튼 */}
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+                    disabled={isSubmitting}
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    )}
+                    {isSubmitting ? '추가 중...' : '설비 추가'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* 일괄 업로드 모달 */}
+        {showBulkUploadModal && (
+          <EquipmentExcelUploader
+            onUploadSuccess={() => {
+              setShowBulkUploadModal(false)
+              refetch() // 데이터 새로고침
+            }}
+            onCancel={() => setShowBulkUploadModal(false)}
+          />
+        )}
       </div>
     )
   }
@@ -396,7 +637,7 @@ export default function EquipmentPage() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 모델별 설비 배치</h3>
           <div className="space-y-3">
             {(availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']).map(model => {
-              const modelEquipments = equipments.filter(eq => eq.currentModel === model)
+              const modelEquipments = equipments.filter(eq => eq.current_model === model)
               const aCount = modelEquipments.filter(eq => eq.location === 'A동').length
               const bCount = modelEquipments.filter(eq => eq.location === 'B동').length
               const total = modelEquipments.length
@@ -488,17 +729,23 @@ export default function EquipmentPage() {
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">모든 모델</option>
-              {(availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']).map(model => (
+              {(availableModels.length > 0 ? availableModels : equipmentAvailableModels).map(model => (
                 <option key={model} value={model}>{model}</option>
               ))}
             </select>
           </div>
 
-          <button 
+          <button
             onClick={handleOpenAddModal}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 mr-2"
           >
             + 설비 추가
+          </button>
+          <button
+            onClick={() => setShowBulkUploadModal(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
+            📄 일괄 추가
           </button>
         </div>
       </div>
@@ -517,20 +764,50 @@ export default function EquipmentPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  설비번호
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('equipment_number')}>
+                  <div className="flex items-center">
+                    설비번호
+                    <span className="ml-1">
+                      {sortField === 'equipment_number' && (sortOrder === 'asc' ? '↑' : '↓')}
+                    </span>
+                  </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  현장
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('location')}>
+                  <div className="flex items-center">
+                    현장
+                    <span className="ml-1">
+                      {sortField === 'location' && (sortOrder === 'asc' ? '↑' : '↓')}
+                    </span>
+                  </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상태
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('status')}>
+                  <div className="flex items-center">
+                    상태
+                    <span className="ml-1">
+                      {sortField === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
+                    </span>
+                  </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  모델
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('current_model')}>
+                  <div className="flex items-center">
+                    모델
+                    <span className="ml-1">
+                      {sortField === 'current_model' && (sortOrder === 'asc' ? '↑' : '↓')}
+                    </span>
+                  </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  공정
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('process')}>
+                  <div className="flex items-center">
+                    공정
+                    <span className="ml-1">
+                      {sortField === 'process' && (sortOrder === 'asc' ? '↑' : '↓')}
+                    </span>
+                  </div>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   앤드밀 사용량
@@ -547,7 +824,7 @@ export default function EquipmentPage() {
                     {/* 설비번호 */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {equipment.equipmentNumber}
+                        C{equipment.equipment_number?.toString().padStart(3, '0')}
                       </div>
                     </td>
                     
@@ -570,7 +847,7 @@ export default function EquipmentPage() {
                     {/* 모델 */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {equipment.currentModel}
+                        {equipment.current_model}
                       </div>
                     </td>
                     
@@ -586,12 +863,18 @@ export default function EquipmentPage() {
                       <div className="flex items-center">
                         <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
                           <div
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{width: '0%'}}
+                            className={`h-2 rounded-full ${
+                              (equipment.tool_usage_percentage || 0) >= 80
+                                ? 'bg-red-500'
+                                : (equipment.tool_usage_percentage || 0) >= 60
+                                ? 'bg-yellow-500'
+                                : 'bg-green-500'
+                            }`}
+                            style={{width: `${equipment.tool_usage_percentage || 0}%`}}
                           ></div>
                         </div>
                         <span className="text-sm">
-                          0/{equipment.tool_position_count || 21}
+                          {equipment.used_tool_positions || 0}/{equipment.total_tool_positions || equipment.tool_position_count || 21}
                         </span>
                       </div>
                     </td>
@@ -603,9 +886,18 @@ export default function EquipmentPage() {
                         <StatusChangeDropdown
                           currentStatus={equipment.status || ''}
                           equipmentId={equipment.id}
-                          equipmentNumber={equipment.equipment_number}
+                          equipmentNumber={`C${equipment.equipment_number?.toString().padStart(3, '0')}`}
                           onStatusChange={handleStatusChange}
                         />
+
+                        {/* 수정 버튼 */}
+                        <button
+                          onClick={() => handleOpenEditModal(equipment)}
+                          className="p-1 text-gray-600 hover:bg-gray-50 rounded"
+                          title="수정"
+                        >
+                          ✏️
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -758,9 +1050,15 @@ export default function EquipmentPage() {
                     disabled={isSubmitting}
                     required
                   >
-                    {equipmentLocations.map(location => (
-                      <option key={location} value={location}>{location}</option>
-                    ))}
+                    {equipmentLocations && equipmentLocations.length > 0
+                      ? equipmentLocations.map(location => (
+                          <option key={location} value={location}>{location}</option>
+                        ))
+                      : [
+                          <option key="A동" value="A동">A동</option>,
+                          <option key="B동" value="B동">B동</option>
+                        ]
+                    }
                   </select>
               </div>
 
@@ -776,11 +1074,18 @@ export default function EquipmentPage() {
                     disabled={isSubmitting}
                     required
                   >
-                    {equipmentStatuses.map((status, index) => (
-                      <option key={String(status.code || status.name || status || index)} value={String(status.code || status.name || status)}>
-                        {String(status.name || status)}
-                      </option>
-                    ))}
+                    {equipmentStatuses && equipmentStatuses.length > 0
+                      ? equipmentStatuses.map((status, index) => (
+                          <option key={String(status.code || status.name || status || index)} value={String(status.code || status.name || status)}>
+                            {String(status.name || status)}
+                          </option>
+                        ))
+                      : [
+                          <option key="가동중" value="가동중">가동중</option>,
+                          <option key="점검중" value="점검중">점검중</option>,
+                          <option key="셋업중" value="셋업중">셋업중</option>
+                        ]
+                    }
                   </select>
               </div>
 
@@ -797,7 +1102,7 @@ export default function EquipmentPage() {
                   required
                 >
                   <option value="">모델 선택</option>
-                  {(availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']).map(model => (
+                  {(availableModels.length > 0 ? availableModels : equipmentAvailableModels).map(model => (
                     <option key={model} value={model}>{model}</option>
                   ))}
                 </select>
@@ -816,7 +1121,7 @@ export default function EquipmentPage() {
                   required
                 >
                   <option value="">공정 선택</option>
-                  {(availableProcesses.length > 0 ? availableProcesses : ['CNC1', 'CNC2', 'CNC2-1']).map(process => (
+                  {(availableProcesses.length > 0 ? availableProcesses : equipmentAvailableProcesses).map(process => (
                     <option key={process} value={process}>{process}</option>
                   ))}
                 </select>
@@ -846,6 +1151,169 @@ export default function EquipmentPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* 설비 수정 모달 */}
+      {showEditModal && editEquipment && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4">
+            <div className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900">
+                  설비 상세 정보 - {editEquipment.equipmentNumber}
+                </h3>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleUpdateEquipment} className="p-6">
+              {/* 설비 정보 */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* 설비번호 (읽기 전용) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    설비번호
+                  </label>
+                  <input
+                    type="text"
+                    value={editEquipment.equipmentNumber}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
+                  />
+                </div>
+
+                {/* 위치 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    위치
+                  </label>
+                  <select
+                    value={editEquipment.location || ''}
+                    onChange={(e) => setEditEquipment({...editEquipment, location: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="A동">A동</option>
+                    <option value="B동">B동</option>
+                  </select>
+                </div>
+
+                {/* 상태 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    상태
+                  </label>
+                  <select
+                    value={editEquipment.status || ''}
+                    onChange={(e) => setEditEquipment({...editEquipment, status: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="가동중">가동중</option>
+                    <option value="점검중">점검중</option>
+                    <option value="셋업중">셋업중</option>
+                  </select>
+                </div>
+
+                {/* 모델 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    생산 모델
+                  </label>
+                  <select
+                    value={editEquipment.current_model || ''}
+                    onChange={(e) => setEditEquipment({...editEquipment, current_model: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">모델 선택</option>
+                    {(availableModels.length > 0 ? availableModels : equipmentAvailableModels).map(model => (
+                      <option key={model} value={model}>{model}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 공정 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    공정
+                  </label>
+                  <select
+                    value={editEquipment.process || ''}
+                    onChange={(e) => setEditEquipment({...editEquipment, process: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">공정 선택</option>
+                    {(availableProcesses.length > 0 ? availableProcesses : equipmentAvailableProcesses).map(process => (
+                      <option key={process} value={process}>{process}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 툴 포지션 수 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    툴 포지션 수
+                  </label>
+                  <input
+                    type="text"
+                    value={editEquipment.tool_position_count || 21}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
+              {/* 생성/수정 정보 */}
+              <div className="mt-6 pt-6 border-t">
+                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                  {editEquipment.created_at && (
+                    <div>
+                      <span className="font-medium">등록일:</span>{' '}
+                      {new Date(editEquipment.created_at).toLocaleDateString('ko-KR')}
+                    </div>
+                  )}
+                  {editEquipment.updated_at && (
+                    <div>
+                      <span className="font-medium">수정일:</span>{' '}
+                      {new Date(editEquipment.updated_at).toLocaleDateString('ko-KR')}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                >
+                  닫기
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  수정 저장
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 일괄 업로드 모달 */}
+      {showBulkUploadModal && (
+        <EquipmentExcelUploader
+          onUploadSuccess={() => {
+            setShowBulkUploadModal(false)
+            refetch() // 데이터 새로고침
+          }}
+          onCancel={() => setShowBulkUploadModal(false)}
+        />
       )}
 
       {/* 승인 모달 */}

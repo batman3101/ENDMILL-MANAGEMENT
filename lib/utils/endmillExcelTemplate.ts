@@ -71,10 +71,13 @@ export const endmillRequiredColumns = [
 // 기본값 (validation API 실패 시 폴백용) - 실제 DB에서 가져온 값들
 export const validCategories = [
   'BALL',
+  'BULL_NOSE',
   'C-CUT',
   'DRILL',
   'FLAT',
+  'FORM',
   'REAMER',
+  'SPECIAL',
   'T-CUT'
 ]
 
@@ -257,13 +260,7 @@ export const validateEndmillExcelData = async (data: any[]) => {
       }
     })
 
-    // 코드 중복 확인 (현재 배치 내에서)
-    const duplicateInBatch = data.filter((otherRow, otherIndex) =>
-      otherIndex !== index && otherRow['Endmill Code'] === row['Endmill Code']
-    )
-    if (duplicateInBatch.length > 0) {
-      rowErrors.push(`${rowNumber}행: Endmill Code '${row['Endmill Code']}'가 배치 내에서 중복됩니다.`)
-    }
+    // 코드 중복 허용 (모델별, 공정별로 다른 Tool Life 및 공급업체별 다른 단가 지원)
 
     if (rowErrors.length > 0) {
       errors.push(...rowErrors)
@@ -293,20 +290,18 @@ export const validateEndmillExcelData = async (data: any[]) => {
   }
 }
 
-// 엔드밀 DB 형태로 변환 함수
-export const convertToEndmillDBFormat = (validData: any[], categoryMap: Record<string, string>, supplierMap: Record<string, string>) => {
+// 엔드밀 DB 형태로 변환 함수 (새로운 API 형식에 맞게)
+export const convertToEndmillDBFormat = (validData: any[]) => {
   return validData.map(item => ({
     code: item.code,
-    category_id: categoryMap[item.category],
+    category: item.category,
     name: item.name,
-    supplier_id: supplierMap[item.supplier],
+    supplier: item.supplier,
     unit_cost: item.unit_cost,
     standard_life: item.standard_life,
-    cam_sheet_data: {
-      model: item.model,
-      process: item.process,
-      tool_life: item.tool_life,
-      t_number: item.t_number
-    }
+    model: item.model,
+    process: item.process,
+    tool_life: item.tool_life,
+    t_number: item.t_number
   }))
 }

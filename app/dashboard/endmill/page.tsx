@@ -27,6 +27,12 @@ interface EndmillInstance {
   status: 'new' | 'active' | 'warning' | 'critical'
   installDate: string
   lastMaintenance: string
+  camSheets?: Array<{
+    model: string
+    process: string
+    toolLife: number
+    tNumber: number
+  }>
 }
 
 // 실제 데이터베이스에서 앤드밀 인스턴스 데이터를 가져오는 함수로 교체 예정
@@ -34,6 +40,7 @@ interface EndmillInstance {
 export default function EndmillPage() {
   const queryClient = useQueryClient()
   const [endmills, setEndmills] = useState<EndmillInstance[]>([])
+  const [equipments, setEquipments] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -67,10 +74,69 @@ export default function EndmillPage() {
       window.history.replaceState({}, '', window.location.pathname)
     }
 
-    // Mock 데이터 대신 빈 배열로 초기화
-    setEndmills([])
-    setIsLoading(false)
+    // 실제 엔드밀 데이터 로드
+    loadEndmillData()
+    loadEquipmentData()
   }, [])
+
+  const loadEndmillData = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/endmill')
+      if (!response.ok) {
+        throw new Error('엔드밀 데이터 로드 실패')
+      }
+
+      const result = await response.json()
+      if (result.success) {
+        // API 응답 데이터를 UI 형식에 맞게 변환
+        const transformedData: EndmillInstance[] = result.data.map((item: any) => ({
+          id: item.id,
+          code: item.code,
+          name: item.name,
+          category: item.categoryName || item.category || 'N/A', // categoryName을 우선 사용
+          equipment: Array.from(new Set(item.camSheets?.map((cs: any) => cs.model) || [])).join(', ') || 'N/A',
+          location: item.inventory?.location || 'N/A',
+          process: Array.from(new Set(item.camSheets?.map((cs: any) => cs.process) || [])).join(', ') || 'N/A',
+          position: Array.from(new Set(item.camSheets?.map((cs: any) => `T${cs.tNumber}`) || [])).join(', ') || 'N/A',
+          currentLife: 0, // 실제 사용량 데이터가 필요
+          totalLife: item.camSheets?.[0]?.toolLife || item.standardLife || 1000,
+          status: item.inventory?.status || 'new',
+          installDate: new Date().toISOString().split('T')[0],
+          lastMaintenance: new Date().toISOString().split('T')[0],
+          // camSheets 데이터를 직접 포함
+          camSheets: item.camSheets || []
+        }))
+
+        setEndmills(transformedData)
+      } else {
+        showError('데이터 로드 실패', '엔드밀 데이터를 불러오는데 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('엔드밀 데이터 로드 오류:', error)
+      showError('오류 발생', '엔드밀 데이터를 불러오는 중 오류가 발생했습니다.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const loadEquipmentData = async () => {
+    try {
+      const response = await fetch('/api/equipment')
+      if (!response.ok) {
+        throw new Error('설비 데이터 로드 실패')
+      }
+
+      const result = await response.json()
+      if (result.success) {
+        setEquipments(result.data)
+      } else {
+        console.error('설비 데이터 로드 실패:', result.error)
+      }
+    } catch (error) {
+      console.error('설비 데이터 로드 오류:', error)
+    }
+  }
 
   // 필터링된 앤드밀 목록
   const filteredEndmills = useMemo(() => {
@@ -184,19 +250,48 @@ export default function EndmillPage() {
     }
   }
 
-  // 현황 정보 집계 함수
+  // 현황 정보 집계 함수 - 실제 설비 데이터 기반으로 계산
   const getEndmillUsageInfo = (code: string) => {
-    // CAM Sheet에서 해당 코드가 포함된 모델/공정 추출
-    const usedInSheets = camSheets.filter(sheet =>
-      (sheet.cam_sheet_endmills || []).some((e: any) => e.endmill_code === code)
-    )
-    const usedModels = Array.from(new Set(usedInSheets.map(s => s.model)))
-    const usedProcesses = Array.from(new Set(usedInSheets.map(s => s.process)))
-    // 설비 데이터(목업)에서 해당 코드가 사용중인 설비 수 추출
-    const usedEquipments = endmills.filter(e => e.code === code)
-    const usedEquipmentNumbers = Array.from(new Set(usedEquipments.map(e => e.equipment)))
+    // 해당 엔드밀 코드가 사용되는 모델/공정 조합 찾기
+    const endmillData = endmills.find(e => e.code === code)
+
+    // 디버깅 로그
+    console.log(`[DEBUG] ${code} - endmillData:`, endmillData)
+    console.log(`[DEBUG] ${code} - equipments count:`, equipments.length)
+
+    if (!endmillData || !endmillData.camSheets) {
+      console.log(`[DEBUG] ${code} - No endmill data or camSheets`)
+      return {
+        usedEquipmentCount: 0,
+        usedModels: [],
+        usedProcesses: [],
+        usedEquipmentNumbers: []
+      }
+    }
+
+    // CAM Sheet에서 해당 코드가 사용되는 모델/공정 조합들
+    const modelProcessPairs = endmillData.camSheets.map((cs: any) => ({
+      model: cs.model,
+      process: cs.process
+    }))
+
+    console.log(`[DEBUG] ${code} - modelProcessPairs:`, modelProcessPairs)
+
+    // 실제 설비 데이터에서 해당 모델/공정 조합을 가진 설비들 찾기
+    const matchingEquipments = equipments.filter(eq => {
+      return modelProcessPairs.some(pair =>
+        eq.current_model === pair.model && eq.process === pair.process
+      )
+    })
+
+    console.log(`[DEBUG] ${code} - matchingEquipments:`, matchingEquipments.length)
+
+    const usedModels = Array.from(new Set(modelProcessPairs.map(p => p.model)))
+    const usedProcesses = Array.from(new Set(modelProcessPairs.map(p => p.process)))
+    const usedEquipmentNumbers = matchingEquipments.map(eq => eq.equipment_number)
+
     return {
-      usedEquipmentCount: usedEquipmentNumbers.length,
+      usedEquipmentCount: matchingEquipments.length,
       usedModels,
       usedProcesses,
       usedEquipmentNumbers
@@ -283,7 +378,7 @@ export default function EndmillPage() {
     // CAM Sheet 데이터 새로고침 (일괄 등록 시 CAM Sheet도 생성되므로)
     queryClient.invalidateQueries({ queryKey: ['cam-sheets'] })
     // 엔드밀 데이터 새로고침
-    queryClient.invalidateQueries({ queryKey: ['endmills'] })
+    loadEndmillData()
   }
 
   // 개별 등록 성공 핸들러
@@ -292,7 +387,7 @@ export default function EndmillPage() {
     // CAM Sheet 데이터 새로고침 (엔드밀 등록 시 CAM Sheet도 생성되므로)
     queryClient.invalidateQueries({ queryKey: ['cam-sheets'] })
     // 엔드밀 데이터 새로고침
-    queryClient.invalidateQueries({ queryKey: ['endmills'] })
+    loadEndmillData()
   }
 
   // 로딩 중일 때
@@ -410,22 +505,16 @@ export default function EndmillPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('code')}>
-                  앤드밀 정보 {sortColumn === 'code' && (sortDirection === 'asc' ? '▲' : '▼')}
+                  엔드밀 코드 {sortColumn === 'code' && (sortDirection === 'asc' ? '▲' : '▼')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('equipment')}>
-                  위치 {sortColumn === 'equipment' && (sortDirection === 'asc' ? '▲' : '▼')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('process')}>
-                  공정 {sortColumn === 'process' && (sortDirection === 'asc' ? '▲' : '▼')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('position')}>
-                  위치번호 {sortColumn === 'position' && (sortDirection === 'asc' ? '▲' : '▼')}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('category')}>
+                  카테고리 {sortColumn === 'category' && (sortDirection === 'asc' ? '▲' : '▼')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('name')}>
                   이름 {sortColumn === 'name' && (sortDirection === 'asc' ? '▲' : '▼')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('category')}>
-                  카테고리 {sortColumn === 'category' && (sortDirection === 'asc' ? '▲' : '▼')}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  사용 댓수
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   작업
@@ -437,49 +526,31 @@ export default function EndmillPage() {
                 return (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-3 ${
-                          item.status === 'critical' ? 'bg-red-100' :
-                          item.status === 'warning' ? 'bg-yellow-100' :
-                          item.status === 'new' ? 'bg-blue-100' : 'bg-green-100'
-                        }`}>
-                          {getStatusIcon(item.status)}
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{item.code}</div>
-                          <div className="text-sm text-gray-500">{item.name}</div>
-                        </div>
+                      <div className="text-sm font-medium text-gray-900">{item.code}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{item.category}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {(() => {
+                          // 이름에서 타입명(FLAT, BALL, T-CUT, C-CUT, REAMER, DRILL) 제거
+                          const name = item.name.replace(/^(FLAT|BALL|T-CUT|C-CUT|REAMER|DRILL)\s*/i, '')
+                          return name
+                        })()}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {item.equipment} ({getEndmillUsageInfo(item.code).usedEquipmentCount}대 사용중)
+                        {getEndmillUsageInfo(item.code).usedEquipmentCount}
                       </div>
-                      <div className="text-sm text-gray-500">{item.process} {item.position}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {item.process}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {item.position}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {/* 이름만 표시 (타입 제거) */}
-                      {(() => {
-                        // 이름에서 타입명(FLAT, BALL, T-CUT, C-CUT, REAMER, DRILL) 제거
-                        const name = item.name.replace(/^(FLAT|BALL|T-CUT|C-CUT|REAMER|DRILL)\s*/i, '')
-                        return name
-                      })()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {item.category}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button 
+                      <button
                         onClick={() => handleViewDetail(item)}
                         className="text-blue-600 hover:text-blue-800 mr-3"
                       >
-                        상세
+                        세부보기
                       </button>
                     </td>
                   </tr>

@@ -142,12 +142,24 @@ export class EquipmentService {
     }
   }
 
+  // 툴 포지션 조회
+  async getToolPositions(equipmentId: string) {
+    const { data, error } = await this.supabase
+      .from('tool_positions')
+      .select('*')
+      .eq('equipment_id', equipmentId)
+      .order('position_number')
+
+    if (error) throw error
+    return data
+  }
+
   // 실시간 구독
   subscribeToChanges(callback: (payload: any) => void) {
     return this.supabase
       .channel('equipment_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'equipment' }, 
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'equipment' },
         callback
       )
       .subscribe()
@@ -669,6 +681,21 @@ export class CAMSheetService {
       `)
       .eq('model', model)
       .eq('process', process)
+
+    if (error) throw error
+    return data
+  }
+
+  // CAM Sheet의 엔드밀 목록 조회
+  async getEndmills(camSheetId: string) {
+    const { data, error } = await this.supabase
+      .from('cam_sheet_endmills')
+      .select(`
+        *,
+        endmill_type:endmill_types(*)
+      `)
+      .eq('cam_sheet_id', camSheetId)
+      .order('t_number', { ascending: true })
 
     if (error) throw error
     return data

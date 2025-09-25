@@ -6,10 +6,14 @@ import { clientSupabaseService } from '../services/supabaseService'
 import { Database } from '../types/database'
 
 // Database 타입에서 가져오기
-type Equipment = Database['public']['Tables']['equipment']['Row']
+type BaseEquipment = Database['public']['Tables']['equipment']['Row']
 
-// 타입 export
-export type { Equipment }
+// 확장된 Equipment 타입 (API에서 추가로 계산되는 필드들 포함)
+export type Equipment = BaseEquipment & {
+  used_tool_positions?: number
+  total_tool_positions?: number
+  tool_usage_percentage?: number
+}
 
 export interface EquipmentFilter {
   status?: string
@@ -179,12 +183,12 @@ export const useEquipment = (filter?: EquipmentFilter) => {
     }
   }
 
-  // 사용 가능한 모델 목록 (하드코딩된 값들)
+  // 사용 가능한 모델 목록 - CAM Sheet 데이터를 기반으로 해야 하지만 순환 참조 방지를 위해 기본값 사용
   const getAvailableModels = () => {
     return ['PA1', 'PA2', 'PS', 'B7', 'Q7']
   }
 
-  // 사용 가능한 공정 목록 (하드코딩된 값들)
+  // 사용 가능한 공정 목록 - CAM Sheet 데이터를 기반으로 해야 하지만 순환 참조 방지를 위해 기본값 사용
   const getAvailableProcesses = () => {
     return ['CNC1', 'CNC2', 'CNC2-1']
   }

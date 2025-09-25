@@ -102,7 +102,7 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
       setValidationResult(validation)
 
       if (validation.isValid) {
-        const dbFormatData = convertToEndmillDBFormat(validation.validData, categoryMap, supplierMap)
+        const dbFormatData = convertToEndmillDBFormat(validation.validData)
         setParsedData(dbFormatData)
         showSuccess('유효성 검사 완료', `${validation.validData.length}개의 유효한 엔드밀 데이터를 확인했습니다.`)
       } else {
@@ -121,30 +121,7 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
     }
   }
 
-  const checkForDuplicates = async (newData: any[]) => {
-    try {
-      // 기존 엔드밀 코드 확인을 위한 API 호출
-      const response = await fetch('/api/endmill/check-duplicates', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          codes: newData.map(item => item.code)
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('중복 검사 실패')
-      }
-
-      const result = await response.json()
-      return result
-    } catch (error) {
-      console.error('중복 검사 오류:', error)
-      return { duplicates: [], newItems: newData }
-    }
-  }
+  // 중복 검사 함수 제거 - 같은 엔드밀이 여러 모델/공정에서 사용되는 것은 정상
 
   const handleUpload = async () => {
     if (!validationResult?.isValid || parsedData.length === 0) {
@@ -154,32 +131,14 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
 
     setLoading(true)
     try {
-      // 중복 검사
-      const duplicateCheck = await checkForDuplicates(parsedData)
-
-      if (duplicateCheck.duplicates.length > 0) {
-        const duplicateCodes = duplicateCheck.duplicates.join(', ')
-        showWarning('중복 엔드밀 발견', `다음 코드는 이미 존재합니다: ${duplicateCodes}. 새로운 엔드밀만 등록됩니다.`)
-      }
-
-      // 새로운 코드만 필터링
-      const itemsToUpload = parsedData.filter(item =>
-        duplicateCheck.newCodes.includes(item.code)
-      )
-
-      if (itemsToUpload.length === 0) {
-        showWarning('등록할 데이터 없음', '모든 엔드밀이 이미 등록되어 있습니다.')
-        return
-      }
-
-      // 엔드밀 등록 API 호출
+      // 엔드밀 등록 API 호출 - 모든 데이터 업로드 (중복 검사 제거)
       const response = await fetch('/api/endmill/bulk-upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          endmills: itemsToUpload
+          endmills: parsedData
         }),
       })
 

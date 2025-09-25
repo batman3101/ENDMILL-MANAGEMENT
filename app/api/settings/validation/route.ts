@@ -10,10 +10,10 @@ const supabase = createClient<Database>(
 
 export async function GET(request: NextRequest) {
   try {
-    // 실제 DB 테이블에서 데이터를 병렬로 조회
+    // app_settings 테이블에서 모든 설정값을 병렬로 조회
     const [categoriesData, suppliersData, processesData, modelsData] = await Promise.all([
-      getEndmillCategoriesFromDB(),
-      getSuppliersFromDB(),
+      getCategoriesFromSettings(),
+      getSuppliersFromSettings(),
       getProcessesFromSettings(),
       getModelsFromSettings()
     ])
@@ -39,35 +39,36 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 엔드밀 카테고리 조회 (endmill_categories 테이블에서)
-async function getEndmillCategoriesFromDB() {
+// 엔드밀 카테고리 조회 (app_settings에서)
+async function getCategoriesFromSettings() {
   const { data, error } = await supabase
-    .from('endmill_categories')
-    .select('code')
-    .order('code')
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'inventory.categories')
+    .single()
 
-  if (error) {
-    console.error('Error fetching endmill categories:', error)
+  if (error || !data) {
+    console.error('Error fetching categories from settings:', error)
     return []
   }
 
-  return data?.map(item => item.code) || []
+  return data.value || []
 }
 
-// 공급업체 조회 (suppliers 테이블에서)
-async function getSuppliersFromDB() {
+// 공급업체 조회 (app_settings에서)
+async function getSuppliersFromSettings() {
   const { data, error } = await supabase
-    .from('suppliers')
-    .select('code')
-    .eq('is_active', true)
-    .order('code')
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'inventory.suppliers')
+    .single()
 
-  if (error) {
-    console.error('Error fetching suppliers:', error)
+  if (error || !data) {
+    console.error('Error fetching suppliers from settings:', error)
     return []
   }
 
-  return data?.map(item => item.code) || []
+  return data.value || []
 }
 
 // 프로세스 목록 조회 (app_settings에서)

@@ -30,15 +30,7 @@ interface EndmillFormProps {
   editData?: any // 수정 모드용 (향후 확장)
 }
 
-// 카테고리 옵션
-const categoryOptions = [
-  { value: 'FLAT', label: '플랫 엔드밀', description: '평면 가공용 일반적인 엔드밀' },
-  { value: 'BALL', label: '볼 엔드밀', description: '곡면 가공 및 3D 가공용 엔드밀' },
-  { value: 'T-CUT', label: 'T-슬롯 엔드밀', description: 'T-슬롯 가공용 엔드밀' },
-  { value: 'C-CUT', label: '코너 R 엔드밀', description: '모서리 R 가공용 엔드밀' },
-  { value: 'REAMER', label: '리머', description: '구멍 정밀 가공용 리머' },
-  { value: 'DRILL', label: '드릴', description: '구멍 가공용 드릴' }
-]
+// 카테고리 옵션 (동적으로 로드)
 
 // 모델 옵션
 const modelOptions = ['PA1', 'PA2', 'PS', 'B7', 'Q7']
@@ -69,6 +61,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [supplierPrices, setSupplierPrices] = useState<SupplierPrice[]>([])
   const [showSupplierSection, setShowSupplierSection] = useState(false)
+  const [categories, setCategories] = useState<any[]>([])
   const { showSuccess, showError } = useToast()
 
   // 수정 모드일 때 초기 데이터 설정
@@ -84,20 +77,28 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
     }
   }, [editData])
 
-  // 공급업체 목록 로드
+  // 카테고리 및 공급업체 목록 로드
   useEffect(() => {
-    const loadSuppliers = async () => {
+    const loadInitialData = async () => {
       try {
-        const response = await fetch('/api/suppliers')
-        const result = await response.json()
-        if (result.success) {
-          setSuppliers(result.data)
+        // 카테고리 로드
+        const categoryResponse = await fetch('/api/endmill/categories')
+        const categoryResult = await categoryResponse.json()
+        if (categoryResult.success) {
+          setCategories(categoryResult.data)
+        }
+
+        // 공급업체 로드
+        const supplierResponse = await fetch('/api/suppliers')
+        const supplierResult = await supplierResponse.json()
+        if (supplierResult.success) {
+          setSuppliers(supplierResult.data)
         }
       } catch (error) {
-        console.error('공급업체 로드 오류:', error)
+        console.error('초기 데이터 로드 오류:', error)
       }
     }
-    loadSuppliers()
+    loadInitialData()
   }, [])
 
   // 폼 필드 변경 핸들러
@@ -315,9 +316,9 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
               disabled={loading}
             >
               <option value="">카테고리를 선택하세요</option>
-              {categoryOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label} - {option.description}
+              {categories.map(category => (
+                <option key={category.code} value={category.code}>
+                  {category.name_ko} - {category.description}
                 </option>
               ))}
             </select>

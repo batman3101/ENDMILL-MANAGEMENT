@@ -221,15 +221,31 @@ export const useCAMSheets = (filter?: CAMSheetFilter) => {
     })
   }
 
-  // 사용 가능한 모델 목록 - 메모이제이션
+  // 사용 가능한 모델 목록 - CAM Sheet에서 실제 등록된 모델들 추출
   const getAvailableModels = useMemo(() => {
-    return ['PA1', 'PA2', 'PS', 'B7', 'Q7']
-  }, [])
+    if (!camSheets || camSheets.length === 0) {
+      return ['PA1', 'PA2', 'PS', 'B7', 'Q7'] // 기본값
+    }
 
-  // 사용 가능한 공정 목록 - 메모이제이션
+    const uniqueModels = [...new Set(camSheets.map(sheet => sheet.model))]
+      .filter(model => model && model.trim())
+      .sort()
+
+    return uniqueModels.length > 0 ? uniqueModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']
+  }, [camSheets])
+
+  // 사용 가능한 공정 목록 - CAM Sheet에서 실제 등록된 공정들 추출
   const getAvailableProcesses = useMemo(() => {
-    return ['CNC1', 'CNC2', 'CNC2-1']
-  }, [])
+    if (!camSheets || camSheets.length === 0) {
+      return ['CNC1', 'CNC2', 'CNC2-1'] // 기본값
+    }
+
+    const uniqueProcesses = [...new Set(camSheets.map(sheet => sheet.process))]
+      .filter(process => process && process.trim())
+      .sort()
+
+    return uniqueProcesses.length > 0 ? uniqueProcesses : ['CNC1', 'CNC2', 'CNC2-1']
+  }, [camSheets])
 
   return {
     camSheets,
