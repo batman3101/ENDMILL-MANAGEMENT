@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createStatusChangeConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
@@ -10,6 +10,7 @@ import { useSettings } from '../../../lib/hooks/useSettings'
 import { useEquipment, useEquipmentStatus, Equipment } from '../../../lib/hooks/useEquipment'
 import PageLoadingIndicator, { SkeletonCard, SkeletonTableRow } from '../../../components/shared/PageLoadingIndicator'
 import EquipmentExcelUploader from '../../../components/features/EquipmentExcelUploader'
+import { supabase } from '../../../lib/supabase/client'
 
 export default function EquipmentPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -22,6 +23,8 @@ export default function EquipmentPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [showEditModal, setShowEditModal] = useState(false)
   const [editEquipment, setEditEquipment] = useState<any>(null)
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false)
+  const lastRefreshTimeRef = useRef<number>(0)
   const confirmation = useConfirmation()
   const { showSuccess, showError } = useToast()
 
@@ -48,8 +51,47 @@ export default function EquipmentPage() {
   const equipmentStatuses = settings.equipment.statuses
   const toolPositionCount = settings.equipment.toolPositionCount
 
+  // Throttled refresh function to prevent excessive API calls
+  const throttledRefresh = useCallback(() => {
+    const now = Date.now()
+    if (now - lastRefreshTimeRef.current > 3000) { // 최소 3초 간격
+      lastRefreshTimeRef.current = now
+      refetch()
+    }
+  }, [refetch])
 
-  
+  // 실시간 구독 설정
+  useEffect(() => {
+    const equipmentChannel = supabase
+      .channel('equipment_realtime_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment' },
+        (payload) => {
+          console.log('🏭 설비 변경:', payload)
+          throttledRefresh()
+        }
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tool_positions' },
+        (payload) => {
+          console.log('🔧 공구 포지션 변경:', payload)
+          throttledRefresh()
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ 설비 실시간 연결됨')
+          setIsRealtimeConnected(true)
+        } else if (status === 'CHANNEL_ERROR') {
+          console.log('❌ 설비 실시간 연결 실패')
+          setIsRealtimeConnected(false)
+        }
+      })
+
+    // 컴포넌트 언마운트 시 구독 해제
+    return () => {
+      supabase.removeChannel(equipmentChannel)
+    }
+  }, [throttledRefresh])
+
   // 설비 추가 폼 상태
   const [addFormData, setAddFormData] = useState({
     equipmentNumber: '',

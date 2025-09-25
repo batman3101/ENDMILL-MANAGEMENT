@@ -11,12 +11,6 @@ interface EndmillFormData {
   standardLife: number
 }
 
-interface CamSheetData {
-  model: string
-  process: string
-  toolLife: number
-  tNumber: number
-}
 
 interface SupplierPrice {
   supplier_id: string
@@ -30,13 +24,7 @@ interface EndmillFormProps {
   editData?: any // 수정 모드용 (향후 확장)
 }
 
-// 카테고리 옵션 (동적으로 로드)
-
-// 모델 옵션
-const modelOptions = ['PA1', 'PA2', 'PS', 'B7', 'Q7']
-
-// 프로세스 옵션
-const processOptions = ['거친가공', '중간가공', '정밀가공', '마감가공', '드릴링', '탭핑']
+// 모든 옵션들은 Supabase에서 동적으로 로드됩니다
 
 export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFormProps) {
   const [formData, setFormData] = useState<EndmillFormData>({
@@ -47,14 +35,6 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
     standardLife: 0
   })
 
-  const [selectedSupplier, setSelectedSupplier] = useState<string>('')
-  const [camSheetData, setCamSheetData] = useState<CamSheetData[]>([{
-    model: '',
-    process: '',
-    toolLife: 0,
-    tNumber: 1
-  }])
-  const [showCamSheetSection, setShowCamSheetSection] = useState(false)
 
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -131,27 +111,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
     setSupplierPrices(prev => prev.filter((_, i) => i !== index))
   }
 
-  // CAM Sheet 데이터 추가
-  const addCamSheetData = () => {
-    setCamSheetData(prev => [...prev, {
-      model: '',
-      process: '',
-      toolLife: 0,
-      tNumber: prev.length + 1
-    }])
-  }
-
-  // CAM Sheet 데이터 제거
-  const removeCamSheetData = (index: number) => {
-    setCamSheetData(prev => prev.filter((_, i) => i !== index))
-  }
-
-  // CAM Sheet 데이터 업데이트
-  const updateCamSheetData = (index: number, field: keyof CamSheetData, value: any) => {
-    setCamSheetData(prev => prev.map((data, i) =>
-      i === index ? { ...data, [field]: value } : data
-    ))
-  }
+  // CAM Sheet 기능은 제거되었습니다. CAM Sheet는 별도로 먼저 등록해야 합니다.
 
   // 공급업체 가격 업데이트
   const updateSupplierPrice = (index: number, field: keyof SupplierPrice, value: any) => {
@@ -187,9 +147,6 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
       newErrors.name = '엔드밀 이름은 필수입니다.'
     }
 
-    if (!selectedSupplier) {
-      newErrors.supplier = '공급업체를 선택해주세요.'
-    }
 
 
     if (formData.unitCost <= 0) {
@@ -224,19 +181,8 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
         standard_life: formData.standardLife
       }
 
-      // 기본 공급업체 가격 정보 추가
-      const allSupplierPrices = [
-        {
-          supplier_id: selectedSupplier,
-          unit_price: formData.unitCost
-        },
-        ...supplierPrices.filter(sp => sp.supplier_id && sp.unit_price > 0)
-      ]
-
-      // CAM Sheet 데이터 준비
-      const validCamSheetData = camSheetData.filter(cs =>
-        cs.model && cs.process && cs.toolLife > 0 && cs.tNumber > 0
-      )
+      // 공급업체별 가격 정보 (선택사항)
+      const allSupplierPrices = supplierPrices.filter(sp => sp.supplier_id && sp.unit_price > 0)
 
       const response = await fetch('/api/endmill/create', {
         method: 'POST',
@@ -245,8 +191,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
         },
         body: JSON.stringify({
           ...submitData,
-          supplier_prices: allSupplierPrices,
-          cam_sheet_data: validCamSheetData
+          supplier_prices: allSupplierPrices
         }),
       })
 
@@ -346,27 +291,6 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
 
           {/* 공급업체 및 단가 */}
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                기본 공급업체 <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={selectedSupplier}
-                onChange={(e) => setSelectedSupplier(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.supplier ? 'border-red-500' : 'border-gray-300'
-                }`}
-                disabled={loading}
-              >
-                <option value="">공급업체를 선택하세요</option>
-                {suppliers.map(supplier => (
-                  <option key={supplier.id} value={supplier.id}>
-                    {supplier.name} ({supplier.code})
-                  </option>
-                ))}
-              </select>
-              {errors.supplier && <p className="mt-1 text-sm text-red-600">{errors.supplier}</p>}
-            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -382,8 +306,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     errors.unitCost ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  disabled={loading || !selectedSupplier}
-                  placeholder={!selectedSupplier ? '공급업체를 먼저 선택하세요' : ''}
+                  disabled={loading}
                 />
                 {errors.unitCost && <p className="mt-1 text-sm text-red-600">{errors.unitCost}</p>}
               </div>
@@ -408,118 +331,6 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
             </div>
           </div>
 
-          {/* CAM Sheet 정보 섹션 */}
-          <div className="border-t pt-6">
-            <div className="flex justify-between items-center mb-4">
-              <h4 className="text-md font-medium text-gray-900">CAM Sheet 정보</h4>
-              <button
-                type="button"
-                onClick={() => setShowCamSheetSection(!showCamSheetSection)}
-                className="text-sm text-blue-600 hover:text-blue-800"
-              >
-                {showCamSheetSection ? '숨기기' : '추가하기'}
-              </button>
-            </div>
-
-            {showCamSheetSection && (
-              <div className="space-y-4">
-                <div className="text-sm text-gray-600 mb-4">
-                  모델별, 프로세스별 수명 정보를 입력할 수 있습니다. (선택사항)
-                </div>
-
-                {camSheetData.map((camData, index) => (
-                  <div key={index} className="bg-gray-50 p-4 rounded-lg border">
-                    <div className="flex justify-between items-start mb-3">
-                      <h5 className="text-sm font-medium text-gray-700">CAM Sheet {index + 1}</h5>
-                      <button
-                        type="button"
-                        onClick={() => removeCamSheetData(index)}
-                        className="text-red-600 hover:text-red-800 text-sm"
-                      >
-                        삭제
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          모델
-                        </label>
-                        <select
-                          value={camData.model}
-                          onChange={(e) => updateCamSheetData(index, 'model', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          disabled={loading}
-                        >
-                          <option value="">모델을 선택하세요</option>
-                          {modelOptions.map(model => (
-                            <option key={model} value={model}>{model}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          프로세스
-                        </label>
-                        <select
-                          value={camData.process}
-                          onChange={(e) => updateCamSheetData(index, 'process', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          disabled={loading}
-                        >
-                          <option value="">프로세스를 선택하세요</option>
-                          {processOptions.map(process => (
-                            <option key={process} value={process}>{process}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          수명 (회)
-                        </label>
-                        <input
-                          type="number"
-                          value={camData.toolLife || ''}
-                          onChange={(e) => updateCamSheetData(index, 'toolLife', Number(e.target.value))}
-                          min="0"
-                          step="50"
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          disabled={loading}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          T 번호
-                        </label>
-                        <input
-                          type="number"
-                          value={camData.tNumber || ''}
-                          onChange={(e) => updateCamSheetData(index, 'tNumber', Number(e.target.value))}
-                          min="1"
-                          max="24"
-                          step="1"
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          disabled={loading}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={addCamSheetData}
-                  className="w-full px-4 py-2 text-sm text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 disabled:opacity-50"
-                  disabled={loading}
-                >
-                  + CAM Sheet 추가
-                </button>
-              </div>
-            )}
-          </div>
 
           {/* 공급업체별 가격 정보 섹션 */}
           <div className="border-t pt-6">

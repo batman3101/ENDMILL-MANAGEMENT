@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createCustomConfirmation } from '../../../lib/hooks/useConfirmation'
@@ -11,6 +11,7 @@ import EndmillExcelUploader from '../../../components/features/EndmillExcelUploa
 import EndmillForm from '../../../components/features/EndmillForm'
 import EndmillSupplierPrices from '../../../components/features/EndmillSupplierPrices'
 import { downloadEndmillTemplate } from '../../../lib/utils/endmillExcelTemplate'
+import { supabase } from '../../../lib/supabase/client'
 
 // 앤드밀 인스턴스 타입 정의
 interface EndmillInstance {
@@ -54,7 +55,9 @@ export default function EndmillPage() {
   const [selectedEndmill, setSelectedEndmill] = useState<EndmillInstance | null>(null)
   const [showExcelUploader, setShowExcelUploader] = useState(false)
   const [showEndmillForm, setShowEndmillForm] = useState(false)
-  
+  const lastRefreshTimeRef = useRef<number>(0)
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false)
+
   // 설정에서 값 가져오기
   const { settings } = useSettings()
   const itemsPerPage = settings.system.itemsPerPage
@@ -62,6 +65,16 @@ export default function EndmillPage() {
   const equipmentLocations = settings.equipment.locations
   const totalEquipmentCount = settings.equipment.totalCount
   const toolPositionCount = settings.equipment.toolPositionCount
+
+  // Throttled refresh function to prevent excessive API calls
+  const throttledRefresh = useCallback(() => {
+    const now = Date.now()
+    if (now - lastRefreshTimeRef.current > 3000) { // 최소 3초 간격
+      lastRefreshTimeRef.current = now
+      loadEndmillData()
+      loadEquipmentData()
+    }
+  }, [])
 
   // 실제 데이터베이스에서 데이터 로드 및 URL 파라미터 처리
   useEffect(() => {
@@ -77,6 +90,71 @@ export default function EndmillPage() {
     // 실제 엔드밀 데이터 로드
     loadEndmillData()
     loadEquipmentData()
+
+    // 실시간 구독 설정
+    const endmillChannel = supabase
+      .channel('endmill_data_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'endmill_types' },
+        (payload) => {
+          console.log('🔧 엔드밀 타입 변경:', payload)
+          throttledRefresh()
+        }
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'endmill_categories' },
+        (payload) => {
+          console.log('📂 엔드밀 카테고리 변경:', payload)
+          throttledRefresh()
+        }
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' },
+        (payload) => {
+          console.log('📦 재고 변경:', payload)
+          throttledRefresh()
+        }
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cam_sheet_endmills' },
+        (payload) => {
+          console.log('📋 CAM 시트 앤드밀 변경:', payload)
+          throttledRefresh()
+        }
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'endmill_supplier_prices' },
+        (payload) => {
+          console.log('💰 공급업체 가격 변경:', payload)
+          throttledRefresh()
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ 엔드밀 실시간 연결됨')
+          setIsRealtimeConnected(true)
+        } else if (status === 'CHANNEL_ERROR') {
+          console.log('❌ 엔드밀 실시간 연결 실패')
+          setIsRealtimeConnected(false)
+        }
+      })
+
+    const equipmentChannel = supabase
+      .channel('equipment_data_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment' },
+        (payload) => {
+          console.log('🏭 설비 변경:', payload)
+          throttledRefresh()
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ 설비 실시간 연결됨')
+        } else if (status === 'CHANNEL_ERROR') {
+          console.log('❌ 설비 실시간 연결 실패')
+        }
+      })
+
+    // 컴포넌트 언마운트 시 구독 해제
+    return () => {
+      supabase.removeChannel(endmillChannel)
+      supabase.removeChannel(equipmentChannel)
+    }
   }, [])
 
   const loadEndmillData = async () => {
@@ -414,6 +492,12 @@ export default function EndmillPage() {
       <div className="flex justify-between items-start">
         <div>
           <p className="text-gray-600">앤드밀 별 모델, 설비, 공정의 사용 현황</p>
+          <div className="flex items-center space-x-2 mt-1">
+            <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+            <span className={`text-xs font-medium ${isRealtimeConnected ? 'text-green-600' : 'text-red-600'}`}>
+              {isRealtimeConnected ? '실시간 연결됨' : '연결 중...'}
+            </span>
+          </div>
         </div>
         <div className="flex gap-3">
           <button
