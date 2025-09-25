@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '../../../../../lib/supabase/client'
+import { createServerClient } from '../../../../../lib/supabase/client'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const supabase = createServerClient()
     const endmillId = params.id
 
     if (!endmillId) {
@@ -20,7 +21,7 @@ export async function GET(
       .from('endmill_supplier_prices')
       .select(`
         *,
-        suppliers (
+        suppliers!inner (
           id,
           code,
           name,
@@ -30,7 +31,6 @@ export async function GET(
         )
       `)
       .eq('endmill_type_id', endmillId)
-      .eq('suppliers.is_active', true)
 
     if (error) {
       console.error('공급업체별 가격 조회 오류:', error)
@@ -81,6 +81,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const supabase = createServerClient()
     const endmillId = params.id
     const priceData = await request.json()
 

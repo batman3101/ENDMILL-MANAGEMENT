@@ -698,55 +698,103 @@ export default function EndmillPage() {
                 const usage = getEndmillUsageInfo(selectedEndmill.code)
                 return (
                   <div className="mb-6">
-                    <h4 className="text-md font-semibold mb-2">현재 사용중인 현황</h4>
+                    <h4 className="text-md font-semibold mb-3">현재 사용중인 현황</h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <span className="text-sm text-gray-600">사용중인 설비 수</span>
                         <div className="text-lg font-bold text-blue-600">{usage.usedEquipmentCount}대</div>
                       </div>
                       <div>
-                        <span className="text-sm text-gray-600">사용중인 설비번호</span>
-                        <div className="text-sm text-gray-900">{usage.usedEquipmentNumbers.join(', ') || '-'}</div>
+                        <span className="text-sm text-gray-600">앤드밀 코드</span>
+                        <div className="text-lg font-bold text-gray-900">{selectedEndmill.code}</div>
                       </div>
                       <div>
-                        <span className="text-sm text-gray-600">사용중인 모델</span>
-                        <div className="text-sm text-gray-900">{usage.usedModels.join(', ') || '-'}</div>
+                        <span className="text-sm text-gray-600">카테고리</span>
+                        <div className="text-sm text-gray-900">{selectedEndmill.category}</div>
                       </div>
                       <div>
-                        <span className="text-sm text-gray-600">사용중인 공정</span>
-                        <div className="text-sm text-gray-900">{usage.usedProcesses.join(', ') || '-'}</div>
+                        <span className="text-sm text-gray-600">이름</span>
+                        <div className="text-sm text-gray-900">{selectedEndmill.name}</div>
                       </div>
                     </div>
                   </div>
                 )
               })()}
-              {/* 기본 정보 */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-sm text-gray-600">앤드밀 코드</span>
-                  <div className="text-lg font-bold text-gray-900">{selectedEndmill.code}</div>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600">타입/이름</span>
-                  <div className="text-sm text-gray-900">{selectedEndmill.name}</div>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600">카테고리</span>
-                  <div className="text-sm text-gray-900">{selectedEndmill.category}</div>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600">설비</span>
-                  <div className="text-sm text-gray-900">{selectedEndmill.equipment}</div>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600">위치</span>
-                  <div className="text-sm text-gray-900">{selectedEndmill.position}</div>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600">공정</span>
-                  <div className="text-sm text-gray-900">{selectedEndmill.process}</div>
-                </div>
-              </div>
+
+              {/* 모델/공정별 사용 현황 테이블 */}
+              {(() => {
+                const usage = getEndmillUsageInfo(selectedEndmill.code)
+
+                if (!selectedEndmill.camSheets || selectedEndmill.camSheets.length === 0) {
+                  return (
+                    <div className="mb-6">
+                      <h4 className="text-md font-semibold mb-2">모델/공정별 사용 현황</h4>
+                      <p className="text-gray-500">사용 중인 모델/공정 정보가 없습니다.</p>
+                    </div>
+                  )
+                }
+
+                // 모델/공정별로 그룹핑
+                const groupedData = selectedEndmill.camSheets.reduce((acc: any, cs: any) => {
+                  const key = `${cs.model}_${cs.process}`
+                  if (!acc[key]) {
+                    acc[key] = {
+                      model: cs.model,
+                      process: cs.process,
+                      tNumbers: [],
+                      toolLife: cs.toolLife,
+                      equipmentNumbers: []
+                    }
+                  }
+                  acc[key].tNumbers.push(cs.tNumber)
+                  return acc
+                }, {})
+
+                // 각 모델/공정에 해당하는 설비 번호 찾기
+                Object.keys(groupedData).forEach(key => {
+                  const data = groupedData[key]
+                  const matchingEquipments = equipments.filter(eq =>
+                    eq.current_model === data.model && eq.process === data.process
+                  )
+                  data.equipmentNumbers = matchingEquipments.map(eq => eq.equipment_number)
+                })
+
+                return (
+                  <div className="mb-6">
+                    <h4 className="text-md font-semibold mb-3">모델/공정별 사용 현황</h4>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full border border-gray-300 rounded-lg">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">모델</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">공정</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">T번호</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">설비 대수</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">설비 번호</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">공구 수명</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.values(groupedData).map((data: any, index: number) => (
+                            <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                              <td className="px-4 py-2 text-sm text-gray-900 border-b">{data.model}</td>
+                              <td className="px-4 py-2 text-sm text-gray-900 border-b">{data.process}</td>
+                              <td className="px-4 py-2 text-sm text-gray-900 border-b">
+                                {data.tNumbers.sort((a: number, b: number) => a - b).map((t: number) => `T${t}`).join(', ')}
+                              </td>
+                              <td className="px-4 py-2 text-sm font-semibold text-blue-600 border-b">{data.equipmentNumbers.length}대</td>
+                              <td className="px-4 py-2 text-sm text-gray-900 border-b">
+                                {data.equipmentNumbers.length > 0 ? data.equipmentNumbers.sort((a: string, b: string) => Number(a) - Number(b)).join(', ') : '-'}
+                              </td>
+                              <td className="px-4 py-2 text-sm text-gray-900 border-b">{data.toolLife.toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )
+              })()}
 
               {/* 공급업체별 가격 정보 */}
               <div className="border-t pt-6">
