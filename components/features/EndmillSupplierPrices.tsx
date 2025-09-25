@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useToast } from '../shared/Toast'
+import AddSupplierPriceModal from './AddSupplierPriceModal'
 
 interface SupplierPrice {
   id: string
@@ -198,27 +199,18 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
         </div>
       )}
 
-      {/* 가격 추가 폼 모달은 별도 컴포넌트로 구현 예정 */}
+      {/* 가격 추가 폼 모달 */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium mb-4">공급업체 가격 추가</h3>
-            <p className="text-gray-600 mb-4">
-              엔드밀 코드: <span className="font-medium">{endmillCode}</span>
-            </p>
-            <p className="text-sm text-gray-500 mb-4">
-              이 기능은 곧 구현될 예정입니다.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-300 rounded hover:bg-gray-400"
-              >
-                닫기
-              </button>
-            </div>
-          </div>
-        </div>
+        <AddSupplierPriceModal
+          endmillId={endmillId}
+          endmillCode={endmillCode}
+          onClose={() => setShowAddForm(false)}
+          onSuccess={() => {
+            setShowAddForm(false)
+            loadSupplierPrices()
+            showSuccess('등록 완료', '공급업체 가격 정보가 등록되었습니다.')
+          }}
+        />
       )}
     </div>
   )

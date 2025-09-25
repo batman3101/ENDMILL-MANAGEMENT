@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '../../../lib/supabase/client'
+import { createServerClient } from '../../../lib/supabase/client'
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createServerClient()
+
     // 활성화된 공급업체 목록 조회
     const { data: suppliers, error } = await supabase
       .from('suppliers')
