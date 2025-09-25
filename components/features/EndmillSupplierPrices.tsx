@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '../shared/Toast'
 import AddSupplierPriceModal from './AddSupplierPriceModal'
+import EditSupplierPriceModal from './EditSupplierPriceModal'
+import { supabase } from '../../lib/supabase/client'
 
 interface SupplierPrice {
   id: string
@@ -30,6 +32,7 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
   const [supplierPrices, setSupplierPrices] = useState<SupplierPrice[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [editingPrice, setEditingPrice] = useState<SupplierPrice | null>(null)
   const { showSuccess, showError } = useToast()
 
   // 공급업체별 가격 정보 로드
@@ -55,6 +58,30 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
   useEffect(() => {
     if (endmillId) {
       loadSupplierPrices()
+
+      // 실시간 구독 설정
+      const channel = supabase
+        .channel('endmill_supplier_prices_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'endmill_supplier_prices',
+            filter: `endmill_type_id=eq.${endmillId}`
+          },
+          (payload) => {
+            console.log('실시간 데이터 변경 감지:', payload)
+            // 데이터가 변경되면 다시 로드
+            loadSupplierPrices()
+          }
+        )
+        .subscribe()
+
+      // 컴포넌트 언마운트 시 구독 해제
+      return () => {
+        supabase.removeChannel(channel)
+      }
     }
   }, [endmillId])
 
@@ -78,6 +105,31 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
     if (rating >= 8) return 'text-blue-600 bg-blue-100'
     if (rating >= 7) return 'text-yellow-600 bg-yellow-100'
     return 'text-red-600 bg-red-100'
+  }
+
+  // 가격 정보 삭제
+  const handleDeletePrice = async (priceId: string) => {
+    if (!confirm('정말로 이 가격 정보를 삭제하시겠습니까?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/endmill/${endmillId}/suppliers/${priceId}`, {
+        method: 'DELETE'
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        showSuccess('삭제 완료', '공급업체 가격 정보가 삭제되었습니다.')
+        loadSupplierPrices()
+      } else {
+        throw new Error(result.error || '삭제 실패')
+      }
+    } catch (error) {
+      console.error('가격 정보 삭제 오류:', error)
+      showError('삭제 실패', '가격 정보 삭제 중 오류가 발생했습니다.')
+    }
   }
 
 
@@ -127,6 +179,9 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
                 <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
                   품질등급
                 </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                  작업
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -157,6 +212,22 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getQualityColor(price.supplier.quality_rating)}`}>
                       {price.supplier.quality_rating}/10
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => setEditingPrice(price)}
+                        className="text-blue-600 hover:text-blue-800 text-sm"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => handleDeletePrice(price.id)}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        삭제
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -209,6 +280,21 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
             setShowAddForm(false)
             loadSupplierPrices()
             showSuccess('등록 완료', '공급업체 가격 정보가 등록되었습니다.')
+          }}
+        />
+      )}
+
+      {/* 가격 수정 폼 모달 */}
+      {editingPrice && (
+        <EditSupplierPriceModal
+          endmillId={endmillId}
+          endmillCode={endmillCode}
+          supplierPrice={editingPrice}
+          onClose={() => setEditingPrice(null)}
+          onSuccess={() => {
+            setEditingPrice(null)
+            loadSupplierPrices()
+            showSuccess('수정 완료', '공급업체 가격 정보가 수정되었습니다.')
           }}
         />
       )}

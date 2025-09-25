@@ -51,7 +51,7 @@ export async function GET(
           code: item.suppliers.code,
           name: item.suppliers.name,
           contact_info: item.suppliers.contact_info,
-          quality_rating: item.suppliers.quality_rating
+          quality_rating: item.quality_rating || item.suppliers.quality_rating || 8
         },
         unit_price: item.unit_price,
         min_order_quantity: item.min_order_quantity,
@@ -131,7 +131,8 @@ export async function POST(
       min_order_quantity: priceData.min_order_quantity || 1,
       lead_time_days: priceData.lead_time_days || 5,
       is_preferred: priceData.is_preferred || false,
-      current_stock: priceData.current_stock || 0
+      current_stock: priceData.current_stock || 0,
+      quality_rating: priceData.quality_rating || 8
     }
 
     const { data: newPrice, error: insertError } = await supabase
