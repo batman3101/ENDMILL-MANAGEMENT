@@ -4,10 +4,16 @@ import { z } from 'zod';
 
 // 설비 생성 스키마
 const createEquipmentSchema = z.object({
-  equipment_number: z.number().int().min(1).max(999),
+  equipment_number: z.union([
+    z.string().regex(/^C\d{3}$/), // C001 형식
+    z.number().int().min(1).max(999) // 기존 숫자 형식도 지원
+  ]),
   model_code: z.string().min(1),
   location: z.string().optional(),
-  status: z.enum(['active', 'maintenance', 'offline']).optional(),
+  status: z.union([
+    z.enum(['active', 'maintenance', 'offline']),
+    z.enum(['가동중', '점검중', '셋업중'])
+  ]).optional(),
 });
 
 // GET: 설비 목록 조회
@@ -123,7 +129,10 @@ export async function POST(request: NextRequest) {
       equipment_number: validatedData.equipment_number,
       model_code: validatedData.model_code,
       location: validatedData.location || null,
-      status: validatedData.status || 'active'
+      status: validatedData.status || 'active',
+      current_model: validatedData.model_code, // current_model 추가
+      process: body.process || 'CNC1', // process 추가
+      tool_position_count: 21 // 기본값 추가
     })
     
     return NextResponse.json({

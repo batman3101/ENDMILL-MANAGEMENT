@@ -76,7 +76,7 @@ export const useEquipment = (filter?: EquipmentFilter) => {
   // 설비 생성 Mutation
   const createMutation = useMutation({
     mutationFn: async (data: {
-      equipment_number: number
+      equipment_number: string | number  // C001 형식 지원
       model_code: string
       status?: string
       location?: string

@@ -94,7 +94,7 @@ export default function EquipmentPage() {
 
   // 설비 추가 폼 상태
   const [addFormData, setAddFormData] = useState({
-    equipmentNumber: '',
+    equipmentNumber: 'C000',
     location: 'A동' as 'A동' | 'B동',
     status: '가동중' as '가동중' | '점검중' | '셋업중',
     currentModel: '',
@@ -237,7 +237,7 @@ export default function EquipmentPage() {
 
     try {
       createEquipment({
-        equipment_number: parseInt(addFormData.equipmentNumber.replace('C', '')),
+        equipment_number: addFormData.equipmentNumber, // C001 형식 그대로 저장
         model_code: addFormData.currentModel,
         location: addFormData.location,
         status: addFormData.status,
@@ -247,7 +247,7 @@ export default function EquipmentPage() {
 
       // 폼 초기화
       setAddFormData({
-        equipmentNumber: '',
+        equipmentNumber: 'C000',
         location: 'A동',
         status: '가동중',
         currentModel: '',
@@ -267,13 +267,16 @@ export default function EquipmentPage() {
 
   // 설비 번호 자동 생성
   const generateNextEquipmentNumber = () => {
-    const existingNumbers = equipments.map(eq =>
-      parseInt(eq.equipment_number?.toString() || '0')
-    ).filter(num => !isNaN(num))
+    const existingNumbers = equipments.map(eq => {
+      const numStr = eq.equipment_number?.toString() || '0'
+      // C로 시작하는 경우 C를 제거하고 숫자만 추출
+      const cleanNum = numStr.replace(/^C/i, '')
+      return parseInt(cleanNum)
+    }).filter(num => !isNaN(num))
 
     const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0
     const nextNumber = maxNumber + 1
-    return nextNumber.toString()
+    return `C${nextNumber.toString().padStart(3, '0')}`
   }
 
   // 정렬 토글 함수
@@ -301,7 +304,7 @@ export default function EquipmentPage() {
       })
 
       setShowEditModal(false)
-      showSuccess('설비 수정 완료', `설비 C${editEquipment.equipment_number?.toString().padStart(3, '0')}이(가) 수정되었습니다.`)
+      showSuccess('설비 수정 완료', `설비 ${editEquipment.equipment_number?.toString().startsWith('C') ? editEquipment.equipment_number : `C${editEquipment.equipment_number?.toString().padStart(3, '0')}`}이(가) 수정되었습니다.`)
     } catch (error) {
       showError('설비 수정 실패', error instanceof Error ? error.message : '설비 수정 중 오류가 발생했습니다.')
     }
@@ -311,7 +314,7 @@ export default function EquipmentPage() {
   const handleOpenEditModal = (equipment: any) => {
     setEditEquipment({
       ...equipment,
-      equipmentNumber: `C${equipment.equipment_number?.toString().padStart(3, '0')}`
+      equipmentNumber: equipment.equipment_number?.toString().startsWith('C') ? equipment.equipment_number : `C${equipment.equipment_number?.toString().padStart(3, '0')}`
     })
     setShowEditModal(true)
   }
@@ -382,15 +385,30 @@ export default function EquipmentPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     설비번호 <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    value={addFormData.equipmentNumber}
-                    onChange={(e) => setAddFormData(prev => ({ ...prev, equipmentNumber: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="예: C001"
-                    disabled={isSubmitting}
-                    required
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                      C
+                    </span>
+                    <input
+                      type="text"
+                      value={addFormData.equipmentNumber.replace(/^C/i, '')}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '')
+                        if (value) {
+                          setAddFormData(prev => ({ ...prev, equipmentNumber: `C${value.padStart(3, '0')}` }))
+                        } else {
+                          setAddFormData(prev => ({ ...prev, equipmentNumber: 'C000' }))
+                        }
+                      }}
+                      className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="001"
+                      maxLength={3}
+                      pattern="[0-9]{3}"
+                      disabled={isSubmitting}
+                      required
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">3자리 숫자를 입력하세요 (예: 001, 002, 010)</p>
                 </div>
 
                 {/* 위치 */}
@@ -866,7 +884,9 @@ export default function EquipmentPage() {
                     {/* 설비번호 */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        C{equipment.equipment_number?.toString().padStart(3, '0')}
+                        {equipment.equipment_number?.toString().startsWith('C')
+                          ? equipment.equipment_number
+                          : `C${equipment.equipment_number?.toString().padStart(3, '0')}`}
                       </div>
                     </td>
                     
@@ -928,7 +948,7 @@ export default function EquipmentPage() {
                         <StatusChangeDropdown
                           currentStatus={equipment.status || ''}
                           equipmentId={equipment.id}
-                          equipmentNumber={`C${equipment.equipment_number?.toString().padStart(3, '0')}`}
+                          equipmentNumber={equipment.equipment_number?.toString().startsWith('C') ? equipment.equipment_number : `C${equipment.equipment_number?.toString().padStart(3, '0')}`}
                           onStatusChange={handleStatusChange}
                         />
 
@@ -1069,15 +1089,29 @@ export default function EquipmentPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   설비번호 <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={addFormData.equipmentNumber}
-                  onChange={(e) => setAddFormData(prev => ({ ...prev, equipmentNumber: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="예: C001"
-                  disabled={isSubmitting}
-                  required
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                    C
+                  </span>
+                  <input
+                    type="text"
+                    value={addFormData.equipmentNumber.replace(/^C/i, '')}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '')
+                      if (value) {
+                        setAddFormData(prev => ({ ...prev, equipmentNumber: `C${value.padStart(3, '0')}` }))
+                      } else {
+                        setAddFormData(prev => ({ ...prev, equipmentNumber: 'C000' }))
+                      }
+                    }}
+                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="001"
+                    maxLength={3}
+                    pattern="[0-9]{3}"
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
               </div>
 
               {/* 위치 */}

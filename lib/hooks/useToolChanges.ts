@@ -11,20 +11,31 @@ export interface ToolChangeFilters {
   endDate?: string
   limit?: number
   offset?: number
+  sortField?: string
+  sortDirection?: 'asc' | 'desc'
 }
 
 export interface ToolChange {
   id: string
   equipment_number: number
-  endmill_type_id: string
+  equipment_id?: string
+  production_model: string
+  process: string
+  t_number: number
+  endmill_type_id?: string
   endmill_code: string
+  endmill_name: string
   change_date: string
-  old_life_hours: number
-  new_life_hours: number
-  reason: string
+  tool_life: number
+  change_reason: string
+  changed_by?: string
   notes?: string
-  user_id: string
   created_at: string
+  // Legacy fields for backward compatibility
+  old_life_hours?: number
+  new_life_hours?: number
+  reason?: string
+  user_id?: string
   equipment?: {
     id: string
     name: string
@@ -96,6 +107,14 @@ export const useToolChanges = (
 
       params.append('limit', limit.toString())
       params.append('offset', offset.toString())
+
+      // 정렬 파라미터
+      if (filters.sortField) {
+        params.append('sort_field', filters.sortField)
+      }
+      if (filters.sortDirection) {
+        params.append('sort_direction', filters.sortDirection)
+      }
 
       const response = await fetch(`/api/tool-changes?${params.toString()}`, {
         method: 'GET',
@@ -170,6 +189,14 @@ export const useToolChanges = (
       params.append('limit', limit.toString())
       params.append('offset', currentOffset.toString())
 
+      // 정렬 파라미터
+      if (updatedFilters.sortField) {
+        params.append('sort_field', updatedFilters.sortField)
+      }
+      if (updatedFilters.sortDirection) {
+        params.append('sort_direction', updatedFilters.sortDirection)
+      }
+
       const response = await fetch(`/api/tool-changes?${params.toString()}`, {
         method: 'GET',
         headers: {
@@ -208,7 +235,9 @@ export const useToolChanges = (
     filters.startDate,
     filters.endDate,
     filters.offset,
-    filters.limit
+    filters.limit,
+    filters.sortField,
+    filters.sortDirection
   ])
 
   // 실시간 업데이트

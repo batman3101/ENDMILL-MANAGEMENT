@@ -440,11 +440,7 @@ export class ToolChangeService {
     const { data, error } = await this.supabase
       .from('tool_changes')
       .insert(toolChange)
-      .select(`
-        *,
-        equipment:equipment(*),
-        endmill_type:endmill_types(*)
-      `)
+      .select()
       .single()
 
     if (error) throw error
@@ -480,6 +476,8 @@ export class ToolChangeService {
     endDate?: string
     limit?: number
     offset?: number
+    sortField?: string
+    sortDirection?: 'asc' | 'desc'
   }) {
     let query = this.supabase
       .from('tool_changes')
@@ -518,7 +516,26 @@ export class ToolChangeService {
       `)
     }
 
-    query = query.order('change_date', { ascending: false })
+    // 정렬 처리
+    const sortField = filters.sortField || 'change_date'
+    const sortDirection = filters.sortDirection || 'desc'
+    const ascending = sortDirection === 'asc'
+
+    // 정렬 가능한 필드 매핑
+    const sortableFields: Record<string, string> = {
+      'change_date': 'change_date',
+      'equipment_number': 'equipment_number',
+      'production_model': 'production_model',
+      'process': 'process',
+      't_number': 't_number',
+      'endmill_name': 'endmill_name',
+      'tool_life': 'tool_life',
+      'change_reason': 'change_reason',
+      'created_at': 'created_at'
+    }
+
+    const actualSortField = sortableFields[sortField] || 'change_date'
+    query = query.order(actualSortField, { ascending })
 
     // 페이지네이션
     if (filters.limit) {

@@ -27,7 +27,7 @@ export default function EquipmentExcelUploader({
   const { showSuccess, showError } = useToast()
 
   // CAM Sheet 데이터 가져오기
-  const { getAvailableModels, getAvailableProcesses } = useCAMSheets()
+  const { getAvailableModels: availableModels, getAvailableProcesses: availableProcesses } = useCAMSheets()
 
   // 템플릿 다운로드 - 서버에서 동적으로 생성된 템플릿 정보 사용
   const handleDownloadTemplate = async () => {
@@ -76,8 +76,6 @@ export default function EquipmentExcelUploader({
       }
 
       // 유효성 검사 - CAM Sheet에서 등록된 모델과 공정 사용
-      const availableModels = getAvailableModels()
-      const availableProcesses = getAvailableProcesses()
       const validation = validateEquipmentData(data, availableModels, availableProcesses)
 
       if (!validation.isValid) {

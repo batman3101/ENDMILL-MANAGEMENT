@@ -1,5 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { serverSupabaseService } from '../../../lib/services/supabaseService'
+import { z } from 'zod'
+
+// 교체 실적 생성 스키마
+const createToolChangeSchema = z.object({
+  equipment_number: z.union([z.string(), z.number()]),
+  production_model: z.string().min(1),
+  process: z.string().min(1),
+  t_number: z.number().min(1),
+  endmill_code: z.string().min(1),
+  endmill_name: z.string().min(1),
+  tool_life: z.number().min(0),
+  change_reason: z.string().min(1),
+  changed_by: z.string().uuid().optional(),
+  change_date: z.string().optional()
+})
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,6 +26,8 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('end_date')
     const limit = searchParams.get('limit')
     const offset = searchParams.get('offset')
+    const sortField = searchParams.get('sort_field')
+    const sortDirection = searchParams.get('sort_direction') as 'asc' | 'desc'
 
     const result = await serverSupabaseService.toolChange.getFiltered({
       equipmentNumber: equipmentNumber ? parseInt(equipmentNumber) : undefined,
@@ -19,7 +36,9 @@ export async function GET(request: NextRequest) {
       startDate,
       endDate,
       limit: limit ? parseInt(limit) : undefined,
-      offset: offset ? parseInt(offset) : undefined
+      offset: offset ? parseInt(offset) : undefined,
+      sortField,
+      sortDirection
     })
 
     // totalCount를 별도로 가져오기
@@ -48,44 +67,67 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// POST: 새 교체 실적 생성
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    
-    if (body.batch && Array.isArray(body.data)) {
-      // 일괄 생성 처리
-      const results = []
-      for (const toolChangeData of body.data) {
-        const result = await serverSupabaseService.toolChange.create(toolChangeData)
-        results.push(result)
-      }
-      
-      return NextResponse.json({
-        success: true,
-        data: results,
-        message: `${results.length}개의 교체 이력이 생성되었습니다.`
-      })
-    } else {
-      // 단일 교체 이력 생성
-      const newToolChange = await serverSupabaseService.toolChange.create(body)
-      
-      return NextResponse.json({
-        success: true,
-        data: newToolChange,
-        message: '교체 이력이 생성되었습니다.'
-      })
+
+    // 입력 데이터 검증
+    const validatedData = createToolChangeSchema.parse(body)
+
+    // equipment_number를 숫자로 변환 (C025 -> 25)
+    let equipmentNumber = validatedData.equipment_number
+    if (typeof equipmentNumber === 'string') {
+      // C 접두사가 있으면 제거
+      const cleaned = equipmentNumber.replace(/^C/i, '')
+      equipmentNumber = parseInt(cleaned)
     }
+
+    // 새 교체 실적 생성
+    const newToolChange = await serverSupabaseService.toolChange.create({
+      equipment_number: equipmentNumber,
+      production_model: validatedData.production_model,
+      process: validatedData.process,
+      t_number: validatedData.t_number,
+      endmill_code: validatedData.endmill_code,
+      endmill_name: validatedData.endmill_name,
+      tool_life: validatedData.tool_life,
+      change_reason: validatedData.change_reason,
+      changed_by: validatedData.changed_by,
+      change_date: validatedData.change_date || new Date().toISOString().split('T')[0]
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: newToolChange,
+      message: '교체 실적이 성공적으로 등록되었습니다.',
+    }, { status: 201 })
+
   } catch (error) {
-    console.error('Error creating tool change:', error)
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: '입력 데이터가 올바르지 않습니다.',
+          details: error.errors,
+        },
+        { status: 400 }
+      )
+    }
+
+    console.error('교체 실적 생성 API 에러:', JSON.stringify(error, null, 2))
+    console.error('에러 상세:', error)
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to create tool change' 
+      {
+        success: false,
+        error: '서버 에러가 발생했습니다.',
+        details: error?.message || 'Unknown error'
       },
       { status: 500 }
     )
   }
 }
+
 
 export async function PUT(request: NextRequest) {
   try {
