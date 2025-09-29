@@ -1,8 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useInventorySearch } from '../../../../lib/hooks/useInventory'
+import { useToast } from '../../../../components/shared/Toast'
+import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
+import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
+import { useSettings } from '../../../../lib/hooks/useSettings'
+import { supabase } from '../../../../lib/supabase/client'
 
 // 앤드밀 데이터 타입 정의
 interface EndmillData {
@@ -14,10 +19,6 @@ interface EndmillData {
   category?: string
   standardLife?: number
 }
-import { useToast } from '../../../../components/shared/Toast'
-import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
-import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
-import { useSettings } from '../../../../lib/hooks/useSettings'
 
 interface OutboundItem {
   id: string
@@ -26,8 +27,8 @@ interface OutboundItem {
   equipmentNumber: string
   tNumber: number
   quantity: number
-  unitPrice: number // VND
-  totalValue: number // VND
+  unitPrice: number
+  totalValue: number
   processedAt: string
   processedBy: string
   purpose: string
@@ -44,35 +45,195 @@ export default function OutboundPage() {
   const [quantity, setQuantity] = useState(1)
   const [equipmentNumber, setEquipmentNumber] = useState('')
   const [tNumber, setTNumber] = useState(1)
-  const [purpose, setPurpose] = useState('교체')
+  const [purpose, setPurpose] = useState('예방교체')
   const [errorMessage, setErrorMessage] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [availableEndmills, setAvailableEndmills] = useState<any[]>([])
 
   // 설정에서 값 가져오기
   const { settings } = useSettings()
   const tNumberRange = settings.toolChanges.tNumberRange
+  const toolChangesReasons = settings.toolChanges.reasons
 
-  const handleQRScan = (code: string) => {
+  // 앤드밀 마스터 데이터 로드
+  const loadAvailableEndmills = async () => {
+    try {
+      const response = await fetch('/api/endmill')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setAvailableEndmills(result.data)
+        }
+      }
+    } catch (error) {
+      console.error('앤드밀 데이터 로드 오류:', error)
+    }
+  }
+
+  // T번호 자동 입력 기능 (기존 아키텍처 사용)
+  const autoFillTNumber = async (equipmentNum: string, endmillCode: string) => {
+    if (!equipmentNum || !endmillCode) return
+
+    try {
+      // 1단계: 설비번호로 model, process 가져오기
+      const equipmentResponse = await fetch(`/api/tool-changes/auto-fill?equipmentNumber=${equipmentNum}`)
+      if (equipmentResponse.ok) {
+        const equipmentResult = await equipmentResponse.json()
+        if (equipmentResult.success && equipmentResult.data.equipmentInfo) {
+          const { model, process } = equipmentResult.data.equipmentInfo
+
+          // 2단계: model, process로 CAM sheet 조회해서 엔드밀 코드에 해당하는 T번호 찾기
+          // CAM sheet의 모든 T번호를 확인해서 해당 엔드밀 코드와 매칭되는 것 찾기
+          for (let t = 1; t <= 24; t++) {
+            const endmillResponse = await fetch(`/api/tool-changes/auto-fill?model=${model}&process=${process}&tNumber=${t}`)
+            if (endmillResponse.ok) {
+              const endmillResult = await endmillResponse.json()
+              if (endmillResult.success && endmillResult.data.endmillInfo) {
+                const { endmillCode: foundEndmillCode } = endmillResult.data.endmillInfo
+                if (foundEndmillCode === endmillCode) {
+                  setTNumber(t)
+                  showSuccess('T번호 자동 입력', `T${t.toString().padStart(2, '0')}이 자동으로 입력되었습니다.`)
+                  return
+                }
+              }
+            }
+          }
+          showWarning('T번호 자동 입력 실패', '해당 설비에서 이 앤드밀이 사용되는 T번호를 찾을 수 없습니다.')
+        }
+      }
+    } catch (error) {
+      console.error('T번호 자동 입력 오류:', error)
+    }
+  }
+
+  // 설비번호 변경 핸들러
+  const handleEquipmentNumberChange = (value: string) => {
+    setEquipmentNumber(value)
+
+    // 엔드밀이 이미 검색되어 있다면 T번호 자동 입력 시도
+    if (endmillData && value.trim()) {
+      autoFillTNumber(value, endmillData.code)
+    }
+  }
+
+  // 컴포넌트 마운트 시 출고 내역 불러오기
+  useEffect(() => {
+    loadAvailableEndmills()
+    loadOutboundHistory()
+
+    // Realtime 구독 설정
+    const channel = supabase
+      .channel('outbound-transactions')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'inventory_transactions',
+          filter: 'transaction_type=eq.outbound'
+        },
+        (payload) => {
+          console.log('실시간 출고 업데이트:', payload)
+          loadOutboundHistory()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
+
+  const loadOutboundHistory = async () => {
+    try {
+      const response = await fetch('/api/inventory/outbound')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          const formattedItems = result.data.map((item: any) => ({
+            id: item.id,
+            endmillCode: item.inventory?.endmill_type?.code || item.endmill_type?.code || '',
+            endmillName: item.inventory?.endmill_type?.name || item.endmill_type?.name || '',
+            equipmentNumber: item.equipment_number || item.notes?.split(' ')?.[0] || '',
+            tNumber: item.t_number || 0,
+            quantity: item.quantity,
+            unitPrice: item.unit_price || 0,
+            totalValue: item.total_amount || (item.quantity * (item.unit_price || 0)),
+            processedAt: new Date(item.created_at).toLocaleString('ko-KR'),
+            processedBy: item.processed_by?.name || '관리자',
+            purpose: item.purpose || '예방교체'
+          }))
+          setOutboundItems(formattedItems)
+        }
+      }
+    } catch (error) {
+      console.error('출고 내역 로드 오류:', error)
+    }
+  }
+
+  const handleQRScan = async (code: string) => {
     setScannedCode(code)
     setIsScanning(false)
     setErrorMessage('')
-    
-    // 앤드밀 데이터베이스에서 검색
-    const foundEndmills = searchByCode(code.trim().toUpperCase())
-    const foundEndmill = foundEndmills[0]
-    
+
+    // 앤드밀 마스터 데이터에서 검색
+    const foundEndmill = availableEndmills.find(endmill =>
+      endmill.code === code.trim().toUpperCase()
+    )
+
     if (foundEndmill) {
-      const endmillInfo: EndmillData = {
-        code: foundEndmill.endmill_types?.code || code,
-        name: foundEndmill.endmill_types?.description_ko || foundEndmill.endmill_types?.description_vi || '',
-        specifications: foundEndmill.endmill_types?.specifications ? JSON.stringify(foundEndmill.endmill_types.specifications) : '',
-        currentStock: foundEndmill.current_stock,
-        unitPrice: foundEndmill.endmill_types?.unit_cost || 0,
-        category: foundEndmill.endmill_types?.endmill_categories?.code || '미분류',
-        standardLife: foundEndmill.endmill_types?.standard_life || 2000
+      // 재고 정보를 별도로 가져오기 (기존 아키텍처 사용)
+      try {
+        const inventoryResponse = await fetch('/api/inventory')
+        let currentStock = 0
+
+        if (inventoryResponse.ok) {
+          const inventoryResult = await inventoryResponse.json()
+          if (inventoryResult.success && inventoryResult.data) {
+            const inventoryItem = inventoryResult.data.find((item: any) =>
+              item.endmill_type?.code === foundEndmill.code
+            )
+            if (inventoryItem) {
+              currentStock = inventoryItem.current_stock || 0
+            }
+          }
+        }
+
+        const endmillInfo: EndmillData = {
+          code: foundEndmill.code,
+          name: foundEndmill.name || '',
+          specifications: foundEndmill.specifications || '',
+          currentStock: currentStock,
+          unitPrice: foundEndmill.unitCost || 0,
+          category: foundEndmill.categoryName || '미분류',
+          standardLife: foundEndmill.standardLife || 2000
+        }
+
+        setEndmillData(endmillInfo)
+        setQuantity(1) // 수량 초기화
+
+        showSuccess('앤드밀 검색 완료', `앤드밀 정보가 로드되었습니다: ${foundEndmill.code} (재고: ${currentStock}개)`)
+
+        // 설비번호가 이미 입력되어 있다면 T번호 자동 입력 시도
+        if (equipmentNumber.trim()) {
+          autoFillTNumber(equipmentNumber, foundEndmill.code)
+        }
+      } catch (error) {
+        console.error('재고 정보 조회 오류:', error)
+        // 재고 정보를 못 가져와도 기본 정보는 표시
+        const endmillInfo: EndmillData = {
+          code: foundEndmill.code,
+          name: foundEndmill.name || '',
+          specifications: foundEndmill.specifications || '',
+          currentStock: 0,
+          unitPrice: foundEndmill.unitCost || 0,
+          category: foundEndmill.categoryName || '미분류',
+          standardLife: foundEndmill.standardLife || 2000
+        }
+        setEndmillData(endmillInfo)
+        setQuantity(1)
+        showSuccess('앤드밀 검색 완료', `앤드밀 정보가 로드되었습니다: ${foundEndmill.code} (재고 정보 불러오기 실패)`)
       }
-      
-      setEndmillData(endmillInfo)
-      setQuantity(1) // 수량 초기화
     } else {
       setEndmillData(null)
       setErrorMessage(`앤드밀 코드 '${code}'를 찾을 수 없습니다. 코드를 확인해주세요.`)
@@ -92,6 +253,12 @@ export default function OutboundPage() {
       return
     }
 
+    // 재고 확인
+    if (endmillData.currentStock < quantity) {
+      showError('재고 부족', `현재 재고(${endmillData.currentStock}개)보다 많은 수량을 출고할 수 없습니다.`)
+      return
+    }
+
     const totalValue = quantity * endmillData.unitPrice
     const confirmed = await confirmation.showConfirmation(
       createSaveConfirmation(
@@ -101,41 +268,82 @@ export default function OutboundPage() {
 
     if (confirmed) {
       confirmation.setLoading(true)
-      
-      try {
-        const newItem: OutboundItem = {
-          id: Date.now().toString(),
-          endmillCode: endmillData.code,
-          endmillName: endmillData.name,
-          equipmentNumber: equipmentNumber,
-          tNumber: tNumber,
-          quantity: quantity,
-          unitPrice: endmillData.unitPrice,
-          totalValue: totalValue,
-          processedAt: new Date().toLocaleString('ko-KR'),
-          processedBy: '관리자', // 실제로는 로그인된 사용자 정보
-          purpose: purpose
-        }
+      setLoading(true)
 
-        setOutboundItems([newItem, ...outboundItems])
-        
-        // 폼 초기화
-        setEndmillData(null)
-        setQuantity(1)
-        setEquipmentNumber('')
-        setTNumber(1)
-        setPurpose('교체')
-        setScannedCode('')
-        setErrorMessage('')
-        
-        showSuccess(
-          '출고 처리 완료',
-          `${endmillData.code} ${quantity}개가 ${equipmentNumber} T${tNumber.toString().padStart(2, '0')}로 출고되었습니다.`
-        )
+      try {
+        const response = await fetch('/api/inventory/outbound', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            endmill_code: endmillData.code,
+            equipment_number: equipmentNumber,
+            t_number: tNumber,
+            quantity: quantity,
+            purpose: purpose,
+            notes: `출고 처리: ${equipmentNumber} T${tNumber.toString().padStart(2, '0')}`
+          })
+        })
+
+        const result = await response.json()
+
+        if (response.ok && result.success) {
+          // 폼 초기화
+          setEndmillData(null)
+          setQuantity(1)
+          setEquipmentNumber('')
+          setTNumber(1)
+          setPurpose('예방교체')
+          setScannedCode('')
+          setErrorMessage('')
+
+          // 출고 내역 새로고침
+          await loadOutboundHistory()
+
+          showSuccess(
+            '출고 처리 완료',
+            `${endmillData.code} ${quantity}개가 ${equipmentNumber} T${tNumber.toString().padStart(2, '0')}로 출고되었습니다.`
+          )
+        } else {
+          showError('출고 처리 실패', result.error || '출고 처리 중 오류가 발생했습니다.')
+        }
       } catch (error) {
+        console.error('출고 처리 오류:', error)
         showError('출고 처리 실패', '출고 처리 중 오류가 발생했습니다.')
       } finally {
         confirmation.setLoading(false)
+        setLoading(false)
+      }
+    }
+  }
+
+  const handleCancelOutbound = async (transactionId: string) => {
+    const confirmed = await confirmation.showConfirmation({
+      title: '출고 취소',
+      message: '이 출고 내역을 취소하시겠습니까? 재고가 복구됩니다.',
+      type: 'danger',
+      confirmText: '취소',
+      cancelText: '유지'
+    })
+
+    if (confirmed) {
+      try {
+        const response = await fetch(`/api/inventory/outbound?id=${transactionId}`, {
+          method: 'DELETE'
+        })
+
+        const result = await response.json()
+
+        if (response.ok && result.success) {
+          await loadOutboundHistory()
+          showSuccess('출고 취소 완료', '출고가 취소되고 재고가 복구되었습니다.')
+        } else {
+          showError('출고 취소 실패', result.error || '출고 취소 중 오류가 발생했습니다.')
+        }
+      } catch (error) {
+        console.error('출고 취소 오류:', error)
+        showError('출고 취소 실패', '출고 취소 중 오류가 발생했습니다.')
       }
     }
   }
@@ -151,9 +359,10 @@ export default function OutboundPage() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-600">QR 스캔을 통한 앤드밀 출고 처리</p>
+          <h1 className="text-2xl font-bold text-gray-900">재고 관리</h1>
+          <p className="text-gray-600">앤드밀 재고 현황 및 공급업체별 단가 비교</p>
         </div>
-        <Link 
+        <Link
           href="/dashboard/inventory"
           className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
         >
@@ -161,11 +370,14 @@ export default function OutboundPage() {
         </Link>
       </div>
 
+      {/* QR 스캔을 통한 앤드밀 출고 처리 */}
+      <p className="text-gray-600">QR 스캔을 통한 앤드밀 출고 처리</p>
+
       {/* QR 스캔 섹션 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">📱 QR 스캐너</h2>
-          
+
           {isScanning ? (
             <div className="border-2 border-dashed border-green-300 rounded-lg p-8 text-center bg-green-50">
               <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-lg flex items-center justify-center">
@@ -173,7 +385,7 @@ export default function OutboundPage() {
               </div>
               <p className="text-green-600 mb-4">카메라가 활성화되었습니다</p>
               <p className="text-sm text-gray-600 mb-4">QR 코드를 카메라에 비춰주세요</p>
-              <button 
+              <button
                 onClick={() => setIsScanning(false)}
                 className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
               >
@@ -186,19 +398,19 @@ export default function OutboundPage() {
                 📷
               </div>
               <p className="text-gray-500 mb-4">QR 코드를 스캔하여 앤드밀 정보를 불러오세요</p>
-              <button 
+              <button
                 onClick={() => setIsScanning(true)}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 mb-2"
               >
                 카메라 시작
               </button>
-              
+
               <div className="mt-4 text-center">
                 <p className="text-sm text-gray-600 mb-2">또는</p>
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="앤드밀 코드 입력 (예: AT001)"
+                    placeholder="앤드밀 코드 입력"
                     value={scannedCode}
                     onChange={(e) => setScannedCode(e.target.value)}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -208,7 +420,7 @@ export default function OutboundPage() {
                       }
                     }}
                   />
-                  <button 
+                  <button
                     onClick={() => scannedCode.trim() && handleQRScan(scannedCode)}
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
                     disabled={!scannedCode.trim()}
@@ -227,10 +439,10 @@ export default function OutboundPage() {
         {/* 출고 정보 입력 */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">📋 출고 정보</h2>
-          
+
           {endmillData ? (
             <div className="space-y-4">
-              {/* 자동 입력된 앤드밀 정보 (읽기 전용) */}
+              {/* 자동 입력된 앤드밀 정보 */}
               <div className="bg-gray-50 p-4 rounded-lg border">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -246,12 +458,10 @@ export default function OutboundPage() {
                     <div className="text-sm font-medium text-gray-900">{endmillData.name}</div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">표준 수명</label>
-                    <div className="text-sm text-gray-600">{endmillData.standardLife?.toLocaleString() || '2,000'}회</div>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">사양</label>
-                    <div className="text-sm text-gray-600">{endmillData.specifications}</div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">현재 재고</label>
+                    <div className={`text-sm font-bold ${endmillData.currentStock < quantity ? 'text-red-600' : 'text-gray-900'}`}>
+                      {endmillData.currentStock}개
+                    </div>
                   </div>
                 </div>
               </div>
@@ -263,7 +473,7 @@ export default function OutboundPage() {
                   <input
                     type="text"
                     value={equipmentNumber}
-                    onChange={(e) => setEquipmentNumber(e.target.value)}
+                    onChange={(e) => handleEquipmentNumberChange(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     placeholder="C001"
                     pattern="C[0-9]{3}"
@@ -291,12 +501,18 @@ export default function OutboundPage() {
                   <input
                     type="number"
                     min="1"
+                    max={endmillData.currentStock}
                     value={quantity}
                     onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-lg"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-lg ${
+                      quantity > endmillData.currentStock ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
                     placeholder="수량 입력"
                     required
                   />
+                  {quantity > endmillData.currentStock && (
+                    <p className="text-red-600 text-xs mt-1">재고 부족! 현재 재고: {endmillData.currentStock}개</p>
+                  )}
                 </div>
 
                 <div>
@@ -307,10 +523,10 @@ export default function OutboundPage() {
                     className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   >
-                    <option value="교체">교체</option>
-                    <option value="예방정비">예방정비</option>
-                    <option value="신규설치">신규설치</option>
-                    <option value="기타">기타</option>
+                    <option value="">사유 선택</option>
+                    {toolChangesReasons.map(reason => (
+                      <option key={reason} value={reason}>{reason}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -327,23 +543,23 @@ export default function OutboundPage() {
                   {endmillData.unitPrice.toLocaleString()} VND × {quantity}개 = {getTotalValue().toLocaleString()} VND
                 </div>
               </div>
-              
+
               {/* 출고 처리 버튼 */}
               <div className="flex gap-3">
-                <button 
+                <button
                   onClick={handleProcessOutbound}
-                  className="flex-1 px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium"
-                  disabled={quantity <= 0 || !equipmentNumber.trim()}
+                  className="flex-1 px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium disabled:bg-gray-400"
+                  disabled={quantity <= 0 || !equipmentNumber.trim() || quantity > endmillData.currentStock || loading}
                 >
-                  📤 출고 처리
+                  {loading ? '처리 중...' : '📤 출고 처리'}
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     setEndmillData(null)
                     setQuantity(1)
                     setEquipmentNumber('')
                     setTNumber(1)
-                    setPurpose('교체')
+                    setPurpose('예방교체')
                     setScannedCode('')
                     setErrorMessage('')
                   }}
@@ -372,7 +588,7 @@ export default function OutboundPage() {
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">오늘 출고 처리 내역</h2>
         </div>
-        
+
         {outboundItems.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             아직 처리된 출고 내역이 없습니다.
@@ -391,6 +607,7 @@ export default function OutboundPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">목적</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">가치 (VND)</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">처리자</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">작업</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -405,6 +622,14 @@ export default function OutboundPage() {
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.purpose}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-green-600">{item.totalValue.toLocaleString()}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.processedBy}</td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                      <button
+                        onClick={() => handleCancelOutbound(item.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        취소
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -425,4 +650,4 @@ export default function OutboundPage() {
       )}
     </div>
   )
-} 
+}

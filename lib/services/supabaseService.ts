@@ -271,7 +271,7 @@ export class InventoryService {
         *,
         endmill_type:endmill_types(
           *,
-          category:endmill_categories(*)
+          endmill_categories(*)
         )
       `)
       .order('current_stock', { ascending: true })
@@ -348,7 +348,7 @@ export class InventoryService {
         *,
         endmill_type:endmill_types(
           *,
-          category:endmill_categories(*)
+          endmill_categories(*)
         )
       `)
       .single()

@@ -4,21 +4,23 @@ import { createServerClient } from '../../../lib/supabase/client'
 export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient()
+    const url = new URL(request.url)
+    const code = url.searchParams.get('code')
 
-    // 엔드밀 타입과 관련 정보를 조회 (단계별 조회로 변경)
-    const { data: endmillTypes, error } = await supabase
+    // 기본 쿼리 빌드
+    let query = supabase
       .from('endmill_types')
       .select(`
         *,
-        endmill_categories!inner(code, name_ko),
+        endmill_categories(code, name_ko),
         endmill_supplier_prices(
           unit_price,
-          suppliers!inner(code, name)
+          suppliers(code, name)
         ),
         cam_sheet_endmills(
           tool_life,
           t_number,
-          cam_sheets!inner(model, process)
+          cam_sheets(model, process)
         ),
         inventory(
           current_stock,
@@ -28,7 +30,15 @@ export async function GET(request: NextRequest) {
           location
         )
       `)
-      .order('created_at', { ascending: false })
+
+    // 특정 코드로 검색하는 경우
+    if (code) {
+      query = query.eq('code', code.toUpperCase()).single()
+    } else {
+      query = query.order('created_at', { ascending: false })
+    }
+
+    const { data: endmillTypes, error } = await query
 
     if (error) {
       console.error('엔드밀 데이터 조회 오류:', error)
@@ -39,7 +49,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 데이터 정리 및 가공
-    const processedEndmills = endmillTypes?.map(endmill => ({
+    const processEndmill = (endmill: any) => ({
       id: endmill.id,
       code: endmill.code,
       category: endmill.endmill_categories?.code || '',
@@ -67,7 +77,11 @@ export async function GET(request: NextRequest) {
       } : null,
       createdAt: endmill.created_at,
       updatedAt: endmill.updated_at
-    })) || []
+    })
+
+    const processedEndmills = code
+      ? (endmillTypes ? [processEndmill(endmillTypes)] : [])
+      : (endmillTypes?.map(processEndmill) || [])
 
     return NextResponse.json({
       success: true,

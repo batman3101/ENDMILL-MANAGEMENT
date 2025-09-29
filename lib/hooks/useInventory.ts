@@ -8,7 +8,7 @@ import { Database } from '../types/database'
 // Database 타입에서 가져오기
 type Inventory = Database['public']['Tables']['inventory']['Row'] & {
   endmill_type?: Database['public']['Tables']['endmill_types']['Row'] & {
-    category?: Database['public']['Tables']['endmill_categories']['Row']
+    endmill_categories?: Database['public']['Tables']['endmill_categories']['Row']
   }
 }
 

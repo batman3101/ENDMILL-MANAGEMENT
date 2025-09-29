@@ -7,6 +7,8 @@ import { useToast } from '../../../components/shared/Toast'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createSaveConfirmation, createCreateConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useSettings } from '../../../lib/hooks/useSettings'
+import SupplierPriceInfo from '../../../components/inventory/SupplierPriceInfo'
+import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import * as XLSX from 'xlsx'
 
 export default function InventoryPage() {
@@ -17,6 +19,10 @@ export default function InventoryPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [supplierFilter, setSupplierFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [sortField, setSortField] = useState<string>('code')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [availableSuppliers, setAvailableSuppliers] = useState<string[]>([])
+  const [availableCategories, setAvailableCategories] = useState<string[]>([])
   
   // 새로운 Hook 사용
   const {
@@ -42,7 +48,42 @@ export default function InventoryPage() {
   const { settings } = useSettings()
   const itemsPerPage = settings.system.itemsPerPage
   const categories = settings.inventory.categories
-  const suppliers = settings.inventory.suppliers
+
+  // 실제 공급업체 및 카테고리 데이터 로드
+  useEffect(() => {
+    loadAvailableSuppliers()
+    loadAvailableCategories()
+  }, [])
+
+  const loadAvailableSuppliers = async () => {
+    try {
+      const response = await fetch('/api/suppliers')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          const supplierNames = result.data.map((supplier: any) => supplier.name)
+          setAvailableSuppliers(supplierNames)
+        }
+      }
+    } catch (error) {
+      console.error('공급업체 데이터 로드 오류:', error)
+    }
+  }
+
+  const loadAvailableCategories = async () => {
+    try {
+      const response = await fetch('/api/endmill-categories')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          const categoryNames = result.data.map((category: any) => category.name_ko || category.code)
+          setAvailableCategories(categoryNames)
+        }
+      }
+    } catch (error) {
+      console.error('카테고리 데이터 로드 오류:', error)
+    }
+  }
 
   // 상태 관리
   const [showAddModal, setShowAddModal] = useState(false)
@@ -149,6 +190,13 @@ export default function InventoryPage() {
     setShowQRScanner(false)
   }
 
+  // 재고 상태 계산 함수 (먼저 정의)
+  const calculateStockStatus = (current: number, min: number, max: number): 'sufficient' | 'low' | 'critical' => {
+    if (current <= min) return 'critical'
+    if (current <= min * 1.5) return 'low'
+    return 'sufficient'
+  }
+
   // 클릭 외부 영역 클릭시 자동완성 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -168,71 +216,110 @@ export default function InventoryPage() {
 
   // 필터링된 재고 목록
   const filteredInventory = useMemo(() => {
-    return getFilteredInventory({
-      status: statusFilter || undefined,
-      category: categoryFilter || undefined,
-      lowStock: statusFilter === 'low' || statusFilter === 'critical'
-    })
-  }, [getFilteredInventory, statusFilter, categoryFilter])
+    let filtered = inventory
+
+    // 카테고리 필터
+    if (categoryFilter) {
+      filtered = filtered.filter(item => {
+        const categoryCode = item.endmill_type?.endmill_categories?.code
+        const categoryName = item.endmill_type?.endmill_categories?.name_ko
+        return categoryCode === categoryFilter || categoryName === categoryFilter
+      })
+    }
+
+    // 상태 필터
+    if (statusFilter) {
+      filtered = filtered.filter(item => {
+        const status = calculateStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0)
+        return status === statusFilter
+      })
+    }
+
+    return filtered
+  }, [inventory, statusFilter, categoryFilter])
 
   // 검색 적용
   const searchFilteredInventory = useMemo(() => {
     if (!searchTerm) return filteredInventory
-    
+
     return filteredInventory.filter(item =>
       item.endmill_type?.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.endmill_type?.description_ko?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.endmill_type?.description_vi?.toLowerCase().includes(searchTerm.toLowerCase())
+      item.endmill_type?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [filteredInventory, searchTerm])
 
-  // 재고 상태 계산 함수
-  const calculateStockStatus = (current: number, min: number, max: number): 'sufficient' | 'low' | 'critical' => {
-    if (current <= min) return 'critical'
-    if (current <= min * 1.5) return 'low'
-    return 'sufficient'
+  // 정렬 처리 함수
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+    setCurrentPage(1)
   }
 
   // 테이블 렌더링을 위한 플랫 데이터 생성
   const flattenedData = useMemo(() => {
-    const result: Array<{
-      itemId: string
-      code: string
-      name: string
-      category: string
-      specifications: string
-      totalCurrentStock: number
-      minStock: number
-      maxStock: number
-      overallStatus: 'sufficient' | 'low' | 'critical'
-      supplier?: string
-      unitPrice?: number
-      supplierStock?: number
-      supplierStatus?: 'sufficient' | 'low' | 'critical'
-      isFirstRow: boolean
-      rowSpan: number
-    }> = []
+    let result = searchFilteredInventory.map(item => ({
+      itemId: item.id,
+      code: item.endmill_type?.code || '',
+      name: item.endmill_type?.name || '',
+      category: item.endmill_type?.endmill_categories?.name_ko || item.endmill_type?.endmill_categories?.code || '',
+      totalCurrentStock: item.current_stock || 0,
+      minStock: item.min_stock || 0,
+      maxStock: item.max_stock || 0,
+      overallStatus: calculateStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0),
+      unitPrice: item.endmill_type?.unit_cost || 0,
+      lastUpdated: item.last_updated || item.created_at,
+      location: item.location || ''
+    }))
 
-    searchFilteredInventory.forEach(item => {
-      // 기본 정보 (공급업체 정보가 없는 경우)
-      result.push({
-        itemId: item.id,
-        code: item.endmill_type?.code || '',
-        name: item.endmill_type?.description_ko || item.endmill_type?.description_vi || '',
-        category: item.endmill_type?.category?.code || '',
-        specifications: item.endmill_type?.specifications ? JSON.stringify(item.endmill_type.specifications) : '',
-        totalCurrentStock: item.current_stock || 0,
-        minStock: item.min_stock || 0,
-        maxStock: item.max_stock || 0,
-        overallStatus: calculateStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0),
-        unitPrice: item.endmill_type?.unit_cost || 0,
-        isFirstRow: true,
-        rowSpan: 1
-      })
+    // 정렬 적용
+    result.sort((a, b) => {
+      let aValue: any, bValue: any
+
+      switch (sortField) {
+        case 'code':
+          aValue = a.code
+          bValue = b.code
+          break
+        case 'name':
+          aValue = a.name
+          bValue = b.name
+          break
+        case 'category':
+          aValue = a.category
+          bValue = b.category
+          break
+        case 'current_stock':
+          aValue = a.totalCurrentStock
+          bValue = b.totalCurrentStock
+          break
+        case 'status':
+          aValue = a.overallStatus
+          bValue = b.overallStatus
+          break
+        case 'unit_price':
+          aValue = a.unitPrice
+          bValue = b.unitPrice
+          break
+        default:
+          aValue = a.code
+          bValue = b.code
+      }
+
+      if (typeof aValue === 'string') {
+        const comparison = aValue.localeCompare(bValue)
+        return sortDirection === 'asc' ? comparison : -comparison
+      } else {
+        const comparison = aValue - bValue
+        return sortDirection === 'asc' ? comparison : -comparison
+      }
     })
 
     return result
-  }, [searchFilteredInventory])
+  }, [searchFilteredInventory, sortField, sortDirection])
 
   // 통계 계산
   const stats = getInventoryStats(searchFilteredInventory)
@@ -272,11 +359,9 @@ export default function InventoryPage() {
   }
 
   const handleEdit = (item: any) => {
-    const inventoryItem = searchFilteredInventory.find(inv => inv.id === item.itemId)
-    if (inventoryItem) {
-      setEditFormData(inventoryItem)
-      setShowEditModal(true)
-    }
+    console.log('Edit clicked for item:', item)
+    setEditFormData(item)
+    setShowEditModal(true)
   }
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -573,13 +658,13 @@ export default function InventoryPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <select 
+            <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">모든 카테고리</option>
-              {categories.map(category => (
+              {availableCategories.map(category => (
                 <option key={category} value={category}>{category}</option>
               ))}
             </select>
@@ -592,16 +677,6 @@ export default function InventoryPage() {
               <option value="sufficient">충분</option>
               <option value="low">부족</option>
               <option value="critical">위험</option>
-            </select>
-            <select 
-              value={supplierFilter}
-              onChange={(e) => setSupplierFilter(e.target.value)}
-              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">모든 공급업체</option>
-              {suppliers.map(supplier => (
-                <option key={supplier} value={supplier}>{supplier}</option>
-              ))}
             </select>
           </div>
           <div className="flex gap-2">
@@ -641,21 +716,48 @@ export default function InventoryPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  앤드밀 정보
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  현재고/최소재고
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상태
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  공급업체
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  단가 (VND)
-                </th>
+                <SortableTableHeader
+                  label="앤드밀 코드"
+                  field="code"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="앤드밀 이름"
+                  field="name"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="카테고리"
+                  field="category"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="현재고"
+                  field="current_stock"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="상태"
+                  field="status"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="단가 (VND)"
+                  field="unit_price"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   작업
                 </th>
@@ -664,53 +766,44 @@ export default function InventoryPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {currentData.map((row, index) => {
                 const stockPercentage = Math.min((row.totalCurrentStock / row.minStock) * 100, 100)
-                const progressColor = row.overallStatus === 'critical' ? 'bg-red-600' : 
+                const progressColor = row.overallStatus === 'critical' ? 'bg-red-600' :
                                     row.overallStatus === 'low' ? 'bg-yellow-600' : 'bg-green-600'
-                
+
                 return (
-                  <tr key={`${row.itemId}-${row.supplier}`} className="hover:bg-gray-50">
-                    {/* 앤드밀 정보 - 첫 번째 행에만 표시 */}
-                    {row.isFirstRow && (
-                      <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" rowSpan={row.rowSpan}>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{row.code}</div>
-                          <div className="text-sm text-gray-500">{row.name}</div>
-                        </div>
-                      </td>
-                    )}
+                  <tr key={row.itemId} className="hover:bg-gray-50">
+                    {/* 앤드밀 코드 */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{row.code}</div>
+                    </td>
 
-                    {/* 현재고/최소재고 - 첫 번째 행에만 표시 */}
-                    {row.isFirstRow && (
-                      <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" rowSpan={row.rowSpan}>
-                        <div className="text-sm text-gray-900">
-                          {row.totalCurrentStock} / {row.minStock}
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                          <div 
-                            className={`h-2 rounded-full ${progressColor}`} 
-                            style={{width: `${Math.min(stockPercentage, 100)}%`}}
-                          ></div>
-                        </div>
-                      </td>
-                    )}
+                    {/* 앤드밀 이름 */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{row.name}</div>
+                    </td>
 
-                    {/* 전체 상태 - 첫 번째 행에만 표시 */}
-                    {row.isFirstRow && (
-                      <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" rowSpan={row.rowSpan}>
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(row.overallStatus)}`}>
-                          {getStatusText(row.overallStatus)}
-                        </span>
-                      </td>
-                    )}
+                    {/* 카테고리 */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{row.category}</div>
+                    </td>
 
-                    {/* 공급업체 */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="flex items-center">
-                        <span className="font-medium">{row.supplier}</span>
-                        <span className="ml-2 text-xs text-gray-500">
-                          ({row.supplierStock}개)
-                        </span>
+                    {/* 현재고 */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {row.totalCurrentStock} / {row.minStock}
                       </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div
+                          className={`h-2 rounded-full ${progressColor}`}
+                          style={{width: `${Math.min(stockPercentage, 100)}%`}}
+                        ></div>
+                      </div>
+                    </td>
+
+                    {/* 상태 */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(row.overallStatus)}`}>
+                        {getStatusText(row.overallStatus)}
+                      </span>
                     </td>
 
                     {/* 단가 */}
@@ -722,19 +815,24 @@ export default function InventoryPage() {
 
                     {/* 작업 */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button 
+                      <button
                         onClick={() => handleViewDetail(searchFilteredInventory.find(item => item.id === row.itemId)!)}
                         className="text-blue-600 hover:text-blue-800 mr-3"
                       >
                         상세
                       </button>
-                      <button 
-                        onClick={() => handleEdit(searchFilteredInventory.find(item => item.id === row.itemId)!)}
+                      <button
+                        onClick={() => {
+                          const inventoryItem = searchFilteredInventory.find(item => item.id === row.itemId)
+                          if (inventoryItem) {
+                            handleEdit(inventoryItem)
+                          }
+                        }}
                         className="text-green-600 hover:text-green-800 mr-3"
                       >
                         수정
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDelete(searchFilteredInventory.find(item => item.id === row.itemId)!)}
                         className="text-red-600 hover:text-red-800"
                       >
@@ -965,7 +1063,7 @@ export default function InventoryPage() {
                     required
                   >
                     <option value="">공급업체 선택</option>
-                    {suppliers.map(supplier => (
+                    {availableSuppliers.map(supplier => (
                       <option key={supplier} value={supplier}>{supplier}</option>
                     ))}
                   </select>
@@ -1066,19 +1164,19 @@ export default function InventoryPage() {
                   <div className="space-y-3">
                     <div>
                       <label className="text-sm font-medium text-gray-700">앤드밀 코드</label>
-                      <p className="mt-1 text-sm text-gray-900 font-mono">{selectedItem.endmill_types?.code}</p>
+                      <p className="mt-1 text-sm text-gray-900 font-mono">{selectedItem.endmill_type?.code}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700">Type</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedItem.endmill_types?.description_ko || selectedItem.endmill_types?.description_vi}</p>
+                      <p className="mt-1 text-sm text-gray-900">{selectedItem.endmill_type?.name}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700">카테고리</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedItem.endmill_types?.endmill_categories?.code}</p>
+                      <p className="mt-1 text-sm text-gray-900">{selectedItem.endmill_type?.endmill_categories?.name_ko || selectedItem.endmill_type?.endmill_categories?.code}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700">앤드밀 이름</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedItem.endmill_types?.specifications ? JSON.stringify(selectedItem.endmill_types.specifications) : ''}</p>
+                      <p className="mt-1 text-sm text-gray-900">{selectedItem.endmill_type?.description_ko || selectedItem.endmill_type?.description_vi || ''}</p>
                     </div>
                   </div>
                 </div>
@@ -1115,23 +1213,7 @@ export default function InventoryPage() {
 
               <div className="mt-6 pt-6 border-t">
                 <h4 className="font-medium text-gray-900 mb-4">공급업체별 단가 정보</h4>
-                <div className="space-y-2">
-                  {/* 실제 공급업체 정보는 데이터베이스에서 가져와야 함 */}
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <span className="font-medium text-gray-900">공급업체 1</span>
-                      <span className="ml-2 text-sm text-gray-500">재고: 100개</span>
-                    </div>
-                    <span className="font-mono text-gray-900">1,000,000 VND</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <span className="font-medium text-gray-900">공급업체 2</span>
-                      <span className="ml-2 text-sm text-gray-500">재고: 50개</span>
-                    </div>
-                    <span className="font-mono text-gray-900">1,200,000 VND</span>
-                  </div>
-                </div>
+                <SupplierPriceInfo endmillTypeId={selectedItem.endmill_type_id} />
               </div>
 
               <div className="flex justify-end pt-6 border-t mt-6">
@@ -1169,51 +1251,44 @@ export default function InventoryPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 코드</label>
                   <input
                     type="text"
-                    value={editFormData.endmill_types?.code}
-                    onChange={(e) => setEditFormData({ ...editFormData, 'endmill_types.code': e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                    value={editFormData.endmill_type?.code || ''}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-                  <input
-                    type="text"
-                    value={editFormData.endmill_types?.description_ko}
-                    onChange={(e) => setEditFormData({ ...editFormData, 'endmill_types.description_ko': e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
-                  <select
-                    value={editFormData.endmill_types?.endmill_categories?.code}
-                    onChange={(e) => setEditFormData({ ...editFormData, 'endmill_types.endmill_categories.code': e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">카테고리 선택</option>
-                    {categories.map(category => (
-                      <option key={category} value={category}>{category}</option>
-                    ))}
-                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 이름</label>
                   <input
                     type="text"
-                    value={editFormData.endmill_types?.specifications ? JSON.stringify(editFormData.endmill_types.specifications) : ''}
-                    onChange={(e) => setEditFormData({ ...editFormData, 'endmill_types.specifications': JSON.parse(e.target.value) })}
+                    value={editFormData.endmill_type?.name || ''}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
+                  <input
+                    type="text"
+                    value={editFormData.endmill_type?.endmill_categories?.name_ko || editFormData.endmill_type?.endmill_categories?.code || ''}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">현재 재고</label>
+                  <input
+                    type="number"
+                    value={editFormData.current_stock || 0}
+                    onChange={(e) => setEditFormData({ ...editFormData, current_stock: Number(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                    min="0"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">최소재고</label>
                   <input
                     type="number"
-                    value={editFormData.min_stock}
+                    value={editFormData.min_stock || 0}
                     onChange={(e) => setEditFormData({ ...editFormData, min_stock: Number(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
@@ -1224,7 +1299,7 @@ export default function InventoryPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">최대재고</label>
                   <input
                     type="number"
-                    value={editFormData.max_stock}
+                    value={editFormData.max_stock || 0}
                     onChange={(e) => setEditFormData({ ...editFormData, max_stock: Number(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required

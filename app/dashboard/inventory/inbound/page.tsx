@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useToast } from '../../../../components/shared/Toast'
 import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
 import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
-import { useSettings } from '../../../../lib/hooks/useSettings'
+import { supabase } from '../../../../lib/supabase/client'
 
 // 앤드밀 데이터 타입 정의
 interface EndmillData {
@@ -41,14 +41,52 @@ export default function InboundPage() {
   const [unitPrice, setUnitPrice] = useState(0)
   const [errorMessage, setErrorMessage] = useState('')
   const [availableEndmills, setAvailableEndmills] = useState<any[]>([])
+  const [availableSuppliers, setAvailableSuppliers] = useState<any[]>([])
+  const [supplierPrices, setSupplierPrices] = useState<Record<string, number>>({})
 
-  // 설정에서 값 가져오기
-  const { settings } = useSettings()
-  const suppliers = settings.inventory.suppliers
+  // 입고 내역 로드 함수
+  const loadInboundItems = async () => {
+    try {
+      const response = await fetch('/api/inventory/inbound')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setInboundItems(result.data || [])
+        }
+      }
+    } catch (error) {
+      console.error('입고 내역 로드 오류:', error)
+    }
+  }
 
-  // 앤드밀 마스터 데이터 로드
+  // 앤드밀 마스터 데이터 및 공급업체 데이터 로드
   useEffect(() => {
     loadAvailableEndmills()
+    loadAvailableSuppliers()
+    loadInboundItems()
+
+    // inventory_transactions 테이블 realtime 구독
+    const subscription = supabase
+      .channel('inventory_transactions_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'inventory_transactions',
+          filter: 'transaction_type=eq.inbound'
+        },
+        (payload) => {
+          console.log('Inventory transaction change:', payload)
+          // 입고 내역 새로고침
+          loadInboundItems()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   const loadAvailableEndmills = async () => {
@@ -65,7 +103,46 @@ export default function InboundPage() {
     }
   }
 
-  const handleQRScan = (code: string) => {
+  const loadAvailableSuppliers = async () => {
+    try {
+      const response = await fetch('/api/suppliers')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setAvailableSuppliers(result.data || [])
+        }
+      }
+    } catch (error) {
+      console.error('공급업체 데이터 로드 오류:', error)
+    }
+  }
+
+  const loadSupplierPrices = async (endmillCode: string) => {
+    try {
+      const foundEndmill = availableEndmills.find(endmill => endmill.code === endmillCode)
+      if (!foundEndmill) return {}
+
+      const response = await fetch(`/api/endmill/${foundEndmill.id}/suppliers`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.data) {
+          const prices: Record<string, number> = {}
+          result.data.forEach((item: any) => {
+            if (item.supplier) {
+              prices[item.supplier.name] = item.unit_price
+            }
+          })
+          setSupplierPrices(prices)
+          return prices
+        }
+      }
+    } catch (error) {
+      console.error('공급업체 가격 로드 오류:', error)
+    }
+    return {}
+  }
+
+  const handleQRScan = async (code: string) => {
     setScannedCode(code)
     setIsScanning(false)
     setErrorMessage('')
@@ -87,8 +164,14 @@ export default function InboundPage() {
 
       setEndmillData(endmillInfo)
       setQuantity(1) // 수량 초기화
-      setUnitPrice(endmillInfo.unitPrice) // 기본 단가 설정 (수정 가능)
+      setUnitPrice(0) // 공급업체 선택 시 가격이 자동 설정됨
       setSelectedSupplier('') // 공급업체는 직접 선택
+      setSupplierPrices({}) // 가격 정보 초기화
+
+      // 해당 앤드밀의 공급업체별 가격 로드
+      const prices = await loadSupplierPrices(foundEndmill.code)
+      console.log('Prices loaded for', foundEndmill.code, ':', prices)
+
       showSuccess('앤드밀 검색 완료', `앤드밀 정보가 로드되었습니다: ${foundEndmill.code}`)
     } else {
       setEndmillData(null)
@@ -113,35 +196,51 @@ export default function InboundPage() {
 
     if (confirmed) {
       confirmation.setLoading(true)
-      
+
       try {
-        const newItem: InboundItem = {
-          id: Date.now().toString(),
-          endmillCode: endmillData.code,
-          endmillName: endmillData.name,
-          supplier: selectedSupplier,
-          quantity: quantity,
-          unitPrice: unitPrice,
-          totalPrice: totalPrice,
-          processedAt: new Date().toLocaleString('ko-KR'),
-          processedBy: '관리자' // 실제로는 로그인된 사용자 정보
+        // API를 통해 입고 처리
+        const response = await fetch('/api/inventory/inbound', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            endmill_code: endmillData.code,
+            endmill_name: endmillData.name,
+            supplier: selectedSupplier,
+            quantity: quantity,
+            unit_price: unitPrice,
+            total_amount: totalPrice
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('입고 처리 실패')
         }
 
-        setInboundItems([newItem, ...inboundItems])
-        
-        // 폼 초기화
-        setEndmillData(null)
-        setQuantity(1)
-        setSelectedSupplier('')
-        setUnitPrice(0)
-        setScannedCode('')
-        setErrorMessage('')
-        
-        showSuccess(
-          '입고 처리 완료', 
-          `${endmillData.code} ${quantity}개가 성공적으로 입고되었습니다. (총액: ${totalPrice.toLocaleString()} VND)`
-        )
+        const result = await response.json()
+
+        if (result.success) {
+          // 입고 내역 새로고침
+          loadInboundItems()
+
+          // 폼 초기화
+          setEndmillData(null)
+          setQuantity(1)
+          setSelectedSupplier('')
+          setUnitPrice(0)
+          setScannedCode('')
+          setErrorMessage('')
+
+          showSuccess(
+            '입고 처리 완료',
+            `${endmillData.code} ${quantity}개가 성공적으로 입고되었습니다. (총액: ${totalPrice.toLocaleString()} VND)`
+          )
+        } else {
+          throw new Error(result.error || '입고 처리 실패')
+        }
       } catch (error) {
+        console.error('입고 처리 오류:', error)
         showError('입고 처리 실패', '입고 처리 중 오류가 발생했습니다.')
       } finally {
         confirmation.setLoading(false)
@@ -211,14 +310,14 @@ export default function InboundPage() {
                     value={scannedCode}
                     onChange={(e) => setScannedCode(e.target.value)}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    onKeyPress={(e) => {
+                    onKeyPress={async (e) => {
                       if (e.key === 'Enter' && scannedCode.trim()) {
-                        handleQRScan(scannedCode)
+                        await handleQRScan(scannedCode)
                       }
                     }}
                   />
-                  <button 
-                    onClick={() => scannedCode.trim() && handleQRScan(scannedCode)}
+                  <button
+                    onClick={async () => scannedCode.trim() && await handleQRScan(scannedCode)}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     disabled={!scannedCode.trim()}
                   >
@@ -259,7 +358,6 @@ export default function InboundPage() {
                     <div className="text-sm text-gray-600">{endmillData.standardLife?.toLocaleString() || '2,000'}회</div>
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">사양</label>
                     <div className="text-sm text-gray-600">{endmillData.specifications}</div>
                   </div>
                 </div>
@@ -271,13 +369,23 @@ export default function InboundPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">공급업체 *</label>
                   <select
                     value={selectedSupplier}
-                    onChange={(e) => setSelectedSupplier(e.target.value)}
+                    onChange={(e) => {
+                      const supplier = e.target.value
+                      setSelectedSupplier(supplier)
+                      // 선택된 공급업체의 가격이 있으면 자동 설정
+                      if (supplier && supplierPrices[supplier]) {
+                        setUnitPrice(supplierPrices[supplier])
+                      }
+                    }}
                     className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   >
                     <option value="">공급업체 선택</option>
-                    {suppliers.map(supplier => (
-                      <option key={supplier} value={supplier}>{supplier}</option>
+                    {availableSuppliers.map(supplier => (
+                      <option key={supplier.id} value={supplier.name}>
+                        {supplier.name}
+                        {supplierPrices[supplier.name] ? ` (${supplierPrices[supplier.name].toLocaleString()} VND)` : ''}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -290,7 +398,7 @@ export default function InboundPage() {
                     value={unitPrice}
                     onChange={(e) => setUnitPrice(parseInt(e.target.value) || 0)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="1000000"
+                    placeholder="단가 입력"
                     required
                   />
                 </div>

@@ -43,8 +43,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (categoryFilter && categoryFilter !== '') {
-      filteredInventory = filteredInventory.filter(item => 
-        item.endmill_type?.category?.code === categoryFilter
+      filteredInventory = filteredInventory.filter(item =>
+        item.endmill_type?.endmill_categories?.code === categoryFilter ||
+        item.endmill_type?.endmill_categories?.name_ko === categoryFilter
       )
     }
 
