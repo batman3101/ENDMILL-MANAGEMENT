@@ -7,6 +7,7 @@ import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createSaveConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useSettings } from '../../../lib/hooks/useSettings'
 import { useToolChanges, type ToolChange, type ToolChangeFilters } from '../../../lib/hooks/useToolChanges'
+import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 
 export default function ToolChangesPage() {
   const { showSuccess, showError, showWarning } = useToast()
@@ -96,11 +97,6 @@ export default function ToolChangesPage() {
     setCurrentPage(1) // 정렬 변경시 첫 페이지로
   }, [sortField])
 
-  // 정렬 아이콘 반환
-  const getSortIcon = useCallback((field: string) => {
-    if (sortField !== field) return '↕️'
-    return sortDirection === 'asc' ? '↑' : '↓'
-  }, [sortField, sortDirection])
 
   // 필터 초기화
   const resetFilters = useCallback(() => {
@@ -976,31 +972,11 @@ export default function ToolChangesPage() {
             <div className="flex gap-4 flex-1">
               <input
                 type="text"
-                placeholder="설비번호, 앤드밀 코드, 사용자명 검색..."
+                placeholder="설비번호, 앤드밀 코드 검색..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <select
-                value={selectedEquipment}
-                onChange={(e) => setSelectedEquipment(e.target.value)}
-                className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">모든 설비</option>
-                <option value="1">C001</option>
-                <option value="2">C002</option>
-                <option value="3">C003</option>
-                <option value="4">C004</option>
-                <option value="5">C005</option>
-              </select>
-              <select
-                value={selectedEndmillType}
-                onChange={(e) => setSelectedEndmillType(e.target.value)}
-                className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">모든 엔드밀</option>
-                {/* TODO: 실제 endmill_types 데이터로 교체 필요 */}
-              </select>
             </div>
             <div className="flex gap-2">
               <button
@@ -1060,61 +1036,69 @@ export default function ToolChangesPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                  onClick={() => handleSort('change_date')}
-                >
-                  교체일시 {getSortIcon('change_date')}
-                </th>
-                <th
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                  onClick={() => handleSort('equipment_number')}
-                >
-                  설비번호 {getSortIcon('equipment_number')}
-                </th>
-                <th
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                  onClick={() => handleSort('production_model')}
-                >
-                  생산모델 {getSortIcon('production_model')}
-                </th>
-                <th
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                  onClick={() => handleSort('process')}
-                >
-                  공정 {getSortIcon('process')}
-                </th>
-                <th
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                  onClick={() => handleSort('t_number')}
-                >
-                  T번호 {getSortIcon('t_number')}
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <SortableTableHeader
+                  label="교체일시"
+                  field="change_date"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="설비번호"
+                  field="equipment_number"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="생산모델"
+                  field="production_model"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="공정"
+                  field="process"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="T번호"
+                  field="t_number"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   앤드밀 코드
                 </th>
-                <th
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                  onClick={() => handleSort('endmill_name')}
-                >
-                  앤드밀 이름 {getSortIcon('endmill_name')}
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <SortableTableHeader
+                  label="앤드밀 이름"
+                  field="endmill_name"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   교체자
                 </th>
-                <th
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                  onClick={() => handleSort('change_reason')}
-                >
-                  교체사유 {getSortIcon('change_reason')}
-                </th>
-                <th
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                  onClick={() => handleSort('tool_life')}
-                >
-                  Tool Life {getSortIcon('tool_life')}
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <SortableTableHeader
+                  label="교체사유"
+                  field="change_reason"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="Tool Life"
+                  field="tool_life"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   작업
                 </th>
               </tr>
@@ -1156,7 +1140,7 @@ export default function ToolChangesPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{change.user?.name || '-'}</div>
+                      <div className="text-sm text-gray-900">{change.user_profiles?.name || '-'}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getReasonBadge(change.change_reason || change.reason || '')}`}>

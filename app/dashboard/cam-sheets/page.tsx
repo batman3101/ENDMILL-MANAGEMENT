@@ -8,6 +8,7 @@ import { useToast } from '../../../components/shared/Toast'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createSaveConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useSettings } from '../../../lib/hooks/useSettings'
+import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 
 export default function CAMSheetsPage() {
   const { 
@@ -528,61 +529,41 @@ export default function CAMSheetsPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <button
-                    onClick={() => handleSort('model')}
-                    className="flex items-center gap-1 hover:text-gray-700 transition-colors"
-                  >
-                    모델
-                    <span className={`transition-colors ${sortField === 'model' ? 'text-blue-600' : 'text-gray-400'}`}>
-                      {sortField === 'model' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}
-                    </span>
-                  </button>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <button
-                    onClick={() => handleSort('process')}
-                    className="flex items-center gap-1 hover:text-gray-700 transition-colors"
-                  >
-                    공정
-                    <span className={`transition-colors ${sortField === 'process' ? 'text-blue-600' : 'text-gray-400'}`}>
-                      {sortField === 'process' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}
-                    </span>
-                  </button>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <button
-                    onClick={() => handleSort('cam_version')}
-                    className="flex items-center gap-1 hover:text-gray-700 transition-colors"
-                  >
-                    CAM 버전
-                    <span className={`transition-colors ${sortField === 'cam_version' ? 'text-blue-600' : 'text-gray-400'}`}>
-                      {sortField === 'cam_version' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}
-                    </span>
-                  </button>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <button
-                    onClick={() => handleSort('endmillCount')}
-                    className="flex items-center gap-1 hover:text-gray-700 transition-colors"
-                  >
-                    등록 앤드밀
-                    <span className={`transition-colors ${sortField === 'endmillCount' ? 'text-blue-600' : 'text-gray-400'}`}>
-                      {sortField === 'endmillCount' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}
-                    </span>
-                  </button>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <button
-                    onClick={() => handleSort('updated_at')}
-                    className="flex items-center gap-1 hover:text-gray-700 transition-colors"
-                  >
-                    마지막 수정
-                    <span className={`transition-colors ${sortField === 'updated_at' ? 'text-blue-600' : 'text-gray-400'}`}>
-                      {sortField === 'updated_at' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}
-                    </span>
-                  </button>
-                </th>
+                <SortableTableHeader
+                  label="모델"
+                  field="model"
+                  currentSortField={sortField}
+                  currentSortOrder={sortOrder}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="공정"
+                  field="process"
+                  currentSortField={sortField}
+                  currentSortOrder={sortOrder}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="CAM 버전"
+                  field="cam_version"
+                  currentSortField={sortField}
+                  currentSortOrder={sortOrder}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="등록 앤드밀"
+                  field="endmillCount"
+                  currentSortField={sortField}
+                  currentSortOrder={sortOrder}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="마지막 수정"
+                  field="updated_at"
+                  currentSortField={sortField}
+                  currentSortOrder={sortOrder}
+                  onSort={handleSort}
+                />
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   작업
                 </th>

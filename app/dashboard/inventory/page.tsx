@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useInventory, useInventorySearch, useInventoryAlerts } from '../../../lib/hooks/useInventory'
 import { useToast } from '../../../components/shared/Toast'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
@@ -43,7 +43,7 @@ export default function InventoryPage() {
   const itemsPerPage = settings.system.itemsPerPage
   const categories = settings.inventory.categories
   const suppliers = settings.inventory.suppliers
-  
+
   // 상태 관리
   const [showAddModal, setShowAddModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
@@ -69,6 +69,102 @@ export default function InventoryPage() {
     updated: number
     errors: string[]
   }>({ processing: false, success: 0, updated: 0, errors: [] })
+
+  // 앤드밀 자동완성을 위한 상태
+  const [searchSuggestions, setSearchSuggestions] = useState<any[]>([])
+  const [showQRScanner, setShowQRScanner] = useState(false)
+  const [availableEndmills, setAvailableEndmills] = useState<any[]>([])
+
+  // 앤드밀 마스터 데이터 로드
+  useEffect(() => {
+    loadAvailableEndmills()
+  }, [])
+
+  const loadAvailableEndmills = async () => {
+    try {
+      const response = await fetch('/api/endmill')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setAvailableEndmills(result.data)
+        }
+      }
+    } catch (error) {
+      console.error('앤드밀 마스터 데이터 로드 오류:', error)
+    }
+  }
+
+  // 앤드밀 코드 입력 변경 처리
+  const handleEndmillCodeChange = (value: string) => {
+    setFormData({...formData, code: value})
+
+    if (value.length > 1) {
+      const filtered = availableEndmills.filter(endmill =>
+        endmill.code.toLowerCase().includes(value.toLowerCase()) ||
+        endmill.name.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 10) // 최대 10개만 표시
+      setSearchSuggestions(filtered)
+    } else {
+      setSearchSuggestions([])
+    }
+  }
+
+  // 자동완성 선택 처리
+  const handleSelectSuggestion = (suggestion: any) => {
+    setFormData({
+      ...formData,
+      code: suggestion.code,
+      name: suggestion.name,
+      category: suggestion.category || '',
+      specifications: suggestion.specifications || ''
+    })
+    setSearchSuggestions([])
+  }
+
+  // QR 코드 스캔 결과 처리
+  const handleQRScanResult = (scannedCode: string) => {
+    // QR 코드에서 앤드밀 코드 추출
+    const endmillCode = scannedCode.trim()
+
+    // 앤드밀 마스터 데이터에서 해당 코드 찾기
+    const foundEndmill = availableEndmills.find(endmill =>
+      endmill.code === endmillCode
+    )
+
+    if (foundEndmill) {
+      setFormData({
+        ...formData,
+        code: foundEndmill.code,
+        name: foundEndmill.name,
+        category: foundEndmill.category || '',
+        specifications: foundEndmill.specifications || ''
+      })
+      showSuccess('QR 스캔 완료', `앤드밀 정보가 자동으로 입력되었습니다: ${foundEndmill.code}`)
+    } else {
+      // 등록되지 않은 앤드밀 코드인 경우 코드만 입력
+      setFormData({...formData, code: endmillCode})
+      showWarning('미등록 앤드밀', '앤드밀 마스터에 등록되지 않은 코드입니다. 수동으로 정보를 입력해주세요.')
+    }
+
+    setShowQRScanner(false)
+  }
+
+  // 클릭 외부 영역 클릭시 자동완성 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchSuggestions.length > 0) {
+        const target = event.target as Element
+        if (!target.closest('.relative')) {
+          setSearchSuggestions([])
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [searchSuggestions])
 
   // 필터링된 재고 목록
   const filteredInventory = useMemo(() => {
@@ -770,14 +866,40 @@ export default function InventoryPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 코드 *</label>
-                  <input
-                    type="text"
-                    value={formData.code}
-                    onChange={(e) => setFormData({...formData, code: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="AT001"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={formData.code}
+                      onChange={(e) => handleEndmillCodeChange(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="앤드밀 코드 입력 또는 QR 스캔"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowQRScanner(true)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      title="QR 코드 스캔"
+                    >
+                      📷
+                    </button>
+                  </div>
+                  {/* 자동완성 드롭다운 */}
+                  {searchSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                      {searchSuggestions.map((suggestion, index) => (
+                        <div
+                          key={suggestion.id}
+                          onClick={() => handleSelectSuggestion(suggestion)}
+                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="font-medium text-gray-900">{suggestion.code}</div>
+                          <div className="text-sm text-gray-500">{suggestion.name}</div>
+                          <div className="text-xs text-gray-400">{suggestion.category}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -786,10 +908,15 @@ export default function InventoryPage() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="FLAT 12mm 4날"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formData.code ? 'bg-blue-50' : ''
+                    }`}
+                    placeholder="앤드밀 코드 선택시 자동 입력"
                     required
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.code ? '앤드밀 코드 기반 자동입력됨' : '앤드밀 마스터에서 자동으로 입력됩니다'}
+                  </p>
                 </div>
 
                 <div>
@@ -797,7 +924,9 @@ export default function InventoryPage() {
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formData.code ? 'bg-blue-50' : ''
+                    }`}
                     required
                   >
                     <option value="">카테고리 선택</option>
@@ -805,6 +934,9 @@ export default function InventoryPage() {
                       <option key={category} value={category}>{category}</option>
                     ))}
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.code ? '앤드밀 코드 기반 자동입력됨' : '앤드밀 마스터에서 자동으로 입력됩니다'}
+                  </p>
                 </div>
 
                 <div>
@@ -813,10 +945,15 @@ export default function InventoryPage() {
                     type="text"
                     value={formData.specifications}
                     onChange={(e) => setFormData({...formData, specifications: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="12mm 4날"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formData.code ? 'bg-blue-50' : ''
+                    }`}
+                    placeholder="앤드밀 코드 선택시 자동 입력"
                     required
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.code ? '앤드밀 코드 기반 자동입력됨' : '앤드밀 마스터에서 자동으로 입력됩니다'}
+                  </p>
                 </div>
 
                 <div>
@@ -1213,6 +1350,67 @@ export default function InventoryPage() {
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                   {uploadProgress.processing ? '처리 중...' : '📄 업로드 처리'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR 스캐너 모달 */}
+      {showQRScanner && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
+            <div className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">QR 코드 스캔</h3>
+                <button
+                  onClick={() => setShowQRScanner(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="text-center">
+                <div className="w-24 h-24 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <span className="text-4xl">📷</span>
+                </div>
+                <p className="text-gray-600 mb-4">앤드밀 QR 코드를 스캔해주세요</p>
+
+                {/* 임시로 수동 입력 필드 제공 */}
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    placeholder="또는 수동으로 앤드밀 코드 입력"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        const target = e.target as HTMLInputElement
+                        if (target.value.trim()) {
+                          handleQRScanResult(target.value.trim())
+                        }
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Enter 키를 눌러서 코드를 입력하세요
+                  </p>
+                </div>
+
+                <div className="text-sm text-gray-500">
+                  📋 QR 코드 스캔 기능은 향후 카메라 접근 권한이 있을 때 구현됩니다.
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t mt-4">
+                <button
+                  onClick={() => setShowQRScanner(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                >
+                  닫기
                 </button>
               </div>
             </div>

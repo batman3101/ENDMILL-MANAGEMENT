@@ -437,13 +437,21 @@ export class ToolChangeService {
 
   // 교체 이력 생성
   async create(toolChange: Database['public']['Tables']['tool_changes']['Insert']) {
+    console.log('ToolChangeService.create called with:', JSON.stringify(toolChange, null, 2))
+
     const { data, error } = await this.supabase
       .from('tool_changes')
       .insert(toolChange)
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase insert error:', error)
+      console.error('Error details:', JSON.stringify(error, null, 2))
+      throw error
+    }
+
+    console.log('Tool change created successfully:', data)
     return data
   }
 
@@ -483,9 +491,7 @@ export class ToolChangeService {
       .from('tool_changes')
       .select(`
         *,
-        equipment:equipment(*),
-        endmill_type:endmill_types(*),
-        user:user_profiles(name, employee_id)
+        user_profiles(name, employee_id)
       `)
 
     // 설비 번호 필터
@@ -506,14 +512,20 @@ export class ToolChangeService {
       query = query.lte('change_date', filters.endDate)
     }
 
-    // 검색어 필터 (설비명, 엔드밀 코드, 사용자명으로 검색)
+    // 검색어 필터 - 단순화
     if (filters.searchTerm) {
-      query = query.or(`
-        equipment.name.ilike.%${filters.searchTerm}%,
-        endmill_code.ilike.%${filters.searchTerm}%,
-        user.name.ilike.%${filters.searchTerm}%,
-        notes.ilike.%${filters.searchTerm}%
-      `)
+      // 설비번호 검색 처리
+      if (filters.searchTerm.match(/^C\d+$/i)) {
+        // C001 -> 1로 변환
+        const numPart = filters.searchTerm.replace(/^C/i, '')
+        query = query.eq('equipment_number', parseInt(numPart))
+      } else if (filters.searchTerm.match(/^\d+$/)) {
+        // 순수 숫자인 경우 설비번호로 검색
+        query = query.eq('equipment_number', parseInt(filters.searchTerm))
+      } else {
+        // 문자열인 경우 엔드밀 코드 또는 이름으로 검색
+        query = query.or(`endmill_code.ilike.%${filters.searchTerm}%,endmill_name.ilike.%${filters.searchTerm}%`)
+      }
     }
 
     // 정렬 처리
@@ -610,12 +622,20 @@ export class ToolChangeService {
       query = query.lte('change_date', filters.endDate)
     }
 
-    // 검색어 필터 - 단순화 (복잡한 OR 조건 제거)
+    // 검색어 필터 - 단순화
     if (filters.searchTerm) {
-      query = query.or(`
-        endmill_code.ilike.%${filters.searchTerm}%,
-        notes.ilike.%${filters.searchTerm}%
-      `)
+      // 설비번호 검색 처리
+      if (filters.searchTerm.match(/^C\d+$/i)) {
+        // C001 -> 1로 변환
+        const numPart = filters.searchTerm.replace(/^C/i, '')
+        query = query.eq('equipment_number', parseInt(numPart))
+      } else if (filters.searchTerm.match(/^\d+$/)) {
+        // 순수 숫자인 경우 설비번호로 검색
+        query = query.eq('equipment_number', parseInt(filters.searchTerm))
+      } else {
+        // 문자열인 경우 엔드밀 코드 또는 이름으로 검색
+        query = query.or(`endmill_code.ilike.%${filters.searchTerm}%,endmill_name.ilike.%${filters.searchTerm}%`)
+      }
     }
 
     const { count, error } = await query

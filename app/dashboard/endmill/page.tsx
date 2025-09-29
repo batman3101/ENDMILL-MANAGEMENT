@@ -12,6 +12,7 @@ import EndmillForm from '../../../components/features/EndmillForm'
 import EndmillSupplierPrices from '../../../components/features/EndmillSupplierPrices'
 import { downloadEndmillTemplate } from '../../../lib/utils/endmillExcelTemplate'
 import { supabase } from '../../../lib/supabase/client'
+import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 
 // 앤드밀 인스턴스 타입 정의
 interface EndmillInstance {
@@ -588,15 +589,27 @@ export default function EndmillPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('code')}>
-                  엔드밀 코드 {sortColumn === 'code' && (sortDirection === 'asc' ? '▲' : '▼')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('category')}>
-                  카테고리 {sortColumn === 'category' && (sortDirection === 'asc' ? '▲' : '▼')}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('name')}>
-                  이름 {sortColumn === 'name' && (sortDirection === 'asc' ? '▲' : '▼')}
-                </th>
+                <SortableTableHeader
+                  label="엔드밀 코드"
+                  field="code"
+                  currentSortField={sortColumn}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="카테고리"
+                  field="category"
+                  currentSortField={sortColumn}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="이름"
+                  field="name"
+                  currentSortField={sortColumn}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   사용 댓수
                 </th>

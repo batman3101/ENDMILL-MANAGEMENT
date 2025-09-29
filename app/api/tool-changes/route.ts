@@ -29,6 +29,18 @@ export async function GET(request: NextRequest) {
     const sortField = searchParams.get('sort_field')
     const sortDirection = searchParams.get('sort_direction') as 'asc' | 'desc'
 
+    console.log('GET /api/tool-changes params:', {
+      equipmentNumber,
+      endmillType,
+      searchTerm,
+      startDate,
+      endDate,
+      limit,
+      offset,
+      sortField,
+      sortDirection
+    })
+
     const result = await serverSupabaseService.toolChange.getFiltered({
       equipmentNumber: equipmentNumber ? parseInt(equipmentNumber) : undefined,
       endmillType,
@@ -57,10 +69,16 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error fetching tool changes:', error)
+    console.error('Error details:', JSON.stringify(error, null, 2))
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to fetch tool changes'
+        error: 'Failed to fetch tool changes',
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     )
@@ -83,8 +101,8 @@ export async function POST(request: NextRequest) {
       equipmentNumber = parseInt(cleaned)
     }
 
-    // 새 교체 실적 생성
-    const newToolChange = await serverSupabaseService.toolChange.create({
+    // 새 교체 실적 생성을 위한 데이터 준비
+    const toolChangeData = {
       equipment_number: equipmentNumber,
       production_model: validatedData.production_model,
       process: validatedData.process,
@@ -95,7 +113,12 @@ export async function POST(request: NextRequest) {
       change_reason: validatedData.change_reason,
       changed_by: validatedData.changed_by,
       change_date: validatedData.change_date || new Date().toISOString().split('T')[0]
-    })
+    }
+
+    console.log('Creating tool change with data:', JSON.stringify(toolChangeData, null, 2))
+
+    // 새 교체 실적 생성
+    const newToolChange = await serverSupabaseService.toolChange.create(toolChangeData)
 
     return NextResponse.json({
       success: true,
