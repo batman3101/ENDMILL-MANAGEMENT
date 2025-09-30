@@ -4,114 +4,112 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clientSupabaseService } from '../services/supabaseService'
 import { User, UserRole, UserStats, UserFilter } from '../types/users'
-
-// 기본 역할 데이터 (임시)
-const defaultRoles: UserRole[] = [
-  {
-    id: '1',
-    name: '시스템 관리자',
-    type: 'system_admin',
-    description: '모든 시스템 권한을 가진 최고 관리자',
-    permissions: {
-      dashboard: ['create', 'read', 'update', 'delete', 'manage'],
-      equipment: ['create', 'read', 'update', 'delete', 'manage'],
-      endmill: ['create', 'read', 'update', 'delete', 'manage'],
-      inventory: ['create', 'read', 'update', 'delete', 'manage'],
-      toolChanges: ['create', 'read', 'update', 'delete', 'manage'],
-      camSheets: ['create', 'read', 'update', 'delete', 'manage'],
-      reports: ['create', 'read', 'update', 'delete', 'manage'],
-      users: ['create', 'read', 'update', 'delete', 'manage'],
-      settings: ['create', 'read', 'update', 'delete', 'manage']
-    },
-    isSystemRole: true,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: '관리자',
-    type: 'admin',
-    description: '일반적인 관리 업무를 담당하는 관리자',
-    permissions: {
-      dashboard: ['read', 'update'],
-      equipment: ['read', 'update'],
-      endmill: ['read', 'update'],
-      inventory: ['read', 'update'],
-      toolChanges: ['read', 'update'],
-      camSheets: ['read', 'update'],
-      reports: ['read'],
-      users: ['read'],
-      settings: ['read']
-    },
-    isSystemRole: true,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '3',
-    name: '사용자',
-    type: 'user',
-    description: '기본 사용자 권한을 가진 일반 사용자',
-    permissions: {
-      dashboard: ['read'],
-      equipment: ['read'],
-      endmill: ['read'],
-      inventory: ['read'],
-      toolChanges: ['read'],
-      camSheets: ['read'],
-      reports: ['read'],
-      users: [],
-      settings: []
-    },
-    isSystemRole: true,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-]
-
-// 기본 사용자 데이터 (임시)
-const defaultUsers: User[] = [
-  {
-    id: '1',
-    name: '관리자',
-    email: 'admin@almustech.com',
-    employeeId: 'EMP001',
-    department: '관리부',
-    position: '부장',
-    shift: '상시',
-    roleId: '1',
-    isActive: true,
-    createdBy: 'system',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-]
+import { useRealtime } from './useRealtime'
 
 export const useUsers = () => {
   const queryClient = useQueryClient()
 
-  // 사용자 데이터 조회 (Supabase 연동 시까지 기본 데이터 사용)
+  // 사용자 프로필 데이터 조회 (Supabase에서 가져오기)
   const {
-    data: users = defaultUsers,
-    isLoading,
-    error,
-    refetch
+    data: rawUsers = [],
+    isLoading: isLoadingUsers,
+    error: usersError,
+    refetch: refetchUsers
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      // TODO: Supabase userProfile 서비스 사용
-      // return await clientSupabaseService.userProfile.getAll()
-      return defaultUsers
+      console.log('🔄 Fetching user profiles from Supabase...')
+      const data = await clientSupabaseService.userProfile.getAll()
+      console.log('✅ User profiles fetched:', data?.length, 'users')
+      return data || []
     },
     staleTime: 5 * 60 * 1000, // 5분
     gcTime: 10 * 60 * 1000 // 10분
   })
 
-  // 역할 데이터 (현재는 기본값 사용)
-  const roles = defaultRoles
+  // 역할 데이터 조회 (Supabase에서 가져오기)
+  const {
+    data: rawRoles = [],
+    isLoading: isLoadingRoles,
+    error: rolesError,
+    refetch: refetchRoles
+  } = useQuery({
+    queryKey: ['userRoles'],
+    queryFn: async () => {
+      console.log('🔄 Fetching user roles from Supabase...')
+      const data = await clientSupabaseService.userRoles.getAll()
+      console.log('✅ User roles fetched:', data?.length, 'roles')
+      return data || []
+    },
+    staleTime: 5 * 60 * 1000, // 5분
+    gcTime: 10 * 60 * 1000 // 10분
+  })
+
+  // user_profiles 테이블 실시간 구독
+  useRealtime({
+    table: 'user_profiles',
+    onInsert: (payload) => {
+      console.log('📥 New user profile inserted:', payload)
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+    onUpdate: (payload) => {
+      console.log('📝 User profile updated:', payload)
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+    onDelete: (payload) => {
+      console.log('🗑️ User profile deleted:', payload)
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    }
+  })
+
+  // user_roles 테이블 실시간 구독
+  useRealtime({
+    table: 'user_roles',
+    onInsert: (payload) => {
+      console.log('📥 New user role inserted:', payload)
+      queryClient.invalidateQueries({ queryKey: ['userRoles'] })
+    },
+    onUpdate: (payload) => {
+      console.log('📝 User role updated:', payload)
+      queryClient.invalidateQueries({ queryKey: ['userRoles'] })
+    },
+    onDelete: (payload) => {
+      console.log('🗑️ User role deleted:', payload)
+      queryClient.invalidateQueries({ queryKey: ['userRoles'] })
+    }
+  })
+
+  // 데이터 변환: Supabase 데이터를 User 타입으로 변환
+  const users: User[] = rawUsers.map(profile => ({
+    id: profile.id,
+    name: profile.name,
+    email: '', // user_profiles에 email이 없으면 빈 문자열
+    employeeId: profile.employee_id,
+    department: profile.department,
+    position: profile.position,
+    shift: profile.shift,
+    roleId: profile.role_id || '',
+    phone: profile.phone || undefined,
+    isActive: profile.is_active ?? true,
+    createdAt: profile.created_at,
+    updatedAt: profile.updated_at
+  }))
+
+  // 역할 데이터 변환
+  const roles: UserRole[] = rawRoles.map(role => ({
+    id: role.id,
+    name: role.name,
+    type: role.type,
+    description: role.description || '',
+    permissions: role.permissions || {},
+    isSystemRole: true,
+    isActive: role.is_active ?? true,
+    createdAt: role.created_at,
+    updatedAt: role.updated_at
+  }))
+
+  const isLoading = isLoadingUsers || isLoadingRoles
+  const error = usersError || rolesError
 
   // 사용자 통계 계산
   const getUserStats = (): UserStats => {
@@ -185,44 +183,100 @@ export const useUsers = () => {
     return users.find(user => user.id === id)
   }
 
-  // 사용자 생성 mutation
+  // 사용자 생성 mutation (Auth + Profile 통합)
   const createUserMutation = useMutation({
-    mutationFn: async (userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {
-      // TODO: Supabase userProfile 서비스 사용
-      // return await clientSupabaseService.userProfile.create(userData)
-      return {
-        ...userData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+    mutationFn: async (userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'> & { password?: string }) => {
+      console.log('🔄 Creating new user with auth:', userData)
+
+      // 비밀번호가 있으면 Auth 회원가입, 없으면 프로필만 생성
+      if (userData.password && userData.email) {
+        // Auth 서비스를 통한 회원가입 (auth.users + user_profiles 동시 생성)
+        const result = await clientSupabaseService.auth.signUp(
+          userData.email,
+          userData.password,
+          {
+            name: userData.name,
+            employee_id: userData.employeeId,
+            department: userData.department,
+            position: userData.position,
+            shift: userData.shift,
+            role_id: userData.roleId,
+            phone: userData.phone
+          }
+        )
+
+        console.log('✅ User created with auth:', result)
+        return result.profile
+      } else {
+        // 프로필만 생성 (기존 로직)
+        const insertData = {
+          name: userData.name,
+          employee_id: userData.employeeId,
+          department: userData.department,
+          position: userData.position,
+          shift: userData.shift,
+          role_id: userData.roleId,
+          phone: userData.phone,
+          is_active: userData.isActive ?? true
+        }
+
+        const result = await clientSupabaseService.userProfile.create(insertData)
+        console.log('✅ User profile created:', result)
+        return result
       }
     },
     onSuccess: () => {
+      console.log('✅ User creation successful, invalidating cache')
       queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+    onError: (error) => {
+      console.error('❌ User creation failed:', error)
     }
   })
 
   // 사용자 수정 mutation
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<User> }) => {
-      // TODO: Supabase userProfile 서비스 사용
-      // return await clientSupabaseService.userProfile.update(id, updates)
-      return { id, ...updates }
+      console.log('🔄 Updating user profile:', id, updates)
+
+      // User 타입을 Supabase Update 타입으로 변환
+      const updateData: any = {}
+      if (updates.name !== undefined) updateData.name = updates.name
+      if (updates.employeeId !== undefined) updateData.employee_id = updates.employeeId
+      if (updates.department !== undefined) updateData.department = updates.department
+      if (updates.position !== undefined) updateData.position = updates.position
+      if (updates.shift !== undefined) updateData.shift = updates.shift
+      if (updates.roleId !== undefined) updateData.role_id = updates.roleId
+      if (updates.phone !== undefined) updateData.phone = updates.phone
+      if (updates.isActive !== undefined) updateData.is_active = updates.isActive
+
+      const result = await clientSupabaseService.userProfile.update(id, updateData)
+      console.log('✅ User profile updated:', result)
+      return result
     },
     onSuccess: () => {
+      console.log('✅ User update successful, invalidating cache')
       queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+    onError: (error) => {
+      console.error('❌ User update failed:', error)
     }
   })
 
   // 사용자 삭제 mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (id: string) => {
-      // TODO: Supabase userProfile 서비스 사용
-      // return await clientSupabaseService.userProfile.delete(id)
-      return id
+      console.log('🔄 Deleting user profile:', id)
+      const result = await clientSupabaseService.userProfile.delete(id)
+      console.log('✅ User profile deleted:', id)
+      return result
     },
     onSuccess: () => {
+      console.log('✅ User deletion successful, invalidating cache')
       queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+    onError: (error) => {
+      console.error('❌ User deletion failed:', error)
     }
   })
 

@@ -832,15 +832,186 @@ export class UserProfileService {
     return data
   }
 
+  // 사용자 프로필 삭제
+  async delete(id: string) {
+    const { error } = await this.supabase
+      .from('user_profiles')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    return true
+  }
+
+  // ID로 사용자 프로필 조회
+  async getById(id: string) {
+    const { data, error } = await this.supabase
+      .from('user_profiles')
+      .select(`
+        *,
+        role:user_roles(*)
+      `)
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
   // 실시간 구독
   subscribeToChanges(callback: (payload: any) => void) {
     return this.supabase
       .channel('user_profiles_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'user_profiles' }, 
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'user_profiles' },
         callback
       )
       .subscribe()
+  }
+}
+
+// User Roles 서비스
+export class UserRolesService {
+  private supabase: SupabaseClient
+
+  constructor(supabase: SupabaseClient) {
+    this.supabase = supabase
+  }
+
+  // 전체 역할 조회
+  async getAll() {
+    const { data, error } = await this.supabase
+      .from('user_roles')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: true })
+
+    if (error) throw error
+    return data
+  }
+
+  // ID로 역할 조회
+  async getById(id: string) {
+    const { data, error } = await this.supabase
+      .from('user_roles')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  // 실시간 구독
+  subscribeToChanges(callback: (payload: any) => void) {
+    return this.supabase
+      .channel('user_roles_changes')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'user_roles' },
+        callback
+      )
+      .subscribe()
+  }
+}
+
+// Auth 서비스
+export class AuthService {
+  private supabase: SupabaseClient
+
+  constructor(supabase: SupabaseClient) {
+    this.supabase = supabase
+  }
+
+  // 회원가입 (관리자가 사용자 생성)
+  async signUp(email: string, password: string, userProfileData: {
+    name: string
+    employee_id: string
+    department: string
+    position: string
+    shift: string
+    role_id: string
+    phone?: string
+  }) {
+    console.log('🔄 Creating auth user and profile:', { email, userProfileData })
+
+    // 1. Supabase Auth에 사용자 생성
+    const { data: authData, error: authError } = await this.supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name: userProfileData.name,
+          employee_id: userProfileData.employee_id
+        }
+      }
+    })
+
+    if (authError) {
+      console.error('❌ Auth signup error:', authError)
+      throw authError
+    }
+
+    if (!authData.user) {
+      throw new Error('회원가입 실패: 사용자 생성 안됨')
+    }
+
+    console.log('✅ Auth user created:', authData.user.id)
+
+    // 2. user_profiles 테이블에 프로필 생성
+    const { data: profileData, error: profileError } = await this.supabase
+      .from('user_profiles')
+      .insert({
+        user_id: authData.user.id,
+        ...userProfileData
+      })
+      .select(`
+        *,
+        role:user_roles(*)
+      `)
+      .single()
+
+    if (profileError) {
+      console.error('❌ Profile creation error:', profileError)
+      // 프로필 생성 실패 시 auth 사용자는 이미 생성되었으므로 에러만 던짐
+      throw profileError
+    }
+
+    console.log('✅ User profile created:', profileData)
+
+    return {
+      user: authData.user,
+      profile: profileData
+    }
+  }
+
+  // 로그인
+  async signIn(email: string, password: string) {
+    const { data, error } = await this.supabase.auth.signInWithPassword({
+      email,
+      password
+    })
+
+    if (error) throw error
+    return data
+  }
+
+  // 로그아웃
+  async signOut() {
+    const { error } = await this.supabase.auth.signOut()
+    if (error) throw error
+  }
+
+  // 현재 사용자 가져오기
+  async getCurrentUser() {
+    const { data: { user }, error } = await this.supabase.auth.getUser()
+    if (error) throw error
+    return user
+  }
+
+  // 비밀번호 재설정 요청
+  async resetPassword(email: string) {
+    const { error } = await this.supabase.auth.resetPasswordForEmail(email)
+    if (error) throw error
   }
 }
 
@@ -852,16 +1023,20 @@ export class SupabaseService {
   public toolChange: ToolChangeService
   public camSheet: CAMSheetService
   public userProfile: UserProfileService
+  public userRoles: UserRolesService
+  public auth: AuthService
 
   constructor(isServer: boolean = false) {
     const supabase = isServer ? createServerSupabaseClient() : createSupabaseClient()
-    
+
     this.equipment = new EquipmentService(supabase)
     this.endmillType = new EndmillTypeService(supabase)
     this.inventory = new InventoryService(supabase)
     this.toolChange = new ToolChangeService(supabase)
     this.camSheet = new CAMSheetService(supabase)
     this.userProfile = new UserProfileService(supabase)
+    this.userRoles = new UserRolesService(supabase)
+    this.auth = new AuthService(supabase)
   }
 }
 

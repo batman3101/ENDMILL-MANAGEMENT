@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useUsers } from '../../../lib/hooks/useUsers'
 import { User, UserRole } from '../../../lib/types/users'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
 import { AdminGuard } from '../../../components/auth/PermissionGuard'
+import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 
 export default function UsersPage() {
   return (
@@ -63,6 +64,7 @@ function UsersPageContent() {
   const [addFormData, setAddFormData] = useState({
     name: '',
     email: '',
+    password: '',
     employeeId: '',
     department: '',
     position: '',
@@ -72,7 +74,26 @@ function UsersPageContent() {
     isActive: true
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
+
+  // 정렬 상태
+  const [sortField, setSortField] = useState<string>('department')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
+
+  // 정렬 핸들러
+  const handleSort = useCallback((field: string) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+    setCurrentPage(1)
+  }, [sortField])
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -116,6 +137,37 @@ function UsersPageContent() {
     
     return matchesSearch && matchesDepartment && matchesRole && matchesStatus
   })
+
+  // 정렬 적용
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    const aValue = a[sortField as keyof User] || ''
+    const bValue = b[sortField as keyof User] || ''
+
+    // 역할 이름으로 정렬하는 경우
+    if (sortField === 'roleId') {
+      const aRole = roles.find(r => r.id === a.roleId)
+      const bRole = roles.find(r => r.id === b.roleId)
+      const aRoleName = aRole ? aRole.name : ''
+      const bRoleName = bRole ? bRole.name : ''
+
+      if (sortDirection === 'asc') {
+        return aRoleName.localeCompare(bRoleName, 'ko')
+      }
+      return bRoleName.localeCompare(aRoleName, 'ko')
+    }
+
+    // 일반 정렬
+    if (sortDirection === 'asc') {
+      return String(aValue).localeCompare(String(bValue), 'ko')
+    }
+    return String(bValue).localeCompare(String(aValue), 'ko')
+  })
+
+  // 페이지네이션 적용
+  const totalPages = Math.ceil(sortedUsers.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedUsers = sortedUsers.slice(startIndex, endIndex)
 
   // 사용자의 역할 정보 가져오기
   const getUserRole = (roleId: string) => {
@@ -231,12 +283,22 @@ function UsersPageContent() {
       showError('입력 오류', '이메일을 입력해주세요.')
       return
     }
-    
+
+    if (!addFormData.password.trim()) {
+      showError('입력 오류', '비밀번호를 입력해주세요.')
+      return
+    }
+
+    if (addFormData.password.length < 6) {
+      showError('입력 오류', '비밀번호는 최소 6자 이상이어야 합니다.')
+      return
+    }
+
     if (!addFormData.employeeId.trim()) {
       showError('입력 오류', '사번을 입력해주세요.')
       return
     }
-    
+
     if (!addFormData.roleId) {
       showError('입력 오류', '권한을 선택해주세요.')
       return
@@ -254,6 +316,7 @@ function UsersPageContent() {
       setAddFormData({
         name: '',
         email: '',
+        password: '',
         employeeId: '',
         department: '',
         position: '',
@@ -647,26 +710,42 @@ function UsersPageContent() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  부서
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  직위
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  이름
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  권한
-                </th>
+                <SortableTableHeader
+                  label="부서"
+                  field="department"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="직위"
+                  field="position"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="이름"
+                  field="name"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableTableHeader
+                  label="권한"
+                  field="roleId"
+                  currentSortField={sortField}
+                  currentSortOrder={sortDirection}
+                  onSort={handleSort}
+                />
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   작업
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => {
+              {paginatedUsers.length > 0 ? (
+                paginatedUsers.map((user) => {
                   const userRole = getUserRole(user.roleId)
                   return (
                     <tr key={user.id} className="hover:bg-gray-50">
@@ -774,6 +853,64 @@ function UsersPageContent() {
             </tbody>
           </table>
         </div>
+
+        {/* 페이지네이션 */}
+        {sortedUsers.length > 0 && (
+          <div className="px-6 py-4 border-t bg-gray-50">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                전체 {sortedUsers.length}개 중 {startIndex + 1}-{Math.min(endIndex, sortedUsers.length)}개 표시
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  이전
+                </button>
+                <div className="flex items-center space-x-1">
+                  {(() => {
+                    const pageNumbers = []
+                    const maxVisiblePages = 5
+
+                    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+                    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+                    if (endPage - startPage < maxVisiblePages - 1) {
+                      startPage = Math.max(1, endPage - maxVisiblePages + 1)
+                    }
+
+                    for (let i = startPage; i <= endPage; i++) {
+                      pageNumbers.push(
+                        <button
+                          key={i}
+                          onClick={() => setCurrentPage(i)}
+                          className={`px-3 py-1 text-sm font-medium rounded-md ${
+                            currentPage === i
+                              ? 'bg-blue-600 text-white'
+                              : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {i}
+                        </button>
+                      )
+                    }
+
+                    return pageNumbers
+                  })()}
+                </div>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  다음
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       )}
 
@@ -1618,6 +1755,7 @@ function UsersPageContent() {
                     setAddFormData({
                       name: '',
                       email: '',
+                      password: '',
                       employeeId: '',
                       department: '',
                       position: '',
@@ -1685,6 +1823,22 @@ function UsersPageContent() {
                       disabled={isSubmitting}
                       required
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      비밀번호 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      value={addFormData.password}
+                      onChange={(e) => setAddFormData(prev => ({ ...prev, password: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="비밀번호 (최소 6자)"
+                      disabled={isSubmitting}
+                      required
+                      minLength={6}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">최초 로그인 시 사용할 비밀번호입니다.</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1846,6 +2000,7 @@ function UsersPageContent() {
                     setAddFormData({
                       name: '',
                       email: '',
+                      password: '',
                       employeeId: '',
                       department: '',
                       position: '',
