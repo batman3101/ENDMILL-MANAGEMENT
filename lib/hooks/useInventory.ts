@@ -201,7 +201,7 @@ export const useInventory = (filter?: InventoryFilter) => {
 
     if (additionalFilter.category && additionalFilter.category !== '') {
       filtered = filtered.filter(item => 
-        item.endmill_types?.endmill_categories?.code === additionalFilter.category
+        item.endmill_type?.endmill_categories?.code === additionalFilter.category
       )
     }
 
@@ -219,9 +219,30 @@ export const useInventory = (filter?: InventoryFilter) => {
   const getInventoryStats = (filtered?: Inventory[]): InventoryStats => {
     const data = filtered || inventory
     
-    const totalItems = data.length
-    const totalValue = data.reduce((sum, item) => 
-      sum + ((item.current_stock || 0) * (item.endmill_types?.unit_cost || 0)), 0)
+    // 총 재고 수량: 모든 앤드밀 코드의 current_stock 합계
+    const totalItems = data.reduce((sum, item) => sum + (item.current_stock || 0), 0)
+    // 총 보유 가치: 각 앤드밀의 최저 공급업체 가격 * 재고 수량의 합계
+    const totalValue = data.reduce((sum, item) => {
+      const currentStock = item.current_stock || 0
+      if (currentStock === 0) return sum
+
+      // 앤드밀 타입의 공급업체별 가격 정보가 있는지 확인
+      const endmillType = item.endmill_type
+      if (!endmillType) return sum
+
+      let lowestPrice = endmillType.unit_cost || 0
+
+      // 공급업체 가격이 있으면 최저가 찾기
+      if (endmillType.endmill_supplier_prices && Array.isArray(endmillType.endmill_supplier_prices) && endmillType.endmill_supplier_prices.length > 0) {
+        const prices = endmillType.endmill_supplier_prices
+          .map((sp: any) => sp.unit_price)
+          .filter((price: any) => price && price > 0)
+        if (prices.length > 0) {
+          lowestPrice = Math.min(...prices)
+        }
+      }
+      return sum + (currentStock * lowestPrice)
+    }, 0)
     
     const statusCounts = data.reduce((acc, item) => {
       const status = calculateStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0)
@@ -235,13 +256,27 @@ export const useInventory = (filter?: InventoryFilter) => {
     
     // 카테고리별 통계
     const categoryStats = data.reduce((acc: Record<string, { count: number; value: number }>, item) => {
-      const category = item.endmill_types?.endmill_categories?.code
+      const category = item.endmill_type?.endmill_categories?.code
       if (category) {
         if (!acc[category]) {
           acc[category] = { count: 0, value: 0 }
         }
         acc[category].count += (item.current_stock || 0)
-        acc[category].value += (item.current_stock || 0) * (item.endmill_types?.unit_cost || 0)
+        // 카테고리별 가치도 최저가 기준으로 계산
+        const currentStock = item.current_stock || 0
+        let lowestPrice = item.endmill_type?.unit_cost || 0
+
+        // 공급업체 가격이 있으면 최저가 찾기
+        if (item.endmill_type?.endmill_supplier_prices && Array.isArray(item.endmill_type.endmill_supplier_prices) && item.endmill_type.endmill_supplier_prices.length > 0) {
+          const prices = item.endmill_type.endmill_supplier_prices
+            .map((sp: any) => sp.unit_price)
+            .filter((price: any) => price && price > 0)
+          if (prices.length > 0) {
+            lowestPrice = Math.min(...prices)
+          }
+        }
+
+        acc[category].value += currentStock * lowestPrice
       }
       return acc
     }, {})
@@ -330,19 +365,19 @@ export const useInventorySearch = () => {
 
   const searchByCode = (code: string) => {
     return inventory.filter(item => 
-      item.endmill_types?.code.toLowerCase().includes(code.toLowerCase())
+      item.endmill_type?.code.toLowerCase().includes(code.toLowerCase())
     )
   }
 
   const searchByName = (name: string) => {
     return inventory.filter(item => 
-      item.endmill_types?.name?.toLowerCase().includes(name.toLowerCase())
+      item.endmill_type?.name?.toLowerCase().includes(name.toLowerCase())
     )
   }
 
   const searchByCategory = (category: string) => {
     return inventory.filter(item => 
-      item.endmill_types?.endmill_categories?.code === category
+      item.endmill_type?.endmill_categories?.code === category
     )
   }
 

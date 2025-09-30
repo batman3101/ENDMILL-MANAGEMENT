@@ -567,7 +567,7 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 재고</p>
+              <p className="text-sm font-medium text-gray-600">총 재고 수량</p>
               <p className="text-2xl font-bold text-gray-900">{stats.totalItems.toLocaleString()}</p>
             </div>
           </div>
@@ -581,7 +581,7 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">위험</p>
+              <p className="text-sm font-medium text-gray-600">위험 CODE</p>
               <p className="text-2xl font-bold text-red-600">{stats.criticalItems}</p>
             </div>
           </div>
@@ -595,7 +595,7 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">부족</p>
+              <p className="text-sm font-medium text-gray-600">부족 CODE</p>
               <p className="text-2xl font-bold text-yellow-600">{stats.lowStockItems}</p>
             </div>
           </div>
@@ -609,7 +609,7 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 가치</p>
+              <p className="text-sm font-medium text-gray-600">총 보유 가치</p>
               <p className="text-2xl font-bold text-green-600">
                 {stats.totalValue.toLocaleString()} VND
               </p>

@@ -199,12 +199,19 @@ export default function OutboundPage() {
           }
         }
 
+        // 공급업체별 가격 중 최저가 계산
+        let lowestPrice = foundEndmill.unitCost || 0
+        if (foundEndmill.suppliers && foundEndmill.suppliers.length > 0) {
+          const prices = foundEndmill.suppliers.map((supplier: any) => supplier.unitPrice || 0)
+          lowestPrice = Math.min(...prices.filter(price => price > 0))
+        }
+
         const endmillInfo: EndmillData = {
           code: foundEndmill.code,
           name: foundEndmill.name || '',
           specifications: foundEndmill.specifications || '',
           currentStock: currentStock,
-          unitPrice: foundEndmill.unitCost || 0,
+          unitPrice: lowestPrice,
           category: foundEndmill.categoryName || '미분류',
           standardLife: foundEndmill.standardLife || 2000
         }
@@ -221,12 +228,19 @@ export default function OutboundPage() {
       } catch (error) {
         console.error('재고 정보 조회 오류:', error)
         // 재고 정보를 못 가져와도 기본 정보는 표시
+        // 공급업체별 가격 중 최저가 계산 (에러 케이스)
+        let lowestPrice = foundEndmill.unitCost || 0
+        if (foundEndmill.suppliers && foundEndmill.suppliers.length > 0) {
+          const prices = foundEndmill.suppliers.map((supplier: any) => supplier.unitPrice || 0)
+          lowestPrice = Math.min(...prices.filter(price => price > 0))
+        }
+
         const endmillInfo: EndmillData = {
           code: foundEndmill.code,
           name: foundEndmill.name || '',
           specifications: foundEndmill.specifications || '',
           currentStock: 0,
-          unitPrice: foundEndmill.unitCost || 0,
+          unitPrice: lowestPrice,
           category: foundEndmill.categoryName || '미분류',
           standardLife: foundEndmill.standardLife || 2000
         }
@@ -354,6 +368,12 @@ export default function OutboundPage() {
     return quantity * endmillData.unitPrice
   }
 
+  // 현재 재고의 총 가치 계산
+  const getCurrentStockValue = () => {
+    if (!endmillData) return 0
+    return endmillData.unitPrice * endmillData.currentStock
+  }
+
   return (
     <div className="space-y-6">
       {/* 헤더 */}
@@ -461,6 +481,12 @@ export default function OutboundPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">현재 재고</label>
                     <div className={`text-sm font-bold ${endmillData.currentStock < quantity ? 'text-red-600' : 'text-gray-900'}`}>
                       {endmillData.currentStock}개
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      총 가치: {getCurrentStockValue().toLocaleString()} VND
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      ({endmillData.unitPrice.toLocaleString()} VND/개, 최저가)
                     </div>
                   </div>
                 </div>
