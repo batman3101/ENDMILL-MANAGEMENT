@@ -123,8 +123,8 @@ export async function POST(request: NextRequest) {
     // ========================================
     // 설비별 성능 분석
     // ========================================
-    const equipmentMap = groupBy(changes, 'equipmentNumber' as any)
-    const equipmentPerformance = Array.from(equipmentMap.entries())
+    const equipmentGroupMap = groupBy(changes, 'equipmentNumber' as any)
+    const equipmentPerformance = Array.from(equipmentGroupMap.entries())
       .map(([equipmentNumber, items]: [any, any]) => {
         const totalCost = sumBy(items, 'unitCost' as any)
         const lives = items.map((i: any) => i.life)

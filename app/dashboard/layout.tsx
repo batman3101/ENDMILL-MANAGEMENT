@@ -162,8 +162,12 @@ export default function DashboardLayout({
           <div className="flex items-center justify-between">
             {/* 로고 및 제목 */}
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-blue-800 text-lg font-bold">🏭</span>
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center p-1">
+                <img
+                  src="/icons/endmill.png"
+                  alt="CNC 앤드밀 관리 시스템"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
                 <h1 className="text-xl font-bold">{t('auth.loginTitle')}</h1>

@@ -31,10 +31,7 @@ export const metadata: Metadata = {
     index: false, // 내부 시스템이므로 검색 엔진에 노출 안 함
     follow: false,
   },
-  icons: {
-    icon: '/favicon.svg',
-    apple: '/apple-touch-icon.png',
-  },
+  // icons는 app/icon.png 파일로 자동 설정됨
   manifest: '/manifest.webmanifest',
 };
 
@@ -57,6 +54,11 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="mobile-web-app-capable" content="yes" />
+
+        {/* 파비콘 */}
+        <link rel="icon" type="image/png" href="/icons/endmill.png" />
+        <link rel="shortcut icon" type="image/png" href="/icons/endmill.png" />
+        <link rel="apple-touch-icon" href="/icons/endmill.png" />
       </head>
       <body className={`${inter.className} antialiased bg-gray-50 text-gray-900`}>
         {/* 접근성을 위한 스킵 링크 */}

@@ -64,9 +64,12 @@ export async function GET(request: NextRequest) {
 async function getEquipmentStats(supabase: any) {
   const { data: equipment, error } = await supabase
     .from('equipment')
-    .select('status, current_model, process')
+    .select('status, model_code, location')
 
-  if (error) throw error
+  if (error) {
+    console.error('equipment 조회 오류:', error)
+    throw error
+  }
 
   const total = equipment.length
   const statusCounts = equipment.reduce((acc: any, item: any) => {
@@ -145,33 +148,50 @@ async function getCostAnalysis(supabase: any) {
   const currentYear = new Date().getFullYear()
   const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear
 
-  // 이번달 비용 (tool_changes에서 계산)
+  // 이번달 교체 내역
   const { data: currentMonthChanges, error: currentError } = await supabase
     .from('tool_changes')
-    .select(`
-      endmill_type_id,
-      endmill_types (unit_cost)
-    `)
+    .select('endmill_code')
     .gte('change_date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
 
-  // 지난달 비용
+  // 지난달 교체 내역
   const { data: lastMonthChanges, error: lastError } = await supabase
     .from('tool_changes')
-    .select(`
-      endmill_type_id,
-      endmill_types (unit_cost)
-    `)
+    .select('endmill_code')
     .gte('change_date', `${lastMonthYear}-${lastMonth.toString().padStart(2, '0')}-01`)
     .lt('change_date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
 
-  if (currentError || lastError) throw currentError || lastError
+  if (currentError || lastError) {
+    console.error('tool_changes 조회 오류:', currentError || lastError)
+    throw currentError || lastError
+  }
 
+  // endmill_types 조회
+  const { data: endmillTypes, error: etError } = await supabase
+    .from('endmill_types')
+    .select('code, unit_cost')
+
+  if (etError) {
+    console.error('endmill_types 조회 오류:', etError)
+    throw etError
+  }
+
+  // Map으로 변환
+  const endmillMap = new Map(endmillTypes?.map((et: any) => [et.code, et]) || [])
+
+  // 비용 계산
   const currentMonthCost = currentMonthChanges.reduce((sum: number, change: any) => {
-    return sum + (change.endmill_types?.unit_cost || 50000) // 기본값 50,000 VND
+    const endmill = endmillMap.get(change.endmill_code)
+    const unitCostString = endmill?.unit_cost || '50000'
+    const unitCost = typeof unitCostString === 'string' ? parseFloat(unitCostString) : Number(unitCostString)
+    return sum + (isNaN(unitCost) ? 50000 : unitCost)
   }, 0)
 
   const lastMonthCost = lastMonthChanges.reduce((sum: number, change: any) => {
-    return sum + (change.endmill_types?.unit_cost || 50000)
+    const endmill = endmillMap.get(change.endmill_code)
+    const unitCostString = endmill?.unit_cost || '50000'
+    const unitCost = typeof unitCostString === 'string' ? parseFloat(unitCostString) : Number(unitCostString)
+    return sum + (isNaN(unitCost) ? 50000 : unitCost)
   }, 0)
 
   const savings = lastMonthCost - currentMonthCost
@@ -190,21 +210,35 @@ async function getCostAnalysis(supabase: any) {
 async function getFrequencyAnalysis(supabase: any) {
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  const { data: weeklyChanges, error } = await supabase
+  // tool_changes 조회
+  const { data: weeklyChanges, error: tcError } = await supabase
     .from('tool_changes')
-    .select(`
-      equipment_id,
-      change_date,
-      equipment (current_model)
-    `)
+    .select('equipment_number, change_date, production_model')
     .gte('change_date', oneWeekAgo)
 
-  if (error) throw error
+  if (tcError) {
+    console.error('tool_changes 조회 오류:', tcError)
+    throw tcError
+  }
+
+  // equipment 조회
+  const { data: equipment, error: eqError } = await supabase
+    .from('equipment')
+    .select('equipment_number, model_code')
+
+  if (eqError) {
+    console.error('equipment 조회 오류:', eqError)
+    throw eqError
+  }
+
+  // Map으로 변환
+  const equipmentMap = new Map(equipment?.map((eq: any) => [eq.equipment_number, eq]) || [])
 
   const modelStats = weeklyChanges.reduce((acc: any, change: any) => {
-    const model = change.equipment?.current_model || 'Unknown'
+    const equipment = equipmentMap.get(change.equipment_number)
+    const model = equipment?.model_code || change.production_model || 'Unknown'
     const series = model.split('-')[0] // PA-xxx -> PA
-    
+
     if (!acc[series]) {
       acc[series] = { count: 0, dates: [] }
     }
@@ -228,20 +262,40 @@ async function getFrequencyAnalysis(supabase: any) {
 
 // 공구별 수명 분석
 async function getLifespanAnalysis(supabase: any) {
-  const { data: endmillTypes, error } = await supabase
+  // endmill_types 조회
+  const { data: endmillTypes, error: etError } = await supabase
     .from('endmill_types')
-    .select(`
-      name,
-      standard_life,
-      specifications,
-      tool_changes (tool_life)
-    `)
+    .select('code, name, standard_life')
 
-  if (error) throw error
+  if (etError) {
+    console.error('endmill_types 조회 오류:', etError)
+    throw etError
+  }
+
+  // tool_changes 조회
+  const { data: toolChanges, error: tcError } = await supabase
+    .from('tool_changes')
+    .select('endmill_code, tool_life')
+
+  if (tcError) {
+    console.error('tool_changes 조회 오류:', tcError)
+    throw tcError
+  }
+
+  // endmill_code별로 그룹화
+  const changesByCode = toolChanges.reduce((acc: any, change: any) => {
+    if (!acc[change.endmill_code]) {
+      acc[change.endmill_code] = []
+    }
+    if (change.tool_life) {
+      acc[change.endmill_code].push(change.tool_life)
+    }
+    return acc
+  }, {})
 
   const lifespanData = endmillTypes.map((type: any) => {
-    const toolLives = type.tool_changes.map((change: any) => change.tool_life).filter(Boolean)
-    const avgLife = toolLives.length > 0 
+    const toolLives = changesByCode[type.code] || []
+    const avgLife = toolLives.length > 0
       ? Math.round(toolLives.reduce((sum: number, life: number) => sum + life, 0) / toolLives.length)
       : type.standard_life || 800
 
@@ -288,27 +342,55 @@ async function getModelCostAnalysis(supabase: any) {
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
 
-  const { data: monthlyChanges, error } = await supabase
+  // tool_changes 조회
+  const { data: monthlyChanges, error: tcError } = await supabase
     .from('tool_changes')
-    .select(`
-      equipment_id,
-      endmill_type_id,
-      equipment (current_model),
-      endmill_types (unit_cost)
-    `)
+    .select('equipment_number, endmill_code, production_model')
     .gte('change_date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
 
-  if (error) throw error
+  if (tcError) {
+    console.error('tool_changes 조회 오류:', tcError)
+    throw tcError
+  }
+
+  // equipment 조회
+  const { data: equipment, error: eqError } = await supabase
+    .from('equipment')
+    .select('equipment_number, model_code')
+
+  if (eqError) {
+    console.error('equipment 조회 오류:', eqError)
+    throw eqError
+  }
+
+  // endmill_types 조회
+  const { data: endmillTypes, error: etError } = await supabase
+    .from('endmill_types')
+    .select('code, unit_cost')
+
+  if (etError) {
+    console.error('endmill_types 조회 오류:', etError)
+    throw etError
+  }
+
+  // Map으로 변환
+  const equipmentMap = new Map(equipment?.map((eq: any) => [eq.equipment_number, eq]) || [])
+  const endmillMap = new Map(endmillTypes?.map((et: any) => [et.code, et]) || [])
 
   const modelCosts = monthlyChanges.reduce((acc: any, change: any) => {
-    const model = change.equipment?.current_model || 'Unknown'
+    const equipment = equipmentMap.get(change.equipment_number)
+    const model = equipment?.model_code || change.production_model || 'Unknown'
     const series = model.split('-')[0] // PA-xxx -> PA
-    const cost = change.endmill_types?.unit_cost || 50000
+
+    const endmill = endmillMap.get(change.endmill_code)
+    const unitCostString = endmill?.unit_cost || '50000'
+    const cost = typeof unitCostString === 'string' ? parseFloat(unitCostString) : Number(unitCostString)
+    const finalCost = isNaN(cost) ? 50000 : cost
 
     if (!acc[series]) {
       acc[series] = 0
     }
-    acc[series] += cost
+    acc[series] += finalCost
     return acc
   }, {})
 
@@ -317,6 +399,6 @@ async function getModelCostAnalysis(supabase: any) {
   return (Object.entries(modelCosts) as [string, number][]).map(([series, cost]) => ({
     series,
     cost,
-    percentage: Math.round((cost / totalCost) * 100)
+    percentage: totalCost > 0 ? Math.round((cost / totalCost) * 100) : 0
   })).sort((a, b) => b.cost - a.cost)
 } 

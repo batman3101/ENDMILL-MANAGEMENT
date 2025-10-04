@@ -314,7 +314,7 @@ export default function DashboardPage() {
               <div className="h-4 bg-gray-200 rounded"></div>
               <div className="h-4 bg-gray-200 rounded"></div>
             </div>
-          ) : (
+          ) : (data?.frequencyAnalysis || []).length > 0 ? (
             <div className="space-y-2">
               {(data?.frequencyAnalysis || []).slice(0, 4).map((item, index) => (
                 <div key={index} className="flex justify-between items-center text-sm">
@@ -325,6 +325,13 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-24 text-gray-400">
+              <div className="text-center">
+                <div className="text-sm">데이터 없음</div>
+                <div className="text-xs mt-1">최근 7일간 교체 내역이 없습니다</div>
+              </div>
             </div>
           )}
         </div>
@@ -368,7 +375,7 @@ export default function DashboardPage() {
               <div className="h-4 bg-gray-200 rounded"></div>
               <div className="h-4 bg-gray-200 rounded"></div>
             </div>
-          ) : (
+          ) : (data?.modelCostAnalysis || []).length > 0 ? (
             <div className="space-y-2">
               {(data?.modelCostAnalysis || []).slice(0, 4).map((item, index) => (
                 <div key={index} className="flex justify-between items-center text-sm">
@@ -379,6 +386,13 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-24 text-gray-400">
+              <div className="text-center">
+                <div className="text-sm">데이터 없음</div>
+                <div className="text-xs mt-1">이번 달 교체 내역이 없습니다</div>
+              </div>
             </div>
           )}
         </div>
