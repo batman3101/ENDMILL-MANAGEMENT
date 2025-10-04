@@ -286,7 +286,7 @@ export default function CAMSheetsPage() {
 
       {/* 기본 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
               📋
@@ -298,7 +298,7 @@ export default function CAMSheetsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
               🏭
@@ -312,7 +312,7 @@ export default function CAMSheetsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
               🔧
@@ -326,7 +326,7 @@ export default function CAMSheetsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
               ⚡
@@ -347,7 +347,7 @@ export default function CAMSheetsPage() {
       {/* 인사이트 분석 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* 1. Tool Life 예측 정확도 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
@@ -369,7 +369,7 @@ export default function CAMSheetsPage() {
         </div>
 
         {/* 2. 교체 주기 분석 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
@@ -399,7 +399,7 @@ export default function CAMSheetsPage() {
         </div>
 
         {/* 3. 재고 연동률 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
@@ -428,7 +428,7 @@ export default function CAMSheetsPage() {
         </div>
 
         {/* 4. 표준화 지수 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
@@ -458,7 +458,7 @@ export default function CAMSheetsPage() {
       </div>
 
       {/* 필터 및 검색 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="flex gap-4 flex-1">
             <input
@@ -507,7 +507,7 @@ export default function CAMSheetsPage() {
       </div>
 
       {/* CAM Sheet 목록 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">CAM Sheet 목록</h2>
           <div className="text-sm text-gray-500">

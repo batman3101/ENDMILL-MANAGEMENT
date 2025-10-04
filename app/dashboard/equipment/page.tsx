@@ -635,7 +635,7 @@ export default function EquipmentPage() {
 
       {/* 상단 설비 상태 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
               🏭
@@ -647,7 +647,7 @@ export default function EquipmentPage() {
           </div>
         </div>
         
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
               🟢
@@ -661,7 +661,7 @@ export default function EquipmentPage() {
           </div>
         </div>
         
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
               🔧
@@ -675,7 +675,7 @@ export default function EquipmentPage() {
           </div>
         </div>
         
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
               ⚙️
@@ -693,7 +693,7 @@ export default function EquipmentPage() {
       {/* 모델별/공정별 설비 배치 현황 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 모델별 배치 현황 - CAM Sheet 데이터 기반 */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 모델별 설비 배치</h3>
           <div className="space-y-3">
             {(availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']).map(model => {
@@ -724,7 +724,7 @@ export default function EquipmentPage() {
         </div>
 
         {/* 공정별 배치 현황 - CAM Sheet 데이터 기반 */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">⚙️ 공정별 설비 배치</h3>
           <div className="space-y-3">
             {(availableProcesses.length > 0 ? availableProcesses : ['CNC1', 'CNC2', 'CNC2-1']).map(process => {
@@ -759,7 +759,7 @@ export default function EquipmentPage() {
       </div>
 
       {/* 필터 및 검색 */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border">
+      <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <input
@@ -811,7 +811,7 @@ export default function EquipmentPage() {
       </div>
 
       {/* 설비 목록 */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">
             설비 목록 ({filteredEquipments.length}개)

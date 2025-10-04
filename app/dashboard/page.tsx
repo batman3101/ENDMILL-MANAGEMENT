@@ -109,7 +109,7 @@ export default function DashboardPage() {
         {isLoading && (
           <>
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 animate-pulse">
+              <div key={i} className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 animate-pulse hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
                 <div className="flex items-center justify-between mb-6">
                   <div className="h-5 bg-gray-200 rounded w-24"></div>
                   <div className="h-4 bg-gray-200 rounded w-12"></div>
@@ -133,7 +133,7 @@ export default function DashboardPage() {
           <>
 
         {/* Tool Life 현황 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-800">Tool Life 현황</h3>
             <span className="text-sm text-gray-500">실시간</span>
@@ -170,7 +170,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 설비 가동률 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-800">설비 가동률</h3>
             <span className="text-sm text-gray-500">실시간</span>
@@ -218,7 +218,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 재고 현황 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-800">재고 현황</h3>
             <span className="text-sm text-gray-500">실시간</span>
@@ -260,7 +260,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 공구 사용 비용 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-lg font-semibold text-gray-800">공구 사용 비용</h4>
             <span className="text-2xl">📊</span>
@@ -303,7 +303,7 @@ export default function DashboardPage() {
       {/* 하단 4개 카드 */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* 설비별 교체 빈도 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-lg font-semibold text-gray-800">설비별 교체 빈도</h4>
             <span className="text-2xl">⚡</span>
@@ -337,7 +337,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 공구별 수명 분석 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-lg font-semibold text-gray-800">공구별 수명 분석</h4>
             <span className="text-2xl">🔬</span>
@@ -364,7 +364,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 설비 모델별 비용 분석 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-lg font-semibold text-gray-800">모델별 월간 비용</h4>
             <span className="text-2xl">🏭</span>
@@ -398,7 +398,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 오늘의 교체 실적 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-lg font-semibold text-gray-800">오늘의 교체</h4>
             <span className="text-2xl">🔄</span>
@@ -419,7 +419,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 알림 및 이벤트 */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-800">실시간 알림</h3>
           <div className="flex items-center space-x-4">

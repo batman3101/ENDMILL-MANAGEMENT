@@ -559,7 +559,7 @@ export default function InventoryPage() {
     <div className="space-y-6">
       {/* 재고 현황 요약 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -573,7 +573,7 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
@@ -587,7 +587,7 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -601,7 +601,7 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
@@ -648,7 +648,7 @@ export default function InventoryPage() {
       </div>
 
       {/* 필터 및 검색 */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border">
+      <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="flex gap-4 flex-1">
             <input
@@ -703,7 +703,7 @@ export default function InventoryPage() {
       </div>
 
       {/* 재고 목록 */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">
             재고 현황 ({flattenedData.length}개 공급업체 정보)

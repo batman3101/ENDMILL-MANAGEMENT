@@ -67,7 +67,7 @@ export default function ReportsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div
           onClick={() => handleReportTypeClick('monthly')}
-          className={`bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-md transition-all ${
+          className={`bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200 ${
             selectedReportType === 'monthly' ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-100'
           }`}
         >
@@ -82,7 +82,7 @@ export default function ReportsPage() {
 
         <div
           onClick={() => handleReportTypeClick('cost')}
-          className={`bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-md transition-all ${
+          className={`bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200 ${
             selectedReportType === 'cost' ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-100'
           }`}
         >
@@ -97,7 +97,7 @@ export default function ReportsPage() {
 
         <div
           onClick={() => handleReportTypeClick('tool-life')}
-          className={`bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-md transition-all ${
+          className={`bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200 ${
             selectedReportType === 'tool-life' ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-100'
           }`}
         >
@@ -112,7 +112,7 @@ export default function ReportsPage() {
 
         <div
           onClick={() => handleReportTypeClick('performance')}
-          className={`bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-md transition-all ${
+          className={`bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200 ${
             selectedReportType === 'performance' ? 'border-orange-500 ring-2 ring-orange-200' : 'border-gray-100'
           }`}
         >
@@ -128,7 +128,7 @@ export default function ReportsPage() {
 
       {/* 필터 및 설정 */}
       {selectedReportType && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             리포트 설정 - {getReportTypeTitle(selectedReportType)}
           </h2>
@@ -238,7 +238,7 @@ export default function ReportsPage() {
 
       {/* 생성된 리포트 표시 */}
       {generatedReport ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200">
           <div className="px-6 py-4 border-b flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
@@ -271,7 +271,7 @@ export default function ReportsPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200">
           <div className="px-6 py-4 border-b">
             <h2 className="text-lg font-semibold text-gray-900">생성된 리포트</h2>
           </div>

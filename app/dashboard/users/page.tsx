@@ -527,7 +527,7 @@ function UsersPageContent() {
     <div className="space-y-6">
       {/* 상단 사용자 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
               👥
@@ -539,7 +539,7 @@ function UsersPageContent() {
           </div>
         </div>
         
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
               👑
@@ -551,7 +551,7 @@ function UsersPageContent() {
           </div>
         </div>
         
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
               🛡️
@@ -563,7 +563,7 @@ function UsersPageContent() {
           </div>
         </div>
         
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
               ✅
@@ -619,7 +619,7 @@ function UsersPageContent() {
 
       {/* 필터 및 검색 - 사용자 목록 탭에서만 표시 */}
       {activeTab === 'list' && (
-      <div className="bg-white p-4 rounded-lg shadow-sm border">
+      <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <input
@@ -694,7 +694,7 @@ function UsersPageContent() {
 
       {/* 사용자 리스트 테이블 - 사용자 목록 탭에서만 표시 */}
       {activeTab === 'list' && (
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">
             사용자 목록 ({filteredUsers.length}명)
@@ -967,7 +967,7 @@ function UsersPageContent() {
           </div>
 
           {/* 권한 매트릭스 테이블 */}
-          <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+          <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-200">
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-gray-50">

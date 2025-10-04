@@ -470,7 +470,7 @@ export default function InboundPage() {
       </div>
 
       {/* 입고 처리 내역 */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">오늘 입고 처리 내역</h2>
         </div>

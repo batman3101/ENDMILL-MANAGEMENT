@@ -79,18 +79,25 @@ function SettingsPageContent() {
   const { showSuccess, showError, showInfo } = useToast()
   
   // 임시 폼 상태 (각 탭별로)
-  const [formData, setFormData] = useState(settings)
+  const [formData, setFormData] = useState(settings || null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const activeTabInfo = SETTINGS_TABS.find(tab => tab.id === activeTab)
 
   // 폼 데이터 업데이트 시 settings가 변경되면 동기화
   useEffect(() => {
-    setFormData(settings)
+    if (settings) {
+      setFormData(settings)
+    }
   }, [settings])
 
   // 저장 핸들러
   const handleSave = async (category: SettingsCategory) => {
+    if (!formData) {
+      showError('저장 실패', '설정 데이터가 로드되지 않았습니다.')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -132,7 +139,7 @@ function SettingsPageContent() {
   // early return 제거 - JSX에서만 조건부 렌더링
   return (
     <div className="space-y-6">
-      {isLoading ? (
+      {isLoading || !formData ? (
         // 로딩 화면
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
@@ -2399,7 +2406,7 @@ function SettingsPageContent() {
               </summary>
               <div className="mt-3 p-3 bg-white rounded border">
                 <pre className="text-xs text-gray-600 overflow-auto max-h-40">
-                  {JSON.stringify(settings[activeTab], null, 2)}
+                  {settings ? JSON.stringify(settings[activeTab], null, 2) : '설정 로딩 중...'}
                 </pre>
               </div>
             </details>

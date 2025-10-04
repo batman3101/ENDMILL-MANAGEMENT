@@ -570,7 +570,7 @@ export default function ToolChangesPage() {
     <div className="space-y-6">
       {/* 통계 카드 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
               🔄
@@ -582,7 +582,7 @@ export default function ToolChangesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
               ⏱️
@@ -596,7 +596,7 @@ export default function ToolChangesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
               💥
@@ -610,7 +610,7 @@ export default function ToolChangesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
               ⚠️
@@ -624,7 +624,7 @@ export default function ToolChangesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
               🔄
@@ -638,7 +638,7 @@ export default function ToolChangesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
               🛡️
@@ -669,7 +669,7 @@ export default function ToolChangesPage() {
             : ['없음', 0]
           
           return (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
               <div className="flex items-center">
                 <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
                   🏭
@@ -701,7 +701,7 @@ export default function ToolChangesPage() {
             : ['없음', 0]
           
           return (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
               <div className="flex items-center">
                 <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center mr-3">
                   ⚙️
@@ -719,7 +719,7 @@ export default function ToolChangesPage() {
 
       {/* 교체 실적 입력 폼 */}
       {showAddForm && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">새 교체 실적 입력</h2>
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -965,7 +965,7 @@ export default function ToolChangesPage() {
       )}
 
       {/* 버튼 및 필터 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
         <div className="flex flex-col gap-4">
           {/* 첫 번째 줄: 검색, 설비, 사유 필터 */}
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -1028,7 +1028,7 @@ export default function ToolChangesPage() {
       </div>
 
       {/* 교체 실적 목록 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">교체 실적 목록</h2>
         </div>
