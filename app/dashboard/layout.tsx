@@ -42,7 +42,7 @@ export default function DashboardLayout({
       await signOut()
       router.push('/login')
     } catch (error) {
-      console.error('로그아웃 오류:', error)
+      console.error('Logout error:', error)
     }
   }
 
@@ -60,7 +60,7 @@ export default function DashboardLayout({
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">인증 확인 중...</p>
+          <p className="mt-4 text-gray-600">{t('common.verifyingAuth')}</p>
         </div>
       </div>
     )
@@ -122,8 +122,8 @@ export default function DashboardLayout({
     {
       href: '/dashboard/endmill-disposal',
       icon: '🗑️',
-      label: '폐기 관리',
-      description: '앤드밀 폐기 기록 관리',
+      label: t('navigation.endmillDisposal'),
+      description: t('endmillDisposal.subtitle'),
       active: pathname === '/dashboard/endmill-disposal',
       requiresPermission: false
     },
@@ -173,7 +173,7 @@ export default function DashboardLayout({
               <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center p-1">
                 <img
                   src="/icons/endmill.png"
-                  alt="CNC 앤드밀 관리 시스템"
+                  alt={t('auth.loginTitle')}
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -214,7 +214,7 @@ export default function DashboardLayout({
                 <div className="flex items-center space-x-2">
                   <span className="text-lg">⏰</span>
                   <div className="text-center">
-                    <p className="text-sm font-bold text-white">{currentTime || '로딩 중...'}</p>
+                    <p className="text-sm font-bold text-white">{currentTime || t('common.loading')}</p>
                     <p className="text-xs text-blue-200">{new Date().toLocaleDateString('ko-KR')}</p>
                   </div>
                 </div>
@@ -224,13 +224,13 @@ export default function DashboardLayout({
               <div className="relative group">
                 <button className="text-right hover:bg-blue-700 rounded-lg p-2 transition-colors">
                   <p className="text-sm text-blue-100">
-                    {user?.name || '사용자'} ({user?.position || '직위 없음'})
+                    {user?.name || t('common.user')} ({user?.position || t('common.noPosition')})
                   </p>
                   <p className="text-xs text-blue-200">
-                    {user?.department || '부서 없음'} · {user?.shift || 'A'}교대
+                    {user?.department || t('common.noDepartment')} · {user?.shift || 'A'}{t('common.shift')}
                   </p>
                 </button>
-                
+
                 {/* 드롭다운 메뉴 */}
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                   <Link
@@ -238,7 +238,7 @@ export default function DashboardLayout({
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
                   >
                     <span>👤</span>
-                    <span>프로필 관리</span>
+                    <span>{t('common.profile')}</span>
                   </Link>
                   <div className="border-t border-gray-100"></div>
                   <button
@@ -246,7 +246,7 @@ export default function DashboardLayout({
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
                   >
                     <span>🚪</span>
-                    <span>로그아웃</span>
+                    <span>{t('navigation.logout')}</span>
                   </button>
                 </div>
               </div>

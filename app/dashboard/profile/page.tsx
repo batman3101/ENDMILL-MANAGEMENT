@@ -5,6 +5,7 @@ import { useAuth } from '../../../lib/hooks/useAuth'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useToast } from '../../../components/shared/Toast'
 import { PermissionGuard } from '../../../components/auth/PermissionGuard'
+import { useTranslation } from 'react-i18next'
 
 interface ProfileFormData {
   name: string
@@ -25,6 +26,7 @@ export default function ProfilePage() {
   const { user, refreshSession } = useAuth()
   const { showSuccess, showError } = useToast()
   const supabase = createClientComponentClient()
+  const { t } = useTranslation()
   
   const [profileData, setProfileData] = useState<ProfileFormData>({
     name: '',
@@ -63,40 +65,40 @@ export default function ProfilePage() {
   // 프로필 유효성 검사
   const validateProfile = (data: ProfileFormData): Record<string, string> => {
     const errors: Record<string, string> = {}
-    
+
     if (!data.name.trim()) {
-      errors.name = '이름을 입력해주세요.'
+      errors.name = t('profile.nameRequired')
     }
-    
+
     if (!data.email.trim()) {
-      errors.email = '이메일을 입력해주세요.'
+      errors.email = t('profile.emailRequired')
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-      errors.email = '올바른 이메일 형식을 입력해주세요.'
+      errors.email = t('profile.invalidEmail')
     }
-    
+
     return errors
   }
 
   // 비밀번호 유효성 검사
   const validatePassword = (data: PasswordFormData): Record<string, string> => {
     const errors: Record<string, string> = {}
-    
+
     if (!data.currentPassword) {
-      errors.currentPassword = '현재 비밀번호를 입력해주세요.'
+      errors.currentPassword = t('profile.currentPasswordRequired')
     }
-    
+
     if (!data.newPassword) {
-      errors.newPassword = '새 비밀번호를 입력해주세요.'
+      errors.newPassword = t('profile.newPasswordRequired')
     } else if (data.newPassword.length < 8) {
-      errors.newPassword = '비밀번호는 최소 8자 이상이어야 합니다.'
+      errors.newPassword = t('profile.passwordTooShort')
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(data.newPassword)) {
-      errors.newPassword = '비밀번호는 대문자, 소문자, 숫자를 포함해야 합니다.'
+      errors.newPassword = t('profile.passwordComplexity')
     }
-    
+
     if (data.newPassword !== data.confirmPassword) {
-      errors.confirmPassword = '비밀번호가 일치하지 않습니다.'
+      errors.confirmPassword = t('profile.passwordMismatch')
     }
-    
+
     return errors
   }
 
@@ -125,14 +127,14 @@ export default function ProfilePage() {
       const result = await response.json()
 
       if (!response.ok) {
-        showError('프로필 업데이트 실패', result.error || '프로필 업데이트 중 오류가 발생했습니다.')
+        showError(t('profile.profileUpdateError'), result.error || t('profile.profileUpdateError'))
       } else {
-        showSuccess('프로필 업데이트 완료', '프로필이 성공적으로 업데이트되었습니다.')
+        showSuccess(t('common.updateSuccess'), t('profile.profileUpdateSuccess'))
         await refreshSession()
       }
     } catch (error) {
       console.error('프로필 업데이트 오류:', error)
-      showError('프로필 업데이트 실패', '프로필 업데이트 중 오류가 발생했습니다.')
+      showError(t('profile.profileUpdateError'), t('profile.profileUpdateError'))
     } finally {
       setLoading(false)
     }
@@ -159,19 +161,19 @@ export default function ProfilePage() {
       })
       
       if (signInError) {
-        setErrors({ currentPassword: '현재 비밀번호가 올바르지 않습니다.' })
+        setErrors({ currentPassword: t('profile.currentPasswordIncorrect') })
         return
       }
-      
+
       // 새 비밀번호로 업데이트
       const { error } = await supabase.auth.updateUser({
         password: passwordData.newPassword
       })
-      
+
       if (error) {
-        showError('비밀번호 변경 실패', error.message)
+        showError(t('profile.passwordChangeError'), error.message)
       } else {
-        showSuccess('비밀번호 변경 완료', '비밀번호가 성공적으로 변경되었습니다.')
+        showSuccess(t('common.success'), t('profile.passwordChangeSuccess'))
         setPasswordData({
           currentPassword: '',
           newPassword: '',
@@ -180,7 +182,7 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error('비밀번호 변경 오류:', error)
-      showError('비밀번호 변경 실패', '비밀번호 변경 중 오류가 발생했습니다.')
+      showError(t('profile.passwordChangeError'), t('profile.passwordChangeError'))
     } finally {
       setPasswordLoading(false)
     }
@@ -191,8 +193,8 @@ export default function ProfilePage() {
       <div className="max-w-4xl mx-auto p-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">프로필 관리</h1>
-            <p className="text-sm text-gray-600 mt-1">개인 정보 및 계정 설정을 관리합니다.</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t('profile.title')}</h1>
+            <p className="text-sm text-gray-600 mt-1">{t('profile.subtitle')}</p>
           </div>
           
           {/* 탭 네비게이션 */}
@@ -206,7 +208,7 @@ export default function ProfilePage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                개인 정보
+                {t('profile.personalInfo')}
               </button>
               <button
                 onClick={() => setActiveTab('password')}
@@ -216,7 +218,7 @@ export default function ProfilePage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                비밀번호 변경
+                {t('profile.changePassword')}
               </button>
             </nav>
           </div>
@@ -227,7 +229,7 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                      이름 *
+                      {t('common.name')} *
                     </label>
                     <input
                       type="text"
@@ -244,7 +246,7 @@ export default function ProfilePage() {
                   
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      이메일 *
+                      {t('auth.email')} *
                     </label>
                     <input
                       type="email"
@@ -261,7 +263,7 @@ export default function ProfilePage() {
                   
                   <div>
                     <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-2">
-                      부서
+                      {t('profile.department')}
                     </label>
                     <input
                       type="text"
@@ -275,7 +277,7 @@ export default function ProfilePage() {
                   
                   <div>
                     <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-2">
-                      직책
+                      {t('profile.position')}
                     </label>
                     <input
                       type="text"
@@ -289,7 +291,7 @@ export default function ProfilePage() {
                   
                   <div>
                     <label htmlFor="shift" className="block text-sm font-medium text-gray-700 mb-2">
-                      근무 교대
+                      {t('profile.shift')}
                     </label>
                     <select
                       id="shift"
@@ -298,16 +300,16 @@ export default function ProfilePage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       disabled={loading}
                     >
-                      <option value="">선택하세요</option>
-                      <option value="day">주간</option>
-                      <option value="night">야간</option>
-                      <option value="rotating">교대</option>
+                      <option value="">{t('profile.selectShift')}</option>
+                      <option value="day">{t('profile.dayShift')}</option>
+                      <option value="night">{t('profile.nightShift')}</option>
+                      <option value="rotating">{t('profile.rotatingShift')}</option>
                     </select>
                   </div>
                   
                   <div>
                     <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
-                      언어 설정
+                      {t('profile.language')}
                     </label>
                     <select
                       id="language"
@@ -316,8 +318,8 @@ export default function ProfilePage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       disabled={loading}
                     >
-                      <option value="ko">한국어</option>
-                      <option value="en">English</option>
+                      <option value="ko">{t('profile.korean')}</option>
+                      <option value="en">{t('profile.english')}</option>
                     </select>
                   </div>
                 </div>
@@ -331,10 +333,10 @@ export default function ProfilePage() {
                     {loading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
-                        업데이트 중...
+                        {t('profile.updating')}
                       </>
                     ) : (
-                      '프로필 업데이트'
+                      t('profile.profileUpdate')
                     )}
                   </button>
                 </div>
@@ -346,7 +348,7 @@ export default function ProfilePage() {
                 <div className="max-w-md space-y-4">
                   <div>
                     <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                      현재 비밀번호 *
+                      {t('profile.currentPassword')} *
                     </label>
                     <input
                       type="password"
@@ -363,7 +365,7 @@ export default function ProfilePage() {
                   
                   <div>
                     <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                      새 비밀번호 *
+                      {t('profile.newPassword')} *
                     </label>
                     <input
                       type="password"
@@ -374,14 +376,14 @@ export default function ProfilePage() {
                         errors.newPassword ? 'border-red-300' : 'border-gray-300'
                       }`}
                       disabled={passwordLoading}
-                      placeholder="최소 8자, 대소문자, 숫자 포함"
+                      placeholder={t('profile.passwordPlaceholder')}
                     />
                     {errors.newPassword && <p className="text-red-500 text-sm mt-1">{errors.newPassword}</p>}
                   </div>
                   
                   <div>
                     <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                      새 비밀번호 확인 *
+                      {t('profile.confirmPassword')} *
                     </label>
                     <input
                       type="password"
@@ -406,12 +408,12 @@ export default function ProfilePage() {
                     </div>
                     <div className="ml-3">
                       <p className="text-sm text-blue-800">
-                        <strong>비밀번호 요구사항:</strong>
+                        <strong>{t('profile.passwordRequirements')}</strong>
                       </p>
                       <ul className="text-sm text-blue-700 mt-1 list-disc list-inside">
-                        <li>최소 8자 이상</li>
-                        <li>대문자와 소문자 포함</li>
-                        <li>숫자 포함</li>
+                        <li>{t('profile.minLength')}</li>
+                        <li>{t('profile.upperLower')}</li>
+                        <li>{t('profile.includeNumber')}</li>
                       </ul>
                     </div>
                   </div>
@@ -426,10 +428,10 @@ export default function ProfilePage() {
                     {passwordLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
-                        변경 중...
+                        {t('profile.changing')}
                       </>
                     ) : (
-                      '비밀번호 변경'
+                      t('profile.changePassword')
                     )}
                   </button>
                 </div>

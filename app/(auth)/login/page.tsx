@@ -5,8 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useAuth } from '../../../lib/hooks/useAuth'
+import { useTranslation } from '../../../lib/hooks/useTranslations'
 
 export default function LoginPage() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -31,7 +33,7 @@ export default function LoginPage() {
     e.preventDefault()
     
     if (!email || !password) {
-      setError('이메일과 비밀번호를 입력해주세요.')
+      setError(t('auth.emailPasswordRequired'))
       return
     }
 
@@ -45,11 +47,11 @@ export default function LoginPage() {
         const targetPath = redirectTo.startsWith('/') ? redirectTo : '/dashboard'
         router.push(targetPath)
       } else {
-        setError(result.error || '로그인에 실패했습니다.')
+        setError(result.error || t('auth.loginError'))
       }
     } catch (error) {
       console.error('로그인 오류:', error)
-      setError('로그인 중 오류가 발생했습니다.')
+      setError(t('auth.loginError'))
     } finally {
       setLoading(false)
     }
@@ -61,7 +63,7 @@ export default function LoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
+          <p className="mt-4 text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     )
@@ -81,10 +83,10 @@ export default function LoginPage() {
             />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            CNC 앤드밀 관리 시스템
+            {t('auth.loginTitle')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            관리자 로그인
+            {t('auth.loginSubtitle')}
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -106,7 +108,7 @@ export default function LoginPage() {
           <div className="space-y-3">
             <div>
               <label htmlFor="email-address" className="sr-only">
-                이메일 주소
+                {t('auth.emailAddress')}
               </label>
               <input
                 id="email-address"
@@ -120,13 +122,13 @@ export default function LoginPage() {
                   if (error) setError('') // 입력 시 오류 메시지 제거
                 }}
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="이메일 주소"
+                placeholder={t('auth.emailAddress')}
                 disabled={loading}
               />
             </div>
             <div className="relative">
               <label htmlFor="password" className="sr-only">
-                비밀번호
+                {t('auth.password')}
               </label>
               <input
                 id="password"
@@ -140,7 +142,7 @@ export default function LoginPage() {
                   if (error) setError('') // 입력 시 오류 메시지 제거
                 }}
                 className="appearance-none relative block w-full px-3 py-3 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="비밀번호"
+                placeholder={t('auth.password')}
                 disabled={loading}
               />
               <button
@@ -172,32 +174,32 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  로그인 중...
+                  {t('auth.loggingIn')}
                 </>
               ) : (
-                '로그인'
+                t('auth.login')
               )}
             </button>
           </div>
 
           <div className="text-center space-y-2">
-            <Link 
+            <Link
               href="/forgot-password"
               className="text-sm text-blue-600 hover:text-blue-500 font-medium"
             >
-              비밀번호를 잊으셨나요?
+              {t('auth.forgotPassword')}
             </Link>
             <p className="text-sm text-gray-600">
-              계정이 없으신가요?{' '}
+              {t('auth.noAccount')}{' '}
               <span className="font-medium text-gray-500">
-                관리자에게 문의하세요
+                {t('auth.contactAdmin')}
               </span>
             </p>
-            <Link 
+            <Link
               href="/"
               className="inline-block text-sm text-blue-600 hover:text-blue-500"
             >
-              ← 메인으로 돌아가기
+              ← {t('auth.backToMain')}
             </Link>
           </div>
         </form>
