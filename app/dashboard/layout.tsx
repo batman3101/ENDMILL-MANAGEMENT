@@ -120,6 +120,14 @@ export default function DashboardLayout({
       requiresPermission: false
     },
     {
+      href: '/dashboard/endmill-disposal',
+      icon: '🗑️',
+      label: '폐기 관리',
+      description: '앤드밀 폐기 기록 관리',
+      active: pathname === '/dashboard/endmill-disposal',
+      requiresPermission: false
+    },
+    {
       href: '/dashboard/reports',
       icon: '📊',
       label: t('navigation.reports'),
