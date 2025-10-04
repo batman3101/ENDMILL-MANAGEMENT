@@ -51,7 +51,7 @@ export async function GET(
           code: item.suppliers.code,
           name: item.suppliers.name,
           contact_info: item.suppliers.contact_info,
-          quality_rating: item.quality_rating || item.suppliers.quality_rating || 8
+          quality_rating: item.suppliers.quality_rating || 8
         },
         unit_price: item.unit_price,
         min_order_quantity: item.min_order_quantity,

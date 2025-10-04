@@ -150,9 +150,9 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
           <h4 className="text-lg font-semibold text-gray-900">공급업체별 가격 정보</h4>
           {supplierPrices.length > 0 && (
             <div className="mt-2 text-sm text-gray-600">
-              <span className="mr-4">최저가: <span className="font-medium text-green-600">{min.toLocaleString()}원</span></span>
-              <span className="mr-4">최고가: <span className="font-medium text-red-600">{max.toLocaleString()}원</span></span>
-              <span>평균가: <span className="font-medium text-blue-600">{Math.round(avg).toLocaleString()}원</span></span>
+              <span className="mr-4">최저가: <span className="font-medium text-green-600">{min.toLocaleString()} VND</span></span>
+              <span className="mr-4">최고가: <span className="font-medium text-red-600">{max.toLocaleString()} VND</span></span>
+              <span>평균가: <span className="font-medium text-blue-600">{Math.round(avg).toLocaleString()} VND</span></span>
             </div>
           )}
         </div>
@@ -202,7 +202,7 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
                   </td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-900">
-                      {price.unit_price.toLocaleString()}원
+                      {price.unit_price.toLocaleString()} VND
                     </div>
                     {price.unit_price === min && (
                       <span className="text-xs text-green-600 font-medium">최저가</span>
@@ -262,7 +262,7 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
                   {supplierPrices.filter(p => p.is_preferred).length > 0 && (
                     <li>선호업체: {supplierPrices.filter(p => p.is_preferred).map(p => p.supplier.name).join(', ')}</li>
                   )}
-                  <li>최적 가격: {supplierPrices.find(p => p.unit_price === min)?.supplier.name} ({min.toLocaleString()}원)</li>
+                  <li>최적 가격: {supplierPrices.find(p => p.unit_price === min)?.supplier.name} ({min.toLocaleString()} VND)</li>
                 </ul>
               </div>
             </div>

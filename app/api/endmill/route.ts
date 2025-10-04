@@ -7,38 +7,65 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url)
     const code = url.searchParams.get('code')
 
-    // 기본 쿼리 빌드
-    let query = supabase
-      .from('endmill_types')
-      .select(`
-        *,
-        endmill_categories(code, name_ko),
-        endmill_supplier_prices(
-          unit_price,
-          suppliers(code, name)
-        ),
-        cam_sheet_endmills(
-          tool_life,
-          t_number,
-          cam_sheets(model, process)
-        ),
-        inventory(
-          current_stock,
-          min_stock,
-          max_stock,
-          status,
-          location
-        )
-      `)
-
     // 특정 코드로 검색하는 경우
-    if (code) {
-      query = query.eq('code', code.toUpperCase()).single()
-    } else {
-      query = query.order('created_at', { ascending: false })
-    }
+    let endmillTypes, error;
 
-    const { data: endmillTypes, error } = await query
+    if (code) {
+      const result = await supabase
+        .from('endmill_types')
+        .select(`
+          *,
+          endmill_categories(code, name_ko),
+          endmill_supplier_prices(
+            unit_price,
+            suppliers(code, name)
+          ),
+          cam_sheet_endmills(
+            tool_life,
+            t_number,
+            cam_sheets(model, process)
+          ),
+          inventory(
+            current_stock,
+            min_stock,
+            max_stock,
+            status,
+            location
+          )
+        `)
+        .eq('code', code.toUpperCase())
+        .single()
+
+      endmillTypes = result.data
+      error = result.error
+    } else {
+      const result = await supabase
+        .from('endmill_types')
+        .select(`
+          *,
+          endmill_categories(code, name_ko),
+          endmill_supplier_prices(
+            unit_price,
+            suppliers(code, name)
+          ),
+          cam_sheet_endmills(
+            tool_life,
+            t_number,
+            cam_sheets(model, process)
+          ),
+          inventory(
+            current_stock,
+            min_stock,
+            max_stock,
+            status,
+            location
+          )
+        `)
+        .order('created_at', { ascending: false })
+
+      endmillTypes = result.data
+      error = result.error
+    }
 
     if (error) {
       console.error('엔드밀 데이터 조회 오류:', error)
@@ -80,8 +107,8 @@ export async function GET(request: NextRequest) {
     })
 
     const processedEndmills = code
-      ? (endmillTypes ? [processEndmill(endmillTypes)] : [])
-      : (endmillTypes?.map(processEndmill) || [])
+      ? (endmillTypes ? [processEndmill(endmillTypes as any)] : [])
+      : (Array.isArray(endmillTypes) ? endmillTypes.map(processEndmill) : [])
 
     return NextResponse.json({
       success: true,

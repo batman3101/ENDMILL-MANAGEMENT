@@ -6,8 +6,8 @@ import { z } from 'zod'
 const createEquipmentSchema = async () => {
   // CAM Sheet에서 사용 가능한 모델과 공정 가져오기
   const camSheets = await serverSupabaseService.camSheet.getAll()
-  const availableModels = [...new Set(camSheets.map(sheet => sheet.model))].filter(Boolean)
-  const availableProcesses = [...new Set(camSheets.map(sheet => sheet.process))].filter(Boolean)
+  const availableModels = Array.from(new Set(camSheets.map(sheet => sheet.model))).filter(Boolean)
+  const availableProcesses = Array.from(new Set(camSheets.map(sheet => sheet.process))).filter(Boolean)
 
   // 기본값 설정
   const validModels = availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']
@@ -68,7 +68,11 @@ export async function POST(request: NextRequest) {
     // 데이터 검증
     const validatedData = bulkUploadSchema.parse(body)
 
-    const results = {
+    const results: {
+      success: any[]
+      failed: any[]
+      duplicates: any[]
+    } = {
       success: [],
       failed: [],
       duplicates: []
@@ -109,7 +113,7 @@ export async function POST(request: NextRequest) {
 
         // 설비 생성
         const newEquipment = await serverSupabaseService.equipment.create({
-          equipment_number: equipmentNumber,
+          equipment_number: equipmentNumber.toString(),
           model_code: equipment.current_model.split('-')[0] || equipment.current_model,
           location: equipment.location,
           status: equipment.status,
@@ -166,8 +170,8 @@ export async function GET() {
   try {
     // CAM Sheet에서 사용 가능한 모델과 공정 가져오기
     const camSheets = await serverSupabaseService.camSheet.getAll()
-    const availableModels = [...new Set(camSheets.map(sheet => sheet.model))].filter(Boolean)
-    const availableProcesses = [...new Set(camSheets.map(sheet => sheet.process))].filter(Boolean)
+    const availableModels = Array.from(new Set(camSheets.map(sheet => sheet.model))).filter(Boolean)
+    const availableProcesses = Array.from(new Set(camSheets.map(sheet => sheet.process))).filter(Boolean)
 
     // 기본값 설정
     const validModels = availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']

@@ -126,10 +126,10 @@ export async function POST(request: NextRequest) {
 
     // 새 설비 생성
     const newEquipment = await serverSupabaseService.equipment.create({
-      equipment_number: validatedData.equipment_number,
+      equipment_number: validatedData.equipment_number.toString(),
       model_code: validatedData.model_code,
-      location: validatedData.location || null,
-      status: validatedData.status || 'active',
+      location: (validatedData.location || 'A동') as 'A동' | 'B동',
+      status: (validatedData.status === 'active' || !validatedData.status) ? '가동중' : validatedData.status as '가동중' | '점검중' | '셋업중',
       current_model: validatedData.model_code, // current_model 추가
       process: body.process || 'CNC1', // process 추가
       tool_position_count: 21 // 기본값 추가

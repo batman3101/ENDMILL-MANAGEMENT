@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🌐 Language Policy
+
+**IMPORTANT: All responses must be in Korean (한국어)**
+
+- 수정 과정과 결과에 대한 모든 답변은 **반드시 한국어로** 작성할 것
+- 코드 설명, 오류 메시지, 진행 상황 보고 등 모든 커뮤니케이션은 한국어 사용
+- 예외: 코드 자체, 변수명, 함수명, 주석은 영어 사용 가능
+
 ## Project Overview
 
 CNC Endmill Management System - A comprehensive web application for managing 800 CNC machines' tool replacement and inventory management with real-time monitoring, automated ordering, and detailed analytics.
@@ -29,7 +37,6 @@ npm run start                  # Start production server
 
 # Code Quality
 npm run lint                   # Run ESLint
-npm run typecheck             # Run TypeScript type checking (if available)
 
 # Admin Tools
 npm run create-admin          # Create admin user interactively
@@ -77,23 +84,25 @@ components/                  # Reusable React components
 
 1. **Authentication Flow**:
    - Supabase Auth with email/password
-   - Role-based access control (admin, manager, operator)
+   - Role-based access control: `system_admin`, `admin`, `user` (defined in `lib/auth/permissions.ts`)
+   - Permission system via `hasPermission()` function checks resource + action combinations
    - Protected routes using middleware
 
 2. **Data Layer**:
-   - Supabase client for database operations
-   - React Query for server state management
-   - Real-time subscriptions for live updates
+   - Two Supabase clients: browser client (`supabase`) and server client (`createServerClient()`) in `lib/supabase/client.ts`
+   - Browser client has fallback hardcoded credentials if env vars missing
+   - React Query for server state management with custom hooks in `lib/hooks/`
+   - Real-time subscriptions configured with 10 events/second limit
 
 3. **Internationalization**:
-   - Database-driven translations
-   - User preference storage
-   - Korean (default) and Vietnamese support
+   - i18next configuration in `lib/i18n.ts` with Korean (default) and Vietnamese
+   - All translations stored in code (not database-driven as previously stated)
+   - Translation keys organized by feature: common, navigation, dashboard, equipment, endmill, inventory, etc.
 
 4. **API Design**:
-   - RESTful endpoints in `app/api`
-   - Consistent error handling
-   - Type-safe with TypeScript
+   - RESTful endpoints in `app/api` organized by feature
+   - Consistent error handling patterns
+   - Type-safe with TypeScript using Zod for validation
 
 ## Database Schema
 
@@ -118,29 +127,48 @@ The project uses Supabase with the following setup:
 ## Development Guidelines
 
 1. **Component Development**:
-   - Use existing UI components from `components/ui`
+   - Use existing UI components from `components/ui` (Shadcn/ui based on Radix)
    - Follow the established pattern with TypeScript interfaces
    - Implement loading and error states
+   - Use custom hooks from `lib/hooks/` for data fetching (e.g., `useAuth`, `useDashboard`, `useEquipment`, etc.)
 
 2. **API Development**:
-   - Create routes in `app/api`
-   - Use consistent response format
-   - Implement proper error handling
+   - Create routes in `app/api` following the existing structure
+   - Use consistent response format with proper HTTP status codes
+   - Implement proper error handling with try-catch blocks
+   - Key API routes:
+     - `/api/auth/*` - Authentication endpoints
+     - `/api/dashboard` - Dashboard data
+     - `/api/equipment/*` - Equipment CRUD + bulk upload
+     - `/api/endmill/*` - Endmill management + categories + suppliers
+     - `/api/inventory/*` - Inventory with inbound/outbound sub-routes
+     - `/api/tool-changes/*` - Tool change records with auto-fill
+     - `/api/cam-sheets` - CAM sheet management
+     - `/api/reports/*` - Monthly, cost, tool-life, performance reports
 
 3. **State Management**:
-   - Use React Query for server state
-   - Local state with React hooks
-   - Form state with React Hook Form
+   - Use TanStack Query v5 for server state with custom hooks
+   - Local state with React hooks (useState, useReducer)
+   - Real-time updates via `useRealtime` hook for live data subscriptions
 
 4. **Styling**:
-   - Use Tailwind CSS classes
-   - Follow the color palette defined in `tailwind.config.ts`
-   - Primary color: #1e3a8a (company blue)
-   - Status colors: success (#10b981), warning (#f59e0b), danger (#ef4444)
+   - Use Tailwind CSS classes exclusively
+   - Follow the color palette defined in `tailwind.config.ts`:
+     - Primary: #1e3a8a (company blue) with shades 50-950
+     - Secondary: #64748b (gray) with shades 50-900
+     - Status colors: success (#10b981), warning (#f59e0b), danger (#ef4444)
+   - Touch-friendly sizing: min-height/width "touch" = 44px for mobile/tablet
+   - Use safe area spacing for mobile devices
 
-5. **Testing Approach**:
-   - Check for test scripts in package.json
-   - Follow existing test patterns if available
+5. **Translations**:
+   - Use `useTranslations` hook from `lib/hooks/useTranslations.ts`
+   - All user-facing text must have keys in `lib/i18n.ts`
+   - Translation keys follow pattern: `category.key` (e.g., `dashboard.title`, `common.save`)
+
+6. **Permissions**:
+   - Always check permissions using `hasPermission(userRole, resource, action)` from `lib/auth/permissions.ts`
+   - Use `canAccessPage()` for route-level checks
+   - Helper functions: `isAdmin()`, `isSystemAdmin()`, `hasHigherRole()`
 
 ## Important Considerations
 
@@ -178,13 +206,37 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
 
+## Important Utilities and Services
+
+1. **Excel Templates** (`lib/utils/`):
+   - `excelTemplate.ts` - General Excel utilities
+   - `equipmentExcelTemplate.ts` - Equipment bulk upload template
+   - `endmillExcelTemplate.ts` - Endmill bulk upload template
+
+2. **Services** (`lib/services/`):
+   - `supabaseService.ts` - Supabase database operations wrapper
+   - `googleTranslateService.ts` - Google Translate API integration
+   - `textScanService.ts` - OCR/text scanning functionality
+
+3. **Type Definitions** (`lib/types/`):
+   - `database.ts` - Supabase database types (auto-generated)
+   - `endmill.ts` - Endmill-related types
+   - `users.ts` - User and auth types
+   - `settings.ts` - Settings configuration types
+   - `reports.ts` - Report data types
+
 ## Current Implementation Status
 
-- ✅ Basic dashboard with equipment overview
-- ✅ Tool change recording system
-- ✅ Inventory tracking
+- ✅ User authentication and role-based permissions
+- ✅ Dashboard with equipment overview
+- ✅ Equipment management with bulk Excel upload
+- ✅ Endmill management with categories and supplier pricing
+- ✅ Tool change recording system with auto-fill
+- ✅ Inventory tracking (inbound/outbound)
 - ✅ CAM sheet management
-- ✅ User authentication
-- 🚧 QR code scanning
-- 🚧 Advanced analytics
-- 🚧 Automated reordering
+- ✅ Reports system (monthly, cost, tool-life, performance)
+- ✅ User management
+- ✅ Multi-language support (Korean/Vietnamese)
+- 🚧 QR code scanning (textScanService exists)
+- 🚧 Real-time dashboard updates
+- 🚧 Automated reordering notifications

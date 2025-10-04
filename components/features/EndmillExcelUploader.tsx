@@ -298,7 +298,7 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
                             <td className="py-2">{item.name}</td>
                             <td className="py-2">{item.model}</td>
                             <td className="py-2">{item.process}</td>
-                            <td className="py-2">{item.unit_cost.toLocaleString()}원</td>
+                            <td className="py-2">{item.unit_cost.toLocaleString()} VND</td>
                           </tr>
                         ))}
                       </tbody>

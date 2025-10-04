@@ -419,7 +419,7 @@ async function createInventoryForNewEndmills(supabase: any, endmills: any[]) {
     .select('endmill_type_id')
     .in('endmill_type_id', endmills.map(e => e.id))
 
-  const existingIds = new Set(existingInventory?.map(inv => inv.endmill_type_id) || [])
+  const existingIds = new Set(existingInventory?.map((inv: any) => inv.endmill_type_id) || [])
 
   const newInventoryData = endmills
     .filter(endmill => !existingIds.has(endmill.id))

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { serverSupabaseService } from '../../../lib/services/supabaseService'
+import { serverSupabaseService, createServerSupabaseClient } from '../../../lib/services/supabaseService'
 
 export async function GET(request: NextRequest) {
   try {
@@ -98,7 +98,8 @@ async function createCAMSheetWithEndmills(data: any) {
         let endmillType = null
 
         if (endmillCode) {
-          const { data: foundEndmill, error: findError } = await serverSupabaseService.camSheet.supabase
+          const supabase = createServerSupabaseClient()
+          const { data: foundEndmill, error: findError } = await supabase
             .from('endmill_types')
             .select('id')
             .eq('code', endmillCode)
@@ -132,7 +133,8 @@ async function createCAMSheetWithEndmills(data: any) {
   }
 
   // 전체 데이터 다시 조회해서 반환
-  const { data: fullData, error: fetchError } = await serverSupabaseService.camSheet.supabase
+  const supabase = createServerSupabaseClient()
+  const { data: fullData, error: fetchError } = await supabase
     .from('cam_sheets')
     .select(`
       *,
@@ -178,7 +180,8 @@ export async function PUT(request: NextRequest) {
       console.log('엔드밀 데이터 수정 시작:', endmills)
 
       // 기존 엔드밀 데이터 삭제
-      const { error: deleteError } = await serverSupabaseService.camSheet.supabase
+      const supabaseDelete = createServerSupabaseClient()
+      const { error: deleteError } = await supabaseDelete
         .from('cam_sheet_endmills')
         .delete()
         .eq('cam_sheet_id', id)
@@ -195,7 +198,8 @@ export async function PUT(request: NextRequest) {
           let endmillType = null
 
           if (endmillCode) {
-            const { data: foundEndmill, error: findError } = await serverSupabaseService.camSheet.supabase
+            const supabaseFind = createServerSupabaseClient()
+            const { data: foundEndmill, error: findError } = await supabaseFind
               .from('endmill_types')
               .select('id')
               .eq('code', endmillCode)
@@ -228,7 +232,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // 전체 데이터 다시 조회해서 반환
-    const { data: fullData, error: fetchError } = await serverSupabaseService.camSheet.supabase
+    const supabaseFetch = createServerSupabaseClient()
+    const { data: fullData, error: fetchError } = await supabaseFetch
       .from('cam_sheets')
       .select(`
         *,

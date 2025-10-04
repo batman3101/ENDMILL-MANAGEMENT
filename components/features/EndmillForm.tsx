@@ -295,7 +295,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  단가 (원) <span className="text-red-500">*</span>
+                  단가 (VND) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -386,7 +386,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
 
                       <div className="col-span-2">
                         <label className="block text-xs font-medium text-gray-700 mb-1">
-                          단가 (원)
+                          단가 (VND)
                         </label>
                         <input
                           type="number"

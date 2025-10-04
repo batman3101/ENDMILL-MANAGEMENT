@@ -312,9 +312,9 @@ async function getModelCostAnalysis(supabase: any) {
     return acc
   }, {})
 
-  const totalCost = Object.values(modelCosts).reduce((sum: number, cost: number) => sum + cost, 0)
+  const totalCost = (Object.values(modelCosts) as number[]).reduce((sum, cost) => sum + cost, 0)
 
-  return Object.entries(modelCosts).map(([series, cost]: [string, number]) => ({
+  return (Object.entries(modelCosts) as [string, number][]).map(([series, cost]) => ({
     series,
     cost,
     percentage: Math.round((cost / totalCost) * 100)

@@ -89,11 +89,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 역할 타입 매핑 (데이터베이스 스키마의 타입에 맞게)
+    const roleTypeMap: Record<string, Database['public']['Enums']['user_role_type']> = {
+      'system_admin': 'system_admin',
+      'admin': 'admin',
+      'manager': 'user', // manager는 user 타입으로 매핑
+      'operator': 'user', // operator는 user 타입으로 매핑
+    }
+
+    const mappedRole = roleTypeMap[role] || 'user'
+
     // 기본 역할 조회 (user 타입)
     const { data: defaultRole, error: roleQueryError } = await supabase
       .from('user_roles')
       .select('id')
-      .eq('type', role || 'operator')
+      .eq('type', mappedRole)
       .eq('is_active', true)
       .single()
 
@@ -112,15 +122,17 @@ export async function POST(request: NextRequest) {
     }
 
     // user_profiles 테이블에 프로필 정보 저장
+    const validShift = (shift === 'A' || shift === 'B' || shift === 'C') ? shift : 'A'
+
     const { error: profileError } = await supabase
       .from('user_profiles')
       .insert({
         user_id: authData.user.id,
         employee_id: `EMP${Date.now()}`,
         name,
-        department,
-        position,
-        shift,
+        department: department || '',
+        position: position || '',
+        shift: validShift,
         role_id: defaultRole.id,
         is_active: true,
       })

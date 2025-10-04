@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       current_stock: 0,
       min_stock: 5,
       max_stock: 50,
-      status: 'critical',
+      status: 'critical' as const,
       location: 'A동 공구창고'
     }
 

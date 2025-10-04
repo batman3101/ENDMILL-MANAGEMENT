@@ -152,7 +152,7 @@ export default function AddSupplierPriceModal({
           {/* 단가 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              단가 (원) <span className="text-red-500">*</span>
+              단가 (VND) <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
