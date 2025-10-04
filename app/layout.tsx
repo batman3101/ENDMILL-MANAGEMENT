@@ -5,6 +5,7 @@ import QueryProvider from '../lib/providers/QueryProvider';
 import { I18nProvider } from '../lib/providers/I18nProvider';
 import { ToastProvider } from '../components/shared/Toast'
 import { AuthProvider } from '../lib/hooks/useAuth'
+import { SettingsProvider } from '../lib/providers/SettingsProvider'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -73,9 +74,11 @@ export default function RootLayout({
           <I18nProvider>
             <ToastProvider>
               <AuthProvider>
-                <QueryProvider>
-                  {children}
-                </QueryProvider>
+                <SettingsProvider>
+                  <QueryProvider>
+                    {children}
+                  </QueryProvider>
+                </SettingsProvider>
               </AuthProvider>
             </ToastProvider>
           </I18nProvider>

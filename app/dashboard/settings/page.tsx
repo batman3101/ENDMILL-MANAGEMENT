@@ -92,9 +92,13 @@ function SettingsPageContent() {
   // 저장 핸들러
   const handleSave = async (category: SettingsCategory) => {
     setIsSubmitting(true)
-    
+
     try {
       await updateCategorySettings(category, formData[category], '관리자', '설정 업데이트')
+
+      // 설정 업데이트 이벤트 발생 (SettingsProvider가 감지하여 새로고침)
+      window.dispatchEvent(new CustomEvent('settingsUpdated'))
+
       showSuccess('저장 완료', `${activeTabInfo?.name} 설정이 성공적으로 저장되었습니다.`)
     } catch (err) {
       showError('저장 실패', '설정 저장 중 오류가 발생했습니다.')
