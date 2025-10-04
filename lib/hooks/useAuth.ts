@@ -4,7 +4,6 @@ import React, { useState, useEffect, createContext, useContext } from 'react'
 import type { ReactNode } from 'react'
 import { supabase } from '../supabase/client'
 import { useToast } from '../../components/shared/Toast'
-import { TempAuthService, TempSessionManager } from '../data/tempAuth'
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
 
 // 사용자 타입 정의
@@ -71,11 +70,6 @@ export function AuthProvider(props: { children: ReactNode }) {
         console.error('Supabase 로그아웃 오류:', error)
       }
       
-      // 임시 인증 로그아웃
-      TempAuthService.signOut()
-      // 임시 세션 제거
-      TempSessionManager.clearSession()
-
       setUser(null)
       setSession(null)
       showSuccess('로그아웃 완료', '안전하게 로그아웃되었습니다.')
@@ -180,23 +174,6 @@ export function AuthProvider(props: { children: ReactNode }) {
     // 초기 세션 상태 확인
     const checkSession = async () => {
       try {
-        // 우선 임시 세션 확인으로 빠른 응답
-        const tempUser = TempSessionManager.getCurrentUser()
-        if (tempUser && mounted) {
-          console.log('✅ 임시 세션으로 즉시 로그인 상태 복원')
-          setUser({
-            id: tempUser.id,
-            email: tempUser.email,
-            name: tempUser.name,
-            department: tempUser.department,
-            position: tempUser.position,
-            shift: tempUser.shift,
-            role: tempUser.role,
-            language: 'ko'
-          })
-          setLoading(false) // 임시 세션으로 우선 로딩 해제
-        }
-
         console.log('🔍 Supabase 세션 확인 시작...')
         const { data: { session }, error } = await supabase.auth.getSession()
 
@@ -204,71 +181,44 @@ export function AuthProvider(props: { children: ReactNode }) {
 
         if (error) {
           console.error('세션 확인 오류:', error)
-          // Supabase 세션 확인 실패 시 임시 인증만 사용
-          if (!tempUser) {
-            setUser(null)
-            setSession(null)
-          }
+          setUser(null)
+          setSession(null)
         } else if (session?.user) {
           console.log('✅ Supabase 세션 발견:', session.user.email)
           setSession(session)
-          // 사용자 프로필 정보 조회
+
+          // user_profiles 테이블에서 사용자 프로필 정보 조회
+          const { data: userData, error: userError } = await supabase
+            .from('user_profiles')
+            .select('id, name, department, position, shift, phone, user_roles(name, type)')
+            .eq('user_id', session.user.id)
+            .single()
+
+          if (userError) {
+            console.error('사용자 정보 조회 오류:', userError)
+          }
+
           const userProfile = {
             id: session.user.id,
             email: session.user.email || '',
-            name: session.user.user_metadata?.name || '',
-            department: session.user.user_metadata?.department || '',
-            position: session.user.user_metadata?.position || '',
-            shift: session.user.user_metadata?.shift || '',
-            role: session.user.user_metadata?.role || 'user',
+            name: userData?.name || session.user.user_metadata?.name || '',
+            department: userData?.department || session.user.user_metadata?.department || '',
+            position: userData?.position || session.user.user_metadata?.position || '',
+            shift: userData?.shift || session.user.user_metadata?.shift || '',
+            role: (userData?.user_roles as any)?.type || session.user.user_metadata?.role || 'user',
             language: session.user.user_metadata?.language || 'ko'
           }
           setUser(userProfile)
-          // Supabase 세션이 있으면 임시 세션도 업데이트
-          TempSessionManager.saveSession({
-            id: userProfile.id,
-            email: userProfile.email,
-            name: userProfile.name || '',
-            department: userProfile.department || '',
-            position: userProfile.position || '',
-            shift: userProfile.shift || '',
-            role: userProfile.role || 'user'
-          })
-        } else if (!tempUser) {
-          // Supabase 세션도 없고 임시 세션도 없는 경우만 null 설정
-          console.log('❌ 모든 세션 없음')
+        } else {
+          console.log('❌ 세션 없음')
           setUser(null)
           setSession(null)
         }
       } catch (error) {
         console.error('세션 확인 오류:', error)
-        // 오류 발생 시에도 임시 인증 확인
-        if (!tempUser) {
-          try {
-            const tempUserFallback = TempSessionManager.getCurrentUser()
-            if (tempUserFallback && mounted) {
-              console.log('✅ 오류 시 임시 세션 발견')
-              setUser({
-                id: tempUserFallback.id,
-                email: tempUserFallback.email,
-                name: tempUserFallback.name,
-                department: tempUserFallback.department,
-                position: tempUserFallback.position,
-                shift: tempUserFallback.shift,
-                role: tempUserFallback.role,
-                language: 'ko'
-              })
-            } else if (mounted) {
-              setUser(null)
-              setSession(null)
-            }
-          } catch (tempError) {
-            console.error('임시 세션 확인 오류:', tempError)
-            if (mounted) {
-              setUser(null)
-              setSession(null)
-            }
-          }
+        if (mounted) {
+          setUser(null)
+          setSession(null)
         }
       } finally {
         if (mounted) {
@@ -327,144 +277,29 @@ export function AuthProvider(props: { children: ReactNode }) {
   const signIn = React.useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setLoading(true)
-      
+
       // API 라우트를 통한 로그인 시도
-      try {
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-        })
-
-        const result = await response.json()
-
-        if (result.success && result.user) {
-          setUser(result.user)
-          // 임시 세션 저장
-          TempSessionManager.saveSession({
-            id: result.user.id,
-            email: result.user.email,
-            name: result.user.name || '',
-            department: result.user.department || '',
-            position: result.user.position || '',
-            shift: result.user.shift || '',
-            role: result.user.role || 'user'
-          })
-          await refreshSession()
-          showSuccess('로그인 성공', `${result.user.name}님, 환영합니다!`)
-          return { success: true }
-        }
-      } catch (apiError) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('API 로그인 실패, Supabase 직접 시도:', apiError)
-        }
-      }
-      
-      // API 실패 시 Supabase 직접 로그인 시도
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔐 Supabase 로그인 시도...');
-      }
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       })
 
-      if (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('⚠️ Supabase 로그인 실패, 임시 인증 시도...', error.message);
-        }
-        
-        // Supabase 로그인 실패 시 임시 인증 시스템 사용
-        const tempResult = await TempAuthService.signIn(email, password);
-        
-        if (tempResult.success && tempResult.user) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ 임시 인증 성공');
-          }
-          setUser({
-            id: tempResult.user.id,
-            email: tempResult.user.email,
-            name: tempResult.user.name,
-            department: tempResult.user.department,
-            position: tempResult.user.position,
-            shift: tempResult.user.shift,
-            role: tempResult.user.role,
-            language: 'ko'
-          });
-          
-          showSuccess('로그인 성공', `${tempResult.user.name}님, 환영합니다! (임시 모드)`);
-          return { success: true };
-        } else {
-          let errorMessage = '로그인에 실패했습니다.'
-          
-          if (error.message.includes('Invalid login credentials')) {
-            errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.'
-          } else if (error.message.includes('Email not confirmed')) {
-            errorMessage = '이메일 인증이 완료되지 않았습니다.'
-          } else {
-            errorMessage = error.message
-          }
-          
-          showError('로그인 실패', errorMessage)
-          return { success: false, error: errorMessage }
-        }
-      }
+      const result = await response.json()
 
-      if (data.user && data.session) {
-        setSession(data.session)
-        const userProfile = {
-          id: data.user.id,
-          email: data.user.email || '',
-          name: data.user.user_metadata?.name || '',
-          department: data.user.user_metadata?.department || '',
-          position: data.user.user_metadata?.position || '',
-          shift: data.user.user_metadata?.shift || '',
-          role: data.user.user_metadata?.role || 'user',
-          language: data.user.user_metadata?.language || 'ko'
-        }
-        setUser(userProfile)
-        // 임시 세션 저장
-        TempSessionManager.saveSession({
-          id: userProfile.id,
-          email: userProfile.email,
-          name: userProfile.name || '',
-          department: userProfile.department || '',
-          position: userProfile.position || '',
-          shift: userProfile.shift || '',
-          role: userProfile.role || 'user'
-        })
-        showSuccess('로그인 성공', `${userProfile.name || '사용자'}님, 환영합니다!`)
+      if (result.success && result.user) {
+        setUser(result.user)
+        await refreshSession()
+        showSuccess('로그인 성공', `${result.user.name}님, 환영합니다!`)
         return { success: true }
+      } else {
+        showError('로그인 실패', result.error || '로그인에 실패했습니다.')
+        return { success: false, error: result.error }
       }
-
-      return { success: false, error: '로그인에 실패했습니다.' }
     } catch (error) {
-      console.error('로그인 오류:', error);
-      
-      // 네트워크 오류 등의 경우 임시 인증 시도
-      const tempResult = await TempAuthService.signIn(email, password);
-      
-      if (tempResult.success && tempResult.user) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ 오류 시 임시 인증 성공');
-        }
-        setUser({
-          id: tempResult.user.id,
-          email: tempResult.user.email,
-          name: tempResult.user.name,
-          department: tempResult.user.department,
-          position: tempResult.user.position,
-          shift: tempResult.user.shift,
-          role: tempResult.user.role,
-          language: 'ko'
-        });
-        
-        showSuccess('로그인 성공', `${tempResult.user.name}님, 환영합니다! (임시 모드)`);
-        return { success: true };
-      }
-      
+      console.error('로그인 오류:', error)
       const errorMessage = '로그인 중 오류가 발생했습니다.'
       showError('로그인 실패', errorMessage)
       return { success: false, error: errorMessage }
@@ -472,6 +307,7 @@ export function AuthProvider(props: { children: ReactNode }) {
       setLoading(false)
     }
   }, [refreshSession, showSuccess, showError])
+
 
   // 중복 함수 제거 (이미 위에서 useCallback으로 정의됨)
 

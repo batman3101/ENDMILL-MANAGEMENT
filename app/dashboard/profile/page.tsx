@@ -103,30 +103,29 @@ export default function ProfilePage() {
   // 프로필 업데이트
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     const validationErrors = validateProfile(profileData)
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return
     }
-    
+
     setLoading(true)
     setErrors({})
-    
+
     try {
-      const { error } = await supabase.auth.updateUser({
-        email: profileData.email,
-        data: {
-          name: profileData.name,
-          department: profileData.department,
-          position: profileData.position,
-          shift: profileData.shift,
-          language: profileData.language
-        }
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(profileData)
       })
-      
-      if (error) {
-        showError('프로필 업데이트 실패', error.message)
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        showError('프로필 업데이트 실패', result.error || '프로필 업데이트 중 오류가 발생했습니다.')
       } else {
         showSuccess('프로필 업데이트 완료', '프로필이 성공적으로 업데이트되었습니다.')
         await refreshSession()
