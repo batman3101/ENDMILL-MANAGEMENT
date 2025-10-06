@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     if (statusFilter) {
       filteredInventory = filteredInventory.filter(item => {
         // 재고 상태 계산
-        const status = getStockStatus(item.current_stock, item.min_stock, item.max_stock)
+        const status = getStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0)
         return status === statusFilter
       })
     }
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
     if (lowStock) {
       filteredInventory = filteredInventory.filter(item => {
-        const status = getStockStatus(item.current_stock, item.min_stock, item.max_stock)
+        const status = getStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0)
         return status === 'low' || status === 'critical'
       })
     }

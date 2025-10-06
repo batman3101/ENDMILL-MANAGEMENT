@@ -10,6 +10,13 @@ export interface DashboardData {
     operatingRate: number
     toolLifeEfficiency: number
   }
+  endmillUsage: {
+    total: number
+    normal: number
+    warning: number
+    critical: number
+    usageRate: number
+  }
   inventory: {
     total: number
     sufficient: number

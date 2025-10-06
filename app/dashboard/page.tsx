@@ -134,39 +134,45 @@ export default function DashboardPage() {
         {!isLoading && (
           <>
 
-        {/* Tool Life 현황 */}
+        {/* 엔드밀 사용 현황 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">{t('endmill.toolLife')} {t('dashboard.equipmentStatus')}</h3>
+            <h3 className="text-lg font-semibold text-gray-800">{t('dashboard.endmillUsageStatus')}</h3>
             <span className="text-sm text-gray-500">{t('endmill.realtimeConnected')}</span>
           </div>
           <div className="flex items-center justify-center">
             <DonutChart
-              value={data?.equipment?.toolLifeEfficiency || 0}
+              value={data?.endmillUsage?.usageRate || 0}
               max={100}
               color="#10b981"
               size={120}
             >
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-900">
-                  {data?.equipment?.toolLifeEfficiency || 0}%
+                  {data?.endmillUsage?.usageRate || 0}%
                 </div>
-                <div className="text-xs text-gray-500">{t('dashboard.operatingRate')}</div>
+                <div className="text-xs text-gray-500">{t('dashboard.usageRate')}</div>
               </div>
             </DonutChart>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             <div>
               <p className="text-xs text-gray-500">{t('endmill.normal')}</p>
-              <p className="text-sm font-semibold text-green-600">420{t('dashboard.pieceCount')}</p>
+              <p className="text-sm font-semibold text-green-600">
+                {data?.endmillUsage?.normal || 0}{t('dashboard.pieceCount')}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-500">{t('endmill.warning')}</p>
-              <p className="text-sm font-semibold text-yellow-600">180{t('dashboard.pieceCount')}</p>
+              <p className="text-sm font-semibold text-yellow-600">
+                {data?.endmillUsage?.warning || 0}{t('dashboard.pieceCount')}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-500">{t('endmill.critical')}</p>
-              <p className="text-sm font-semibold text-red-600">80{t('dashboard.pieceCount')}</p>
+              <p className="text-sm font-semibold text-red-600">
+                {data?.endmillUsage?.critical || 0}{t('dashboard.pieceCount')}
+              </p>
             </div>
           </div>
         </div>
@@ -185,13 +191,13 @@ export default function DashboardPage() {
               size={120}
             >
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-xl font-bold text-gray-900">
                   {data?.equipment?.active || 0}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-[10px] text-gray-500">
                   / {data?.equipment?.total || 0}{t('dashboard.equipmentCount')}
                 </div>
-                <div className="text-xs text-blue-600 mt-1">
+                <div className="text-[10px] text-blue-600 mt-0.5">
                   {data?.equipment?.operatingRate || 0}% {t('dashboard.operatingRate')}
                 </div>
               </div>
@@ -338,10 +344,10 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* 공구별 수명 분석 */}
+        {/* 엔드밀 평균 사용 수명 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('reports.toolLifeAnalysis')}</h4>
+            <h4 className="text-lg font-semibold text-gray-800">{t('dashboard.avgLifespan')}</h4>
             <span className="text-2xl">🔬</span>
           </div>
           {isLoading ? (
@@ -354,10 +360,10 @@ export default function DashboardPage() {
             <div className="space-y-2">
               {(data?.lifespanAnalysis || []).slice(0, 4).map((item, index) => (
                 <div key={index} className="flex justify-between items-center text-sm">
-                  <span className="text-gray-700">{item.category}:</span>
+                  <span className="text-gray-700">{item.category} {t('common.type')}:</span>
                   <div className="text-right">
-                    <div className="font-semibold">{item.avgLife}{t('camSheets.hours')}</div>
-                    <div className="text-xs text-gray-500">±{item.variance}{t('camSheets.hours')}</div>
+                    <div className="font-semibold">{t('common.avgCount')}: {item.avgLife}{t('dashboard.pieces')}</div>
+                    <div className="text-xs text-gray-500">±{item.variance}{t('dashboard.pieces')}</div>
                   </div>
                 </div>
               ))}
@@ -420,10 +426,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 알림 및 이벤트 */}
+      {/* 최근 활동 현황 */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-800">{t('endmill.realtimeConnected')} {t('common.info')}</h3>
+          <h3 className="text-lg font-semibold text-gray-800">{t('dashboard.recentActivity')}</h3>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <div className={`w-2 h-2 rounded-full ${isAllConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
@@ -437,75 +443,39 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="px-6 py-4">
-          <div className="space-y-3">
-            <div className="flex items-start p-4 bg-red-50 rounded-lg border border-red-200">
-              <div className="flex-shrink-0 mt-1">
-                <div className="w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
-              </div>
-              <div className="ml-4 flex-1">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-gray-900">{t('endmill.critical')} {t('toolChanges.changeReason')}</p>
-                  <span className="text-xs text-red-600 font-medium">{t('camSheets.high')}</span>
+          {data?.recentAlerts && data.recentAlerts.length > 0 ? (
+            <div className="space-y-3">
+              {data.recentAlerts.map((alert: any, index: number) => (
+                <div key={index} className={`flex items-start p-4 bg-${alert.color}-50 rounded-lg border border-${alert.color}-200`}>
+                  <div className="flex-shrink-0 mt-1">
+                    <div className={`w-3 h-3 bg-${alert.color}-400 rounded-full ${alert.severity === 'high' || alert.severity === 'warning' ? 'animate-pulse' : ''}`}></div>
+                  </div>
+                  <div className="ml-4 flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-gray-900">{alert.title}</p>
+                      <span className={`text-xs text-${alert.color}-600 font-medium`}>
+                        {alert.severity === 'high' ? t('camSheets.high') : alert.severity === 'warning' ? t('common.warning') : alert.severity === 'medium' ? t('camSheets.medium') : t('common.info')}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">{alert.message}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-gray-500">{alert.time}</span>
+                      <button className={`text-xs text-${alert.color}-600 hover:text-${alert.color}-800 font-medium`}>
+                        {alert.severity === 'high' ? `${t('common.detail')} ${t('common.view')} →` : alert.type === 'low_stock' ? '주문하기 →' : `${t('common.view')} →`}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-1">C045 {t('equipment.title')} T12 {t('endmill.title')} {t('endmill.toolLife')} 종료 - {t('endmill.immediateReplace')}</p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-gray-500">2분 전</span>
-                  <button className="text-xs text-red-600 hover:text-red-800 font-medium">처리하기 →</button>
-                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-32 text-gray-400">
+              <div className="text-center">
+                <p className="text-sm">{t('common.noData')}</p>
+                <p className="text-xs mt-1">표시할 알림이 없습니다</p>
               </div>
             </div>
-
-            <div className="flex items-start p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-              <div className="flex-shrink-0 mt-1">
-                <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-              </div>
-              <div className="ml-4 flex-1">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-gray-900">{t('inventory.low')} {t('common.warning')}</p>
-                  <span className="text-xs text-yellow-600 font-medium">{t('camSheets.medium')}</span>
-                </div>
-                <p className="text-sm text-gray-600 mt-1">EM-001 {t('endmill.title')} {t('inventory.stockStatus')}가 최소 수준 이하 (현재: 5{t('dashboard.pieceCount')})</p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-gray-500">15분 전</span>
-                  <button className="text-xs text-yellow-600 hover:text-yellow-800 font-medium">주문하기 →</button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-start p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex-shrink-0 mt-1">
-                <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-              </div>
-              <div className="ml-4 flex-1">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-gray-900">{t('equipment.maintenance')} {t('common.success')}</p>
-                  <span className="text-xs text-blue-600 font-medium">{t('common.info')}</span>
-                </div>
-                <p className="text-sm text-gray-600 mt-1">A동 15번 라인 {t('equipment.maintenance')} {t('common.success')} - 모든 {t('equipment.title')} {t('endmill.normal')}</p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-gray-500">1시간 전</span>
-                  <button className="text-xs text-blue-600 hover:text-blue-800 font-medium">{t('common.view')} →</button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-start p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex-shrink-0 mt-1">
-                <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-              </div>
-              <div className="ml-4 flex-1">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-gray-900">생산 목표 달성</p>
-                  <span className="text-xs text-green-600 font-medium">{t('common.success')}</span>
-                </div>
-                <p className="text-sm text-gray-600 mt-1">오늘 생산 목표 103% 달성 - 우수한 성과</p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-gray-500">2시간 전</span>
-                  <button className="text-xs text-green-600 hover:text-green-800 font-medium">{t('common.detail')} {t('common.view')} →</button>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

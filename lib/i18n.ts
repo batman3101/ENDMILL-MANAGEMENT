@@ -59,6 +59,7 @@ const resources = {
         price: '가격',
         required: '필수',
         optional: '선택',
+        avgCount: '평균',
 
         // 시스템 정보
         lastUpdate: '마지막 업데이트',
@@ -108,6 +109,15 @@ const resources = {
         operatingRate: '가동률',
         maintenanceCount: '점검중',
         setupCount: '셋업중',
+        endmillUsageStatus: '엔드밀 사용 현황',
+        usageRate: '사용률',
+        normalUsage: '정상 사용',
+        replaceRecommended: '교체 권장',
+        immediateReplace: '즉시 교체',
+        avgLifespan: '평균 사용 수명',
+        recentActivity: '최근 활동 현황',
+        activityHistory: '활동 이력',
+        pieces: '개',
       },
 
       // 설비 관리
@@ -793,6 +803,8 @@ const resources = {
         price: 'Giá',
         required: 'Bắt buộc',
         optional: 'Tùy chọn',
+        type: 'Loại',
+        avgCount: 'Trung bình',
 
         // 시스템 정보
         lastUpdate: 'Cập nhật cuối',
@@ -838,6 +850,15 @@ const resources = {
         equipmentStatus: 'Tình trạng hoạt động thiết bị',
         equipmentCount: 'máy',
         pieceCount: 'cái',
+        endmillUsageStatus: 'Tình trạng sử dụng dao phay',
+        usageRate: 'Tỷ lệ sử dụng',
+        normalUsage: 'Sử dụng bình thường',
+        replaceRecommended: 'Khuyến cáo thay thế',
+        immediateReplace: 'Thay thế ngay',
+        avgLifespan: 'Tuổi thọ sử dụng trung bình',
+        recentActivity: 'Hoạt động gần đây',
+        activityHistory: 'Lịch sử hoạt động',
+        pieces: 'cái',
         percentCount: '%',
         operatingRate: 'Tỷ lệ hoạt động',
         maintenanceCount: 'Đang bảo trì',

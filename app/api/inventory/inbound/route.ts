@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       quantity: transaction.quantity,
       unitPrice: transaction.unit_price,
       totalPrice: transaction.total_amount,
-      processedAt: new Date(transaction.processed_at).toLocaleString('ko-KR'),
+      processedAt: transaction.processed_at ? new Date(transaction.processed_at).toLocaleString('ko-KR') : '',
       processedBy: transaction.notes || '관리자'
     }))
 
@@ -131,6 +131,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 입고 트랜잭션 생성
+    if (!inventory) {
+      return NextResponse.json(
+        { error: '재고 정보를 찾을 수 없습니다.' },
+        { status: 404 }
+      )
+    }
+
     const { data: transaction, error: transactionError } = await supabase
       .from('inventory_transactions')
       .insert({

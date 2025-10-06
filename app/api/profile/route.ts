@@ -43,7 +43,7 @@ export async function PUT(request: NextRequest) {
     const user = session.user
 
     // 사용자 정보 업데이트 (users 테이블)
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('users')
       .update({
         name,

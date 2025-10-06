@@ -114,9 +114,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 재고가 충분한지 확인
-    if (inventory.current_stock < quantity) {
+    const currentStock = inventory.current_stock || 0
+    if (currentStock < quantity) {
       return NextResponse.json(
-        { error: `재고가 부족합니다. 현재 재고: ${inventory.current_stock}개` },
+        { error: `재고가 부족합니다. 현재 재고: ${currentStock}개` },
         { status: 400 }
       )
     }
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase
       .from('inventory')
       .update({
-        current_stock: inventory.current_stock - quantity,
+        current_stock: currentStock - quantity,
         last_updated: new Date().toISOString()
       })
       .eq('id', inventory.id)
@@ -270,10 +271,11 @@ export async function DELETE(request: NextRequest) {
         .single()
 
       if (!inventoryError && inventory) {
+        const rollbackStock = (inventory.current_stock || 0) + transaction.quantity
         await supabase
           .from('inventory')
           .update({
-            current_stock: inventory.current_stock + transaction.quantity,
+            current_stock: rollbackStock,
             last_updated: new Date().toISOString()
           })
           .eq('id', inventory.id)

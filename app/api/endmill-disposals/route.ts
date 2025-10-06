@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = createServerSupabaseClient()
 
-    let query = supabase
+    let query: any = (supabase as any)
       .from('endmill_disposals')
       .select('*')
       .order('disposal_date', { ascending: false })
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 폐기 기록 저장
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('endmill_disposals')
       .insert({
         disposal_date,
