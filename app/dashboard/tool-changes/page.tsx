@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useToast } from '../../../components/shared/Toast'
 import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
@@ -10,6 +11,7 @@ import { useToolChanges, type ToolChange, type ToolChangeFilters } from '../../.
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 
 export default function ToolChangesPage() {
+  const { t } = useTranslation()
   const { showSuccess, showError, showWarning } = useToast()
   const { camSheets, getAvailableModels, getAvailableProcesses } = useCAMSheets()
   const confirmation = useConfirmation()
@@ -51,6 +53,24 @@ export default function ToolChangesPage() {
   const { settings } = useSettings()
   const toolChangesReasons = settings.toolChanges.reasons
   const tNumberRange = settings.toolChanges.tNumberRange
+
+  // 교체사유 번역 매핑 함수
+  const getReasonTranslation = (reason: string) => {
+    const reasonMap: Record<string, string> = {
+      '정기교체': t('toolChanges.regularReplacement'),
+      '수명완료': t('toolChanges.lifeCompleted'),
+      '파손': t('toolChanges.broken'),
+      '마모': t('toolChanges.wear'),
+      '모델변경': t('toolChanges.modelChange'),
+      '모델교체': t('toolChanges.modelChange'),
+      '품질불량': t('toolChanges.qualityDefect'),
+      '품질테스트': t('toolChanges.qualityDefect'),
+      '공구테스트': t('toolChanges.toolTest'),
+      '예방교체': t('toolChanges.preventive'),
+      '기타': t('toolChanges.other'),
+    }
+    return reasonMap[reason] || reason
+  }
 
   // 필터 업데이트 함수들
   const updateFilters = useCallback(() => {
@@ -576,7 +596,7 @@ export default function ToolChangesPage() {
               🔄
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">오늘 교체</p>
+              <p className="text-xs font-medium text-gray-600">{t('toolChanges.todayChanges')}</p>
               <p className="text-xl font-bold text-blue-600">{toolChanges.filter(tc => tc.change_date?.startsWith(getTodayDate())).length}</p>
             </div>
           </div>
@@ -588,7 +608,7 @@ export default function ToolChangesPage() {
               ⏱️
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">정기교체</p>
+              <p className="text-xs font-medium text-gray-600">{t('toolChanges.regularReplacement')}</p>
               <p className="text-xl font-bold text-green-600">
                 {toolChanges.filter(tc => tc.change_reason === '정기교체' || tc.reason === '정기교체').length}
               </p>
@@ -602,7 +622,7 @@ export default function ToolChangesPage() {
               💥
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">파손</p>
+              <p className="text-xs font-medium text-gray-600">{t('toolChanges.broken')}</p>
               <p className="text-xl font-bold text-red-600">
                 {toolChanges.filter(tc => tc.change_reason === '파손' || tc.reason === '파손').length}
               </p>
@@ -616,7 +636,7 @@ export default function ToolChangesPage() {
               ⚠️
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">마모</p>
+              <p className="text-xs font-medium text-gray-600">{t('toolChanges.wear')}</p>
               <p className="text-xl font-bold text-yellow-600">
                 {toolChanges.filter(tc => tc.change_reason === '마모' || tc.reason === '마모').length}
               </p>
@@ -630,7 +650,7 @@ export default function ToolChangesPage() {
               🔄
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">모델변경</p>
+              <p className="text-xs font-medium text-gray-600">{t('toolChanges.modelChange')}</p>
               <p className="text-xl font-bold text-purple-600">
                 {toolChanges.filter(tc => tc.change_reason === '모델변경' || tc.reason === '모델변경').length}
               </p>
@@ -644,7 +664,7 @@ export default function ToolChangesPage() {
               🛡️
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">품질불량</p>
+              <p className="text-xs font-medium text-gray-600">{t('toolChanges.qualityDefect')}</p>
               <p className="text-xl font-bold text-orange-600">
                 {toolChanges.filter(tc => tc.change_reason === '품질불량' || tc.reason === '품질불량').length}
               </p>
@@ -675,9 +695,9 @@ export default function ToolChangesPage() {
                   🏭
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-600">오늘 최다 교체 모델</p>
+                  <p className="text-xs font-medium text-gray-600">{t('toolChanges.topModelToday')}</p>
                   <p className="text-lg font-bold text-indigo-600">{topModel[0]}</p>
-                  <p className="text-xs text-gray-500">{topModel[1]}건</p>
+                  <p className="text-xs text-gray-500">{topModel[1]} {t('toolChanges.cases')}</p>
                 </div>
               </div>
             </div>
@@ -707,9 +727,9 @@ export default function ToolChangesPage() {
                   ⚙️
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-600">오늘 최다 교체 공정</p>
+                  <p className="text-xs font-medium text-gray-600">{t('toolChanges.topProcessToday')}</p>
                   <p className="text-lg font-bold text-teal-600">{topProcess[0]}</p>
-                  <p className="text-xs text-gray-500">{topProcess[1]}건</p>
+                  <p className="text-xs text-gray-500">{topProcess[1]} {t('toolChanges.cases')}</p>
                 </div>
               </div>
             </div>
@@ -720,22 +740,22 @@ export default function ToolChangesPage() {
       {/* 교체 실적 입력 폼 */}
       {showAddForm && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">새 교체 실적 입력</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('toolChanges.newChangeRecordInput')}</h2>
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">교체일자</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.changeDate')}</label>
                 <input
                   type="text"
                   value={formData.change_date}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
                   readOnly
                 />
-                <p className="text-xs text-gray-500 mt-1">자동으로 현재 날짜/시간이 입력됩니다</p>
+                <p className="text-xs text-gray-500 mt-1">{t('toolChanges.autoFilledDateTime')}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">설비번호</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.equipmentNumber')}</label>
                 <input
                   type="text"
                   placeholder="C001"
@@ -746,14 +766,14 @@ export default function ToolChangesPage() {
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   pattern="C[0-9]{3}"
-                  title="C001-C800 형식으로 입력해주세요"
+                  title={t('toolChanges.equipmentNumberFormat')}
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">설비번호 입력시 생산모델과 공정이 자동으로 입력됩니다</p>
+                <p className="text-xs text-gray-500 mt-1">{t('toolChanges.autoFilledModelProcess')}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">생산 모델</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.productionModel')}</label>
                 <select
                   value={formData.productionModel}
                   onChange={(e) => setFormData({...formData, productionModel: e.target.value})}
@@ -762,18 +782,18 @@ export default function ToolChangesPage() {
                   }`}
                   required
                 >
-                  <option value="">모델 선택</option>
+                  <option value="">{t('toolChanges.selectModel')}</option>
                   {availableModels.map(model => (
                     <option key={model} value={model}>{model}</option>
                   ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  {formData.equipmentNumber ? '설비번호 기준 자동입력됨' : '등록된 CAM SHEET의 모델들'}
+                  {formData.equipmentNumber ? t('toolChanges.autoFilledByEquipment') : t('toolChanges.registeredCAMSheetModels')}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">공정</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.process')}</label>
                 <select
                   value={formData.process}
                   onChange={(e) => setFormData({...formData, process: e.target.value})}
@@ -782,18 +802,18 @@ export default function ToolChangesPage() {
                   }`}
                   required
                 >
-                  <option value="">공정 선택</option>
+                  <option value="">{t('toolChanges.selectProcess')}</option>
                   <option value="CNC1">CNC1</option>
                   <option value="CNC2">CNC2</option>
                   <option value="CNC2-1">CNC2-1</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  {formData.equipmentNumber ? '설비번호 기준 자동입력됨' : '공정을 선택하세요'}
+                  {formData.equipmentNumber ? t('toolChanges.autoFilledByEquipment') : t('toolChanges.selectProcessPrompt')}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">T번호</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.tNumber')}</label>
                                     <select
                       value={formData.tNumber}
                       onChange={(e) => setFormData({...formData, tNumber: parseInt(e.target.value)})}
@@ -807,11 +827,11 @@ export default function ToolChangesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 코드</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.endmillCode')}</label>
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder={isManualEndmillInput ? "앤드밀 코드 입력" : "모델, 공정, T번호 선택 시 자동 입력"}
+                    placeholder={isManualEndmillInput ? t('toolChanges.enterEndmillCode') : t('toolChanges.autoFilledEndmillCode')}
                     value={formData.endmillCode}
                     onChange={(e) => isManualEndmillInput && setFormData({...formData, endmillCode: e.target.value})}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
@@ -842,21 +862,21 @@ export default function ToolChangesPage() {
                       }}
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800"
                     >
-                      {isManualEndmillInput ? "자동입력" : "수동입력"}
+                      {isManualEndmillInput ? t('toolChanges.autoInput') : t('toolChanges.manualInput')}
                     </button>
                   )}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  {isManualEndmillInput ? "수동으로 입력해주세요" : "T번호 선택시 자동으로 입력됩니다"}
+                  {isManualEndmillInput ? t('toolChanges.pleaseEnterManually') : t('toolChanges.autoFilledOnTNumber')}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 이름</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.endmillName')}</label>
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder={isManualEndmillInput ? "앤드밀 이름 입력" : "모델, 공정, T번호 선택 시 자동 입력"}
+                    placeholder={isManualEndmillInput ? t('toolChanges.enterEndmillName') : t('toolChanges.autoFilledEndmillName')}
                     value={formData.endmillName}
                     onChange={(e) => isManualEndmillInput && setFormData({...formData, endmillName: e.target.value})}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
@@ -887,17 +907,17 @@ export default function ToolChangesPage() {
                       }}
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800"
                     >
-                      {isManualEndmillInput ? "자동입력" : "수동입력"}
+                      {isManualEndmillInput ? t('toolChanges.autoInput') : t('toolChanges.manualInput')}
                     </button>
                   )}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  {isManualEndmillInput ? "수동으로 입력해주세요" : "T번호 선택시 자동으로 입력됩니다"}
+                  {isManualEndmillInput ? t('toolChanges.pleaseEnterManually') : t('toolChanges.autoFilledOnTNumber')}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">실제 Tool life</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.actualToolLife')}</label>
                 <input
                   type="number"
                   placeholder="2500"
@@ -908,40 +928,40 @@ export default function ToolChangesPage() {
                   max="10000"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">교체된 앤드밀의 실제 사용 횟수</p>
+                <p className="text-xs text-gray-500 mt-1">{t('toolChanges.actualToolLifeDescription')}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">교체사유</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.changeReason')}</label>
                 <select
                   value={formData.changeReason}
                   onChange={(e) => setFormData({...formData, changeReason: e.target.value})}
                   className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="">사유 선택</option>
+                  <option value="">{t('toolChanges.selectReason')}</option>
                   {toolChangesReasons.map(reason => (
-                    <option key={reason} value={reason}>{reason}</option>
+                    <option key={reason} value={reason}>{getReasonTranslation(reason)}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">교체자</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.replacedBy')}</label>
                 <select
                   value={formData.changedBy}
                   onChange={(e) => setFormData({...formData, changedBy: e.target.value})}
                   className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="">교체자 선택</option>
+                  <option value="">{t('toolChanges.selectReplacer')}</option>
                   {availableUsers.map(user => (
                     <option key={user.id} value={user.id}>
                       {user.name} ({user.employee_id})
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">교체 작업을 수행한 작업자를 선택하세요</p>
+                <p className="text-xs text-gray-500 mt-1">{t('toolChanges.selectReplacerDescription')}</p>
               </div>
             </div>
 
@@ -950,14 +970,14 @@ export default function ToolChangesPage() {
                 type="submit"
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
-                저장
+                {t('toolChanges.save')}
               </button>
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
                 className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
               >
-                취소
+                {t('toolChanges.cancel')}
               </button>
             </div>
           </form>
@@ -972,7 +992,7 @@ export default function ToolChangesPage() {
             <div className="flex gap-4 flex-1">
               <input
                 type="text"
-                placeholder="설비번호, 앤드밀 코드 검색..."
+                placeholder={t('toolChanges.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -983,20 +1003,20 @@ export default function ToolChangesPage() {
                 onClick={resetFilters}
                 className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
               >
-                필터 초기화
+                {t('toolChanges.resetFilters')}
               </button>
               <button
                 onClick={() => setShowAddForm(true)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
-                + 교체 기록 추가
+                {t('toolChanges.addChangeRecord')}
               </button>
             </div>
           </div>
 
           {/* 두 번째 줄: 날짜 필터 */}
           <div className="flex gap-4 items-center">
-            <label className="text-sm font-medium text-gray-700">기간:</label>
+            <label className="text-sm font-medium text-gray-700">{t('toolChanges.period')}:</label>
             <input
               type="date"
               value={dateRange.start}
@@ -1014,13 +1034,13 @@ export default function ToolChangesPage() {
             {/* 에러 및 로딩 상태 표시 */}
             {toolChangesError && (
               <div className="text-red-600 text-sm">
-                오류: {toolChangesError}
+                {t('toolChanges.error')}: {toolChangesError}
               </div>
             )}
             {isLoading && (
               <div className="flex items-center text-blue-600 text-sm">
                 <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mr-2"></div>
-                로딩 중...
+                {t('toolChanges.loading')}
               </div>
             )}
           </div>
@@ -1030,76 +1050,76 @@ export default function ToolChangesPage() {
       {/* 교체 실적 목록 */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">교체 실적 목록</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('toolChanges.changeHistoryList')}</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <SortableTableHeader
-                  label="교체일시"
+                  label={t('toolChanges.changeDateTime')}
                   field="change_date"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="설비번호"
+                  label={t('toolChanges.equipmentNumber')}
                   field="equipment_number"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="생산모델"
+                  label={t('toolChanges.productionModel')}
                   field="production_model"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="공정"
+                  label={t('toolChanges.process')}
                   field="process"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="T번호"
+                  label={t('toolChanges.tNumber')}
                   field="t_number"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  앤드밀 코드
+                  {t('toolChanges.endmillCode')}
                 </th>
                 <SortableTableHeader
-                  label="앤드밀 이름"
+                  label={t('toolChanges.endmillName')}
                   field="endmill_name"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  교체자
+                  {t('toolChanges.replacedBy')}
                 </th>
                 <SortableTableHeader
-                  label="교체사유"
+                  label={t('toolChanges.changeReason')}
                   field="change_reason"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="Tool Life"
+                  label={t('toolChanges.toolLife')}
                   field="tool_life"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  작업
+                  {t('toolChanges.actions')}
                 </th>
               </tr>
             </thead>
@@ -1168,7 +1188,7 @@ export default function ToolChangesPage() {
                             : 'text-red-600 hover:text-red-800'
                         }`}
                       >
-                        {deletingItemId === change.id ? '확인 삭제' : '삭제'}
+                        {deletingItemId === change.id ? t('toolChanges.confirmDelete') : t('toolChanges.delete')}
                       </button>
                     </td>
                   </tr>
@@ -1179,10 +1199,10 @@ export default function ToolChangesPage() {
                     {isLoading ? (
                       <div className="flex items-center justify-center">
                         <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mr-2"></div>
-                        데이터를 불러오는 중...
+                        {t('toolChanges.loadingData')}
                       </div>
                     ) : (
-                      '교체 실적 데이터가 없습니다.'
+                      t('toolChanges.noData')
                     )}
                   </td>
                 </tr>
@@ -1196,7 +1216,11 @@ export default function ToolChangesPage() {
           <div className="px-6 py-4 border-t bg-gray-50">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-700">
-                전체 {totalCount || toolChanges.length}개 중 {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalCount || toolChanges.length)}개 표시
+                {t('toolChanges.showing', {
+                  total: totalCount || toolChanges.length,
+                  from: ((currentPage - 1) * itemsPerPage) + 1,
+                  to: Math.min(currentPage * itemsPerPage, totalCount || toolChanges.length)
+                })}
               </div>
               <div className="flex items-center space-x-2">
                 <button
@@ -1204,7 +1228,7 @@ export default function ToolChangesPage() {
                   disabled={currentPage === 1 || isLoading}
                   className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  이전
+                  {t('toolChanges.previous')}
                 </button>
                 <div className="flex items-center space-x-1">
                   {(() => {
@@ -1247,7 +1271,7 @@ export default function ToolChangesPage() {
                   disabled={!hasMore || isLoading}
                   className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  다음
+                  {t('toolChanges.next')}
                 </button>
               </div>
             </div>
@@ -1466,7 +1490,7 @@ export default function ToolChangesPage() {
                       required
                     >
                       {toolChangesReasons.map(reason => (
-                        <option key={reason} value={reason}>{reason}</option>
+                        <option key={reason} value={reason}>{getReasonTranslation(reason)}</option>
                       ))}
                     </select>
                   </div>
