@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createStatusChangeConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
@@ -13,6 +14,7 @@ import EquipmentExcelUploader from '../../../components/features/EquipmentExcelU
 import { supabase } from '../../../lib/supabase/client'
 
 export default function EquipmentPage() {
+  const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [modelFilter, setModelFilter] = useState('')
@@ -197,19 +199,27 @@ export default function EquipmentPage() {
     const equipment = equipments.find(eq => eq.id === equipmentId)
     if (!equipment) return
 
-    const confirmed = await confirmation.showConfirmation(
-      createStatusChangeConfirmation(
-        equipment.equipment_number,
-        equipment.status || '',
-        newStatus
-      )
-    )
+    // 상태 번역
+    const translateStatus = (status: string) => {
+      if (status === '가동중') return t('equipment.operating')
+      if (status === '점검중') return t('equipment.maintenance')
+      if (status === '셋업중') return t('equipment.setup')
+      return status
+    }
+
+    const confirmed = await confirmation.showConfirmation({
+      type: 'update',
+      title: t('equipment.statusChangeConfirmTitle'),
+      message: `${equipment.equipment_number}${t('equipment.statusChangeConfirmMessage')}\n\n${t('equipment.currentStatus')}: ${translateStatus(equipment.status || '')}\n${t('equipment.changeStatus')}: ${translateStatus(newStatus)}`,
+      confirmText: t('equipment.confirmChange'),
+      cancelText: t('common.cancel')
+    })
 
     if (confirmed) {
       changeStatus(equipmentId, newStatus)
       showSuccess(
-        '상태 변경 완료',
-        `${equipment.equipment_number}의 상태가 ${newStatus}(으)로 변경되었습니다.`
+        t('equipment.statusChangeComplete'),
+        `${equipment.equipment_number} → ${translateStatus(newStatus)}`
       )
     }
   }
@@ -343,20 +353,20 @@ export default function EquipmentPage() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="text-4xl mb-4">📊</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">표시할 설비 데이터가 없습니다</h3>
-            <p className="text-gray-500 mb-4">데이터베이스에 설비 정보가 등록되어 있지 않습니다.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('equipment.noEquipment')}</h3>
+            <p className="text-gray-500 mb-4">{t('equipment.noEquipmentMessage')}</p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={handleOpenAddModal}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
-                + 개별 설비 추가
+                + {t('equipment.individualAdd')}
               </button>
               <button
                 onClick={() => setShowBulkUploadModal(true)}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
               >
-                📄 일괄 설비 추가
+                📄 {t('equipment.bulkUpload')}
               </button>
             </div>
           </div>
@@ -368,7 +378,7 @@ export default function EquipmentPage() {
             <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
               <div className="px-6 py-4 border-b">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900">새 설비 추가</h3>
+                  <h3 className="text-lg font-medium text-gray-900">{t('equipment.newEquipment')}</h3>
                   <button
                     onClick={() => setShowAddModal(false)}
                     className="text-gray-400 hover:text-gray-600"
@@ -383,7 +393,7 @@ export default function EquipmentPage() {
                 {/* 설비번호 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    설비번호 <span className="text-red-500">*</span>
+                    {t('equipment.equipmentNumber')} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
@@ -408,13 +418,13 @@ export default function EquipmentPage() {
                       required
                     />
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">3자리 숫자를 입력하세요 (예: 001, 002, 010)</p>
+                  <p className="mt-1 text-xs text-gray-500">{t('equipment.numberFormat')}</p>
                 </div>
 
                 {/* 위치 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    위치 <span className="text-red-500">*</span>
+                    {t('equipment.location')} <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={addFormData.location}
@@ -425,11 +435,13 @@ export default function EquipmentPage() {
                   >
                     {equipmentLocations && equipmentLocations.length > 0
                       ? equipmentLocations.map(location => (
-                          <option key={location} value={location}>{location}</option>
+                          <option key={location} value={location}>
+                            {location === 'A동' ? t('equipment.locationA') : location === 'B동' ? t('equipment.locationB') : location}
+                          </option>
                         ))
                       : [
-                          <option key="A동" value="A동">A동</option>,
-                          <option key="B동" value="B동">B동</option>
+                          <option key="A동" value="A동">{t('equipment.locationA')}</option>,
+                          <option key="B동" value="B동">{t('equipment.locationB')}</option>
                         ]
                     }
                   </select>
@@ -438,7 +450,7 @@ export default function EquipmentPage() {
                 {/* 초기 상태 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    초기 상태 <span className="text-red-500">*</span>
+                    {t('equipment.initialStatus')} <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={addFormData.status}
@@ -448,15 +460,22 @@ export default function EquipmentPage() {
                     required
                   >
                     {equipmentStatuses && equipmentStatuses.length > 0
-                      ? equipmentStatuses.map((status, index) => (
-                          <option key={String(status.code || status.name || status || index)} value={String(status.code || status.name || status)}>
-                            {String(status.name || status)}
-                          </option>
-                        ))
+                      ? equipmentStatuses.map((status, index) => {
+                          const statusValue = String(status.code || status.name || status)
+                          const statusText = statusValue === '가동중' ? t('equipment.operating') :
+                                           statusValue === '점검중' ? t('equipment.maintenance') :
+                                           statusValue === '셋업중' ? t('equipment.setup') :
+                                           String(status.name || status)
+                          return (
+                            <option key={String(status.code || status.name || status || index)} value={statusValue}>
+                              {statusText}
+                            </option>
+                          )
+                        })
                       : [
-                          <option key="가동중" value="가동중">가동중</option>,
-                          <option key="점검중" value="점검중">점검중</option>,
-                          <option key="셋업중" value="셋업중">셋업중</option>
+                          <option key="가동중" value="가동중">{t('equipment.operating')}</option>,
+                          <option key="점검중" value="점검중">{t('equipment.maintenance')}</option>,
+                          <option key="셋업중" value="셋업중">{t('equipment.setup')}</option>
                         ]
                     }
                   </select>
@@ -465,7 +484,7 @@ export default function EquipmentPage() {
                 {/* 모델 선택 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    생산 모델 <span className="text-red-500">*</span>
+                    {t('equipment.productionModel')} <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={addFormData.currentModel}
@@ -474,7 +493,7 @@ export default function EquipmentPage() {
                     disabled={isSubmitting}
                     required
                   >
-                    <option value="">모델 선택</option>
+                    <option value="">{t('equipment.selectModel')}</option>
                     {(availableModels.length > 0 ? availableModels : equipmentAvailableModels).map(model => (
                       <option key={model} value={model}>{model}</option>
                     ))}
@@ -484,7 +503,7 @@ export default function EquipmentPage() {
                 {/* 공정 선택 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    공정 <span className="text-red-500">*</span>
+                    {t('equipment.process')} <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={addFormData.process}
@@ -493,7 +512,7 @@ export default function EquipmentPage() {
                     disabled={isSubmitting}
                     required
                   >
-                    <option value="">공정 선택</option>
+                    <option value="">{t('equipment.selectProcess')}</option>
                     {(availableProcesses.length > 0 ? availableProcesses : equipmentAvailableProcesses).map(process => (
                       <option key={process} value={process}>{process}</option>
                     ))}
@@ -508,7 +527,7 @@ export default function EquipmentPage() {
                     className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
                     disabled={isSubmitting}
                   >
-                    취소
+                    {t('equipment.cancel')}
                   </button>
                   <button
                     type="submit"
@@ -518,7 +537,7 @@ export default function EquipmentPage() {
                     {isSubmitting && (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     )}
-                    {isSubmitting ? '추가 중...' : '설비 추가'}
+                    {isSubmitting ? t('equipment.adding') : t('equipment.addEquipment')}
                   </button>
                 </div>
               </form>
@@ -546,13 +565,13 @@ export default function EquipmentPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="text-4xl mb-4">⚠️</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">데이터 로드 오류</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('equipment.loadError')}</h3>
           <p className="text-gray-500 mb-4">{dataError}</p>
           <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
-            다시 시도
+            {t('equipment.retry')}
           </button>
         </div>
       </div>
@@ -619,8 +638,8 @@ export default function EquipmentPage() {
 
         {/* 로딩 인디케이터 */}
         <PageLoadingIndicator
-          message="설비 데이터를 불러오는 중..."
-          subMessage="잠시만 기다려주세요"
+          message={t('equipment.loadingData')}
+          subMessage={t('equipment.pleaseWait')}
           size="md"
         />
       </div>
@@ -641,49 +660,49 @@ export default function EquipmentPage() {
               🏭
             </div>
             <div>
-              <p className="text-sm text-gray-600">총 설비</p>
-              <p className="text-xl font-bold text-gray-900">{equipmentStats.total}대</p>
+              <p className="text-sm text-gray-600">{t('equipment.totalEquipment')}</p>
+              <p className="text-xl font-bold text-gray-900">{equipmentStats.total}{t('equipment.unit')}</p>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
               🟢
             </div>
             <div>
-              <p className="text-sm text-gray-600">가동설비</p>
+              <p className="text-sm text-gray-600">{t('equipment.operatingEquipment')}</p>
               <p className="text-xl font-bold text-green-600">
-                {equipmentStats.active}대
+                {equipmentStats.active}{t('equipment.unit')}
               </p>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
               🔧
             </div>
             <div>
-              <p className="text-sm text-gray-600">점검중</p>
+              <p className="text-sm text-gray-600">{t('equipment.maintenance')}</p>
               <p className="text-xl font-bold text-red-600">
-                {equipmentStats.maintenance}대
+                {equipmentStats.maintenance}{t('equipment.unit')}
               </p>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
               ⚙️
             </div>
             <div>
-              <p className="text-sm text-gray-600">셋업중</p>
+              <p className="text-sm text-gray-600">{t('equipment.setup')}</p>
               <p className="text-xl font-bold text-orange-600">
-                {equipmentStats.setup}대
+                {equipmentStats.setup}{t('equipment.unit')}
               </p>
             </div>
           </div>
@@ -694,14 +713,14 @@ export default function EquipmentPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 모델별 배치 현황 - CAM Sheet 데이터 기반 */}
         <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 모델별 설비 배치</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 {t('equipment.modelDistribution')}</h3>
           <div className="space-y-3">
             {(availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']).map(model => {
               const modelEquipments = equipments.filter(eq => eq.current_model === model)
               const aCount = modelEquipments.filter(eq => eq.location === 'A동').length
               const bCount = modelEquipments.filter(eq => eq.location === 'B동').length
               const total = modelEquipments.length
-              
+
               return (
                 <div key={model} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
@@ -709,13 +728,13 @@ export default function EquipmentPage() {
                       <span className="text-sm font-bold text-blue-600 text-center truncate px-1">{model}</span>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{model} 모델</p>
-                      <p className="text-sm text-gray-500">A동: {aCount}대 | B동: {bCount}대</p>
+                      <p className="font-medium text-gray-900">{model} {t('equipment.modelModel')}</p>
+                      <p className="text-sm text-gray-500">{t('equipment.locationA')}: {aCount}{t('equipment.unit')} | {t('equipment.locationB')}: {bCount}{t('equipment.unit')}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-gray-900">{total}대</p>
-                    <p className="text-xs text-gray-500">전체</p>
+                    <p className="text-lg font-bold text-gray-900">{total}{t('equipment.unit')}</p>
+                    <p className="text-xs text-gray-500">{t('equipment.total')}</p>
                   </div>
                 </div>
               )
@@ -725,7 +744,7 @@ export default function EquipmentPage() {
 
         {/* 공정별 배치 현황 - CAM Sheet 데이터 기반 */}
         <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">⚙️ 공정별 설비 배치</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">⚙️ {t('equipment.processDistribution')}</h3>
           <div className="space-y-3">
             {(availableProcesses.length > 0 ? availableProcesses : ['CNC1', 'CNC2', 'CNC2-1']).map(process => {
               const processEquipments = equipments.filter(eq => eq.process === process)
@@ -733,7 +752,7 @@ export default function EquipmentPage() {
               const bCount = processEquipments.filter(eq => eq.location === 'B동').length
               const total = processEquipments.length
               const activeCount = processEquipments.filter(eq => eq.status === '가동중').length
-              
+
               return (
                 <div key={process} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
@@ -741,15 +760,15 @@ export default function EquipmentPage() {
                       <span className="text-sm font-bold text-green-600 text-center truncate px-1">{process}</span>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{process} 공정</p>
+                      <p className="font-medium text-gray-900">{process} {t('equipment.processProcess')}</p>
                       <p className="text-sm text-gray-500">
-                        A동: {aCount}대 | B동: {bCount}대 | 가동: {activeCount}대
+                        {t('equipment.locationA')}: {aCount}{t('equipment.unit')} | {t('equipment.locationB')}: {bCount}{t('equipment.unit')} | {t('equipment.operatingStatus')}: {activeCount}{t('equipment.unit')}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-gray-900">{total}대</p>
-                    <p className="text-xs text-gray-500">전체</p>
+                    <p className="text-lg font-bold text-gray-900">{total}{t('equipment.unit')}</p>
+                    <p className="text-xs text-gray-500">{t('equipment.total')}</p>
                   </div>
                 </div>
               )
@@ -764,31 +783,31 @@ export default function EquipmentPage() {
           <div className="flex-1">
             <input
               type="text"
-              placeholder="설비번호, 모델, 현장, 공정 검색..."
+              placeholder={t('equipment.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <select 
+            <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">모든 상태</option>
-              <option value="가동중">가동중</option>
-              <option value="점검중">점검중</option>
-              <option value="셋업중">셋업중</option>
+              <option value="">{t('equipment.allStatus')}</option>
+              <option value="가동중">{t('equipment.operating')}</option>
+              <option value="점검중">{t('equipment.maintenance')}</option>
+              <option value="셋업중">{t('equipment.setup')}</option>
             </select>
           </div>
           <div>
-            <select 
+            <select
               value={modelFilter}
               onChange={(e) => setModelFilter(e.target.value)}
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">모든 모델</option>
+              <option value="">{t('equipment.allModel')}</option>
               {(availableModels.length > 0 ? availableModels : equipmentAvailableModels).map(model => (
                 <option key={model} value={model}>{model}</option>
               ))}
@@ -799,13 +818,13 @@ export default function EquipmentPage() {
             onClick={handleOpenAddModal}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 mr-2"
           >
-            + 설비 추가
+            + {t('equipment.addEquipment')}
           </button>
           <button
             onClick={() => setShowBulkUploadModal(true)}
             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
           >
-            📄 일괄 추가
+            📄 {t('equipment.bulkAdd')}
           </button>
         </div>
       </div>
@@ -814,10 +833,10 @@ export default function EquipmentPage() {
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">
-            설비 목록 ({filteredEquipments.length}개)
+            {t('equipment.equipmentList')} ({filteredEquipments.length}{t('equipment.items')})
           </h2>
           <p className="text-sm text-gray-500 mt-1">
-            페이지 {currentPage} / {totalPages} (1페이지당 {itemsPerPage}개)
+            {t('equipment.page')} {currentPage} {t('equipment.ofTotal')} {totalPages} (1{t('equipment.perPage')} {itemsPerPage}{t('equipment.items')})
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -827,7 +846,7 @@ export default function EquipmentPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     onClick={() => handleSort('equipment_number')}>
                   <div className="flex items-center">
-                    설비번호
+                    {t('equipment.equipmentNumber')}
                     <span className="ml-1">
                       {sortField === 'equipment_number' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </span>
@@ -836,7 +855,7 @@ export default function EquipmentPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     onClick={() => handleSort('location')}>
                   <div className="flex items-center">
-                    현장
+                    {t('equipment.site')}
                     <span className="ml-1">
                       {sortField === 'location' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </span>
@@ -845,7 +864,7 @@ export default function EquipmentPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     onClick={() => handleSort('status')}>
                   <div className="flex items-center">
-                    상태
+                    {t('equipment.status')}
                     <span className="ml-1">
                       {sortField === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </span>
@@ -854,7 +873,7 @@ export default function EquipmentPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     onClick={() => handleSort('current_model')}>
                   <div className="flex items-center">
-                    모델
+                    {t('equipment.model')}
                     <span className="ml-1">
                       {sortField === 'current_model' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </span>
@@ -863,17 +882,17 @@ export default function EquipmentPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     onClick={() => handleSort('process')}>
                   <div className="flex items-center">
-                    공정
+                    {t('equipment.process')}
                     <span className="ml-1">
                       {sortField === 'process' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </span>
                   </div>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  앤드밀 사용량
+                  {t('equipment.endmillUsage')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  작업
+                  {t('equipment.actions')}
                 </th>
               </tr>
             </thead>
@@ -902,7 +921,10 @@ export default function EquipmentPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(equipment.status)}`}>
                         <span className="mr-1">{getStatusIcon(equipment.status)}</span>
-                        {equipment.status}
+                        {equipment.status === '가동중' ? t('equipment.operating') :
+                         equipment.status === '점검중' ? t('equipment.maintenance') :
+                         equipment.status === '셋업중' ? t('equipment.setup') :
+                         equipment.status}
                       </span>
                     </td>
                     
@@ -978,22 +1000,23 @@ export default function EquipmentPage() {
                 disabled={currentPage === 1}
                 className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                이전
+                {t('equipment.previous')}
               </button>
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
                 className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                다음
+                {t('equipment.next')}
               </button>
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  총 <span className="font-medium">{filteredEquipments.length}</span>개 중{' '}
-                  <span className="font-medium">{startIndex + 1}</span>-
-                  <span className="font-medium">{Math.min(endIndex, filteredEquipments.length)}</span>개 표시
+                  {t('equipment.showing')} <span className="font-medium">{filteredEquipments.length}</span>{t('equipment.ofItems')}{' '}
+                  <span className="font-medium">{startIndex + 1}</span>
+                  {t('equipment.to')}
+                  <span className="font-medium">{Math.min(endIndex, filteredEquipments.length)}</span>{t('equipment.itemsDisplay')}
                 </p>
               </div>
               <div>
@@ -1051,8 +1074,8 @@ export default function EquipmentPage() {
       {/* 검색 결과가 없을 때 */}
       {filteredEquipments.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-gray-500">검색 조건에 맞는 설비가 없습니다.</p>
-          <button 
+          <p className="text-gray-500">{t('equipment.noMatchingEquipment')}</p>
+          <button
             onClick={() => {
               setSearchTerm('')
               setStatusFilter('')
@@ -1061,7 +1084,7 @@ export default function EquipmentPage() {
             }}
             className="mt-2 text-blue-600 hover:text-blue-800"
           >
-            필터 초기화
+            {t('equipment.filterReset')}
           </button>
         </div>
       )}
@@ -1072,8 +1095,8 @@ export default function EquipmentPage() {
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
             <div className="px-6 py-4 border-b">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">새 설비 추가</h3>
-                <button 
+                <h3 className="text-lg font-medium text-gray-900">{t('equipment.newEquipment')}</h3>
+                <button
                   onClick={() => setShowAddModal(false)}
                   className="text-gray-400 hover:text-gray-600"
                   disabled={isSubmitting}
@@ -1082,12 +1105,12 @@ export default function EquipmentPage() {
                 </button>
               </div>
             </div>
-            
+
             <form onSubmit={handleAddEquipment} className="p-6 space-y-4">
               {/* 설비번호 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  설비번호 <span className="text-red-500">*</span>
+                  {t('equipment.equipmentNumber')} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
@@ -1117,7 +1140,7 @@ export default function EquipmentPage() {
               {/* 위치 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  위치 <span className="text-red-500">*</span>
+                  {t('equipment.location')} <span className="text-red-500">*</span>
                 </label>
                                   <select
                     value={addFormData.location}
@@ -1128,11 +1151,13 @@ export default function EquipmentPage() {
                   >
                     {equipmentLocations && equipmentLocations.length > 0
                       ? equipmentLocations.map(location => (
-                          <option key={location} value={location}>{location}</option>
+                          <option key={location} value={location}>
+                            {location === 'A동' ? t('equipment.locationA') : location === 'B동' ? t('equipment.locationB') : location}
+                          </option>
                         ))
                       : [
-                          <option key="A동" value="A동">A동</option>,
-                          <option key="B동" value="B동">B동</option>
+                          <option key="A동" value="A동">{t('equipment.locationA')}</option>,
+                          <option key="B동" value="B동">{t('equipment.locationB')}</option>
                         ]
                     }
                   </select>
@@ -1141,7 +1166,7 @@ export default function EquipmentPage() {
               {/* 초기 상태 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  초기 상태 <span className="text-red-500">*</span>
+                  {t('equipment.initialStatus')} <span className="text-red-500">*</span>
                 </label>
                                   <select
                     value={addFormData.status}
@@ -1151,15 +1176,22 @@ export default function EquipmentPage() {
                     required
                   >
                     {equipmentStatuses && equipmentStatuses.length > 0
-                      ? equipmentStatuses.map((status, index) => (
-                          <option key={String(status.code || status.name || status || index)} value={String(status.code || status.name || status)}>
-                            {String(status.name || status)}
-                          </option>
-                        ))
+                      ? equipmentStatuses.map((status, index) => {
+                          const statusValue = String(status.code || status.name || status)
+                          const statusText = statusValue === '가동중' ? t('equipment.operating') :
+                                           statusValue === '점검중' ? t('equipment.maintenance') :
+                                           statusValue === '셋업중' ? t('equipment.setup') :
+                                           String(status.name || status)
+                          return (
+                            <option key={String(status.code || status.name || status || index)} value={statusValue}>
+                              {statusText}
+                            </option>
+                          )
+                        })
                       : [
-                          <option key="가동중" value="가동중">가동중</option>,
-                          <option key="점검중" value="점검중">점검중</option>,
-                          <option key="셋업중" value="셋업중">셋업중</option>
+                          <option key="가동중" value="가동중">{t('equipment.operating')}</option>,
+                          <option key="점검중" value="점검중">{t('equipment.maintenance')}</option>,
+                          <option key="셋업중" value="셋업중">{t('equipment.setup')}</option>
                         ]
                     }
                   </select>
@@ -1168,7 +1200,7 @@ export default function EquipmentPage() {
               {/* 모델 선택 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  생산 모델 <span className="text-red-500">*</span>
+                  {t('equipment.productionModel')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={addFormData.currentModel}
@@ -1177,7 +1209,7 @@ export default function EquipmentPage() {
                   disabled={isSubmitting}
                   required
                 >
-                  <option value="">모델 선택</option>
+                  <option value="">{t('equipment.selectModel')}</option>
                   {(availableModels.length > 0 ? availableModels : equipmentAvailableModels).map(model => (
                     <option key={model} value={model}>{model}</option>
                   ))}
@@ -1187,7 +1219,7 @@ export default function EquipmentPage() {
               {/* 공정 선택 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  공정 <span className="text-red-500">*</span>
+                  {t('equipment.process')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={addFormData.process}
@@ -1196,7 +1228,7 @@ export default function EquipmentPage() {
                   disabled={isSubmitting}
                   required
                 >
-                  <option value="">공정 선택</option>
+                  <option value="">{t('equipment.selectProcess')}</option>
                   {(availableProcesses.length > 0 ? availableProcesses : equipmentAvailableProcesses).map(process => (
                     <option key={process} value={process}>{process}</option>
                   ))}
@@ -1211,7 +1243,7 @@ export default function EquipmentPage() {
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
                   disabled={isSubmitting}
                 >
-                  취소
+                  {t('equipment.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -1221,7 +1253,7 @@ export default function EquipmentPage() {
                   {isSubmitting && (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   )}
-                  {isSubmitting ? '추가 중...' : '설비 추가'}
+                  {isSubmitting ? t('equipment.adding') : t('equipment.addEquipment')}
                 </button>
               </div>
             </form>
@@ -1236,7 +1268,7 @@ export default function EquipmentPage() {
             <div className="px-6 py-4 border-b">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-900">
-                  설비 상세 정보 - {editEquipment.equipmentNumber}
+                  {t('equipment.equipmentDetail')} - {editEquipment.equipmentNumber}
                 </h3>
                 <button
                   onClick={() => setShowEditModal(false)}
@@ -1253,7 +1285,7 @@ export default function EquipmentPage() {
                 {/* 설비번호 (읽기 전용) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    설비번호
+                    {t('equipment.equipmentNumber')}
                   </label>
                   <input
                     type="text"
@@ -1266,45 +1298,45 @@ export default function EquipmentPage() {
                 {/* 위치 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    위치
+                    {t('equipment.location')}
                   </label>
                   <select
                     value={editEquipment.location || ''}
                     onChange={(e) => setEditEquipment({...editEquipment, location: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="A동">A동</option>
-                    <option value="B동">B동</option>
+                    <option value="A동">{t('equipment.locationA')}</option>
+                    <option value="B동">{t('equipment.locationB')}</option>
                   </select>
                 </div>
 
                 {/* 상태 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    상태
+                    {t('equipment.status')}
                   </label>
                   <select
                     value={editEquipment.status || ''}
                     onChange={(e) => setEditEquipment({...editEquipment, status: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="가동중">가동중</option>
-                    <option value="점검중">점검중</option>
-                    <option value="셋업중">셋업중</option>
+                    <option value="가동중">{t('equipment.operating')}</option>
+                    <option value="점검중">{t('equipment.maintenance')}</option>
+                    <option value="셋업중">{t('equipment.setup')}</option>
                   </select>
                 </div>
 
                 {/* 모델 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    생산 모델
+                    {t('equipment.productionModel')}
                   </label>
                   <select
                     value={editEquipment.current_model || ''}
                     onChange={(e) => setEditEquipment({...editEquipment, current_model: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">모델 선택</option>
+                    <option value="">{t('equipment.selectModel')}</option>
                     {(availableModels.length > 0 ? availableModels : equipmentAvailableModels).map(model => (
                       <option key={model} value={model}>{model}</option>
                     ))}
@@ -1314,14 +1346,14 @@ export default function EquipmentPage() {
                 {/* 공정 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    공정
+                    {t('equipment.process')}
                   </label>
                   <select
                     value={editEquipment.process || ''}
                     onChange={(e) => setEditEquipment({...editEquipment, process: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">공정 선택</option>
+                    <option value="">{t('equipment.selectProcess')}</option>
                     {(availableProcesses.length > 0 ? availableProcesses : equipmentAvailableProcesses).map(process => (
                       <option key={process} value={process}>{process}</option>
                     ))}
@@ -1331,7 +1363,7 @@ export default function EquipmentPage() {
                 {/* 툴 포지션 수 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    툴 포지션 수
+                    {t('equipment.toolPositionCount')}
                   </label>
                   <input
                     type="text"
@@ -1347,13 +1379,13 @@ export default function EquipmentPage() {
                 <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                   {editEquipment.created_at && (
                     <div>
-                      <span className="font-medium">등록일:</span>{' '}
+                      <span className="font-medium">{t('equipment.registeredDate')}:</span>{' '}
                       {new Date(editEquipment.created_at).toLocaleDateString('ko-KR')}
                     </div>
                   )}
                   {editEquipment.updated_at && (
                     <div>
-                      <span className="font-medium">수정일:</span>{' '}
+                      <span className="font-medium">{t('equipment.modifiedDate')}:</span>{' '}
                       {new Date(editEquipment.updated_at).toLocaleDateString('ko-KR')}
                     </div>
                   )}
@@ -1367,13 +1399,13 @@ export default function EquipmentPage() {
                   onClick={() => setShowEditModal(false)}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                 >
-                  닫기
+                  {t('equipment.close')}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
-                  수정 저장
+                  {t('equipment.saveEdit')}
                 </button>
               </div>
             </form>

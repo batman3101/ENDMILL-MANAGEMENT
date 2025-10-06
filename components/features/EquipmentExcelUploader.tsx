@@ -9,6 +9,7 @@ import {
 } from '../../lib/utils/equipmentExcelTemplate'
 import { useToast } from '../shared/Toast'
 import { useCAMSheets } from '../../lib/hooks/useCAMSheets'
+import { useTranslation } from 'react-i18next'
 
 interface EquipmentExcelUploaderProps {
   onUploadSuccess: () => void
@@ -19,10 +20,12 @@ export default function EquipmentExcelUploader({
   onUploadSuccess,
   onCancel
 }: EquipmentExcelUploaderProps) {
+  const { t } = useTranslation()
   const [isUploading, setIsUploading] = useState(false)
   const [parsedData, setParsedData] = useState<EquipmentExcelData[]>([])
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [uploadResults, setUploadResults] = useState<any>(null)
+  const [selectedFileName, setSelectedFileName] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { showSuccess, showError } = useToast()
 
@@ -44,20 +47,26 @@ export default function EquipmentExcelUploader({
         downloadEquipmentTemplate()
       }
 
-      showSuccess('템플릿 다운로드', '엑셀 템플릿이 다운로드되었습니다.')
+      showSuccess(t('equipment.downloadTemplate'), t('equipment.templateDownloaded'))
     } catch (error) {
-      showError('다운로드 실패', '템플릿 다운로드에 실패했습니다.')
+      showError(t('equipment.downloadFailed'), t('equipment.downloadFailedMsg'))
     }
   }
 
   // 파일 선택 처리
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file) {
+      setSelectedFileName('')
+      return
+    }
+
+    setSelectedFileName(file.name)
 
     // 파일 타입 체크
     if (!file.name.match(/\.(xlsx|xls)$/)) {
-      showError('파일 형식 오류', '엑셀 파일(.xlsx, .xls)만 업로드 가능합니다.')
+      showError(t('equipment.fileFormatError'), t('equipment.excelFileOnly'))
+      setSelectedFileName('')
       return
     }
 
@@ -66,12 +75,12 @@ export default function EquipmentExcelUploader({
       const data = await parseEquipmentExcel(file)
 
       if (data.length === 0) {
-        showError('데이터 없음', '엑셀 파일에 데이터가 없습니다.')
+        showError(t('equipment.noData'), t('equipment.excelNoData'))
         return
       }
 
       if (data.length > 100) {
-        showError('데이터 초과', '한 번에 최대 100개까지만 등록 가능합니다.')
+        showError(t('equipment.dataExceed'), t('equipment.maxHundred'))
         return
       }
 
@@ -87,10 +96,10 @@ export default function EquipmentExcelUploader({
       // 유효성 검사 통과
       setValidationErrors([])
       setParsedData(data)
-      showSuccess('파일 검증 완료', `${data.length}개의 설비 데이터가 확인되었습니다.`)
+      showSuccess(t('equipment.fileValidationComplete'), `${data.length}${t('equipment.dataConfirmed')}`)
 
     } catch (error) {
-      showError('파일 읽기 실패', error instanceof Error ? error.message : '파일을 읽을 수 없습니다.')
+      showError(t('equipment.fileReadError'), error instanceof Error ? error.message : t('equipment.cannotReadFile'))
       setParsedData([])
       setValidationErrors([])
     }
@@ -99,7 +108,7 @@ export default function EquipmentExcelUploader({
   // 데이터 업로드
   const handleUpload = async () => {
     if (parsedData.length === 0) {
-      showError('데이터 없음', '업로드할 데이터가 없습니다.')
+      showError(t('equipment.noData'), t('equipment.noUploadData'))
       return
     }
 
@@ -116,13 +125,13 @@ export default function EquipmentExcelUploader({
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || '업로드에 실패했습니다.')
+        throw new Error(result.error || t('equipment.uploadFailed'))
       }
 
       setUploadResults(result.results)
 
       if (result.success) {
-        showSuccess('업로드 완료', result.message)
+        showSuccess(t('equipment.uploadComplete'), result.message)
 
         // 성공한 항목이 있으면 3초 후 모달 닫기
         if (result.results.success.length > 0) {
@@ -133,7 +142,7 @@ export default function EquipmentExcelUploader({
       }
 
     } catch (error) {
-      showError('업로드 실패', error instanceof Error ? error.message : '업로드에 실패했습니다.')
+      showError(t('equipment.uploadFailed'), error instanceof Error ? error.message : t('equipment.uploadFailed'))
     } finally {
       setIsUploading(false)
     }
@@ -144,6 +153,7 @@ export default function EquipmentExcelUploader({
     setParsedData([])
     setValidationErrors([])
     setUploadResults(null)
+    setSelectedFileName('')
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -156,7 +166,7 @@ export default function EquipmentExcelUploader({
         <div className="px-6 py-4 border-b bg-gray-50">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">
-              설비 일괄 등록
+              {t('equipment.bulkRegistration')}
             </h3>
             <button
               onClick={onCancel}
@@ -177,57 +187,75 @@ export default function EquipmentExcelUploader({
                 <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
                   1
                 </div>
-                <span className="ml-2 text-sm font-medium">템플릿 다운로드</span>
+                <span className="ml-2 text-sm font-medium">{t('equipment.templateDownloadStep')}</span>
               </div>
               <div className="flex items-center">
                 <div className={`w-8 h-8 ${parsedData.length > 0 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'} rounded-full flex items-center justify-center font-semibold`}>
                   2
                 </div>
-                <span className="ml-2 text-sm font-medium">파일 업로드</span>
+                <span className="ml-2 text-sm font-medium">{t('equipment.fileUploadStep')}</span>
               </div>
               <div className="flex items-center">
                 <div className={`w-8 h-8 ${uploadResults ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'} rounded-full flex items-center justify-center font-semibold`}>
                   3
                 </div>
-                <span className="ml-2 text-sm font-medium">등록 완료</span>
+                <span className="ml-2 text-sm font-medium">{t('equipment.registrationCompleteStep')}</span>
               </div>
             </div>
           </div>
 
           {/* 1. 템플릿 다운로드 */}
           <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">1. 엑셀 템플릿 다운로드</h4>
+            <h4 className="font-medium text-gray-900 mb-2">1. {t('equipment.downloadExcelTemplate')}</h4>
             <p className="text-sm text-gray-600 mb-3">
-              먼저 템플릿을 다운로드하여 양식에 맞게 데이터를 작성해주세요.
+              {t('equipment.downloadTemplateDesc')}
             </p>
             <button
               onClick={handleDownloadTemplate}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              📥 템플릿 다운로드
+              📥 {t('equipment.templateDownloadStep')}
             </button>
           </div>
 
           {/* 2. 파일 업로드 */}
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">2. 작성한 엑셀 파일 업로드</h4>
+            <h4 className="font-medium text-gray-900 mb-2">2. {t('equipment.uploadExcelFile')}</h4>
             <p className="text-sm text-gray-600 mb-3">
-              템플릿에 데이터를 입력한 후 파일을 선택해주세요.
+              {t('equipment.uploadFileDesc')}
             </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileSelect}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              disabled={isUploading}
-            />
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="equipment-excel-upload"
+                disabled={isUploading}
+              />
+              <label
+                htmlFor="equipment-excel-upload"
+                className="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-semibold rounded-md border-0 cursor-pointer hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                📁 {t('equipment.selectFile')}
+              </label>
+              {selectedFileName ? (
+                <span className="ml-3 text-sm text-gray-600">
+                  {selectedFileName}
+                </span>
+              ) : (
+                <span className="ml-3 text-sm text-gray-400">
+                  {t('equipment.noFileSelected')}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* 유효성 검사 오류 */}
           {validationErrors.length > 0 && (
             <div className="mb-6 p-4 bg-red-50 rounded-lg">
-              <h4 className="font-medium text-red-900 mb-2">❌ 데이터 검증 실패</h4>
+              <h4 className="font-medium text-red-900 mb-2">❌ {t('equipment.validationFailed')}</h4>
               <div className="max-h-40 overflow-y-auto">
                 <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
                   {validationErrors.map((error, index) => (
@@ -242,17 +270,17 @@ export default function EquipmentExcelUploader({
           {parsedData.length > 0 && validationErrors.length === 0 && !uploadResults && (
             <div className="mb-6">
               <h4 className="font-medium text-gray-900 mb-2">
-                데이터 미리보기 ({parsedData.length}개)
+                {t('equipment.dataPreview')} ({parsedData.length}{t('equipment.items')})
               </h4>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">설비번호</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">위치</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">생산모델</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">공정</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('equipment.equipmentNumber')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('equipment.location')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('equipment.status')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('equipment.productionModel')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('equipment.process')}</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -338,14 +366,14 @@ export default function EquipmentExcelUploader({
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                   disabled={isUploading}
                 >
-                  초기화
+                  {t('equipment.reset')}
                 </button>
                 <button
                   onClick={onCancel}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                   disabled={isUploading}
                 >
-                  취소
+                  {t('equipment.cancel')}
                 </button>
                 <button
                   onClick={handleUpload}
@@ -355,7 +383,7 @@ export default function EquipmentExcelUploader({
                   {isUploading && (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   )}
-                  {isUploading ? '업로드 중...' : '등록하기'}
+                  {isUploading ? t('equipment.uploading') : t('equipment.uploadStart')}
                 </button>
               </>
             )}
@@ -364,7 +392,7 @@ export default function EquipmentExcelUploader({
                 onClick={onCancel}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
-                닫기
+                {t('equipment.close')}
               </button>
             )}
           </div>

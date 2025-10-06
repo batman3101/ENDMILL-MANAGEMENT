@@ -282,15 +282,15 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-3">
               <div className="text-xs text-gray-500">
-                {t('reports.monthlyReport')} (이전): {formatVND(data?.costAnalysis?.lastMonth || 0)}
+                {t('reports.monthlyReport')} ({t('dashboard.previous')}): {formatVND(data?.costAnalysis?.lastMonth || 0)}
               </div>
               <div className="text-xs text-gray-500">
-                {t('reports.monthlyReport')} (현재): {formatVND(data?.costAnalysis?.currentMonth || 0)}
+                {t('reports.monthlyReport')} ({t('dashboard.current')}): {formatVND(data?.costAnalysis?.currentMonth || 0)}
               </div>
               <div className={`text-sm font-semibold ${
                 (data?.costAnalysis?.savings || 0) >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
-                절감액: {formatVND(data?.costAnalysis?.savings || 0)}
+                {t('dashboard.savings')}: {formatVND(data?.costAnalysis?.savings || 0)}
                 ({data?.costAnalysis?.savingsPercent || 0}%)
               </div>
               <div className="mt-3 h-2 bg-gray-200 rounded">
@@ -418,9 +418,9 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-500">{t('dashboard.pieceCount')} {t('common.success')}</p>
             <div className="mt-3 flex justify-between text-xs">
               <span className={`${getTrendColor(data?.toolChanges?.trend || '+8')}`}>
-                {getTrendIcon(data?.toolChanges?.trend || '0')} 전일 대비 {data?.toolChanges?.trend || '0'}
+                {getTrendIcon(data?.toolChanges?.trend || '0')} {t('dashboard.vsPreviousDay')} {data?.toolChanges?.trend || '0'}
               </span>
-              <span className="text-gray-500">목표: {data?.toolChanges?.target || 0}{t('dashboard.pieceCount')}</span>
+              <span className="text-gray-500">{t('dashboard.target')}: {data?.toolChanges?.target || 0}{t('dashboard.pieceCount')}</span>
             </div>
           </div>
         </div>
@@ -445,34 +445,58 @@ export default function DashboardPage() {
         <div className="px-6 py-4">
           {data?.recentAlerts && data.recentAlerts.length > 0 ? (
             <div className="space-y-3">
-              {data.recentAlerts.map((alert: any, index: number) => (
-                <div key={index} className={`flex items-start p-4 bg-${alert.color}-50 rounded-lg border border-${alert.color}-200`}>
-                  <div className="flex-shrink-0 mt-1">
-                    <div className={`w-3 h-3 bg-${alert.color}-400 rounded-full ${alert.severity === 'high' || alert.severity === 'warning' ? 'animate-pulse' : ''}`}></div>
-                  </div>
-                  <div className="ml-4 flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-gray-900">{alert.title}</p>
-                      <span className={`text-xs text-${alert.color}-600 font-medium`}>
-                        {alert.severity === 'high' ? t('camSheets.high') : alert.severity === 'warning' ? t('common.warning') : alert.severity === 'medium' ? t('camSheets.medium') : t('common.info')}
-                      </span>
+              {data.recentAlerts.map((alert: any, index: number) => {
+                // 제목과 메시지 생성
+                let title = ''
+                let message = ''
+
+                if (alert.type === 'abnormal_wear') {
+                  title = t('dashboard.abnormalWear')
+                  message = `${alert.equipmentNumber || 'Unknown'} ${t('equipment.title')} T${alert.tNumber} - ${t('dashboard.wearMessage')} (${alert.actualLife}${t('dashboard.productionAfter')}, ${t('dashboard.standard')}: ${alert.standardLife}${t('dashboard.pieceCount')})`
+                } else if (alert.type === 'abnormal_damage') {
+                  title = t('dashboard.abnormalDamage')
+                  message = `${alert.equipmentNumber || 'Unknown'} ${t('equipment.title')} T${alert.tNumber} - ${t('dashboard.damageMessage')}`
+                } else if (alert.type === 'low_stock') {
+                  title = `${t('inventory.critical')} ${t('common.warning')}`
+                  message = `${alert.endmillCode || 'Unknown'} ${alert.endmillName || ''} - ${t('inventory.stockStatus')} ${alert.currentStock}${t('dashboard.pieceCount')} (${t('dashboard.minStock')} ${alert.minStock}${t('dashboard.pieceCount')})`
+                } else if (alert.type === 'trend_increase') {
+                  title = t('dashboard.trendIncrease')
+                  message = `${t('dashboard.trendMessage')} - ${t('dashboard.recentDays')} ${alert.recentCount}${t('dashboard.cases')} (${t('dashboard.vsLastWeek')} +${alert.increase}%)`
+                }
+
+                const timeText = alert.minutesAgo < 60
+                  ? `${alert.minutesAgo}${t('dashboard.minute')} ${t('dashboard.ago')}`
+                  : `${Math.floor(alert.minutesAgo / 60)}${t('dashboard.hour')} ${t('dashboard.ago')}`
+
+                return (
+                  <div key={index} className={`flex items-start p-4 bg-${alert.color}-50 rounded-lg border border-${alert.color}-200`}>
+                    <div className="flex-shrink-0 mt-1">
+                      <div className={`w-3 h-3 bg-${alert.color}-400 rounded-full ${alert.severity === 'high' || alert.severity === 'warning' ? 'animate-pulse' : ''}`}></div>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{alert.message}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-gray-500">{alert.time}</span>
-                      <button className={`text-xs text-${alert.color}-600 hover:text-${alert.color}-800 font-medium`}>
-                        {alert.severity === 'high' ? `${t('common.detail')} ${t('common.view')} →` : alert.type === 'low_stock' ? '주문하기 →' : `${t('common.view')} →`}
-                      </button>
+                    <div className="ml-4 flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-gray-900">{title}</p>
+                        <span className={`text-xs text-${alert.color}-600 font-medium`}>
+                          {alert.severity === 'high' ? t('camSheets.high') : alert.severity === 'warning' ? t('common.warning') : alert.severity === 'medium' ? t('camSheets.medium') : t('common.info')}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">{message}</p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-gray-500">{timeText}</span>
+                        <button className={`text-xs text-${alert.color}-600 hover:text-${alert.color}-800 font-medium`}>
+                          {alert.type === 'low_stock' ? `${t('dashboard.orderAction')} →` : alert.type === 'abnormal_damage' ? `${t('dashboard.confirmAction')} →` : `${t('common.detail')} ${t('common.view')} →`}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div className="flex items-center justify-center h-32 text-gray-400">
               <div className="text-center">
                 <p className="text-sm">{t('common.noData')}</p>
-                <p className="text-xs mt-1">표시할 알림이 없습니다</p>
+                <p className="text-xs mt-1">{t('dashboard.noAlerts')}</p>
               </div>
             </div>
           )}

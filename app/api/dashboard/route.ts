@@ -471,9 +471,11 @@ async function getRecentAlerts(supabase: any) {
         alerts.push({
           type: 'abnormal_wear',
           severity: 'high',
-          title: '비정상 마모 감지',
-          message: `${change.equipment_number || 'Unknown'} 설비 T${change.t_number} - 표준 대비 빠른 마모율 (${actualLife}개 생산 후 교체, 표준: ${standardLife}개)`,
-          time: minutesAgo < 60 ? `${minutesAgo}분 전` : `${Math.floor(minutesAgo / 60)}시간 전`,
+          equipmentNumber: change.equipment_number,
+          tNumber: change.t_number,
+          actualLife,
+          standardLife,
+          minutesAgo,
           color: 'red'
         })
         break // 첫 번째만 추가
@@ -495,9 +497,9 @@ async function getRecentAlerts(supabase: any) {
     alerts.push({
       type: 'abnormal_damage',
       severity: 'warning',
-      title: '비정상 파손 감지',
-      message: `${change.equipment_number || 'Unknown'} 설비 T${change.t_number} - 갑작스러운 공구 파손 의심 (즉시 확인 필요)`,
-      time: minutesAgo < 60 ? `${minutesAgo}분 전` : `${Math.floor(minutesAgo / 60)}시간 전`,
+      equipmentNumber: change.equipment_number,
+      tNumber: change.t_number,
+      minutesAgo,
       color: 'orange'
     })
   }
@@ -516,9 +518,11 @@ async function getRecentAlerts(supabase: any) {
     alerts.push({
       type: 'low_stock',
       severity: 'medium',
-      title: '재고 부족 경보',
-      message: `${item.endmill_types?.code || 'Unknown'} ${item.endmill_types?.name || ''} - 재고상태 ${item.current_stock}개 (최소 재고 ${item.min_stock}개)`,
-      time: minutesAgo < 60 ? `${minutesAgo}분 전` : `${Math.floor(minutesAgo / 60)}시간 전`,
+      endmillCode: item.endmill_types?.code,
+      endmillName: item.endmill_types?.name,
+      currentStock: item.current_stock,
+      minStock: item.min_stock,
+      minutesAgo,
       color: 'yellow'
     })
   }
@@ -549,9 +553,9 @@ async function getRecentAlerts(supabase: any) {
       alerts.push({
         type: 'trend_increase',
         severity: 'info',
-        title: '최근 증가 교체사유',
-        message: `파손 사유 교체 증가 추세 - 최근 7일간 ${recentCount}건 (전주 대비 +${increase}%)`,
-        time: '1시간 전',
+        recentCount,
+        increase,
+        minutesAgo: 60, // 1시간 전으로 고정
         color: 'blue'
       })
     }

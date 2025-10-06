@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 // 설비 상태 타입
 type EquipmentStatus = '가동중' | '점검중' | '셋업중'
@@ -29,6 +30,7 @@ export default function StatusChangeDropdown({
   equipmentNumber,
   onStatusChange
 }: StatusChangeDropdownProps) {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -68,65 +70,65 @@ export default function StatusChangeDropdown({
       '가동중': [
         {
           status: '점검중',
-          label: '점검 시작',
+          label: t('equipment.inspectionStart'),
           icon: '🔧',
           color: 'text-red-700',
           bgColor: 'bg-red-50',
           borderColor: 'border-red-200',
-          description: '가동을 중단하고 점검 모드로 전환'
+          description: t('equipment.stopAndInspection')
         },
         {
           status: '셋업중',
-          label: '셋업 시작',
+          label: t('equipment.setupStart'),
           icon: '⚙️',
           color: 'text-purple-700',
           bgColor: 'bg-purple-50',
           borderColor: 'border-purple-200',
-          description: '가동을 중단하고 셋업 모드로 전환'
+          description: t('equipment.stopAndSetup')
         }
       ],
       '점검중': [
         {
           status: '가동중',
-          label: '가동 재시작',
+          label: t('equipment.operationRestart'),
           icon: '▶️',
           color: 'text-green-700',
           bgColor: 'bg-green-50',
           borderColor: 'border-green-200',
-          description: '점검 완료 후 정상 가동으로 복귀'
+          description: t('equipment.inspectionComplete')
         },
         {
           status: '셋업중',
-          label: '셋업 전환',
+          label: t('equipment.setupSwitch'),
           icon: '⚙️',
           color: 'text-purple-700',
           bgColor: 'bg-purple-50',
           borderColor: 'border-purple-200',
-          description: '점검에서 셋업 모드로 전환'
+          description: t('equipment.inspectionToSetup')
         }
       ],
       '셋업중': [
         {
           status: '가동중',
-          label: '가동 시작',
+          label: t('equipment.operationStart'),
           icon: '▶️',
           color: 'text-green-700',
           bgColor: 'bg-green-50',
           borderColor: 'border-green-200',
-          description: '셋업 완료 후 정상 가동 시작'
+          description: t('equipment.setupComplete')
         },
         {
           status: '점검중',
-          label: '점검 전환',
+          label: t('equipment.inspectionSwitch'),
           icon: '🔧',
           color: 'text-red-700',
           bgColor: 'bg-red-50',
           borderColor: 'border-red-200',
-          description: '셋업에서 점검 모드로 전환'
+          description: t('equipment.setupToInspection')
         }
       ]
     }
-    
+
     return allTransitions[current] || []
   }
 
@@ -167,11 +169,16 @@ export default function StatusChangeDropdown({
         type="button"
       >
         <span className="text-base">{currentStyle.icon}</span>
-        <span className="flex-1">{currentStatus}</span>
-        <svg 
+        <span className="flex-1">
+          {currentStatus === '가동중' ? t('equipment.operating') :
+           currentStatus === '점검중' ? t('equipment.maintenance') :
+           currentStatus === '셋업중' ? t('equipment.setup') :
+           currentStatus}
+        </span>
+        <svg
           className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-          fill="none" 
-          stroke="currentColor" 
+          fill="none"
+          stroke="currentColor"
           viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -185,10 +192,10 @@ export default function StatusChangeDropdown({
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <span className="text-base">🏭</span>
               <span className="font-medium">{equipmentNumber}</span>
-              <span>상태 변경</span>
+              <span>{t('equipment.statusChange')}</span>
             </div>
           </div>
-          
+
           <div className="p-2">
             {availableTransitions.length > 0 ? (
               <div className="space-y-1">
@@ -227,15 +234,15 @@ export default function StatusChangeDropdown({
               </div>
             ) : (
               <div className="p-4 text-center text-gray-500 text-sm">
-                현재 상태에서 전환 가능한 옵션이 없습니다.
+                {t('equipment.noTransitionAvailable')}
               </div>
             )}
           </div>
-          
+
           <div className="p-3 border-t border-gray-100 bg-gray-50 rounded-b-lg">
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span>💡</span>
-              <span>상태 변경 시 승인 절차가 진행됩니다</span>
+              <span>{t('equipment.approvalRequired')}</span>
             </div>
           </div>
         </div>
