@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useToast } from '../shared/Toast'
 
 interface EndmillFormData {
@@ -27,6 +28,7 @@ interface EndmillFormProps {
 // 모든 옵션들은 Supabase에서 동적으로 로드됩니다
 
 export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFormProps) {
+  const { t } = useTranslation()
   const [formData, setFormData] = useState<EndmillFormData>({
     code: '',
     category: '',
@@ -134,27 +136,27 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
     const newErrors: Record<string, string> = {}
 
     if (!formData.code.trim()) {
-      newErrors.code = '엔드밀 코드는 필수입니다.'
+      newErrors.code = t('endmill.endmillCodeError')
     } else if (!/^[A-Z0-9-]+$/.test(formData.code)) {
-      newErrors.code = '엔드밀 코드는 영문 대문자, 숫자, 하이픈만 사용 가능합니다.'
+      newErrors.code = t('endmill.endmillCodeFormatError')
     }
 
     if (!formData.category) {
-      newErrors.category = '카테고리를 선택해주세요.'
+      newErrors.category = t('endmill.categoryError')
     }
 
     if (!formData.name.trim()) {
-      newErrors.name = '엔드밀 이름은 필수입니다.'
+      newErrors.name = t('endmill.endmillNameError')
     }
 
 
 
     if (formData.unitCost <= 0) {
-      newErrors.unitCost = '단가는 0보다 큰 숫자여야 합니다.'
+      newErrors.unitCost = t('endmill.unitCostError')
     }
 
     if (formData.standardLife <= 0) {
-      newErrors.standardLife = '표준 수명은 0보다 큰 숫자여야 합니다.'
+      newErrors.standardLife = t('endmill.standardLifeError')
     }
 
     setErrors(newErrors)
@@ -166,7 +168,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
     e.preventDefault()
 
     if (!validateForm()) {
-      showError('입력 오류', '모든 필수 필드를 올바르게 입력해주세요.')
+      showError(t('endmill.inputError'), t('endmill.inputErrorMessage'))
       return
     }
 
@@ -198,16 +200,16 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
       const result = await response.json()
 
       if (response.ok && result.success) {
-        showSuccess('등록 완료', '엔드밀이 성공적으로 등록되었습니다.')
+        showSuccess(t('endmill.registerSuccess'), t('endmill.registerSuccessMessage'))
         onSuccess?.(result.data)
         onClose()
       } else {
-        throw new Error(result.error || '등록 실패')
+        throw new Error(result.error || t('endmill.registerFailed'))
       }
     } catch (error) {
       console.error('엔드밀 등록 오류:', error)
-      const errorMessage = error instanceof Error ? error.message : '엔드밀 등록 중 오류가 발생했습니다.'
-      showError('등록 실패', errorMessage)
+      const errorMessage = error instanceof Error ? error.message : t('endmill.registerError')
+      showError(t('endmill.registerFailed'), errorMessage)
     } finally {
       setLoading(false)
     }
@@ -218,7 +220,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
       <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b flex items-center justify-between">
           <h3 className="text-lg font-medium">
-            {editData ? '엔드밀 수정' : '신규 엔드밀 등록'}
+            {editData ? t('endmill.editEndmillTitle') : t('endmill.newEndmillTitle')}
           </h3>
           <button
             onClick={onClose}
@@ -232,13 +234,13 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
           {/* 엔드밀 코드 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              엔드밀 코드 <span className="text-red-500">*</span>
+              {t('endmill.endmillCodeRequired')} <span className="text-red-500">{t('endmill.required')}</span>
             </label>
             <input
               type="text"
               value={formData.code}
               onChange={(e) => handleInputChange('code', e.target.value.toUpperCase())}
-              placeholder="예: EM-F-12"
+              placeholder={t('endmill.endmillCodePlaceholder')}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.code ? 'border-red-500' : 'border-gray-300'
               }`}
@@ -250,7 +252,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
           {/* 카테고리 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              카테고리 <span className="text-red-500">*</span>
+              {t('endmill.categoryRequired')} <span className="text-red-500">{t('endmill.required')}</span>
             </label>
             <select
               value={formData.category}
@@ -260,7 +262,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
               }`}
               disabled={loading}
             >
-              <option value="">카테고리를 선택하세요</option>
+              <option value="">{t('endmill.categoryPlaceholder')}</option>
               {categories.map(category => (
                 <option key={category.code} value={category.code}>
                   {category.name_ko} - {category.description}
@@ -273,13 +275,13 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
           {/* 엔드밀 이름 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              엔드밀 이름 <span className="text-red-500">*</span>
+              {t('endmill.endmillNameRequired')} <span className="text-red-500">{t('endmill.required')}</span>
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="예: FLAT 12mm 2날"
+              placeholder={t('endmill.endmillNamePlaceholder')}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.name ? 'border-red-500' : 'border-gray-300'
               }`}
@@ -295,7 +297,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  단가 (VND) <span className="text-red-500">*</span>
+                  {t('endmill.unitCostRequired')} <span className="text-red-500">{t('endmill.required')}</span>
                 </label>
                 <input
                   type="number"
@@ -313,7 +315,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  표준 수명 (회) <span className="text-red-500">*</span>
+                  {t('endmill.standardLifeRequired')} <span className="text-red-500">{t('endmill.required')}</span>
                 </label>
                 <input
                   type="number"
@@ -335,39 +337,39 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
           {/* 공급업체별 가격 정보 섹션 */}
           <div className="border-t pt-6">
             <div className="flex justify-between items-center mb-4">
-              <h4 className="text-md font-medium text-gray-900">공급업체별 가격 정보</h4>
+              <h4 className="text-md font-medium text-gray-900">{t('endmill.supplierPriceInfo')}</h4>
               <button
                 type="button"
                 onClick={() => setShowSupplierSection(!showSupplierSection)}
                 className="text-sm text-blue-600 hover:text-blue-800"
               >
-                {showSupplierSection ? '숨기기' : '추가하기'}
+                {showSupplierSection ? t('endmill.hideButton') : t('endmill.addButton')}
               </button>
             </div>
 
             {showSupplierSection && (
               <div className="space-y-4">
                 <div className="text-sm text-gray-600 mb-4">
-                  공급업체별로 다른 단가와 조건을 입력할 수 있습니다. (선택사항)
+                  {t('endmill.supplierPriceDescription')}
                 </div>
 
                 {supplierPrices.map((price, index) => (
                   <div key={index} className="bg-gray-50 p-4 rounded-lg border">
                     <div className="flex justify-between items-start mb-3">
-                      <h5 className="text-sm font-medium text-gray-700">공급업체 {index + 1}</h5>
+                      <h5 className="text-sm font-medium text-gray-700">{t('endmill.supplierNumber')} {index + 1}</h5>
                       <button
                         type="button"
                         onClick={() => removeSupplierPrice(index)}
                         className="text-red-600 hover:text-red-800 text-sm"
                       >
-                        삭제
+                        {t('endmill.deleteButton')}
                       </button>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="col-span-2">
                         <label className="block text-xs font-medium text-gray-700 mb-1">
-                          공급업체 선택
+                          {t('endmill.selectSupplier')}
                         </label>
                         <select
                           value={price.supplier_id}
@@ -375,7 +377,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                           disabled={loading}
                         >
-                          <option value="">공급업체를 선택하세요</option>
+                          <option value="">{t('endmill.selectSupplierPlaceholder')}</option>
                           {suppliers.map(supplier => (
                             <option key={supplier.id} value={supplier.id}>
                               {supplier.name} ({supplier.code})
@@ -386,7 +388,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
 
                       <div className="col-span-2">
                         <label className="block text-xs font-medium text-gray-700 mb-1">
-                          단가 (VND)
+                          {t('endmill.supplierUnitPrice')}
                         </label>
                         <input
                           type="number"
@@ -396,7 +398,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                           step="1000"
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                           disabled={loading || !price.supplier_id}
-                          placeholder={!price.supplier_id ? '공급업체를 먼저 선택하세요' : ''}
+                          placeholder={!price.supplier_id ? t('endmill.selectSupplierFirst') : ''}
                         />
                       </div>
                     </div>
@@ -409,7 +411,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                   className="w-full px-4 py-2 text-sm text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 disabled:opacity-50"
                   disabled={loading}
                 >
-                  + 공급업체 추가
+                  {t('endmill.addSupplierButton')}
                 </button>
               </div>
             )}
@@ -423,14 +425,14 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
               className="px-4 py-2 text-gray-700 bg-gray-300 rounded-lg hover:bg-gray-400 disabled:opacity-50"
               disabled={loading}
             >
-              취소
+              {t('endmill.cancelButton')}
             </button>
             <button
               type="submit"
               className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading}
             >
-              {loading ? '등록 중...' : (editData ? '수정' : '등록')}
+              {loading ? t('endmill.submitting') : (editData ? t('endmill.editButton') : t('endmill.submitButton'))}
             </button>
           </div>
         </form>

@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     const mergedData = toolChanges.map(tc => ({
       ...tc,
-      endmill_types: endmillMap.get(tc.endmill_code) || null
+      endmill_types: endmillMap.get(tc.endmill_code ?? '') || null
     }))
 
     // 4. 엔드밀 카테고리 필터 적용
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     const costByModelMap = groupBy(changes, 'model' as any)
     const costByModel = Array.from(costByModelMap.entries())
       .map(([model, items]: [any, any]) => {
-        const cost = sumBy(items, 'unitCost' as any)
+        const cost = items.reduce((sum: number, item: any) => sum + (item.unitCost || 0), 0)
         return {
           model,
           totalCost: Math.round(cost),
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
     const costByCategoryMap = groupBy(changes, 'category' as any)
     const costByCategory = Array.from(costByCategoryMap.entries())
       .map(([category, items]: [any, any]) => {
-        const cost = sumBy(items, 'unitCost' as any)
+        const cost = items.reduce((sum: number, item: any) => sum + (item.unitCost || 0), 0)
         return {
           category,
           totalCost: Math.round(cost),

@@ -80,8 +80,8 @@ export async function POST(request: NextRequest) {
 
     const mergedData = toolChanges.map(tc => ({
       ...tc,
-      endmill_types: endmillMap.get(tc.endmill_code) || null,
-      user_profiles: userMap.get(tc.changed_by) || null
+      endmill_types: endmillMap.get(tc.endmill_code ?? '') || null,
+      user_profiles: userMap.get(tc.changed_by ?? '') || null
     }))
 
 
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
       .map(([date, items]: [any, any]) => ({
         date,
         count: items.length,
-        cost: sumBy(items, 'unitCost' as any)
+        cost: items.reduce((sum: number, item: any) => sum + (item.unitCost || 0), 0)
       }))
       .sort((a, b) => a.date.localeCompare(b.date))
 
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
       .map(([model, items]: [any, any]) => ({
         model: model || '미지정',
         count: items.length,
-        cost: sumBy(items, 'unitCost' as any),
+        cost: items.reduce((sum: number, item: any) => sum + (item.unitCost || 0), 0),
         percentage: calculatePercentage(items.length, totalChanges)
       }))
       .sort((a, b) => b.count - a.count)
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
       .map(([category, items]: [any, any]) => ({
         category,
         count: items.length,
-        cost: sumBy(items, 'unitCost' as any),
+        cost: items.reduce((sum: number, item: any) => sum + (item.unitCost || 0), 0),
         percentage: calculatePercentage(items.length, totalChanges)
       }))
       .sort((a, b) => b.count - a.count)

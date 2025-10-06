@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createCustomConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
@@ -40,6 +41,7 @@ interface EndmillInstance {
 // 실제 데이터베이스에서 앤드밀 인스턴스 데이터를 가져오는 함수로 교체 예정
 
 export default function EndmillPage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [endmills, setEndmills] = useState<EndmillInstance[]>([])
   const [equipments, setEquipments] = useState<any[]>([])
@@ -189,11 +191,11 @@ export default function EndmillPage() {
 
         setEndmills(transformedData)
       } else {
-        showError('데이터 로드 실패', '엔드밀 데이터를 불러오는데 실패했습니다.')
+        showError(t('endmill.loadDataFailed'), t('endmill.loadDataFailedMessage'))
       }
     } catch (error) {
       console.error('엔드밀 데이터 로드 오류:', error)
-      showError('오류 발생', '엔드밀 데이터를 불러오는 중 오류가 발생했습니다.')
+      showError(t('endmill.loadDataError'), t('endmill.loadDataErrorMessage'))
     } finally {
       setIsLoading(false)
     }
@@ -474,14 +476,14 @@ export default function EndmillPage() {
     return (
       <div className="space-y-6">
         <div>
-          <p className="text-gray-600">앤드밀 별 모델, 설비, 공정의 사용 현황</p>
+          <p className="text-gray-600">{t('endmill.subtitle')}</p>
         </div>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-lg flex items-center justify-center">
               <span className="text-2xl">🔧</span>
             </div>
-            <p className="text-gray-600">앤드밀 데이터를 불러오는 중...</p>
+            <p className="text-gray-600">{t('endmill.loadingData')}</p>
           </div>
         </div>
       </div>
@@ -492,11 +494,11 @@ export default function EndmillPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-start">
         <div>
-          <p className="text-gray-600">앤드밀 별 모델, 설비, 공정의 사용 현황</p>
+          <p className="text-gray-600">{t('endmill.subtitle')}</p>
           <div className="flex items-center space-x-2 mt-1">
             <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
             <span className={`text-xs font-medium ${isRealtimeConnected ? 'text-green-600' : 'text-red-600'}`}>
-              {isRealtimeConnected ? '실시간 연결됨' : '연결 중...'}
+              {isRealtimeConnected ? t('endmill.realtimeConnected') : t('endmill.connecting')}
             </span>
           </div>
         </div>
@@ -505,19 +507,19 @@ export default function EndmillPage() {
             onClick={() => setShowEndmillForm(true)}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
           >
-            ➕ 신규 엔드밀 등록
+            ➕ {t('endmill.newEndmillRegister')}
           </button>
           <button
             onClick={handleDownloadTemplate}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
           >
-            📥 엑셀 템플릿 다운로드
+            📥 {t('endmill.excelTemplateDownload')}
           </button>
           <button
             onClick={() => setShowExcelUploader(true)}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
           >
-            📤 엔드밀 일괄 등록
+            📤 {t('endmill.endmillBulkRegister')}
           </button>
         </div>
       </div>
@@ -528,29 +530,29 @@ export default function EndmillPage() {
           <div className="flex-1">
             <input
               type="text"
-              placeholder="앤드밀 코드, 설비, 위치 검색..."
+              placeholder={t('endmill.searchPlaceholderEndmill')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <select 
+          <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">모든 상태</option>
-            <option value="new">신규</option>
-            <option value="active">사용중</option>
-            <option value="warning">경고</option>
-            <option value="critical">위험</option>
+            <option value="">{t('endmill.allStatus')}</option>
+            <option value="new">{t('endmill.new')}</option>
+            <option value="active">{t('endmill.inUse')}</option>
+            <option value="warning">{t('endmill.warning')}</option>
+            <option value="critical">{t('endmill.danger')}</option>
           </select>
-          <select 
+          <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
             className="px-4 py-2 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">모든 타입</option>
+            <option value="">{t('endmill.allType')}</option>
             {categories.map(category => (
               <option key={category} value={category}>{category}</option>
             ))}
@@ -560,7 +562,7 @@ export default function EndmillPage() {
         {/* 필터 초기화 버튼 */}
         {(searchTerm || statusFilter || typeFilter) && (
           <div className="mt-4">
-            <button 
+            <button
               onClick={() => {
                 setSearchTerm('')
                 setStatusFilter('')
@@ -569,7 +571,7 @@ export default function EndmillPage() {
               }}
               className="text-blue-600 hover:text-blue-800 text-sm"
             >
-              필터 초기화
+              {t('endmill.filterReset')}
             </button>
           </div>
         )}
@@ -579,10 +581,10 @@ export default function EndmillPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">
-            앤드밀 현황 ({sortedEndmills.length}개)
+            {t('endmill.endmillStatusList')} ({sortedEndmills.length}{t('endmill.count')})
           </h2>
           <p className="text-sm text-gray-500 mt-1">
-            페이지 {currentPage} / {totalPages} (1페이지당 {itemsPerPage}개)
+            {t('endmill.page')} {currentPage} / {totalPages} ({t('endmill.perPage')} {itemsPerPage}{t('endmill.items')})
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -590,31 +592,31 @@ export default function EndmillPage() {
             <thead className="bg-gray-50">
               <tr>
                 <SortableTableHeader
-                  label="엔드밀 코드"
+                  label={t('endmill.endmillCodeLabel')}
                   field="code"
                   currentSortField={sortColumn}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="카테고리"
+                  label={t('endmill.categoryLabel')}
                   field="category"
                   currentSortField={sortColumn}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="이름"
+                  label={t('endmill.nameLabel')}
                   field="name"
                   currentSortField={sortColumn}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  사용 댓수
+                  {t('endmill.usageCountLabel')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  작업
+                  {t('endmill.actionsLabel')}
                 </th>
               </tr>
             </thead>
@@ -647,7 +649,7 @@ export default function EndmillPage() {
                         onClick={() => handleViewDetail(item)}
                         className="text-blue-600 hover:text-blue-800 mr-3"
                       >
-                        세부보기
+                        {t('endmill.detailViewButton')}
                       </button>
                     </td>
                   </tr>
@@ -666,22 +668,22 @@ export default function EndmillPage() {
                 disabled={currentPage === 1}
                 className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                이전
+                {t('endmill.previousButton')}
               </button>
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
                 className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                다음
+                {t('endmill.nextButton')}
               </button>
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  총 <span className="font-medium">{sortedEndmills.length}</span>개 중{' '}
+                  {t('endmill.total')} <span className="font-medium">{sortedEndmills.length}</span>{t('endmill.of')}{' '}
                   <span className="font-medium">{startIndex + 1}</span>-
-                  <span className="font-medium">{Math.min(endIndex, sortedEndmills.length)}</span>개 표시
+                  <span className="font-medium">{Math.min(endIndex, sortedEndmills.length)}</span>{t('endmill.display')}
                 </p>
               </div>
               <div>
@@ -742,15 +744,15 @@ export default function EndmillPage() {
           <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
             <span className="text-2xl">🔧</span>
           </div>
-          <p className="text-lg text-gray-600 mb-2">표시할 앤드밀 데이터가 없습니다</p>
-          <p className="text-sm text-gray-500">앤드밀 마스터 데이터를 등록하거나 데이터베이스 설정을 확인해주세요.</p>
+          <p className="text-lg text-gray-600 mb-2">{t('endmill.noEndmillData')}</p>
+          <p className="text-sm text-gray-500">{t('endmill.noEndmillMessage')}</p>
         </div>
       )}
 
       {/* 검색 결과가 없을 때 */}
       {endmills.length > 0 && sortedEndmills.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-gray-500">검색 조건에 맞는 앤드밀이 없습니다.</p>
+          <p className="text-gray-500">{t('endmill.noSearchResults')}</p>
           <button
             onClick={() => {
               setSearchTerm('')
@@ -760,7 +762,7 @@ export default function EndmillPage() {
             }}
             className="mt-2 text-blue-600 hover:text-blue-800"
           >
-            필터 초기화
+            {t('endmill.filterReset')}
           </button>
         </div>
       )}
@@ -781,8 +783,8 @@ export default function EndmillPage() {
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b flex items-center justify-between">
-              <h3 className="text-lg font-medium">앤드밀 현황 상세 - {selectedEndmill.code}</h3>
-              <button 
+              <h3 className="text-lg font-medium">{t('endmill.statusDetailTitle')} - {selectedEndmill.code}</h3>
+              <button
                 onClick={() => setSelectedEndmill(null)}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -795,22 +797,22 @@ export default function EndmillPage() {
                 const usage = getEndmillUsageInfo(selectedEndmill.code)
                 return (
                   <div className="mb-6">
-                    <h4 className="text-md font-semibold mb-3">현재 사용중인 현황</h4>
+                    <h4 className="text-md font-semibold mb-3">{t('endmill.currentUsageStatus')}</h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <span className="text-sm text-gray-600">사용중인 설비 수</span>
-                        <div className="text-lg font-bold text-blue-600">{usage.usedEquipmentCount}대</div>
+                        <span className="text-sm text-gray-600">{t('endmill.usedEquipmentCount')}</span>
+                        <div className="text-lg font-bold text-blue-600">{usage.usedEquipmentCount}{t('endmill.unit')}</div>
                       </div>
                       <div>
-                        <span className="text-sm text-gray-600">앤드밀 코드</span>
+                        <span className="text-sm text-gray-600">{t('endmill.endmillCodeLabel')}</span>
                         <div className="text-lg font-bold text-gray-900">{selectedEndmill.code}</div>
                       </div>
                       <div>
-                        <span className="text-sm text-gray-600">카테고리</span>
+                        <span className="text-sm text-gray-600">{t('endmill.categoryLabel')}</span>
                         <div className="text-sm text-gray-900">{selectedEndmill.category}</div>
                       </div>
                       <div>
-                        <span className="text-sm text-gray-600">이름</span>
+                        <span className="text-sm text-gray-600">{t('endmill.nameLabel')}</span>
                         <div className="text-sm text-gray-900">{selectedEndmill.name}</div>
                       </div>
                     </div>
@@ -825,8 +827,8 @@ export default function EndmillPage() {
                 if (!selectedEndmill.camSheets || selectedEndmill.camSheets.length === 0) {
                   return (
                     <div className="mb-6">
-                      <h4 className="text-md font-semibold mb-2">모델/공정별 사용 현황</h4>
-                      <p className="text-gray-500">사용 중인 모델/공정 정보가 없습니다.</p>
+                      <h4 className="text-md font-semibold mb-2">{t('endmill.usageByModelProcess')}</h4>
+                      <p className="text-gray-500">{t('endmill.noUsageInfo')}</p>
                     </div>
                   )
                 }
@@ -858,17 +860,17 @@ export default function EndmillPage() {
 
                 return (
                   <div className="mb-6">
-                    <h4 className="text-md font-semibold mb-3">모델/공정별 사용 현황</h4>
+                    <h4 className="text-md font-semibold mb-3">{t('endmill.usageByModelProcess')}</h4>
                     <div className="overflow-x-auto">
                       <table className="min-w-full border border-gray-300 rounded-lg">
                         <thead>
                           <tr className="bg-gray-50">
-                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">모델</th>
-                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">공정</th>
-                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">T번호</th>
-                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">설비 대수</th>
-                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">설비 번호</th>
-                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">공구 수명</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">{t('endmill.model')}</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">{t('endmill.process')}</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">{t('endmill.tNumberLabel')}</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">{t('endmill.equipmentCount')}</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">{t('endmill.equipmentNumbers')}</th>
+                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">{t('endmill.toolLifeLabel')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -879,7 +881,7 @@ export default function EndmillPage() {
                               <td className="px-4 py-2 text-sm text-gray-900 border-b">
                                 {data.tNumbers.sort((a: number, b: number) => a - b).map((t: number) => `T${t}`).join(', ')}
                               </td>
-                              <td className="px-4 py-2 text-sm font-semibold text-blue-600 border-b">{data.equipmentNumbers.length}대</td>
+                              <td className="px-4 py-2 text-sm font-semibold text-blue-600 border-b">{data.equipmentNumbers.length}{t('endmill.unit')}</td>
                               <td className="px-4 py-2 text-sm text-gray-900 border-b">
                                 {data.equipmentNumbers.length > 0 ? data.equipmentNumbers.sort((a: string, b: string) => Number(a) - Number(b)).join(', ') : '-'}
                               </td>

@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     const mergedData = toolChanges.map(tc => ({
       ...tc,
-      endmill_types: endmillMap.get(tc.endmill_code) || null
+      endmill_types: endmillMap.get(tc.endmill_code ?? '') || null
     }))
 
     // 엔드밀 카테고리 필터 적용 (클라이언트 사이드)

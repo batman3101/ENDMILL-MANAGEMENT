@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     // 3. equipment 데이터 조회
     const { data: equipments, error: eqError } = await supabase
-      .from('equipments')
+      .from('equipment')
       .select('equipment_number, model_code, location')
 
     if (eqError) {
@@ -75,8 +75,8 @@ export async function POST(request: NextRequest) {
 
     const mergedData = toolChanges.map(tc => ({
       ...tc,
-      endmill_types: endmillMap.get(tc.endmill_code) || null,
-      equipment: equipmentDataMap.get(tc.equipment_number) || null
+      endmill_types: endmillMap.get(tc.endmill_code ?? '') || null,
+      equipment: equipmentDataMap.get(tc.equipment_number?.toString() ?? '') || null
     }))
 
     // 데이터 변환
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     const equipmentGroupMap = groupBy(changes, 'equipmentNumber' as any)
     const equipmentPerformance = Array.from(equipmentGroupMap.entries())
       .map(([equipmentNumber, items]: [any, any]) => {
-        const totalCost = sumBy(items, 'unitCost' as any)
+        const totalCost = items.reduce((sum: number, item: any) => sum + (item.unitCost || 0), 0)
         const lives = items.map((i: any) => i.life)
         const averageToolLife = calculateAverage(lives)
 
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
       .map(([model, items]: [any, any]) => {
         const equipmentCount = new Set(items.map((i: any) => i.equipmentNumber)).size
         const averageChanges = items.length / equipmentCount
-        const totalCost = sumBy(items, 'unitCost' as any)
+        const totalCost = items.reduce((sum: number, item: any) => sum + (item.unitCost || 0), 0)
         const averageCost = totalCost / items.length
         const lives = items.map((i: any) => i.life)
         const averageLife = calculateAverage(lives)
@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
       .map(([location, items]: [any, any]) => {
         const equipmentCount = new Set(items.map((i: any) => i.equipmentNumber)).size
         const totalChanges = items.length
-        const totalCost = sumBy(items, 'unitCost' as any)
+        const totalCost = items.reduce((sum: number, item: any) => sum + (item.unitCost || 0), 0)
         const lives = items.map((i: any) => i.life)
         const averageLife = calculateAverage(lives)
 
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
         const changeCount = items.length
         const lives = items.map((i: any) => i.life)
         const averageLife = calculateAverage(lives)
-        const cost = sumBy(items, 'unitCost' as any)
+        const cost = items.reduce((sum: number, item: any) => sum + (item.unitCost || 0), 0)
 
         // 효율성 점수
         const validItems = items.filter((i: any) => i.standardLife > 0)
