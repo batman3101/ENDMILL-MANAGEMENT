@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCAMSheets, type CAMSheet, type EndmillInfo } from '../../../lib/hooks/useCAMSheets'
 import CAMSheetForm from '../../../components/features/CAMSheetForm'
@@ -33,10 +33,46 @@ export default function CAMSheetsPage() {
   const [processFilter, setProcessFilter] = useState('')
   const [sortField, setSortField] = useState<'model' | 'process' | 'cam_version' | 'endmillCount' | 'updated_at'>('updated_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [toolChanges, setToolChanges] = useState<any[]>([])
+  const [inventoryData, setInventoryData] = useState<any[]>([])
 
   // 설정에서 값 가져오기
   const { settings } = useSettings()
   const availableProcesses = settings.equipment.processes
+
+  // 교체 실적 데이터 가져오기
+  useEffect(() => {
+    const fetchToolChanges = async () => {
+      try {
+        const response = await fetch('/api/tool-changes')
+        if (response.ok) {
+          const result = await response.json()
+          console.log('교체 실적 데이터:', result)
+          setToolChanges(result.data || [])
+        }
+      } catch (error) {
+        console.error('교체 실적 데이터 로드 실패:', error)
+      }
+    }
+    fetchToolChanges()
+  }, [])
+
+  // 재고 데이터 가져오기
+  useEffect(() => {
+    const fetchInventory = async () => {
+      try {
+        const response = await fetch('/api/inventory')
+        if (response.ok) {
+          const result = await response.json()
+          console.log('재고 데이터:', result)
+          setInventoryData(result.data || result.inventory || [])
+        }
+      } catch (error) {
+        console.error('재고 데이터 로드 실패:', error)
+      }
+    }
+    fetchInventory()
+  }, [])
 
   // 필터링 및 정렬된 CAM Sheet 목록
   const filteredSheets = camSheets
@@ -88,6 +124,11 @@ export default function CAMSheetsPage() {
 
   // 인사이트 데이터 계산
   const calculateInsights = () => {
+    console.log('=== 인사이트 계산 시작 ===')
+    console.log('CAM Sheets 개수:', camSheets.length)
+    console.log('교체 실적 개수:', toolChanges.length)
+    console.log('재고 데이터 개수:', inventoryData.length)
+
     if (camSheets.length === 0) {
       return {
         toolLifeAccuracy: 0,
@@ -109,45 +150,192 @@ export default function CAMSheetsPage() {
       }
     }
 
-    // 1. Tool Life 예측 정확도 (실제 계산 필요)
-    const toolLifeAccuracy = 90 // 기본값으로 설정
-
-    // 2. 교체 주기 분석 (시간 단위)
     const allEndmills = camSheets.flatMap(sheet => sheet.cam_sheet_endmills || [])
-        const averageChangeInterval = allEndmills.length > 0
-      ? Math.round((allEndmills.reduce((acc, endmill) => acc + (endmill.tool_life / 60), 0) / allEndmills.length) * 10) / 10
-      : 0
+    console.log('=== CAM Sheet 앤드밀 정보 ===')
+    console.log('CAM Sheet 등록 앤드밀 개수:', allEndmills.length)
+    console.log('CAM Sheet 앤드밀 샘플:', allEndmills.slice(0, 3).map(e => ({
+      code: e.endmill_code,
+      name: e.endmill_name,
+      toolLife: e.tool_life
+    })))
 
-    // 앤드밀 타입별 교체 주기 (실제 계산 필요)
-    const endmillTypeIntervals = {
-      FLAT: 35.0,
-      BALL: 30.0,
-      'T-CUT': 40.0
+    // 1. Tool Life 예측 정확도 (실제 교체 실적 데이터 기반)
+    let toolLifeAccuracy = 0
+    let processAccuracy: { [key: string]: number } = {
+      'CNC1': 0,
+      'CNC2': 0,
+      'CNC2-1': 0
     }
 
-    // 3. 재고 연동률 (실제 재고 데이터와 연동 필요)
+    console.log('=== Tool Life 예측 정확도 계산 ===')
+    console.log('교체 실적 데이터 개수:', toolChanges.length)
+    console.log('CAM Sheet 앤드밀 개수:', allEndmills.length)
+
+    if (toolChanges.length > 0 && allEndmills.length > 0) {
+      // 전체 정확도 계산
+      const validChanges = toolChanges.filter(change => change.tool_life && change.tool_life > 0)
+      console.log('유효한 교체 실적 개수:', validChanges.length)
+      console.log('교체 실적 샘플:', validChanges.slice(0, 3).map(c => ({
+        code: c.endmill_code,
+        name: c.endmill_name,
+        toolLife: c.tool_life,
+        process: c.process
+      })))
+
+      if (validChanges.length > 0) {
+        let matchCount = 0
+        let notMatchedCount = 0
+        const totalAccuracy = validChanges.reduce((sum, change) => {
+          // 해당 앤드밀의 CAM Sheet 설정 Tool Life 찾기
+          const camEndmill = allEndmills.find(e => e.endmill_code === change.endmill_code)
+          if (camEndmill && camEndmill.tool_life > 0) {
+            matchCount++
+            const accuracy = Math.min((change.tool_life / camEndmill.tool_life) * 100, 100)
+            console.log(`✓ 매칭: ${change.endmill_code}, 실제: ${change.tool_life}회, 설정: ${camEndmill.tool_life}회, 정확도: ${accuracy.toFixed(1)}%`)
+            return sum + accuracy
+          } else {
+            notMatchedCount++
+            console.log(`✗ 매칭 실패: ${change.endmill_code} (CAM Sheet에 없음)`)
+          }
+          return sum
+        }, 0)
+        console.log('매칭 성공:', matchCount, '/ 매칭 실패:', notMatchedCount)
+        console.log('총 정확도:', totalAccuracy)
+        toolLifeAccuracy = matchCount > 0 ? Math.round(totalAccuracy / matchCount) : 0
+        console.log('최종 Tool Life 정확도:', toolLifeAccuracy + '%')
+      }
+
+      // 공정별 정확도 계산
+      const processes = ['CNC1', 'CNC2', 'CNC2-1']
+      processes.forEach(process => {
+        const processChanges = validChanges.filter(change => change.process === process)
+        if (processChanges.length > 0) {
+          const processTotal = processChanges.reduce((sum, change) => {
+            const camEndmill = allEndmills.find(e => e.endmill_code === change.endmill_code)
+            if (camEndmill && camEndmill.tool_life > 0) {
+              const accuracy = Math.min((change.tool_life / camEndmill.tool_life) * 100, 100)
+              return sum + accuracy
+            }
+            return sum
+          }, 0)
+          processAccuracy[process] = Math.round(processTotal / processChanges.length)
+        }
+      })
+    }
+
+    // 2. 교체 주기 분석 (수량 단위)
+    let averageChangeInterval = 0
+    let endmillTypeIntervals: { [key: string]: number } = {}
+
+    console.log('=== 교체 주기 분석 ===')
+    if (toolChanges.length > 0) {
+      // 전체 평균 교체 주기 (수량 기준)
+      const validLifes = toolChanges
+        .filter(change => change.tool_life && change.tool_life > 0)
+        .map(change => change.tool_life)
+
+      console.log('유효한 Tool Life 개수:', validLifes.length)
+      if (validLifes.length > 0) {
+        const total = validLifes.reduce((sum, life) => sum + life, 0)
+        averageChangeInterval = Math.round(total / validLifes.length)
+        console.log('전체 평균 교체 주기:', averageChangeInterval + '회')
+      }
+
+      // 앤드밀 타입별 평균 교체 주기 (실제 데이터에서 동적으로 추출)
+      const typeGroups: { [key: string]: number[] } = {}
+
+      toolChanges.forEach(change => {
+        if (change.endmill_name && change.tool_life > 0) {
+          // 앤드밀 이름에서 타입 추출 (예: "D8×18R FLAT EM" -> "FLAT")
+          let detectedType = 'OTHER'
+
+          // 주요 타입 키워드 검사
+          const typeKeywords = ['FLAT', 'BALL', 'T-CUT', 'RADIUS', 'CORNER', 'TAPER', 'DRILL', 'CHAMFER']
+          for (const keyword of typeKeywords) {
+            if (change.endmill_name.toUpperCase().includes(keyword)) {
+              detectedType = keyword
+              break
+            }
+          }
+
+          if (!typeGroups[detectedType]) {
+            typeGroups[detectedType] = []
+          }
+          typeGroups[detectedType].push(change.tool_life)
+        }
+      })
+
+      // 각 타입별 평균 계산
+      Object.entries(typeGroups).forEach(([type, lifes]) => {
+        if (lifes.length > 0) {
+          const typeAvg = lifes.reduce((sum, life) => sum + life, 0) / lifes.length
+          endmillTypeIntervals[type] = Math.round(typeAvg)
+          console.log(`${type} 평균 교체 주기: ${endmillTypeIntervals[type]}회 (데이터: ${lifes.length}건)`)
+        }
+      })
+    } else {
+      console.log('교체 실적 데이터가 없습니다.')
+    }
+
+    // 3. 재고 연동률 (실제 Supabase 재고 데이터 기반)
     const totalRegisteredEndmills = allEndmills.length
-    const securedEndmills = Math.floor(totalRegisteredEndmills * 0.90) // 90% 기본값
-    const shortageEndmills = totalRegisteredEndmills - securedEndmills
-    const inventoryLinkage = totalRegisteredEndmills > 0
-      ? Math.round((securedEndmills / totalRegisteredEndmills) * 100)
-      : 0
+    let securedEndmills = 0
+    let shortageEndmills = 0
+    let inventoryLinkage = 0
+
+    console.log('=== 재고 연동률 계산 ===')
+    console.log('재고 데이터 개수:', inventoryData.length)
+    console.log('재고 데이터 샘플:', inventoryData.slice(0, 2).map(i => ({
+      code: i.endmill_type?.code,
+      name: i.endmill_type?.name_ko,
+      currentStock: i.current_stock,
+      minStock: i.min_stock
+    })))
+
+    if (totalRegisteredEndmills > 0 && inventoryData.length > 0) {
+      // CAM Sheet에 등록된 각 앤드밀 코드별로 재고 확인
+      const uniqueEndmillCodes = new Set(allEndmills.map(e => e.endmill_code))
+      console.log('고유 앤드밀 코드 개수:', uniqueEndmillCodes.size)
+      console.log('앤드밀 코드 목록:', Array.from(uniqueEndmillCodes))
+
+      uniqueEndmillCodes.forEach(code => {
+        // 재고에서 해당 앤드밀 코드 찾기 (endmill_type.code로 접근)
+        const inventoryItem = inventoryData.find(item =>
+          item.endmill_type && item.endmill_type.code === code
+        )
+
+        if (inventoryItem) {
+          const currentStock = inventoryItem.current_stock || 0
+          const minStock = inventoryItem.min_stock || 0
+          const status = currentStock >= minStock ? '✓ 확보' : '✗ 부족'
+          console.log(`${status}: ${code}, 현재: ${currentStock}개, 최소: ${minStock}개`)
+
+          // 재고가 최소 재고 이상이면 확보된 것으로 간주
+          if (currentStock >= minStock) {
+            securedEndmills++
+          } else {
+            shortageEndmills++
+          }
+        } else {
+          console.log(`✗ 재고 데이터 없음: ${code}`)
+          // 재고 데이터가 없으면 부족으로 간주
+          shortageEndmills++
+        }
+      })
+
+      console.log('재고 확보:', securedEndmills, '/ 재고 부족:', shortageEndmills)
+      inventoryLinkage = Math.round((securedEndmills / uniqueEndmillCodes.size) * 100)
+      console.log('최종 재고 연동률:', inventoryLinkage + '%')
+    }
 
     // 4. 표준화 지수
     const endmillCodes = new Set(allEndmills.map(e => e.endmill_code))
     const totalUniqueEndmills = endmillCodes.size
     const estimatedStandardEndmills = Math.floor(totalUniqueEndmills * 0.75)
     const duplicateEndmills = totalUniqueEndmills - estimatedStandardEndmills
-    const standardization = totalUniqueEndmills > 0 
+    const standardization = totalUniqueEndmills > 0
       ? Math.round((estimatedStandardEndmills / totalUniqueEndmills) * 100)
       : 0
-
-    // 공정별 정확도 (실제 계산 필요)
-    const processAccuracy = {
-      'CNC1': 88,
-      'CNC2': 92,
-      'CNC2-1': 85
-    }
 
     return {
       toolLifeAccuracy,
@@ -335,11 +523,53 @@ export default function CAMSheetsPage() {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-600">{t('camSheets.efficiencyIndex')}</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {camSheets.length > 0 
-                  ? `${Math.round((camSheets.reduce((acc, sheet) => acc + (sheet.cam_sheet_endmills?.length || 0), 0) / Math.max(camSheets.length * 10, 1)) * 100)}%`
-                  : '0%'
-                }
+              <p className={`text-2xl font-bold ${(() => {
+                // 효율성 지수 계산: (실제 평균 사용 횟수 / CAM Sheet 설정 Tool Life) × 100
+                if (toolChanges.length === 0 || camSheets.length === 0) return 'text-gray-400'
+
+                // CAM Sheet에 등록된 모든 앤드밀의 평균 Tool Life
+                const allEndmills = camSheets.flatMap(sheet => sheet.cam_sheet_endmills || [])
+                const avgExpectedToolLife = allEndmills.length > 0
+                  ? allEndmills.reduce((sum, e) => sum + e.tool_life, 0) / allEndmills.length
+                  : 0
+
+                // 실제 교체 실적의 평균 Tool Life
+                const actualToolLifes = toolChanges
+                  .filter(change => change.tool_life && change.tool_life > 0)
+                  .map(change => change.tool_life)
+                const avgActualToolLife = actualToolLifes.length > 0
+                  ? actualToolLifes.reduce((sum, life) => sum + life, 0) / actualToolLifes.length
+                  : 0
+
+                const efficiency = avgExpectedToolLife > 0
+                  ? Math.round((avgActualToolLife / avgExpectedToolLife) * 100)
+                  : 0
+
+                if (efficiency >= 80) return 'text-green-600'
+                if (efficiency >= 50) return 'text-yellow-600'
+                return 'text-red-600'
+              })()}`}>
+                {(() => {
+                  if (toolChanges.length === 0 || camSheets.length === 0) return '0%'
+
+                  const allEndmills = camSheets.flatMap(sheet => sheet.cam_sheet_endmills || [])
+                  const avgExpectedToolLife = allEndmills.length > 0
+                    ? allEndmills.reduce((sum, e) => sum + e.tool_life, 0) / allEndmills.length
+                    : 0
+
+                  const actualToolLifes = toolChanges
+                    .filter(change => change.tool_life && change.tool_life > 0)
+                    .map(change => change.tool_life)
+                  const avgActualToolLife = actualToolLifes.length > 0
+                    ? actualToolLifes.reduce((sum, life) => sum + life, 0) / actualToolLifes.length
+                    : 0
+
+                  const efficiency = avgExpectedToolLife > 0
+                    ? Math.round((avgActualToolLife / avgExpectedToolLife) * 100)
+                    : 0
+
+                  return `${efficiency}%`
+                })()}
               </p>
             </div>
           </div>
@@ -379,24 +609,35 @@ export default function CAMSheetsPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">{t('camSheets.replacementCycle')}</p>
-                <p className="text-2xl font-bold text-blue-600">{insights.averageChangeInterval}{t('camSheets.hours')}</p>
+                <p className="text-2xl font-bold text-blue-600">{insights.averageChangeInterval.toLocaleString()}{t('camSheets.times')}</p>
               </div>
             </div>
           </div>
           <div className="text-xs text-gray-500 mb-2">{t('camSheets.averageCycle')}</div>
           <div className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-600">FLAT</span>
-              <span className="font-medium">{insights.endmillTypeIntervals.FLAT}{t('camSheets.hours')}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-600">BALL</span>
-              <span className="font-medium">{insights.endmillTypeIntervals.BALL}{t('camSheets.hours')}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-600">T-CUT</span>
-              <span className="font-medium">{insights.endmillTypeIntervals['T-CUT']}{t('camSheets.hours')}</span>
-            </div>
+            {(() => {
+              // 앤드밀 타입별 교체 주기를 내림차순 정렬 (많은 순서대로)
+              const sortedTypes = Object.entries(insights.endmillTypeIntervals)
+                .filter(([_, interval]) => interval > 0) // 0인 항목 제외
+                .sort(([_, a], [__, b]) => b - a) // 교체 주기 내림차순
+
+              // 데이터가 없으면 기본 메시지
+              if (sortedTypes.length === 0) {
+                return (
+                  <div className="text-xs text-gray-400 text-center py-2">
+                    {t('common.noData')}
+                  </div>
+                )
+              }
+
+              // 상위 3개만 표시
+              return sortedTypes.slice(0, 3).map(([type, interval]) => (
+                <div key={type} className="flex justify-between text-xs">
+                  <span className="text-gray-600">{type}</span>
+                  <span className="font-medium">{interval.toLocaleString()}{t('camSheets.times')}</span>
+                </div>
+              ))
+            })()}
           </div>
         </div>
 
