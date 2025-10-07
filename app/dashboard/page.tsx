@@ -483,9 +483,6 @@ export default function DashboardPage() {
                       <p className="text-sm text-gray-600 mt-1">{message}</p>
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-xs text-gray-500">{timeText}</span>
-                        <button className={`text-xs text-${alert.color}-600 hover:text-${alert.color}-800 font-medium`}>
-                          {alert.type === 'low_stock' ? `${t('dashboard.orderAction')} →` : alert.type === 'abnormal_damage' ? `${t('dashboard.confirmAction')} →` : `${t('common.detail')} ${t('common.view')} →`}
-                        </button>
                       </div>
                     </div>
                   </div>

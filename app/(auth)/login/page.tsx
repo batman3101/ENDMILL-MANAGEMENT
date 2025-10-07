@@ -8,7 +8,7 @@ import { useAuth } from '../../../lib/hooks/useAuth'
 import { useTranslation } from '../../../lib/hooks/useTranslations'
 
 export default function LoginPage() {
-  const { t } = useTranslation()
+  const { t, changeLanguage, currentLanguage } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -71,15 +71,28 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      {/* 언어 토글 - 오른쪽 상단 */}
+      <div className="absolute top-4 right-4">
+        <button
+          onClick={() => changeLanguage(currentLanguage === 'ko' ? 'vi' : 'ko')}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+          </svg>
+          {currentLanguage === 'ko' ? 'KO' : 'VI'}
+        </button>
+      </div>
+
       <div className="max-w-md w-full space-y-8">
         <div>
-          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center">
+          <div className="mx-auto flex justify-center">
             <Image
-              src="/images/symbols/symbol BLUE.png"
-              alt="ALMUS Symbol"
-              width={32}
-              height={32}
-              className="w-8 h-8 object-contain"
+              src="/images/logos/ALMUS TECH.png"
+              alt="ALMUS TECH"
+              width={300}
+              height={60}
+              className="h-12 w-auto object-contain"
             />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

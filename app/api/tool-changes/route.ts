@@ -43,23 +43,23 @@ export async function GET(request: NextRequest) {
 
     const result = await serverSupabaseService.toolChange.getFiltered({
       equipmentNumber: equipmentNumber ? parseInt(equipmentNumber) : undefined,
-      endmillType,
-      searchTerm,
-      startDate,
-      endDate,
+      endmillType: endmillType || undefined,
+      searchTerm: searchTerm || undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
       limit: limit ? parseInt(limit) : undefined,
       offset: offset ? parseInt(offset) : undefined,
-      sortField,
-      sortDirection
+      sortField: sortField || undefined,
+      sortDirection: sortDirection || undefined
     })
 
     // totalCount를 별도로 가져오기
     const countResult = await serverSupabaseService.toolChange.getCount({
       equipmentNumber: equipmentNumber ? parseInt(equipmentNumber) : undefined,
-      endmillType,
-      searchTerm,
-      startDate,
-      endDate
+      endmillType: endmillType || undefined,
+      searchTerm: searchTerm || undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined
     })
 
     return NextResponse.json({
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       data: result,
       totalCount: countResult || 0
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching tool changes:', error)
     console.error('Error details:', JSON.stringify(error, null, 2))
     if (error instanceof Error) {
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       endmill_code: validatedData.endmill_code,
       endmill_name: validatedData.endmill_name,
       tool_life: validatedData.tool_life,
-      change_reason: validatedData.change_reason,
+      change_reason: validatedData.change_reason as "수명완료" | "파손" | "마모" | "예방교체" | "모델변경" | "기타",
       changed_by: validatedData.changed_by,
       change_date: validatedData.change_date || new Date().toISOString().split('T')[0]
     }
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       message: '교체 실적이 성공적으로 등록되었습니다.',
     }, { status: 201 })
 
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
@@ -171,7 +171,7 @@ export async function PUT(request: NextRequest) {
       data: updatedToolChange,
       message: '교체 이력이 업데이트되었습니다.'
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating tool change:', error)
     return NextResponse.json(
       { 
@@ -201,7 +201,7 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: '교체 이력이 삭제되었습니다.'
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting tool change:', error)
     return NextResponse.json(
       { 

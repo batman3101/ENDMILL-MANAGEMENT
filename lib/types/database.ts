@@ -914,10 +914,10 @@ export type Database = {
     }
     Enums: {
       change_reason:
-        | "정기교체"
-        | "마모"
+        | "수명완료"
         | "파손"
-        | "품질불량"
+        | "마모"
+        | "예방교체"
         | "모델변경"
         | "기타"
       equipment_location: "A동" | "B동"
@@ -1073,10 +1073,10 @@ export const Constants = {
   public: {
     Enums: {
       change_reason: [
-        "정기교체",
-        "마모",
+        "수명완료",
         "파손",
-        "품질불량",
+        "마모",
+        "예방교체",
         "모델변경",
         "기타",
       ],

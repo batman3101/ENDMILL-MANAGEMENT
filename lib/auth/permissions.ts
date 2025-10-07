@@ -121,3 +121,118 @@ export function getRoleLevel(userRole: UserRole): number {
 export function hasHigherRole(userRole: UserRole, targetRole: UserRole): boolean {
   return getRoleLevel(userRole) > getRoleLevel(targetRole)
 }
+
+// 데이터베이스 권한 객체를 Permission[] 배열로 변환
+export function parsePermissionsFromDB(dbPermissions: any): Permission[] {
+  if (!dbPermissions || typeof dbPermissions !== 'object') {
+    return []
+  }
+
+  const permissions: Permission[] = []
+
+  for (const [resource, actions] of Object.entries(dbPermissions)) {
+    if (Array.isArray(actions)) {
+      for (const action of actions) {
+        if (['create', 'read', 'update', 'delete', 'manage'].includes(action)) {
+          permissions.push({
+            resource,
+            action: action as Permission['action']
+          })
+        }
+      }
+    }
+  }
+
+  return permissions
+}
+
+// 권한 매트릭스에서 특정 리소스의 액션 확인
+export function hasPermissionInMatrix(
+  permissionMatrix: Record<string, string[]>,
+  resource: string,
+  action: Permission['action']
+): boolean {
+  const resourcePermissions = permissionMatrix[resource] || []
+
+  // 'manage' 권한이 있으면 모든 액션 허용
+  if (resourcePermissions.includes('manage')) {
+    return true
+  }
+
+  // 특정 액션 확인
+  return resourcePermissions.includes(action)
+}
+
+// 권한 매트릭스 초기화 (기본 권한 설정)
+export function getDefaultPermissionMatrix(userRole: UserRole): Record<string, string[]> {
+  const permissions = DEFAULT_PERMISSIONS[userRole] || []
+  const matrix: Record<string, string[]> = {}
+
+  for (const permission of permissions) {
+    if (!matrix[permission.resource]) {
+      matrix[permission.resource] = []
+    }
+    if (!matrix[permission.resource].includes(permission.action)) {
+      matrix[permission.resource].push(permission.action)
+    }
+  }
+
+  return matrix
+}
+
+// 권한 매트릭스 병합 (커스텀 권한 + 기본 권한)
+export function mergePermissionMatrices(
+  customMatrix: Record<string, string[]>,
+  defaultMatrix: Record<string, string[]>
+): Record<string, string[]> {
+  const merged: Record<string, string[]> = { ...defaultMatrix }
+
+  for (const [resource, actions] of Object.entries(customMatrix)) {
+    if (!merged[resource]) {
+      merged[resource] = []
+    }
+
+    for (const action of actions) {
+      if (!merged[resource].includes(action)) {
+        merged[resource].push(action)
+      }
+    }
+  }
+
+  return merged
+}
+
+// 모든 가능한 리소스 목록
+export const AVAILABLE_RESOURCES = [
+  'dashboard',
+  'equipment',
+  'endmills',
+  'inventory',
+  'cam_sheets',
+  'tool_changes',
+  'reports',
+  'settings',
+  'users'
+] as const
+
+// 모든 가능한 액션 목록
+export const AVAILABLE_ACTIONS = [
+  'create',
+  'read',
+  'update',
+  'delete',
+  'manage'
+] as const
+
+// 리소스별 사용 가능한 액션 정의
+export const RESOURCE_AVAILABLE_ACTIONS: Record<string, Permission['action'][]> = {
+  dashboard: ['read'],
+  equipment: ['create', 'read', 'update', 'delete', 'manage'],
+  endmills: ['create', 'read', 'update', 'delete', 'manage'],
+  inventory: ['create', 'read', 'update', 'delete', 'manage'],
+  cam_sheets: ['create', 'read', 'update', 'delete', 'manage'],
+  tool_changes: ['create', 'read', 'update', 'delete', 'manage'],
+  reports: ['read', 'manage'],
+  settings: ['read', 'update', 'manage'],
+  users: ['create', 'read', 'update', 'delete', 'manage']
+}
