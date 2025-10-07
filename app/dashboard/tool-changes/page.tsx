@@ -446,9 +446,9 @@ export default function ToolChangesPage() {
   }
 
   const getToolLifeStatus = (toolLife: number) => {
-    if (toolLife < 1000) return { color: 'text-red-600', status: '짧음' }
-    if (toolLife < 2000) return { color: 'text-yellow-600', status: '보통' }
-    return { color: 'text-green-600', status: '양호' }
+    if (toolLife < 1000) return { color: 'text-red-600', status: t('toolChanges.toolLifeShort') }
+    if (toolLife < 2000) return { color: 'text-yellow-600', status: t('toolChanges.toolLifeNormal') }
+    return { color: 'text-green-600', status: t('toolChanges.toolLifeGood') }
   }
 
   // 수정 모달 열기
@@ -1164,7 +1164,7 @@ export default function ToolChangesPage() {
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getReasonBadge(change.change_reason || change.reason || '')}`}>
-                        {change.change_reason || change.reason || '-'}
+                        {getReasonTranslation(change.change_reason || change.reason || '-')}
                       </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
@@ -1178,7 +1178,7 @@ export default function ToolChangesPage() {
                         onClick={() => handleEdit(change)}
                         className="text-blue-600 hover:text-blue-800 mr-3"
                       >
-                        수정
+                        {t('toolChanges.edit')}
                       </button>
                       <button 
                         onClick={() => handleDelete(change)}
@@ -1285,8 +1285,8 @@ export default function ToolChangesPage() {
           <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">교체 실적 수정</h3>
-                <button 
+                <h3 className="text-lg font-medium">{t('toolChanges.editChangeRecord')}</h3>
+                <button
                   onClick={handleCloseEditModal}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -1298,7 +1298,7 @@ export default function ToolChangesPage() {
               <form onSubmit={handleSaveEdit}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">교체일자</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editChangeDate')}</label>
                     <input
                       type="text"
                       value={editingItem.change_date}
@@ -1309,7 +1309,7 @@ export default function ToolChangesPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">설비번호</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editEquipmentNumber')}</label>
                     <input
                       type="text"
                       value={editingItem.equipmentNumber}
@@ -1319,14 +1319,14 @@ export default function ToolChangesPage() {
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       pattern="C[0-9]{3}"
-                      title="C001-C800 형식으로 입력해주세요"
+                      title={t('toolChanges.equipmentNumberPattern')}
                       required
                     />
-                    <p className="text-xs text-gray-500 mt-1">설비번호 입력시 생산모델과 공정이 자동으로 입력됩니다</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('toolChanges.autoFillOnEquipment')}</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">생산 모델</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editProductionModel')}</label>
                     <select
                       value={editingItem.productionModel}
                       onChange={(e) => setEditingItem({...editingItem, productionModel: e.target.value})}
@@ -1335,18 +1335,18 @@ export default function ToolChangesPage() {
                       }`}
                       required
                     >
-                      <option value="">모델 선택</option>
+                      <option value="">{t('toolChanges.selectModelPrompt')}</option>
                       {availableModels.map(model => (
                         <option key={model} value={model}>{model}</option>
                       ))}
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
-                      {editingItem.equipmentNumber ? '설비번호 기준 자동입력됨' : '등록된 CAM SHEET의 모델들'}
+                      {editingItem.equipmentNumber ? t('toolChanges.autoFilledBasis') : t('toolChanges.camSheetModels')}
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">공정</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editProcess')}</label>
                     <select
                       value={editingItem.process}
                       onChange={(e) => setEditingItem({...editingItem, process: e.target.value})}
@@ -1360,12 +1360,12 @@ export default function ToolChangesPage() {
                       <option value="CNC2-1">CNC2-1</option>
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
-                      {editingItem.equipmentNumber ? '설비번호 기준 자동입력됨' : '공정을 선택하세요'}
+                      {editingItem.equipmentNumber ? t('toolChanges.autoFilledBasis') : t('toolChanges.selectProcessOption')}
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">T번호</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editTNumber')}</label>
                     <select
                       value={editingItem.tNumber}
                       onChange={(e) => setEditingItem({...editingItem, tNumber: parseInt(e.target.value)})}
@@ -1379,11 +1379,11 @@ export default function ToolChangesPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 코드</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editEndmillCode')}</label>
                     <div className="relative">
                       <input
                         type="text"
-                        placeholder={isEditManualEndmillInput ? "앤드밀 코드 입력" : "모델, 공정, T번호 선택 시 자동 입력"}
+                        placeholder={isEditManualEndmillInput ? t('toolChanges.endmillCodeInputPrompt') : t('toolChanges.endmillCodeAutoFill')}
                         value={editingItem.endmillCode}
                         onChange={(e) => isEditManualEndmillInput && setEditingItem({...editingItem, endmillCode: e.target.value})}
                         className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
@@ -1414,21 +1414,21 @@ export default function ToolChangesPage() {
                           }}
                           className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800"
                         >
-                          {isEditManualEndmillInput ? "자동입력" : "수동입력"}
+                          {isEditManualEndmillInput ? t('toolChanges.autoInput') : t('toolChanges.manualInput')}
                         </button>
                       )}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      {isEditManualEndmillInput ? "수동으로 입력해주세요" : "CAM SHEET에서 자동으로 입력됩니다"}
+                      {isEditManualEndmillInput ? t('toolChanges.pleaseEnterManually') : t('toolChanges.camSheetAutoFill')}
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 이름</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editEndmillName')}</label>
                     <div className="relative">
                       <input
                         type="text"
-                        placeholder={isEditManualEndmillInput ? "앤드밀 이름 입력" : "모델, 공정, T번호 선택 시 자동 입력"}
+                        placeholder={isEditManualEndmillInput ? t('toolChanges.endmillNameInputPrompt') : t('toolChanges.endmillNameAutoFill')}
                         value={editingItem.endmillName}
                         onChange={(e) => isEditManualEndmillInput && setEditingItem({...editingItem, endmillName: e.target.value})}
                         className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
@@ -1459,17 +1459,17 @@ export default function ToolChangesPage() {
                           }}
                           className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800"
                         >
-                          {isEditManualEndmillInput ? "자동입력" : "수동입력"}
+                          {isEditManualEndmillInput ? t('toolChanges.autoInput') : t('toolChanges.manualInput')}
                         </button>
                       )}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      {isEditManualEndmillInput ? "수동으로 입력해주세요" : "CAM SHEET에서 자동으로 입력됩니다"}
+                      {isEditManualEndmillInput ? t('toolChanges.pleaseEnterManually') : t('toolChanges.camSheetAutoFill')}
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tool Life</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editToolLife')}</label>
                     <input
                       type="number"
                       value={editingItem.toolLife || 0}
@@ -1482,7 +1482,7 @@ export default function ToolChangesPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">교체사유</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editChangeReason')}</label>
                     <select
                       value={editingItem.changeReason}
                       onChange={(e) => setEditingItem({...editingItem, changeReason: e.target.value})}
@@ -1497,18 +1497,18 @@ export default function ToolChangesPage() {
                 </div>
 
                 <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
-                  <button 
+                  <button
                     type="button"
                     onClick={handleCloseEditModal}
                     className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                   >
-                    취소
+                    {t('toolChanges.cancel')}
                   </button>
-                  <button 
+                  <button
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >
-                    저장
+                    {t('toolChanges.save')}
                   </button>
                 </div>
               </form>

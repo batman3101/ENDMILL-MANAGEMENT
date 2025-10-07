@@ -327,6 +327,34 @@ const resources = {
         selectReplacerDescription: '교체 작업을 수행한 작업자를 선택하세요',
         save: '저장',
         cancel: '취소',
+
+        // 수정 모달
+        editChangeRecord: '교체 실적 수정',
+        editChangeDate: '교체일자',
+        editEquipmentNumber: '설비번호',
+        editProductionModel: '생산 모델',
+        editProcess: '공정',
+        editTNumber: 'T번호',
+        editEndmillCode: '앤드밀 코드',
+        editEndmillName: '앤드밀 이름',
+        editToolLife: 'Tool Life',
+        editChangeReason: '교체사유',
+        equipmentNumberPattern: 'C001-C800 형식으로 입력해주세요',
+        autoFillOnEquipment: '설비번호 입력시 생산모델과 공정이 자동으로 입력됩니다',
+        selectModelPrompt: '모델 선택',
+        autoFilledBasis: '설비번호 기준 자동입력됨',
+        camSheetModels: '등록된 CAM SHEET의 모델들',
+        selectProcessOption: '공정을 선택하세요',
+        endmillCodeInputPrompt: '앤드밀 코드 입력',
+        endmillCodeAutoFill: '모델, 공정, T번호 선택 시 자동 입력',
+        endmillNameInputPrompt: '앤드밀 이름 입력',
+        endmillNameAutoFill: '모델, 공정, T번호 선택 시 자동 입력',
+        camSheetAutoFill: 'CAM SHEET에서 자동으로 입력됩니다',
+
+        // Tool Life 상태
+        toolLifeShort: '짧음',
+        toolLifeNormal: '보통',
+        toolLifeGood: '양호',
       },
 
       // 리포트
@@ -1842,6 +1870,34 @@ const resources = {
         selectReplacerDescription: 'Chọn người thực hiện công việc thay thế',
         save: 'Lưu',
         cancel: 'Hủy',
+
+        // 수정 모달
+        editChangeRecord: 'Sửa kết quả thay thế',
+        editChangeDate: 'Ngày thay thế',
+        editEquipmentNumber: 'Số thiết bị',
+        editProductionModel: 'Mẫu sản xuất',
+        editProcess: 'Quy trình',
+        editTNumber: 'Số T',
+        editEndmillCode: 'Mã dao phay',
+        editEndmillName: 'Tên dao phay',
+        editToolLife: 'Tool Life',
+        editChangeReason: 'Lý do thay thế',
+        equipmentNumberPattern: 'Nhập theo định dạng C001-C800',
+        autoFillOnEquipment: 'Mẫu sản xuất và quy trình sẽ tự động nhập khi nhập số thiết bị',
+        selectModelPrompt: 'Chọn mẫu',
+        autoFilledBasis: 'Tự động nhập dựa trên số thiết bị',
+        camSheetModels: 'Mẫu của CAM SHEET đã đăng ký',
+        selectProcessOption: 'Vui lòng chọn quy trình',
+        endmillCodeInputPrompt: 'Nhập mã dao phay',
+        endmillCodeAutoFill: 'Tự động nhập khi chọn mẫu, quy trình, số T',
+        endmillNameInputPrompt: 'Nhập tên dao phay',
+        endmillNameAutoFill: 'Tự động nhập khi chọn mẫu, quy trình, số T',
+        camSheetAutoFill: 'Tự động nhập từ CAM SHEET',
+
+        // Tool Life 상태
+        toolLifeShort: 'Ngắn',
+        toolLifeNormal: 'Bình thường',
+        toolLifeGood: 'Tốt',
       },
 
       // 리포트
