@@ -110,3 +110,126 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Disposal ID is required' },
+        { status: 400 }
+      )
+    }
+
+    const formData = await request.formData()
+
+    const disposal_date = formData.get('disposal_date') as string
+    const quantity = parseInt(formData.get('quantity') as string)
+    const weight_kg = parseFloat(formData.get('weight_kg') as string)
+    const inspector = formData.get('inspector') as string
+    const reviewer = formData.get('reviewer') as string
+    const notes = formData.get('notes') as string
+    const imageFile = formData.get('image') as File | null
+
+    const supabase = createServerSupabaseClient()
+
+    // 이미지 업로드 (있는 경우)
+    let imageUrl = undefined
+    if (imageFile && imageFile.size > 0) {
+      const fileExt = imageFile.name.split('.').pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      const filePath = `disposal-images/${fileName}`
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('endmill-images')
+        .upload(filePath, imageFile)
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError)
+      } else {
+        const { data: { publicUrl } } = supabase.storage
+          .from('endmill-images')
+          .getPublicUrl(filePath)
+
+        imageUrl = publicUrl
+      }
+    }
+
+    // 폐기 기록 업데이트
+    const updateData: any = {
+      disposal_date,
+      quantity,
+      weight_kg,
+      inspector,
+      reviewer,
+      notes: notes || null
+    }
+
+    if (imageUrl !== undefined) {
+      updateData.image_url = imageUrl
+    }
+
+    const { data, error } = await (supabase as any)
+      .from('endmill_disposals')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating disposal:', error)
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ success: true, data })
+  } catch (error) {
+    console.error('Error in PUT /api/endmill-disposals:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to update disposal' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Disposal ID is required' },
+        { status: 400 }
+      )
+    }
+
+    const supabase = createServerSupabaseClient()
+
+    // 폐기 기록 삭제
+    const { error } = await (supabase as any)
+      .from('endmill_disposals')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error deleting disposal:', error)
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error in DELETE /api/endmill-disposals:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete disposal' },
+      { status: 500 }
+    )
+  }
+}

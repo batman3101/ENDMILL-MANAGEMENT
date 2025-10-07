@@ -151,7 +151,7 @@ export default function InboundPage() {
 
     // 앤드밀 마스터 데이터에서 검색
     const foundEndmill = availableEndmills.find(endmill =>
-      endmill.code === code.trim()
+      endmill.code === code.trim().toUpperCase()
     )
 
     if (foundEndmill) {
