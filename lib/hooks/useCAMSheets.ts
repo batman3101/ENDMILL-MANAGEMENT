@@ -16,10 +16,14 @@ export type { CAMSheet }
 
 export interface EndmillInfo {
   t_number: number
-  endmill_code: string
-  endmill_name: string
-  specifications: string
-  tool_life: number
+  endmill_code: string | null
+  endmill_name: string | null
+  specifications: string | null
+  tool_life: number | null
+  endmill_type_id?: string | null
+  cam_sheet_id?: string | null
+  id?: string
+  created_at?: string | null
 }
 
 // CAM Sheet 검색을 위한 필터 타입

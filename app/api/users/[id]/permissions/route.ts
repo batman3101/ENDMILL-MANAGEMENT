@@ -298,10 +298,10 @@ export async function POST(
       data: {
         userId: updatedProfile.id,
         userName: updatedProfile.name,
-        roleId: updatedProfile.user_roles.id,
-        roleName: updatedProfile.user_roles.name,
-        roleType: updatedProfile.user_roles.type,
-        permissions: updatedProfile.user_roles.permissions
+        roleId: updatedProfile.user_roles?.id || '',
+        roleName: updatedProfile.user_roles?.name || '',
+        roleType: updatedProfile.user_roles?.type || '',
+        permissions: updatedProfile.user_roles?.permissions || []
       },
       message: 'Template applied successfully'
     })

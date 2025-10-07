@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     // 필터 적용
     if (department) query = query.eq('department', department)
-    if (shift) query = query.eq('shift', shift)
+    if (shift && ['A', 'B', 'C'].includes(shift)) query = query.eq('shift', shift as 'A' | 'B' | 'C')
     if (roleId) query = query.eq('role_id', roleId)
     if (isActive !== null) query = query.eq('is_active', isActive === 'true')
 

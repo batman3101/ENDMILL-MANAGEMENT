@@ -649,7 +649,7 @@ async function getRecentAlerts(supabase: any) {
       const endmillMap = new Map(endmillTypes.map((et: any) => [et.id, et]))
 
       for (const change of recentChangesWithLife) {
-        const endmillType = endmillMap.get(change.endmill_type_id)
+        const endmillType: any = endmillMap.get(change.endmill_type_id)
         const standardLife = endmillType?.standard_life || 800
         const actualLife = change.tool_life || 0
 

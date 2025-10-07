@@ -108,8 +108,8 @@ export default function CAMSheetsPage() {
           bVal = (b.cam_sheet_endmills || b.endmills || []).length
           break
         case 'updated_at':
-          aVal = new Date(a.updated_at).getTime()
-          bVal = new Date(b.updated_at).getTime()
+          aVal = a.updated_at ? new Date(a.updated_at).getTime() : 0
+          bVal = b.updated_at ? new Date(b.updated_at).getTime() : 0
           break
         default:
           return 0
@@ -188,7 +188,7 @@ export default function CAMSheetsPage() {
         const totalAccuracy = validChanges.reduce((sum, change) => {
           // 해당 앤드밀의 CAM Sheet 설정 Tool Life 찾기
           const camEndmill = allEndmills.find(e => e.endmill_code === change.endmill_code)
-          if (camEndmill && camEndmill.tool_life > 0) {
+          if (camEndmill && camEndmill.tool_life && camEndmill.tool_life > 0 && change.tool_life) {
             matchCount++
             const accuracy = Math.min((change.tool_life / camEndmill.tool_life) * 100, 100)
             console.log(`✓ 매칭: ${change.endmill_code}, 실제: ${change.tool_life}회, 설정: ${camEndmill.tool_life}회, 정확도: ${accuracy.toFixed(1)}%`)
@@ -212,7 +212,7 @@ export default function CAMSheetsPage() {
         if (processChanges.length > 0) {
           const processTotal = processChanges.reduce((sum, change) => {
             const camEndmill = allEndmills.find(e => e.endmill_code === change.endmill_code)
-            if (camEndmill && camEndmill.tool_life > 0) {
+            if (camEndmill && camEndmill.tool_life && camEndmill.tool_life > 0 && change.tool_life) {
               const accuracy = Math.min((change.tool_life / camEndmill.tool_life) * 100, 100)
               return sum + accuracy
             }
@@ -530,7 +530,7 @@ export default function CAMSheetsPage() {
                 // CAM Sheet에 등록된 모든 앤드밀의 평균 Tool Life
                 const allEndmills = camSheets.flatMap(sheet => sheet.cam_sheet_endmills || [])
                 const avgExpectedToolLife = allEndmills.length > 0
-                  ? allEndmills.reduce((sum, e) => sum + e.tool_life, 0) / allEndmills.length
+                  ? allEndmills.reduce((sum, e) => sum + (e.tool_life || 0), 0) / allEndmills.length
                   : 0
 
                 // 실제 교체 실적의 평균 Tool Life
@@ -554,7 +554,7 @@ export default function CAMSheetsPage() {
 
                   const allEndmills = camSheets.flatMap(sheet => sheet.cam_sheet_endmills || [])
                   const avgExpectedToolLife = allEndmills.length > 0
-                    ? allEndmills.reduce((sum, e) => sum + e.tool_life, 0) / allEndmills.length
+                    ? allEndmills.reduce((sum, e) => sum + (e.tool_life || 0), 0) / allEndmills.length
                     : 0
 
                   const actualToolLifes = toolChanges
