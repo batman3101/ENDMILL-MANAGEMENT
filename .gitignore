@@ -58,4 +58,6 @@ logs
 # MCP configuration (contains tokens)
 .mcp.json
 .claude/
+.claude_config.json
+.env
 .env.local 
