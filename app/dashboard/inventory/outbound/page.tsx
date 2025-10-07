@@ -460,7 +460,7 @@ export default function OutboundPage() {
 
         {/* 출고 정보 입력 */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">📋 출고 정보</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">📋 {t('inventory.outboundInfo')}</h2>
 
           {endmillData ? (
             <div className="space-y-4">
@@ -468,27 +468,27 @@ export default function OutboundPage() {
               <div className="bg-gray-50 p-4 rounded-lg border">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">앤드밀 코드</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('inventory.endmillCodeLabel')}</label>
                     <div className="text-lg font-bold text-green-600">{endmillData.code}</div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('inventory.category')}</label>
                     <div className="text-sm text-gray-900">{endmillData.category}</div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">앤드밀 이름</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('inventory.endmillNameLabel')}</label>
                     <div className="text-sm font-medium text-gray-900">{endmillData.name}</div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">현재 재고</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('inventory.currentStock')}</label>
                     <div className={`text-sm font-bold ${endmillData.currentStock < quantity ? 'text-red-600' : 'text-gray-900'}`}>
-                      {endmillData.currentStock}개
+                      {endmillData.currentStock}{t('inventory.pieces')}
                     </div>
                     <div className="text-xs text-gray-600 mt-1">
-                      총 가치: {getCurrentStockValue().toLocaleString()} VND
+                      {t('inventory.currentStockValue')}: {getCurrentStockValue().toLocaleString()} VND
                     </div>
                     <div className="text-xs text-gray-500">
-                      ({endmillData.unitPrice.toLocaleString()} VND/개, 최저가)
+                      ({endmillData.unitPrice.toLocaleString()} VND/{t('inventory.pieces')}, {t('common.avgCount')})
                     </div>
                   </div>
                 </div>
@@ -497,21 +497,21 @@ export default function OutboundPage() {
               {/* 출고 관련 입력 필드들 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">설비번호 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.equipmentNumberRequired')}</label>
                   <input
                     type="text"
                     value={equipmentNumber}
                     onChange={(e) => handleEquipmentNumberChange(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    placeholder="C001"
+                    placeholder={t('inventory.equipmentNumberPlaceholder')}
                     pattern="C[0-9]{3}"
-                    title="C001-C800 형식으로 입력해주세요"
+                    title={t('inventory.equipmentNumberFormatError')}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">T번호 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.tNumberRequired')}</label>
                   <select
                     value={tNumber}
                     onChange={(e) => setTNumber(parseInt(e.target.value))}
@@ -525,7 +525,7 @@ export default function OutboundPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">출고 수량 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.outboundQuantity')} {t('inventory.required')}</label>
                   <input
                     type="number"
                     min="1"
@@ -535,23 +535,23 @@ export default function OutboundPage() {
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-lg ${
                       quantity > endmillData.currentStock ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}
-                    placeholder="수량 입력"
+                    placeholder={t('inventory.enterQuantity')}
                     required
                   />
                   {quantity > endmillData.currentStock && (
-                    <p className="text-red-600 text-xs mt-1">재고 부족! 현재 재고: {endmillData.currentStock}개</p>
+                    <p className="text-red-600 text-xs mt-1">{t('inventory.insufficientStock')}! {t('inventory.currentStock')}: {endmillData.currentStock}{t('inventory.pieces')}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">출고 목적 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.purposeRequired')}</label>
                   <select
                     value={purpose}
                     onChange={(e) => setPurpose(e.target.value)}
                     className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   >
-                    <option value="">사유 선택</option>
+                    <option value="">{t('inventory.selectSupplier')}</option>
                     {toolChangesReasons.map(reason => (
                       <option key={reason} value={reason}>{reason}</option>
                     ))}
@@ -562,13 +562,13 @@ export default function OutboundPage() {
               {/* 총액 표시 */}
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">총 출고 가치:</span>
+                  <span className="text-sm font-medium text-gray-700">{t('inventory.totalOutboundAmount')}:</span>
                   <span className="text-2xl font-bold text-green-600">
                     {getTotalValue().toLocaleString()} VND
                   </span>
                 </div>
                 <div className="text-xs text-gray-600 mt-1">
-                  {endmillData.unitPrice.toLocaleString()} VND × {quantity}개 = {getTotalValue().toLocaleString()} VND
+                  {endmillData.unitPrice.toLocaleString()} VND × {quantity}{t('inventory.pieces')} = {getTotalValue().toLocaleString()} VND
                 </div>
               </div>
 
@@ -579,7 +579,7 @@ export default function OutboundPage() {
                   className="flex-1 px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium disabled:bg-gray-400"
                   disabled={quantity <= 0 || !equipmentNumber.trim() || quantity > endmillData.currentStock || loading}
                 >
-                  {loading ? '처리 중...' : '📤 출고 처리'}
+                  {loading ? t('common.loading') : `📤 ${t('inventory.processOutbound')}`}
                 </button>
                 <button
                   onClick={() => {
@@ -593,7 +593,7 @@ export default function OutboundPage() {
                   }}
                   className="px-4 py-3 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                 >
-                  초기화
+                  {t('common.reset')}
                 </button>
               </div>
             </div>
@@ -602,10 +602,10 @@ export default function OutboundPage() {
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
                 📦
               </div>
-              <p className="text-lg font-medium mb-2">앤드밀 정보를 스캔해주세요</p>
-              <p className="text-sm">QR 코드를 스캔하거나 앤드밀 코드를 입력하면</p>
-              <p className="text-sm">자동으로 정보가 불러와집니다</p>
-              <p className="text-xs text-gray-400 mt-2">출고 정보는 직접 입력하세요</p>
+              <p className="text-lg font-medium mb-2">{t('inventory.scanEndmillOutbound')}</p>
+              <p className="text-sm">{t('inventory.scanOrEnterOutbound')}</p>
+              <p className="text-sm">{t('inventory.autoLoadOutbound')}</p>
+              <p className="text-xs text-gray-400 mt-2">{t('inventory.enterEquipmentAndPurpose')}</p>
             </div>
           )}
         </div>
@@ -614,28 +614,28 @@ export default function OutboundPage() {
       {/* 출고 처리 내역 */}
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">오늘 출고 처리 내역</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('inventory.todayOutboundHistory')}</h2>
         </div>
 
         {outboundItems.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            아직 처리된 출고 내역이 없습니다.
+            {t('inventory.noOutboundHistory')}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">처리시간</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">앤드밀 코드</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">앤드밀 이름</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">설비번호</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">T번호</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">수량</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">목적</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">가치 (VND)</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">처리자</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">작업</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.processedTime')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.endmillCode')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.endmillName')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.equipmentNumber')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">T{t('common.code')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('common.quantity')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.purpose')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.currentStockValue')} (VND)</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.processor')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.actions')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -655,7 +655,7 @@ export default function OutboundPage() {
                         onClick={() => handleCancelOutbound(item.id)}
                         className="text-red-600 hover:text-red-800"
                       >
-                        취소
+                        {t('common.cancel')}
                       </button>
                     </td>
                   </tr>
