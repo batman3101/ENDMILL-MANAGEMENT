@@ -7,6 +7,7 @@ import { useToast } from '../../../../components/shared/Toast'
 import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
 import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
 import { useSettings } from '../../../../lib/hooks/useSettings'
+import { useTranslations } from '../../../../lib/hooks/useTranslations'
 import { supabase } from '../../../../lib/supabase/client'
 
 // 앤드밀 데이터 타입 정의
@@ -35,6 +36,7 @@ interface OutboundItem {
 }
 
 export default function OutboundPage() {
+  const { t } = useTranslations()
   const { showSuccess, showError, showWarning } = useToast()
   const confirmation = useConfirmation()
   const { searchByCode } = useInventorySearch()
@@ -92,13 +94,13 @@ export default function OutboundPage() {
                 const { endmillCode: foundEndmillCode } = endmillResult.data.endmillInfo
                 if (foundEndmillCode === endmillCode) {
                   setTNumber(t)
-                  showSuccess('T번호 자동 입력', `T${t.toString().padStart(2, '0')}이 자동으로 입력되었습니다.`)
+                  showSuccess(t('inventory.tNumberAutoInput'), `T${t.toString().padStart(2, '0')}${t('inventory.tNumberAutoInputSuccess')}`)
                   return
                 }
               }
             }
           }
-          showWarning('T번호 자동 입력 실패', '해당 설비에서 이 앤드밀이 사용되는 T번호를 찾을 수 없습니다.')
+          showWarning(t('inventory.tNumberAutoInputFailed'), t('inventory.tNumberNotFound'))
         }
       }
     } catch (error) {
@@ -219,7 +221,7 @@ export default function OutboundPage() {
         setEndmillData(endmillInfo)
         setQuantity(1) // 수량 초기화
 
-        showSuccess('앤드밀 검색 완료', `앤드밀 정보가 로드되었습니다: ${foundEndmill.code} (재고: ${currentStock}개)`)
+        showSuccess(t('inventory.searchComplete'), `${t('inventory.infoLoaded')}: ${foundEndmill.code} (${t('inventory.stock')}: ${currentStock}${t('inventory.pieces')})`)
 
         // 설비번호가 이미 입력되어 있다면 T번호 자동 입력 시도
         if (equipmentNumber.trim()) {
@@ -246,30 +248,30 @@ export default function OutboundPage() {
         }
         setEndmillData(endmillInfo)
         setQuantity(1)
-        showSuccess('앤드밀 검색 완료', `앤드밀 정보가 로드되었습니다: ${foundEndmill.code} (재고 정보 불러오기 실패)`)
+        showSuccess(t('inventory.searchComplete'), `${t('inventory.infoLoaded')}: ${foundEndmill.code} (${t('inventory.stockInfo')})`)
       }
     } else {
       setEndmillData(null)
-      setErrorMessage(`앤드밀 코드 '${code}'를 찾을 수 없습니다. 코드를 확인해주세요.`)
+      setErrorMessage(`${t('inventory.codeNotFound')} '${code}'`)
     }
   }
 
   const handleProcessOutbound = async () => {
     if (!endmillData || quantity <= 0 || !equipmentNumber.trim()) {
-      showError('입력 확인 필요', '앤드밀 정보, 수량, 설비번호를 확인해주세요.')
+      showError(t('inventory.checkInput'), t('inventory.checkOutboundFields'))
       return
     }
 
     // 설비번호 패턴 검증
     const equipmentPattern = /^C[0-9]{3}$/
     if (!equipmentPattern.test(equipmentNumber)) {
-      showWarning('설비번호 형식 오류', '설비번호는 C001-C800 형식으로 입력해주세요.')
+      showWarning(t('inventory.equipmentNumberFormat'), t('inventory.equipmentNumberFormatError'))
       return
     }
 
     // 재고 확인
     if (endmillData.currentStock < quantity) {
-      showError('재고 부족', `현재 재고(${endmillData.currentStock}개)보다 많은 수량을 출고할 수 없습니다.`)
+      showError(t('inventory.insufficientStock'), `${t('inventory.insufficientStockError')} (${endmillData.currentStock}${t('inventory.pieces')})`)
       return
     }
 
@@ -316,15 +318,15 @@ export default function OutboundPage() {
           await loadOutboundHistory()
 
           showSuccess(
-            '출고 처리 완료',
-            `${endmillData.code} ${quantity}개가 ${equipmentNumber} T${tNumber.toString().padStart(2, '0')}로 출고되었습니다.`
+            t('inventory.outboundProcessComplete'),
+            `${endmillData.code} ${quantity}${t('inventory.successfullyOutbound')} ${equipmentNumber} T${tNumber.toString().padStart(2, '0')}${t('inventory.outboundTo')}`
           )
         } else {
-          showError('출고 처리 실패', result.error || '출고 처리 중 오류가 발생했습니다.')
+          showError(t('inventory.outboundProcessFailed'), result.error || t('inventory.outboundProcessError'))
         }
       } catch (error) {
         console.error('출고 처리 오류:', error)
-        showError('출고 처리 실패', '출고 처리 중 오류가 발생했습니다.')
+        showError(t('inventory.outboundProcessFailed'), t('inventory.outboundProcessError'))
       } finally {
         confirmation.setLoading(false)
         setLoading(false)
@@ -334,11 +336,11 @@ export default function OutboundPage() {
 
   const handleCancelOutbound = async (transactionId: string) => {
     const confirmed = await confirmation.showConfirmation({
-      title: '출고 취소',
-      message: '이 출고 내역을 취소하시겠습니까? 재고가 복구됩니다.',
+      title: t('inventory.cancelOutbound'),
+      message: t('inventory.cancelOutboundConfirm'),
       type: 'danger',
-      confirmText: '취소',
-      cancelText: '유지'
+      confirmText: t('common.cancel'),
+      cancelText: t('inventory.keep')
     })
 
     if (confirmed) {
@@ -351,13 +353,13 @@ export default function OutboundPage() {
 
         if (response.ok && result.success) {
           await loadOutboundHistory()
-          showSuccess('출고 취소 완료', '출고가 취소되고 재고가 복구되었습니다.')
+          showSuccess(t('inventory.cancelOutboundSuccess'), t('inventory.cancelOutboundSuccessMessage'))
         } else {
-          showError('출고 취소 실패', result.error || '출고 취소 중 오류가 발생했습니다.')
+          showError(t('inventory.cancelOutboundFailed'), result.error || t('inventory.cancelOutboundError'))
         }
       } catch (error) {
         console.error('출고 취소 오류:', error)
-        showError('출고 취소 실패', '출고 취소 중 오류가 발생했습니다.')
+        showError(t('inventory.cancelOutboundFailed'), t('inventory.cancelOutboundError'))
       }
     }
   }
@@ -379,37 +381,37 @@ export default function OutboundPage() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">재고 관리</h1>
-          <p className="text-gray-600">앤드밀 재고 현황 및 공급업체별 단가 비교</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('inventory.title')}</h1>
+          <p className="text-gray-600">{t('inventory.subtitle')}</p>
         </div>
         <Link
           href="/dashboard/inventory"
           className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
         >
-          ← 재고현황으로
+          ← {t('inventory.backToInventory')}
         </Link>
       </div>
 
       {/* QR 스캔을 통한 앤드밀 출고 처리 */}
-      <p className="text-gray-600">QR 스캔을 통한 앤드밀 출고 처리</p>
+      <p className="text-gray-600">{t('inventory.outboundScanDescription')}</p>
 
       {/* QR 스캔 섹션 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">📱 QR 스캐너</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">📱 {t('inventory.qrScanner')}</h2>
 
           {isScanning ? (
             <div className="border-2 border-dashed border-green-300 rounded-lg p-8 text-center bg-green-50">
               <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-lg flex items-center justify-center">
                 📷
               </div>
-              <p className="text-green-600 mb-4">카메라가 활성화되었습니다</p>
-              <p className="text-sm text-gray-600 mb-4">QR 코드를 카메라에 비춰주세요</p>
+              <p className="text-green-600 mb-4">{t('inventory.cameraActivated')}</p>
+              <p className="text-sm text-gray-600 mb-4">{t('inventory.showQRToCamera')}</p>
               <button
                 onClick={() => setIsScanning(false)}
                 className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
               >
-                스캔 중지
+                {t('inventory.stopScanning')}
               </button>
             </div>
           ) : (
@@ -417,20 +419,20 @@ export default function OutboundPage() {
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
                 📷
               </div>
-              <p className="text-gray-500 mb-4">QR 코드를 스캔하여 앤드밀 정보를 불러오세요</p>
+              <p className="text-gray-500 mb-4">{t('inventory.scanToLoadInfo')}</p>
               <button
                 onClick={() => setIsScanning(true)}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 mb-2"
               >
-                카메라 시작
+                {t('inventory.startCamera')}
               </button>
 
               <div className="mt-4 text-center">
-                <p className="text-sm text-gray-600 mb-2">또는</p>
+                <p className="text-sm text-gray-600 mb-2">{t('inventory.or')}</p>
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="앤드밀 코드 입력"
+                    placeholder={t('inventory.enterCodePlaceholder')}
                     value={scannedCode}
                     onChange={(e) => setScannedCode(e.target.value)}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -445,7 +447,7 @@ export default function OutboundPage() {
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
                     disabled={!scannedCode.trim()}
                   >
-                    검색
+                    {t('common.search')}
                   </button>
                 </div>
                 {errorMessage && (
