@@ -380,6 +380,51 @@ const resources = {
         // 기타
         required: '*',
         pieces: '개',
+
+        // 입고 페이지
+        qrScanner: 'QR 스캐너',
+        scanDescription: 'QR 스캔을 통한 앤드밀 입고 처리',
+        backToInventory: '재고현황으로',
+        cameraActivated: '카메라가 활성화되었습니다',
+        showQRToCamera: 'QR 코드를 카메라에 비춰주세요',
+        stopScanning: '스캔 중지',
+        scanToLoadInfo: 'QR 코드를 스캔하여 앤드밀 정보를 불러오세요',
+        startCamera: '카메라 시작',
+        or: '또는',
+        enterCodePlaceholder: '앤드밀 코드 입력 (예: AT001)',
+
+        inboundInfo: '입고 정보',
+        autoFilledInfo: '자동 입력된 앤드밀 정보',
+        readOnly: '(읽기 전용)',
+        standardLife: '표준 수명',
+        times: '회',
+        inboundQuantity: '입고 수량',
+        enterUnitPrice: '단가 입력',
+        enterQuantity: '수량 입력',
+        totalInboundAmount: '총 입고 금액',
+        processInbound: '입고 처리',
+
+        scanEndmillInfo: '앤드밀 정보를 스캔해주세요',
+        scanOrEnterCode: 'QR 코드를 스캔하거나 앤드밀 코드를 입력하면',
+        autoLoadInfo: '자동으로 정보가 불러와집니다',
+        enterSupplierAndPrice: '공급업체와 단가는 직접 입력하세요',
+
+        todayInboundHistory: '오늘 입고 처리 내역',
+        noInboundHistory: '아직 처리된 입고 내역이 없습니다.',
+        processedTime: '처리시간',
+        processor: '처리자',
+        totalAmount: '총액',
+
+        searchComplete: '앤드밀 검색 완료',
+        infoLoaded: '앤드밀 정보가 로드되었습니다',
+        codeNotFound: '앤드밀 코드를 찾을 수 없습니다. 코드를 확인해주세요.',
+        checkInput: '입력 확인 필요',
+        checkAllFields: '앤드밀 정보, 수량, 공급업체, 단가를 모두 확인해주세요.',
+        inboundProcessComplete: '입고 처리 완료',
+        successfullyInbound: '개가 성공적으로 입고되었습니다.',
+        inboundProcessFailed: '입고 처리 실패',
+        inboundProcessError: '입고 처리 중 오류가 발생했습니다.',
+        totalPrice: '총액',
       },
 
       // CAM SHEET 관리
