@@ -42,12 +42,12 @@ export default function Breadcrumb() {
     '/dashboard/inventory/inbound': [
       { label: t('navigation.dashboard'), href: '/dashboard', icon: '🏠' },
       { label: t('navigation.inventory'), href: '/dashboard/inventory', icon: '📦' },
-      { label: '입고 관리', href: '/dashboard/inventory/inbound', icon: '📥' }
+      { label: t('inventory.inboundManagement'), href: '/dashboard/inventory/inbound', icon: '📥' }
     ],
     '/dashboard/inventory/outbound': [
       { label: t('navigation.dashboard'), href: '/dashboard', icon: '🏠' },
       { label: t('navigation.inventory'), href: '/dashboard/inventory', icon: '📦' },
-      { label: '출고 관리', href: '/dashboard/inventory/outbound', icon: '📤' }
+      { label: t('inventory.outboundManagement'), href: '/dashboard/inventory/outbound', icon: '📤' }
     ],
     '/dashboard/reports': [
       { label: t('navigation.dashboard'), href: '/dashboard', icon: '🏠' },

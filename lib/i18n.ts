@@ -472,6 +472,11 @@ const resources = {
         keep: '유지',
         stock: '재고',
         stockInfo: '재고 정보 불러오기 실패',
+
+        // 공통
+        uncategorized: '미분류',
+        selectPurpose: '목적 선택',
+        outboundNotePrefix: '출고 처리:',
       },
 
       // CAM SHEET 관리
@@ -2177,6 +2182,103 @@ const resources = {
         // 기타
         required: '*',
         pieces: 'cái',
+
+        // 입고 페이지
+        qrScanner: 'Máy quét QR',
+        scanDescription: 'Xử lý nhập kho dao phay bằng quét mã QR',
+        backToInventory: 'Về tồn kho',
+        cameraActivated: 'Camera đã được kích hoạt',
+        showQRToCamera: 'Vui lòng hiển thị mã QR trước camera',
+        stopScanning: 'Dừng quét',
+        scanToLoadInfo: 'Quét mã QR để tải thông tin dao phay',
+        startCamera: 'Khởi động camera',
+        or: 'Hoặc',
+        enterCodePlaceholder: 'Nhập mã dao phay (Ví dụ: AT001)',
+
+        inboundInfo: 'Thông tin nhập kho',
+        autoFilledInfo: 'Thông tin dao phay tự động nhập',
+        readOnly: '(Chỉ đọc)',
+        standardLife: 'Tuổi thọ tiêu chuẩn',
+        times: 'lần',
+        inboundQuantity: 'Số lượng nhập kho',
+        enterUnitPrice: 'Nhập đơn giá',
+        enterQuantity: 'Nhập số lượng',
+        totalInboundAmount: 'Tổng tiền nhập kho',
+        processInbound: 'Xử lý nhập kho',
+
+        scanEndmillInfo: 'Vui lòng quét thông tin dao phay',
+        scanOrEnterCode: 'Quét mã QR hoặc nhập mã dao phay',
+        autoLoadInfo: 'Thông tin sẽ được tải tự động',
+        enterSupplierAndPrice: 'Vui lòng nhập nhà cung cấp và đơn giá trực tiếp',
+
+        todayInboundHistory: 'Lịch sử nhập kho hôm nay',
+        noInboundHistory: 'Chưa có lịch sử nhập kho.',
+        processedTime: 'Thời gian xử lý',
+        processor: 'Người xử lý',
+        totalAmount: 'Tổng tiền',
+
+        searchComplete: 'Tìm kiếm dao phay hoàn tất',
+        infoLoaded: 'Thông tin dao phay đã được tải',
+        codeNotFound: 'Không tìm thấy mã dao phay. Vui lòng kiểm tra mã.',
+        checkInput: 'Cần kiểm tra đầu vào',
+        checkAllFields: 'Vui lòng kiểm tra thông tin dao phay, số lượng, nhà cung cấp và đơn giá.',
+        inboundProcessComplete: 'Nhập kho hoàn tất',
+        successfullyInbound: 'đã được nhập kho thành công.',
+        inboundProcessFailed: 'Nhập kho thất bại',
+        inboundProcessError: 'Đã xảy ra lỗi trong quá trình nhập kho.',
+        totalPrice: 'Tổng tiền',
+
+        // 출고 페이지
+        outboundScanDescription: 'Xử lý xuất kho dao phay bằng quét mã QR',
+        outboundInfo: 'Thông tin xuất kho',
+        equipmentNumber: 'Số thiết bị',
+        equipmentNumberPlaceholder: 'Nhập số thiết bị (Ví dụ: C001)',
+        equipmentNumberRequired: 'Số thiết bị *',
+        tNumberRequired: 'Số T *',
+        tNumberAutoInput: 'Tự động nhập số T',
+        tNumberAutoInputSuccess: 'đã được tự động nhập.',
+        tNumberAutoInputFailed: 'Tự động nhập số T thất bại',
+        tNumberNotFound: 'Không tìm thấy số T mà dao phay này được sử dụng trong thiết bị này.',
+        purpose: 'Lý do thay thế',
+        purposeRequired: 'Lý do thay thế *',
+        outboundQuantity: 'Số lượng xuất kho',
+        processOutbound: 'Xử lý xuất kho',
+        totalOutboundAmount: 'Tổng tiền xuất kho',
+        currentStockValue: 'Giá trị tồn kho hiện tại',
+
+        scanEndmillOutbound: 'Vui lòng quét thông tin dao phay',
+        scanOrEnterOutbound: 'Quét mã QR hoặc nhập mã dao phay',
+        autoLoadOutbound: 'Thông tin sẽ được tải tự động',
+        enterEquipmentAndPurpose: 'Vui lòng nhập số thiết bị và lý do thay thế trực tiếp',
+
+        todayOutboundHistory: 'Lịch sử xuất kho hôm nay',
+        noOutboundHistory: 'Chưa có lịch sử xuất kho.',
+
+        checkOutboundFields: 'Vui lòng kiểm tra thông tin dao phay, số lượng và số thiết bị.',
+        equipmentNumberFormat: 'Lỗi định dạng số thiết bị',
+        equipmentNumberFormatError: 'Vui lòng nhập số thiết bị theo định dạng C001-C800.',
+        insufficientStock: 'Thiếu tồn kho',
+        insufficientStockError: 'Không thể xuất kho nhiều hơn tồn kho hiện tại.',
+        outboundProcessComplete: 'Xuất kho hoàn tất',
+        successfullyOutbound: 'đã',
+        outboundTo: 'được xuất kho đến',
+        outboundProcessFailed: 'Xuất kho thất bại',
+        outboundProcessError: 'Đã xảy ra lỗi trong quá trình xuất kho.',
+
+        cancelOutbound: 'Hủy xuất kho',
+        cancelOutboundConfirm: 'Bạn có muốn hủy lịch sử xuất kho này không? Tồn kho sẽ được khôi phục.',
+        cancelOutboundSuccess: 'Hủy xuất kho hoàn tất',
+        cancelOutboundSuccessMessage: 'Xuất kho đã được hủy và tồn kho đã được khôi phục.',
+        cancelOutboundFailed: 'Hủy xuất kho thất bại',
+        cancelOutboundError: 'Đã xảy ra lỗi trong quá trình hủy xuất kho.',
+        keep: 'Giữ',
+        stock: 'Tồn kho',
+        stockInfo: 'Tải thông tin tồn kho thất bại',
+
+        // 공통
+        uncategorized: 'Không phân loại',
+        selectPurpose: 'Chọn mục đích',
+        outboundNotePrefix: 'Xử lý xuất kho:',
       },
 
       // CAM SHEET 관리

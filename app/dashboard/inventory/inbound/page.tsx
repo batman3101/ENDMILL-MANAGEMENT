@@ -160,7 +160,7 @@ export default function InboundPage() {
         name: foundEndmill.name || '',
         specifications: foundEndmill.specifications || '',
         unitPrice: foundEndmill.unitPrice || 0,
-        category: foundEndmill.category || '미분류',
+        category: foundEndmill.category || t('inventory.uncategorized'),
         standardLife: foundEndmill.standardLife || 2000
       }
 
@@ -260,9 +260,7 @@ export default function InboundPage() {
     <div className="space-y-6">
       {/* 헤더 */}
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-gray-600">{t('inventory.scanDescription')}</p>
-        </div>
+        <p className="text-gray-600">{t('inventory.scanDescription')}</p>
         <Link
           href="/dashboard/inventory"
           className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"

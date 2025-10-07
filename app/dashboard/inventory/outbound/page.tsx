@@ -47,7 +47,7 @@ export default function OutboundPage() {
   const [quantity, setQuantity] = useState(1)
   const [equipmentNumber, setEquipmentNumber] = useState('')
   const [tNumber, setTNumber] = useState(1)
-  const [purpose, setPurpose] = useState('예방교체')
+  const [purpose, setPurpose] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [availableEndmills, setAvailableEndmills] = useState<any[]>([])
@@ -214,7 +214,7 @@ export default function OutboundPage() {
           specifications: foundEndmill.specifications || '',
           currentStock: currentStock,
           unitPrice: lowestPrice,
-          category: foundEndmill.categoryName || '미분류',
+          category: foundEndmill.categoryName || t('inventory.uncategorized'),
           standardLife: foundEndmill.standardLife || 2000
         }
 
@@ -243,7 +243,7 @@ export default function OutboundPage() {
           specifications: foundEndmill.specifications || '',
           currentStock: 0,
           unitPrice: lowestPrice,
-          category: foundEndmill.categoryName || '미분류',
+          category: foundEndmill.categoryName || t('inventory.uncategorized'),
           standardLife: foundEndmill.standardLife || 2000
         }
         setEndmillData(endmillInfo)
@@ -298,7 +298,7 @@ export default function OutboundPage() {
             t_number: tNumber,
             quantity: quantity,
             purpose: purpose,
-            notes: `출고 처리: ${equipmentNumber} T${tNumber.toString().padStart(2, '0')}`
+            notes: `${t('inventory.outboundNotePrefix')} ${equipmentNumber} T${tNumber.toString().padStart(2, '0')}`
           })
         })
 
@@ -310,7 +310,7 @@ export default function OutboundPage() {
           setQuantity(1)
           setEquipmentNumber('')
           setTNumber(1)
-          setPurpose('예방교체')
+          setPurpose(toolChangesReasons[0] || '')
           setScannedCode('')
           setErrorMessage('')
 
@@ -380,10 +380,7 @@ export default function OutboundPage() {
     <div className="space-y-6">
       {/* 헤더 */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('inventory.title')}</h1>
-          <p className="text-gray-600">{t('inventory.subtitle')}</p>
-        </div>
+        <p className="text-gray-600">{t('inventory.outboundScanDescription')}</p>
         <Link
           href="/dashboard/inventory"
           className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
@@ -391,9 +388,6 @@ export default function OutboundPage() {
           ← {t('inventory.backToInventory')}
         </Link>
       </div>
-
-      {/* QR 스캔을 통한 앤드밀 출고 처리 */}
-      <p className="text-gray-600">{t('inventory.outboundScanDescription')}</p>
 
       {/* QR 스캔 섹션 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -551,7 +545,7 @@ export default function OutboundPage() {
                     className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   >
-                    <option value="">{t('inventory.selectSupplier')}</option>
+                    <option value="">{t('inventory.selectPurpose')}</option>
                     {toolChangesReasons.map(reason => (
                       <option key={reason} value={reason}>{reason}</option>
                     ))}
@@ -587,7 +581,7 @@ export default function OutboundPage() {
                     setQuantity(1)
                     setEquipmentNumber('')
                     setTNumber(1)
-                    setPurpose('예방교체')
+                    setPurpose(toolChangesReasons[0] || '')
                     setScannedCode('')
                     setErrorMessage('')
                   }}
