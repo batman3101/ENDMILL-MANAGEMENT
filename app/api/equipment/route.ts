@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { serverSupabaseService } from '../../../lib/services/supabaseService';
 import { z } from 'zod';
+import { logger } from '@/lib/utils/logger';
 
 // 설비 생성 스키마
 const createEquipmentSchema = z.object({
@@ -29,13 +30,13 @@ export async function GET(request: NextRequest) {
 
     // CAM Sheet 데이터 가져오기
     const camSheets = await serverSupabaseService.camSheet.getAll()
-    console.log('🔍 CAM Sheet 데이터:', camSheets.length, '개')
+    logger.log('🔍 CAM Sheet 데이터:', camSheets.length, '개')
 
     // 각 설비에 대해 툴 포지션 정보 추가
     const equipmentsWithToolUsage = await Promise.all(
       equipments.map(async (equipment) => {
         try {
-          console.log(`🔧 설비 처리 중: ${equipment.equipment_number} (모델: ${equipment.current_model}, 공정: ${equipment.process})`)
+          logger.log(`🔧 설비 처리 중: ${equipment.equipment_number} (모델: ${equipment.current_model}, 공정: ${equipment.process})`)
 
           // 해당 설비의 모델과 공정에 맞는 CAM Sheet 찾기
           const camSheet = camSheets.find(sheet =>
@@ -47,10 +48,10 @@ export async function GET(request: NextRequest) {
           let totalPositions = equipment.tool_position_count || 21
 
           if (camSheet) {
-            console.log(`✅ CAM Sheet 발견: ${camSheet.id} (모델: ${camSheet.model}, 공정: ${camSheet.process})`)
+            logger.log(`✅ CAM Sheet 발견: ${camSheet.id} (모델: ${camSheet.model}, 공정: ${camSheet.process})`)
             // CAM Sheet에서 엔드밀 데이터 가져오기
             const endmills = await serverSupabaseService.camSheet.getEndmills(camSheet.id)
-            console.log(`🔧 엔드밀 데이터:`, endmills?.length, '개')
+            logger.log(`🔧 엔드밀 데이터:`, endmills?.length, '개')
 
             if (endmills && endmills.length > 0) {
               // 등록된 엔드밀 수 = 사용중인 포지션 수
@@ -60,10 +61,10 @@ export async function GET(request: NextRequest) {
               if (maxTNumber > 0) {
                 totalPositions = maxTNumber
               }
-              console.log(`📊 사용량 계산: ${usedPositions}/${totalPositions}`)
+              logger.log(`📊 사용량 계산: ${usedPositions}/${totalPositions}`)
             }
           } else {
-            console.log('❌ 매칭되는 CAM Sheet 없음')
+            logger.log('❌ 매칭되는 CAM Sheet 없음')
           }
 
           return {

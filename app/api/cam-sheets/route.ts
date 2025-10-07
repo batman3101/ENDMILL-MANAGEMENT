@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { serverSupabaseService, createServerSupabaseClient } from '../../../lib/services/supabaseService'
+import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    console.log('CAM Sheet API 요청 데이터:', body)
+    logger.log('CAM Sheet API 요청 데이터:', body)
 
     if (body.batch && Array.isArray(body.data)) {
       // 일괄 업로드 처리
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function createCAMSheetWithEndmills(data: any) {
-  console.log('createCAMSheetWithEndmills 실행:', data)
+  logger.log('createCAMSheetWithEndmills 실행:', data)
 
   // 필드명 매핑
   const camSheetData = {
@@ -81,15 +82,15 @@ async function createCAMSheetWithEndmills(data: any) {
     version_date: data.versionDate || data.version_date
   }
 
-  console.log('변환된 CAM Sheet 데이터:', camSheetData)
+  logger.log('변환된 CAM Sheet 데이터:', camSheetData)
 
   // CAM Sheet 생성
   const newCAMSheet = await serverSupabaseService.camSheet.create(camSheetData)
-  console.log('생성된 CAM Sheet:', newCAMSheet)
+  logger.log('생성된 CAM Sheet:', newCAMSheet)
 
   // 엔드밀 데이터 처리
   if (data.endmills && Array.isArray(data.endmills) && data.endmills.length > 0) {
-    console.log('엔드밀 데이터 처리 시작:', data.endmills)
+    logger.log('엔드밀 데이터 처리 시작:', data.endmills)
 
     for (const endmill of data.endmills) {
       try {
@@ -123,7 +124,7 @@ async function createCAMSheetWithEndmills(data: any) {
           specifications: endmill.specifications || ''
         }
 
-        console.log('CAM Sheet 엔드밀 매핑 데이터:', camSheetEndmillData)
+        logger.log('CAM Sheet 엔드밀 매핑 데이터:', camSheetEndmillData)
 
         await serverSupabaseService.camSheet.addEndmill(camSheetEndmillData)
       } catch (endmillError) {
@@ -155,7 +156,7 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
     const { id, endmills, ...updateData } = body
-    console.log('CAM Sheet 수정 API 요청:', body)
+    logger.log('CAM Sheet 수정 API 요청:', body)
 
     if (!id) {
       return NextResponse.json(
@@ -173,11 +174,11 @@ export async function PUT(request: NextRequest) {
     }
 
     const updatedCAMSheet = await serverSupabaseService.camSheet.update(id, camSheetData)
-    console.log('수정된 CAM Sheet:', updatedCAMSheet)
+    logger.log('수정된 CAM Sheet:', updatedCAMSheet)
 
     // 엔드밀 데이터 처리 (삭제 후 재생성)
     if (endmills && Array.isArray(endmills)) {
-      console.log('엔드밀 데이터 수정 시작:', endmills)
+      logger.log('엔드밀 데이터 수정 시작:', endmills)
 
       // 기존 엔드밀 데이터 삭제
       const supabaseDelete = createServerSupabaseClient()
@@ -222,7 +223,7 @@ export async function PUT(request: NextRequest) {
             specifications: endmill.specifications || ''
           }
 
-          console.log('CAM Sheet 엔드밀 매핑 데이터:', camSheetEndmillData)
+          logger.log('CAM Sheet 엔드밀 매핑 데이터:', camSheetEndmillData)
 
           await serverSupabaseService.camSheet.addEndmill(camSheetEndmillData)
         } catch (endmillError) {

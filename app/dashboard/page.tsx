@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { clientLogger } from '../../lib/utils/logger'
 import LandingStatusCard from '../../components/features/LandingStatusCard'
 import DonutChart from '../../components/features/DonutChart'
 import { useSettings } from '../../lib/hooks/useSettings'
@@ -40,29 +41,29 @@ export default function DashboardPage() {
   const realtimeCallbacks = useMemo(() => ({
     tool_changes: {
       onInsert: (payload: any) => {
-        console.log('🔧 새로운 공구 교체:', payload)
+        clientLogger.log('🔧 새로운 공구 교체:', payload)
         throttledRefresh() // 제한된 새로고침
       },
       onUpdate: (payload: any) => {
-        console.log('🔧 공구 교체 업데이트:', payload)
+        clientLogger.log('🔧 공구 교체 업데이트:', payload)
         throttledRefresh()
       }
     },
     inventory_transactions: {
       onInsert: (payload: any) => {
-        console.log('📦 새로운 재고 거래:', payload)
+        clientLogger.log('📦 새로운 재고 거래:', payload)
         throttledRefresh()
       }
     },
     notifications: {
       onInsert: (payload: any) => {
-        console.log('🔔 새로운 알림:', payload)
+        clientLogger.log('🔔 새로운 알림:', payload)
         // 실시간 알림 표시 로직 추가 가능
       }
     },
     activity_logs: {
       onInsert: (payload: any) => {
-        console.log('📋 새로운 활동 로그:', payload)
+        clientLogger.log('📋 새로운 활동 로그:', payload)
       }
     }
   }), [throttledRefresh])

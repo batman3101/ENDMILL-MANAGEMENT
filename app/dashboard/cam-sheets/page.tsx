@@ -10,6 +10,7 @@ import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createSaveConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useSettings } from '../../../lib/hooks/useSettings'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
+import { logger } from '@/lib/utils/logger'
 
 export default function CAMSheetsPage() {
   const { t } = useTranslation()
@@ -47,7 +48,7 @@ export default function CAMSheetsPage() {
         const response = await fetch('/api/tool-changes')
         if (response.ok) {
           const result = await response.json()
-          console.log('교체 실적 데이터:', result)
+          logger.log('교체 실적 데이터:', result)
           setToolChanges(result.data || [])
         }
       } catch (error) {
@@ -64,7 +65,7 @@ export default function CAMSheetsPage() {
         const response = await fetch('/api/inventory')
         if (response.ok) {
           const result = await response.json()
-          console.log('재고 데이터:', result)
+          logger.log('재고 데이터:', result)
           setInventoryData(result.data || result.inventory || [])
         }
       } catch (error) {
@@ -124,10 +125,10 @@ export default function CAMSheetsPage() {
 
   // 인사이트 데이터 계산
   const calculateInsights = () => {
-    console.log('=== 인사이트 계산 시작 ===')
-    console.log('CAM Sheets 개수:', camSheets.length)
-    console.log('교체 실적 개수:', toolChanges.length)
-    console.log('재고 데이터 개수:', inventoryData.length)
+    logger.log('=== 인사이트 계산 시작 ===')
+    logger.log('CAM Sheets 개수:', camSheets.length)
+    logger.log('교체 실적 개수:', toolChanges.length)
+    logger.log('재고 데이터 개수:', inventoryData.length)
 
     if (camSheets.length === 0) {
       return {
@@ -151,9 +152,9 @@ export default function CAMSheetsPage() {
     }
 
     const allEndmills = camSheets.flatMap(sheet => sheet.cam_sheet_endmills || [])
-    console.log('=== CAM Sheet 앤드밀 정보 ===')
-    console.log('CAM Sheet 등록 앤드밀 개수:', allEndmills.length)
-    console.log('CAM Sheet 앤드밀 샘플:', allEndmills.slice(0, 3).map(e => ({
+    logger.log('=== CAM Sheet 앤드밀 정보 ===')
+    logger.log('CAM Sheet 등록 앤드밀 개수:', allEndmills.length)
+    logger.log('CAM Sheet 앤드밀 샘플:', allEndmills.slice(0, 3).map(e => ({
       code: e.endmill_code,
       name: e.endmill_name,
       toolLife: e.tool_life
@@ -167,15 +168,15 @@ export default function CAMSheetsPage() {
       'CNC2-1': 0
     }
 
-    console.log('=== Tool Life 예측 정확도 계산 ===')
-    console.log('교체 실적 데이터 개수:', toolChanges.length)
-    console.log('CAM Sheet 앤드밀 개수:', allEndmills.length)
+    logger.log('=== Tool Life 예측 정확도 계산 ===')
+    logger.log('교체 실적 데이터 개수:', toolChanges.length)
+    logger.log('CAM Sheet 앤드밀 개수:', allEndmills.length)
 
     if (toolChanges.length > 0 && allEndmills.length > 0) {
       // 전체 정확도 계산
       const validChanges = toolChanges.filter(change => change.tool_life && change.tool_life > 0)
-      console.log('유효한 교체 실적 개수:', validChanges.length)
-      console.log('교체 실적 샘플:', validChanges.slice(0, 3).map(c => ({
+      logger.log('유효한 교체 실적 개수:', validChanges.length)
+      logger.log('교체 실적 샘플:', validChanges.slice(0, 3).map(c => ({
         code: c.endmill_code,
         name: c.endmill_name,
         toolLife: c.tool_life,
@@ -191,18 +192,18 @@ export default function CAMSheetsPage() {
           if (camEndmill && camEndmill.tool_life && camEndmill.tool_life > 0 && change.tool_life) {
             matchCount++
             const accuracy = Math.min((change.tool_life / camEndmill.tool_life) * 100, 100)
-            console.log(`✓ 매칭: ${change.endmill_code}, 실제: ${change.tool_life}회, 설정: ${camEndmill.tool_life}회, 정확도: ${accuracy.toFixed(1)}%`)
+            logger.log(`✓ 매칭: ${change.endmill_code}, 실제: ${change.tool_life}회, 설정: ${camEndmill.tool_life}회, 정확도: ${accuracy.toFixed(1)}%`)
             return sum + accuracy
           } else {
             notMatchedCount++
-            console.log(`✗ 매칭 실패: ${change.endmill_code} (CAM Sheet에 없음)`)
+            logger.log(`✗ 매칭 실패: ${change.endmill_code} (CAM Sheet에 없음)`)
           }
           return sum
         }, 0)
-        console.log('매칭 성공:', matchCount, '/ 매칭 실패:', notMatchedCount)
-        console.log('총 정확도:', totalAccuracy)
+        logger.log('매칭 성공:', matchCount, '/ 매칭 실패:', notMatchedCount)
+        logger.log('총 정확도:', totalAccuracy)
         toolLifeAccuracy = matchCount > 0 ? Math.round(totalAccuracy / matchCount) : 0
-        console.log('최종 Tool Life 정확도:', toolLifeAccuracy + '%')
+        logger.log('최종 Tool Life 정확도:', toolLifeAccuracy + '%')
       }
 
       // 공정별 정확도 계산
@@ -227,18 +228,18 @@ export default function CAMSheetsPage() {
     let averageChangeInterval = 0
     let endmillTypeIntervals: { [key: string]: number } = {}
 
-    console.log('=== 교체 주기 분석 ===')
+    logger.log('=== 교체 주기 분석 ===')
     if (toolChanges.length > 0) {
       // 전체 평균 교체 주기 (수량 기준)
       const validLifes = toolChanges
         .filter(change => change.tool_life && change.tool_life > 0)
         .map(change => change.tool_life)
 
-      console.log('유효한 Tool Life 개수:', validLifes.length)
+      logger.log('유효한 Tool Life 개수:', validLifes.length)
       if (validLifes.length > 0) {
         const total = validLifes.reduce((sum, life) => sum + life, 0)
         averageChangeInterval = Math.round(total / validLifes.length)
-        console.log('전체 평균 교체 주기:', averageChangeInterval + '회')
+        logger.log('전체 평균 교체 주기:', averageChangeInterval + '회')
       }
 
       // 앤드밀 타입별 평균 교체 주기 (실제 데이터에서 동적으로 추출)
@@ -270,11 +271,11 @@ export default function CAMSheetsPage() {
         if (lifes.length > 0) {
           const typeAvg = lifes.reduce((sum, life) => sum + life, 0) / lifes.length
           endmillTypeIntervals[type] = Math.round(typeAvg)
-          console.log(`${type} 평균 교체 주기: ${endmillTypeIntervals[type]}회 (데이터: ${lifes.length}건)`)
+          logger.log(`${type} 평균 교체 주기: ${endmillTypeIntervals[type]}회 (데이터: ${lifes.length}건)`)
         }
       })
     } else {
-      console.log('교체 실적 데이터가 없습니다.')
+      logger.log('교체 실적 데이터가 없습니다.')
     }
 
     // 3. 재고 연동률 (실제 Supabase 재고 데이터 기반)
@@ -283,9 +284,9 @@ export default function CAMSheetsPage() {
     let shortageEndmills = 0
     let inventoryLinkage = 0
 
-    console.log('=== 재고 연동률 계산 ===')
-    console.log('재고 데이터 개수:', inventoryData.length)
-    console.log('재고 데이터 샘플:', inventoryData.slice(0, 2).map(i => ({
+    logger.log('=== 재고 연동률 계산 ===')
+    logger.log('재고 데이터 개수:', inventoryData.length)
+    logger.log('재고 데이터 샘플:', inventoryData.slice(0, 2).map(i => ({
       code: i.endmill_type?.code,
       name: i.endmill_type?.name_ko,
       currentStock: i.current_stock,
@@ -295,8 +296,8 @@ export default function CAMSheetsPage() {
     if (totalRegisteredEndmills > 0 && inventoryData.length > 0) {
       // CAM Sheet에 등록된 각 앤드밀 코드별로 재고 확인
       const uniqueEndmillCodes = new Set(allEndmills.map(e => e.endmill_code))
-      console.log('고유 앤드밀 코드 개수:', uniqueEndmillCodes.size)
-      console.log('앤드밀 코드 목록:', Array.from(uniqueEndmillCodes))
+      logger.log('고유 앤드밀 코드 개수:', uniqueEndmillCodes.size)
+      logger.log('앤드밀 코드 목록:', Array.from(uniqueEndmillCodes))
 
       uniqueEndmillCodes.forEach(code => {
         // 재고에서 해당 앤드밀 코드 찾기 (endmill_type.code로 접근)
@@ -308,7 +309,7 @@ export default function CAMSheetsPage() {
           const currentStock = inventoryItem.current_stock || 0
           const minStock = inventoryItem.min_stock || 0
           const status = currentStock >= minStock ? '✓ 확보' : '✗ 부족'
-          console.log(`${status}: ${code}, 현재: ${currentStock}개, 최소: ${minStock}개`)
+          logger.log(`${status}: ${code}, 현재: ${currentStock}개, 최소: ${minStock}개`)
 
           // 재고가 최소 재고 이상이면 확보된 것으로 간주
           if (currentStock >= minStock) {
@@ -317,15 +318,15 @@ export default function CAMSheetsPage() {
             shortageEndmills++
           }
         } else {
-          console.log(`✗ 재고 데이터 없음: ${code}`)
+          logger.log(`✗ 재고 데이터 없음: ${code}`)
           // 재고 데이터가 없으면 부족으로 간주
           shortageEndmills++
         }
       })
 
-      console.log('재고 확보:', securedEndmills, '/ 재고 부족:', shortageEndmills)
+      logger.log('재고 확보:', securedEndmills, '/ 재고 부족:', shortageEndmills)
       inventoryLinkage = Math.round((securedEndmills / uniqueEndmillCodes.size) * 100)
-      console.log('최종 재고 연동률:', inventoryLinkage + '%')
+      logger.log('최종 재고 연동률:', inventoryLinkage + '%')
     }
 
     // 4. 표준화 지수

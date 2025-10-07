@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../../lib/supabase/client'
+import { logger } from '@/lib/utils/logger'
 
 interface ExcelRowData {
   code: string
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
       camSheetsMap
     } = normalizeExcelData(endmills)
 
-    console.log('정규화된 데이터:', {
+    logger.log('정규화된 데이터:', {
       endmillTypes: endmillTypesMap.size,
       supplierPrices: supplierPrices.length,
       camSheetEndmills: camSheetEndmills.length
@@ -59,24 +60,24 @@ export async function POST(request: NextRequest) {
     const supplierMap = await getSupplierMapping(supabase, requiredSuppliers)
 
     // 4. 순차 처리
-    console.log('엔드밀 타입 UPSERT 시작...')
+    logger.log('엔드밀 타입 UPSERT 시작...')
     const processedEndmills = await upsertEndmillTypes(supabase, endmillTypesMap, categoryMap)
-    console.log('처리된 엔드밀 타입:', processedEndmills.length)
+    logger.log('처리된 엔드밀 타입:', processedEndmills.length)
 
-    console.log('CAM Sheet 확인/생성 시작...')
+    logger.log('CAM Sheet 확인/생성 시작...')
     const processedCamSheets = await ensureCamSheets(supabase, camSheetsMap)
-    console.log('처리된 CAM Sheet:', processedCamSheets.length)
+    logger.log('처리된 CAM Sheet:', processedCamSheets.length)
 
-    console.log('공급업체별 가격 정보 처리 시작...')
+    logger.log('공급업체별 가격 정보 처리 시작...')
     const processedSupplierPrices = await upsertSupplierPrices(supabase, supplierPrices, processedEndmills, supplierMap)
-    console.log('처리된 공급업체 가격:', processedSupplierPrices.length)
+    logger.log('처리된 공급업체 가격:', processedSupplierPrices.length)
 
-    console.log('CAM Sheet 엔드밀 매핑 처리 시작...')
+    logger.log('CAM Sheet 엔드밀 매핑 처리 시작...')
     const processedCamSheetEndmills = await upsertCamSheetEndmills(supabase, camSheetEndmills, processedEndmills, processedCamSheets)
-    console.log('처리된 CAM Sheet 매핑:', processedCamSheetEndmills.length)
+    logger.log('처리된 CAM Sheet 매핑:', processedCamSheetEndmills.length)
 
     // 5. 인벤토리 생성 (새로운 엔드밀 타입에 대해서만)
-    console.log('인벤토리 생성 시작...')
+    logger.log('인벤토리 생성 시작...')
     await createInventoryForNewEndmills(supabase, processedEndmills)
 
     return NextResponse.json({
@@ -184,7 +185,7 @@ async function getCategoryMapping(supabase: any, requiredCategories: Set<string>
   const missingCategories = Array.from(requiredCategories).filter(cat => !categoryMap.has(cat))
 
   if (missingCategories.length > 0) {
-    console.log('누락된 카테고리 생성:', missingCategories)
+    logger.log('누락된 카테고리 생성:', missingCategories)
 
     const newCategories = missingCategories.map(code => ({
       code,
@@ -228,7 +229,7 @@ async function getSupplierMapping(supabase: any, requiredSuppliers: Set<string>)
   const missingSuppliers = Array.from(requiredSuppliers).filter(sup => !supplierMap.has(sup))
 
   if (missingSuppliers.length > 0) {
-    console.log('누락된 공급업체 생성:', missingSuppliers)
+    logger.log('누락된 공급업체 생성:', missingSuppliers)
 
     const newSuppliers = missingSuppliers.map(code => ({
       code,

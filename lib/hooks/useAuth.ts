@@ -50,12 +50,12 @@ export function AuthProvider(props: { children: ReactNode }) {
     try {
       const { data, error } = await supabase.auth.refreshSession()
       if (error) {
-        console.error('세션 새로고침 오류:', error)
+        console.error('세션 새로고침 오류:', error) // 에러는 유지
       } else if (data.session) {
         setSession(data.session)
       }
     } catch (error) {
-      console.error('세션 새로고침 오류:', error)
+      console.error('세션 새로고침 오류:', error) // 에러는 유지
     }
   }, [])
 
@@ -67,14 +67,14 @@ export function AuthProvider(props: { children: ReactNode }) {
       const { error } = await supabase.auth.signOut()
       
       if (error) {
-        console.error('Supabase 로그아웃 오류:', error)
+        console.error('Supabase 로그아웃 오류:', error) // 에러는 유지
       }
-      
+
       setUser(null)
       setSession(null)
       showSuccess('로그아웃 완료', '안전하게 로그아웃되었습니다.')
     } catch (error) {
-      console.error('로그아웃 오류:', error)
+      console.error('로그아웃 오류:', error) // 에러는 유지
       showError('로그아웃 실패', '로그아웃 중 오류가 발생했습니다.')
     } finally {
        setLoading(false)

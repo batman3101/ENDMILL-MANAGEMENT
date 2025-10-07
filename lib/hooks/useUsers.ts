@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clientSupabaseService } from '../services/supabaseService'
 import { User, UserRole, UserStats, UserFilter } from '../types/users'
 import { useRealtime } from './useRealtime'
+import { logger } from '@/lib/utils/logger'
 
 export const useUsers = () => {
   const queryClient = useQueryClient()
@@ -18,9 +19,9 @@ export const useUsers = () => {
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      console.log('🔄 Fetching user profiles from Supabase...')
+      logger.log('🔄 Fetching user profiles from Supabase...')
       const data = await clientSupabaseService.userProfile.getAll()
-      console.log('✅ User profiles fetched:', data?.length, 'users')
+      logger.log('✅ User profiles fetched:', data?.length, 'users')
       return data || []
     },
     staleTime: 5 * 60 * 1000, // 5분
@@ -36,9 +37,9 @@ export const useUsers = () => {
   } = useQuery({
     queryKey: ['userRoles'],
     queryFn: async () => {
-      console.log('🔄 Fetching user roles from Supabase...')
+      logger.log('🔄 Fetching user roles from Supabase...')
       const data = await clientSupabaseService.userRoles.getAll()
-      console.log('✅ User roles fetched:', data?.length, 'roles')
+      logger.log('✅ User roles fetched:', data?.length, 'roles')
       return data || []
     },
     staleTime: 5 * 60 * 1000, // 5분
@@ -49,15 +50,15 @@ export const useUsers = () => {
   useRealtime({
     table: 'user_profiles',
     onInsert: (payload) => {
-      console.log('📥 New user profile inserted:', payload)
+      logger.log('📥 New user profile inserted:', payload)
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
     onUpdate: (payload) => {
-      console.log('📝 User profile updated:', payload)
+      logger.log('📝 User profile updated:', payload)
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
     onDelete: (payload) => {
-      console.log('🗑️ User profile deleted:', payload)
+      logger.log('🗑️ User profile deleted:', payload)
       queryClient.invalidateQueries({ queryKey: ['users'] })
     }
   })
@@ -66,15 +67,15 @@ export const useUsers = () => {
   useRealtime({
     table: 'user_roles',
     onInsert: (payload) => {
-      console.log('📥 New user role inserted:', payload)
+      logger.log('📥 New user role inserted:', payload)
       queryClient.invalidateQueries({ queryKey: ['userRoles'] })
     },
     onUpdate: (payload) => {
-      console.log('📝 User role updated:', payload)
+      logger.log('📝 User role updated:', payload)
       queryClient.invalidateQueries({ queryKey: ['userRoles'] })
     },
     onDelete: (payload) => {
-      console.log('🗑️ User role deleted:', payload)
+      logger.log('🗑️ User role deleted:', payload)
       queryClient.invalidateQueries({ queryKey: ['userRoles'] })
     }
   })
@@ -186,7 +187,7 @@ export const useUsers = () => {
   // 사용자 생성 mutation (Auth + Profile 통합)
   const createUserMutation = useMutation({
     mutationFn: async (userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'> & { password?: string }) => {
-      console.log('🔄 Creating new user with auth:', userData)
+      logger.log('🔄 Creating new user with auth:', userData)
 
       // 비밀번호가 있으면 Auth 회원가입, 없으면 프로필만 생성
       if (userData.password && userData.email) {
@@ -205,7 +206,7 @@ export const useUsers = () => {
           }
         )
 
-        console.log('✅ User created with auth:', result)
+        logger.log('✅ User created with auth:', result)
         return result.profile
       } else {
         // 프로필만 생성 (기존 로직)
@@ -221,12 +222,12 @@ export const useUsers = () => {
         }
 
         const result = await clientSupabaseService.userProfile.create(insertData)
-        console.log('✅ User profile created:', result)
+        logger.log('✅ User profile created:', result)
         return result
       }
     },
     onSuccess: () => {
-      console.log('✅ User creation successful, invalidating cache')
+      logger.log('✅ User creation successful, invalidating cache')
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
     onError: (error) => {
@@ -237,7 +238,7 @@ export const useUsers = () => {
   // 사용자 수정 mutation
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<User> }) => {
-      console.log('🔄 Updating user profile:', id, updates)
+      logger.log('🔄 Updating user profile:', id, updates)
 
       // User 타입을 Supabase Update 타입으로 변환
       const updateData: any = {}
@@ -251,11 +252,11 @@ export const useUsers = () => {
       if (updates.isActive !== undefined) updateData.is_active = updates.isActive
 
       const result = await clientSupabaseService.userProfile.update(id, updateData)
-      console.log('✅ User profile updated:', result)
+      logger.log('✅ User profile updated:', result)
       return result
     },
     onSuccess: () => {
-      console.log('✅ User update successful, invalidating cache')
+      logger.log('✅ User update successful, invalidating cache')
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
     onError: (error) => {
@@ -266,13 +267,13 @@ export const useUsers = () => {
   // 사용자 삭제 mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (id: string) => {
-      console.log('🔄 Deleting user profile:', id)
+      logger.log('🔄 Deleting user profile:', id)
       const result = await clientSupabaseService.userProfile.delete(id)
-      console.log('✅ User profile deleted:', id)
+      logger.log('✅ User profile deleted:', id)
       return result
     },
     onSuccess: () => {
-      console.log('✅ User deletion successful, invalidating cache')
+      logger.log('✅ User deletion successful, invalidating cache')
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
     onError: (error) => {
@@ -308,9 +309,9 @@ export const useUsers = () => {
   const resetUserPassword = (id: string): boolean => {
     const user = users.find(user => user.id === id)
     if (!user) return false
-    
+
     // 실제로는 서버 API 호출
-    console.log(`비밀번호 재설정 요청: ${user.email}`)
+    logger.log(`비밀번호 재설정 요청: ${user.email}`)
     return true
   }
 

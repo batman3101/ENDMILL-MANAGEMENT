@@ -14,6 +14,7 @@ import EndmillSupplierPrices from '../../../components/features/EndmillSupplierP
 import { downloadEndmillTemplate } from '../../../lib/utils/endmillExcelTemplate'
 import { supabase } from '../../../lib/supabase/client'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
+import { logger } from '@/lib/utils/logger'
 
 // 앤드밀 인스턴스 타입 정의
 interface EndmillInstance {
@@ -99,40 +100,40 @@ export default function EndmillPage() {
       .channel('endmill_data_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'endmill_types' },
         (payload) => {
-          console.log('🔧 엔드밀 타입 변경:', payload)
+          logger.log('🔧 엔드밀 타입 변경:', payload)
           throttledRefresh()
         }
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'endmill_categories' },
         (payload) => {
-          console.log('📂 엔드밀 카테고리 변경:', payload)
+          logger.log('📂 엔드밀 카테고리 변경:', payload)
           throttledRefresh()
         }
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' },
         (payload) => {
-          console.log('📦 재고 변경:', payload)
+          logger.log('📦 재고 변경:', payload)
           throttledRefresh()
         }
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cam_sheet_endmills' },
         (payload) => {
-          console.log('📋 CAM 시트 앤드밀 변경:', payload)
+          logger.log('📋 CAM 시트 앤드밀 변경:', payload)
           throttledRefresh()
         }
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'endmill_supplier_prices' },
         (payload) => {
-          console.log('💰 공급업체 가격 변경:', payload)
+          logger.log('💰 공급업체 가격 변경:', payload)
           throttledRefresh()
         }
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('✅ 엔드밀 실시간 연결됨')
+          logger.log('✅ 엔드밀 실시간 연결됨')
           setIsRealtimeConnected(true)
         } else if (status === 'CHANNEL_ERROR') {
-          console.log('❌ 엔드밀 실시간 연결 실패')
+          logger.log('❌ 엔드밀 실시간 연결 실패')
           setIsRealtimeConnected(false)
         }
       })
@@ -141,15 +142,15 @@ export default function EndmillPage() {
       .channel('equipment_data_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment' },
         (payload) => {
-          console.log('🏭 설비 변경:', payload)
+          logger.log('🏭 설비 변경:', payload)
           throttledRefresh()
         }
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('✅ 설비 실시간 연결됨')
+          logger.log('✅ 설비 실시간 연결됨')
         } else if (status === 'CHANNEL_ERROR') {
-          console.log('❌ 설비 실시간 연결 실패')
+          logger.log('❌ 설비 실시간 연결 실패')
         }
       })
 
@@ -337,11 +338,11 @@ export default function EndmillPage() {
     const endmillData = endmills.find(e => e.code === code)
 
     // 디버깅 로그
-    console.log(`[DEBUG] ${code} - endmillData:`, endmillData)
-    console.log(`[DEBUG] ${code} - equipments count:`, equipments.length)
+    logger.log(`[DEBUG] ${code} - endmillData:`, endmillData)
+    logger.log(`[DEBUG] ${code} - equipments count:`, equipments.length)
 
     if (!endmillData || !endmillData.camSheets) {
-      console.log(`[DEBUG] ${code} - No endmill data or camSheets`)
+      logger.log(`[DEBUG] ${code} - No endmill data or camSheets`)
       return {
         usedEquipmentCount: 0,
         usedModels: [],
@@ -356,7 +357,7 @@ export default function EndmillPage() {
       process: cs.process
     }))
 
-    console.log(`[DEBUG] ${code} - modelProcessPairs:`, modelProcessPairs)
+    logger.log(`[DEBUG] ${code} - modelProcessPairs:`, modelProcessPairs)
 
     // 실제 설비 데이터에서 해당 모델/공정 조합을 가진 설비들 찾기
     const matchingEquipments = equipments.filter(eq => {
@@ -365,7 +366,7 @@ export default function EndmillPage() {
       )
     })
 
-    console.log(`[DEBUG] ${code} - matchingEquipments:`, matchingEquipments.length)
+    logger.log(`[DEBUG] ${code} - matchingEquipments:`, matchingEquipments.length)
 
     const usedModels = Array.from(new Set(modelProcessPairs.map(p => p.model)))
     const usedProcesses = Array.from(new Set(modelProcessPairs.map(p => p.process)))

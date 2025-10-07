@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { clientLogger } from '../../../lib/utils/logger'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createStatusChangeConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
@@ -68,22 +69,22 @@ export default function EquipmentPage() {
       .channel('equipment_realtime_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment' },
         (payload) => {
-          console.log('🏭 설비 변경:', payload)
+          clientLogger.log('🏭 설비 변경:', payload)
           throttledRefresh()
         }
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tool_positions' },
         (payload) => {
-          console.log('🔧 공구 포지션 변경:', payload)
+          clientLogger.log('🔧 공구 포지션 변경:', payload)
           throttledRefresh()
         }
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('✅ 설비 실시간 연결됨')
+          clientLogger.log('✅ 설비 실시간 연결됨')
           setIsRealtimeConnected(true)
         } else if (status === 'CHANNEL_ERROR') {
-          console.log('❌ 설비 실시간 연결 실패')
+          clientLogger.log('❌ 설비 실시간 연결 실패')
           setIsRealtimeConnected(false)
         }
       })

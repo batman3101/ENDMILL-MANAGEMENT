@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
-  console.log('🚀 대시보드 API 호출됨:', new Date().toISOString())
+  logger.log('🚀 대시보드 API 호출됨:', new Date().toISOString())
   try {
     // Service Role Key를 직접 사용하여 Supabase 클라이언트 생성
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
       throw new Error('Supabase 환경변수가 설정되지 않았습니다.')
     }
 
-    console.log('🔑 환경변수 확인:', {
+    logger.log('🔑 환경변수 확인:', {
       url: supabaseUrl,
       serviceKeyLength: supabaseServiceKey.length,
       serviceKeyPrefix: supabaseServiceKey.substring(0, 20) + '...'
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
         schema: 'public'
       }
     })
-    console.log('✅ Supabase 클라이언트 생성 완료 (Service Role Key 사용)')
+    logger.log('✅ Supabase 클라이언트 생성 완료 (Service Role Key 사용)')
 
     // 연결 테스트 - equipment 테이블 조회
     const { data: testData, error: testError } = await supabase
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
       .select('id')
       .limit(1)
 
-    console.log('🧪 연결 테스트:', {
+    logger.log('🧪 연결 테스트:', {
       testDataCount: testData?.length || 0,
       testError: testError?.message || null
     })
@@ -176,7 +177,7 @@ async function getEndmillUsageStats(supabase: any) {
   const totalInUse = stats.normal + stats.warning + stats.critical
   const usageRate = totalInUse > 0 ? Math.round((stats.normal / totalInUse) * 100) : 0
 
-  console.log('✅ 엔드밀 통계 계산 완료:', { totalInUse, stats, usageRate })
+  logger.log('✅ 엔드밀 통계 계산 완료:', { totalInUse, stats, usageRate })
 
   return {
     total: totalInUse,
@@ -193,7 +194,7 @@ async function getInventoryStats(supabase: any) {
     .from('inventory')
     .select('current_stock, min_stock, max_stock')
 
-  console.log('📦 inventory 조회 결과:', {
+  logger.log('📦 inventory 조회 결과:', {
     count: inventory?.length || 0,
     sample: inventory?.slice(0, 5),
     error: error?.message || null
@@ -217,7 +218,7 @@ async function getInventoryStats(supabase: any) {
     return acc
   }, { sufficient: 0, low: 0, critical: 0 })
 
-  console.log('📊 재고 상태별 집계 (재계산):', stats)
+  logger.log('📊 재고 상태별 집계 (재계산):', stats)
 
   // 실제 데이터 샘플 출력
   const sufficientSamples = inventory
@@ -230,8 +231,8 @@ async function getInventoryStats(supabase: any) {
     .slice(0, 3)
     .map((i: any) => ({ stock: i.current_stock, min: i.min_stock }))
 
-  console.log('✅ sufficient 샘플:', sufficientSamples)
-  console.log('⚠️ critical 샘플:', criticalSamples)
+  logger.log('✅ sufficient 샘플:', sufficientSamples)
+  logger.log('⚠️ critical 샘플:', criticalSamples)
 
   return {
     total: inventory.length,
@@ -246,7 +247,7 @@ async function getToolChangeStats(supabase: any) {
   const today = new Date().toISOString().split('T')[0]
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  console.log('📅 교체 실적 조회:', { today, yesterday })
+  logger.log('📅 교체 실적 조회:', { today, yesterday })
 
   // .gte()가 작동하지 않을 수 있으므로 전체 데이터를 가져와서 JavaScript로 필터링
   const { data: allChanges, error } = await supabase
@@ -264,7 +265,7 @@ async function getToolChangeStats(supabase: any) {
     change.change_date >= yesterday && change.change_date < today
   )
 
-  console.log('📊 교체 실적 집계:', {
+  logger.log('📊 교체 실적 집계:', {
     totalCount: allChanges?.length || 0,
     todayCount: todayChanges.length,
     yesterdayCount: yesterdayChanges.length,
@@ -293,7 +294,7 @@ async function getCostAnalysis(supabase: any) {
   const currentMonthStart = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`
   const lastMonthStart = `${lastMonthYear}-${lastMonth.toString().padStart(2, '0')}-01`
 
-  console.log('💰 비용 분석 시작:', { currentMonth, lastMonth, currentMonthStart, lastMonthStart })
+  logger.log('💰 비용 분석 시작:', { currentMonth, lastMonth, currentMonthStart, lastMonthStart })
 
   // .gte()가 작동하지 않을 수 있으므로 전체 데이터를 가져와서 JavaScript로 필터링
   const { data: allChanges, error } = await supabase
@@ -311,7 +312,7 @@ async function getCostAnalysis(supabase: any) {
     change.change_date >= lastMonthStart && change.change_date < currentMonthStart
   )
 
-  console.log('📊 비용 분석 데이터 집계:', {
+  logger.log('📊 비용 분석 데이터 집계:', {
     totalCount: allChanges?.length || 0,
     currentMonthCount: currentMonthChanges.length,
     lastMonthCount: lastMonthChanges.length,
@@ -351,7 +352,7 @@ async function getCostAnalysis(supabase: any) {
   const savings = lastMonthCost - currentMonthCost
   const savingsPercent = lastMonthCost > 0 ? Math.round((savings / lastMonthCost) * 100) : 0
 
-  console.log('💵 비용 계산 완료:', {
+  logger.log('💵 비용 계산 완료:', {
     currentMonthCost,
     lastMonthCost,
     savings,
@@ -371,7 +372,7 @@ async function getCostAnalysis(supabase: any) {
 async function getFrequencyAnalysis(supabase: any) {
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  console.log('📈 frequencyAnalysis 시작:', { oneWeekAgo })
+  logger.log('📈 frequencyAnalysis 시작:', { oneWeekAgo })
 
   // .gte()가 작동하지 않으므로 전체 데이터를 가져와서 JavaScript로 필터링
   const { data: allChanges, error: tcError } = await supabase
@@ -386,7 +387,7 @@ async function getFrequencyAnalysis(supabase: any) {
   // JavaScript로 필터링: oneWeekAgo 이후 데이터만
   const weeklyChanges = (allChanges || []).filter((change: any) => change.change_date >= oneWeekAgo)
 
-  console.log('📊 주간 tool_changes 조회 및 필터링 완료:', {
+  logger.log('📊 주간 tool_changes 조회 및 필터링 완료:', {
     totalCount: allChanges?.length || 0,
     filteredCount: weeklyChanges.length,
     sample: weeklyChanges.slice(0, 3)
@@ -517,7 +518,7 @@ async function getModelCostAnalysis(supabase: any) {
   const currentYear = new Date().getFullYear()
   const startDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`
 
-  console.log('💰 modelCostAnalysis 시작:', { currentMonth, currentYear, startDate })
+  logger.log('💰 modelCostAnalysis 시작:', { currentMonth, currentYear, startDate })
 
   // .gte()가 작동하지 않으므로 전체 데이터를 가져와서 JavaScript로 필터링
   const { data: allChanges, error: tcError } = await supabase
@@ -532,7 +533,7 @@ async function getModelCostAnalysis(supabase: any) {
   // JavaScript로 필터링: startDate 이후 데이터만
   const monthlyChanges = (allChanges || []).filter((change: any) => change.change_date >= startDate)
 
-  console.log('📊 월간 tool_changes 조회 및 필터링 완료:', {
+  logger.log('📊 월간 tool_changes 조회 및 필터링 완료:', {
     totalCount: allChanges?.length || 0,
     filteredCount: monthlyChanges.length,
     sample: monthlyChanges.slice(0, 3)
@@ -590,7 +591,7 @@ async function getModelCostAnalysis(supabase: any) {
 
 // 최근 경고 및 알림 조회
 async function getRecentAlerts(supabase: any) {
-  console.log('🚨 최근 알림 조회 시작')
+  logger.log('🚨 최근 알림 조회 시작')
 
   const alerts = []
 
@@ -607,7 +608,7 @@ async function getRecentAlerts(supabase: any) {
       .filter((change: any) => change.change_reason === '파손')
       .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
-    console.log('🔨 파손 이력 조회 결과:', {
+    logger.log('🔨 파손 이력 조회 결과:', {
       totalChanges: allChanges?.length || 0,
       brokenCount: brokenTools.length,
       latestBroken: brokenTools[0] || null
@@ -617,7 +618,7 @@ async function getRecentAlerts(supabase: any) {
       const change = brokenTools[0]
       const minutesAgo = Math.floor((new Date().getTime() - new Date(change.created_at).getTime()) / 60000)
 
-      console.log('⚠️ 최근 파손 발견:', {
+      logger.log('⚠️ 최근 파손 발견:', {
         equipment: change.equipment_number,
         tNumber: change.t_number,
         createdAt: change.created_at,
@@ -683,7 +684,7 @@ async function getRecentAlerts(supabase: any) {
       .filter((item: any) => item.current_stock < item.min_stock)
       .sort((a: any, b: any) => new Date(b.last_updated).getTime() - new Date(a.last_updated).getTime())
 
-    console.log('📦 재고 부족 항목:', { criticalCount: criticalItems.length })
+    logger.log('📦 재고 부족 항목:', { criticalCount: criticalItems.length })
 
     if (criticalItems.length > 0) {
       const item = criticalItems[0]
@@ -709,7 +710,7 @@ async function getRecentAlerts(supabase: any) {
     }
   }
 
-  console.log('✅ 최근 알림 조회 완료:', { alertCount: alerts.length })
+  logger.log('✅ 최근 알림 조회 완료:', { alertCount: alerts.length })
 
   return alerts
 }

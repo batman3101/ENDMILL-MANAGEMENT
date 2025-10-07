@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase/client'
 import { RealtimeChannel } from '@supabase/supabase-js'
+import { clientLogger } from '../utils/logger'
 
 interface RealtimeHookOptions {
   table: string
@@ -30,7 +31,7 @@ export function useRealtime({
   useEffect(() => {
     if (!enabled) return
 
-    console.log(`🔄 Setting up realtime subscription for table: ${table}`)
+    clientLogger.log(`🔄 Setting up realtime subscription for table: ${table}`)
 
     const channelName = `realtime:${table}`
     const realtimeChannel = supabase
@@ -43,7 +44,7 @@ export function useRealtime({
           table: table
         },
         (payload) => {
-          console.log(`📡 Realtime event received for ${table}:`, payload)
+          clientLogger.log(`📡 Realtime event received for ${table}:`, payload)
 
           const { onInsert, onUpdate, onDelete } = callbacksRef.current
 
@@ -61,12 +62,12 @@ export function useRealtime({
         }
       )
       .subscribe((status) => {
-        console.log(`📊 Realtime subscription status for ${table}:`, status)
+        clientLogger.log(`📊 Realtime subscription status for ${table}:`, status)
 
         if (status === 'SUBSCRIBED') {
           setIsConnected(true)
           setError(null)
-          console.log(`✅ Successfully subscribed to ${table} changes`)
+          clientLogger.log(`✅ Successfully subscribed to ${table} changes`)
         } else if (status === 'CHANNEL_ERROR') {
           setIsConnected(false)
           setError(`Failed to subscribe to ${table}`)
@@ -77,14 +78,14 @@ export function useRealtime({
           console.error(`⏰ Subscription timeout for ${table}`)
         } else if (status === 'CLOSED') {
           setIsConnected(false)
-          console.log(`🔌 Subscription closed for ${table}`)
+          clientLogger.log(`🔌 Subscription closed for ${table}`)
         }
       })
 
     setChannel(realtimeChannel)
 
     return () => {
-      console.log(`🔌 Cleaning up realtime subscription for ${table}`)
+      clientLogger.log(`🔌 Cleaning up realtime subscription for ${table}`)
       realtimeChannel.unsubscribe()
       setIsConnected(false)
       setChannel(null)
@@ -130,7 +131,7 @@ export function useMultiTableRealtime(tables: string[], callbacks?: {
             table: table
           },
           (payload) => {
-            console.log(`📡 Multi-table realtime event for ${table}:`, payload)
+            clientLogger.log(`📡 Multi-table realtime event for ${table}:`, payload)
 
             const tableCallbacks = callbacksRef.current?.[table]
             if (tableCallbacks) {
@@ -149,7 +150,7 @@ export function useMultiTableRealtime(tables: string[], callbacks?: {
           }
         )
         .subscribe((status) => {
-          console.log(`📊 Multi-table subscription status for ${table}:`, status)
+          clientLogger.log(`📊 Multi-table subscription status for ${table}:`, status)
 
           // Update state individually to prevent object recreation loops
           if (status === 'SUBSCRIBED') {
@@ -170,7 +171,7 @@ export function useMultiTableRealtime(tables: string[], callbacks?: {
     })
 
     return () => {
-      console.log('🔌 Cleaning up all multi-table realtime subscriptions')
+      clientLogger.log('🔌 Cleaning up all multi-table realtime subscriptions')
       channels.forEach(channel => channel.unsubscribe())
       setConnections({})
       setErrors({})

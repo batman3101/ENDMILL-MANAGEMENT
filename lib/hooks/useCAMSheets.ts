@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 import { clientSupabaseService } from '../services/supabaseService'
 import { Database } from '../types/database'
+import { clientLogger } from '../utils/logger'
 
 // Database 타입에서 가져오기
 type CAMSheet = Database['public']['Tables']['cam_sheets']['Row'] & {
@@ -67,7 +68,7 @@ export const useCAMSheets = (filter?: CAMSheetFilter) => {
         throw new Error(result.error || 'CAM Sheet 데이터를 불러오는데 실패했습니다.')
       }
 
-      console.log('CAM Sheet API 응답 데이터:', result.data)
+      clientLogger.log('CAM Sheet API 응답 데이터:', result.data)
 
       // 데이터 정규화: endmills 필드를 cam_sheet_endmills로 매핑
       const normalizedData = result.data.map((sheet: any) => ({
@@ -75,7 +76,7 @@ export const useCAMSheets = (filter?: CAMSheetFilter) => {
         cam_sheet_endmills: sheet.endmills || sheet.cam_sheet_endmills || []
       }))
 
-      console.log('정규화된 CAM Sheet 데이터:', normalizedData)
+      clientLogger.log('정규화된 CAM Sheet 데이터:', normalizedData)
 
       return normalizedData as CAMSheet[]
     }
@@ -84,8 +85,8 @@ export const useCAMSheets = (filter?: CAMSheetFilter) => {
   // 실시간 구독 설정
   useEffect(() => {
     const subscription = clientSupabaseService.camSheet.subscribeToChanges((payload) => {
-      console.log('CAM Sheets 실시간 업데이트:', payload)
-      
+      clientLogger.log('CAM Sheets 실시간 업데이트:', payload)
+
       // React Query 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ['cam-sheets'] })
     })
