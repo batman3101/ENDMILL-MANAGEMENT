@@ -9,9 +9,11 @@ import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, cr
 import { useSettings } from '../../../lib/hooks/useSettings'
 import SupplierPriceInfo from '../../../components/inventory/SupplierPriceInfo'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
+import { useTranslations } from '../../../lib/hooks/useTranslations'
 import * as XLSX from 'xlsx'
 
 export default function InventoryPage() {
+  const { t } = useTranslations()
   const { showSuccess, showError } = useToast()
   const confirmation = useConfirmation()
   const [searchTerm, setSearchTerm] = useState('')
@@ -180,11 +182,11 @@ export default function InventoryPage() {
         category: foundEndmill.category || '',
         specifications: foundEndmill.specifications || ''
       })
-      showSuccess('QR 스캔 완료', `앤드밀 정보가 자동으로 입력되었습니다: ${foundEndmill.code}`)
+      showSuccess(t('inventory.qrScanComplete'), `${t('inventory.autoInputMessage')} ${foundEndmill.code}`)
     } else {
       // 등록되지 않은 앤드밀 코드인 경우 코드만 입력
       setFormData({...formData, code: endmillCode})
-      showWarning('미등록 앤드밀', '앤드밀 마스터에 등록되지 않은 코드입니다. 수동으로 정보를 입력해주세요.')
+      showWarning(t('inventory.unregisteredEndmill'), t('inventory.unregisteredMessage'))
     }
 
     setShowQRScanner(false)
@@ -346,10 +348,10 @@ export default function InventoryPage() {
 
   const getStatusText = (status: 'sufficient' | 'low' | 'critical') => {
     switch (status) {
-      case 'sufficient': return '충분'
-      case 'low': return '부족'
-      case 'critical': return '위험'
-      default: return '알 수 없음'
+      case 'sufficient': return t('inventory.sufficient')
+      case 'low': return t('inventory.low')
+      case 'critical': return t('inventory.critical')
+      default: return t('inventory.unknown')
     }
   }
 
@@ -384,23 +386,23 @@ export default function InventoryPage() {
       
       setShowEditModal(false)
       setEditFormData(null)
-      showSuccess('수정 완료', '재고 정보가 성공적으로 수정되었습니다.')
+      showSuccess(t('inventory.updateSuccess'), t('inventory.updateSuccessMessage'))
     } catch (error) {
-      showError('수정 실패', '재고 정보 수정 중 오류가 발생했습니다.')
+      showError(t('inventory.updateFailed'), t('inventory.updateFailedMessage'))
     }
   }
 
   const handleDelete = async (item: any) => {
     const confirmed = await confirmation.showConfirmation(
-      createDeleteConfirmation(`재고 항목 (${item.code})`)
+      createDeleteConfirmation(`${t('inventory.confirmDelete')} (${item.code})`)
     )
     if (!confirmed) return
 
     try {
       await deleteInventory(item.itemId)
-      showSuccess('삭제 완료', '재고 항목이 성공적으로 삭제되었습니다.')
+      showSuccess(t('inventory.deleteSuccess'), t('inventory.deleteSuccessMessage'))
     } catch (error) {
-      showError('삭제 실패', '재고 항목 삭제 중 오류가 발생했습니다.')
+      showError(t('inventory.deleteFailed'), t('inventory.deleteFailedMessage'))
     }
   }
 
@@ -408,7 +410,7 @@ export default function InventoryPage() {
     e.preventDefault()
 
     const confirmed = await confirmation.showConfirmation(
-      createCreateConfirmation('새 재고 항목')
+      createCreateConfirmation(t('inventory.confirmCreate'))
     )
     if (!confirmed) return
 
@@ -434,9 +436,9 @@ export default function InventoryPage() {
         maxStock: 0
       })
       setShowAddModal(false)
-      showSuccess('추가 완료', '새 재고 항목이 성공적으로 추가되었습니다.')
+      showSuccess(t('inventory.createSuccess'), t('inventory.createSuccessMessage'))
     } catch (error) {
-      showError('추가 실패', '재고 항목 추가 중 오류가 발생했습니다.')
+      showError(t('inventory.createFailed'), t('inventory.createFailedMessage'))
     }
   }
 
@@ -450,7 +452,7 @@ export default function InventoryPage() {
   const handleExcelDownload = () => {
     try {
       const endmillData = getEndmillMasterData()
-      
+
       // 워크시트 생성
       const worksheet = XLSX.utils.json_to_sheet(endmillData)
       const workbook = XLSX.utils.book_new()
@@ -459,10 +461,10 @@ export default function InventoryPage() {
       // 파일 다운로드
       const fileName = `앤드밀마스터_${new Date().toISOString().split('T')[0]}.xlsx`
       XLSX.writeFile(workbook, fileName)
-      
-      showSuccess('다운로드 완료', `${endmillData.length}개의 앤드밀 마스터 데이터가 다운로드되었습니다.`)
+
+      showSuccess(t('inventory.downloadComplete'), `${endmillData.length}${t('inventory.downloadSuccessMessage')}`)
     } catch (error) {
-      showError('다운로드 실패', '엑셀 파일 생성 중 오류가 발생했습니다.')
+      showError(t('inventory.downloadFailed'), t('inventory.downloadFailedMessage'))
       console.error('Excel download error:', error)
     }
   }
@@ -470,18 +472,18 @@ export default function InventoryPage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+      if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
           file.type === 'application/vnd.ms-excel') {
         setExcelFile(file)
       } else {
-        showError('파일 형식 오류', '엑셀 파일(.xlsx, .xls)만 업로드 가능합니다.')
+        showError(t('inventory.fileFormatError'), t('inventory.fileFormatErrorMessage'))
       }
     }
   }
 
   const handleProcessExcel = async () => {
     if (!excelFile) {
-      showError('파일 오류', '업로드할 파일을 선택해주세요.')
+      showError(t('inventory.selectFileError'), t('inventory.selectFileErrorMessage'))
       return
     }
 
@@ -498,8 +500,8 @@ export default function InventoryPage() {
           const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
           // 새로운 API를 사용해 데이터 업데이트 (실제 구현 필요)
-          showSuccess('업로드 완료', `${jsonData.length}개의 데이터가 처리되었습니다.`)
-          
+          showSuccess(t('inventory.uploadSuccess'), `${jsonData.length}${t('inventory.uploadSuccessMessage')}`)
+
           setUploadProgress({
             processing: false,
             success: jsonData.length,
@@ -507,21 +509,21 @@ export default function InventoryPage() {
             errors: []
           })
         } catch (error) {
-          setUploadProgress({ processing: false, success: 0, updated: 0, errors: ['파일 처리 중 오류가 발생했습니다.'] })
-          showError('파일 처리 실패', '엑셀 파일을 읽는 중 오류가 발생했습니다.')
+          setUploadProgress({ processing: false, success: 0, updated: 0, errors: [t('inventory.processingFileError')] })
+          showError(t('inventory.fileProcessingError'), t('inventory.fileProcessingErrorMessage'))
           console.error('Excel processing error:', error)
         }
       }
-      
+
       reader.onerror = () => {
-        setUploadProgress({ processing: false, success: 0, updated: 0, errors: ['파일을 읽을 수 없습니다.'] })
-        showError('파일 읽기 실패', '파일을 읽는 중 오류가 발생했습니다.')
+        setUploadProgress({ processing: false, success: 0, updated: 0, errors: [t('inventory.cannotReadFile')] })
+        showError(t('inventory.fileReadError'), t('inventory.fileReadErrorMessage'))
       }
-      
+
       reader.readAsArrayBuffer(excelFile)
     } catch (error) {
-      setUploadProgress({ processing: false, success: 0, updated: 0, errors: ['파일 업로드 중 오류가 발생했습니다.'] })
-      showError('업로드 실패', '파일 업로드 중 오류가 발생했습니다.')
+      setUploadProgress({ processing: false, success: 0, updated: 0, errors: [t('inventory.uploadingFileError')] })
+      showError(t('inventory.uploadError'), t('inventory.uploadErrorMessage'))
       console.error('File upload error:', error)
     }
   }
@@ -532,7 +534,7 @@ export default function InventoryPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <span className="ml-4 text-gray-600">재고 데이터를 불러오는 중...</span>
+          <span className="ml-4 text-gray-600">{t('inventory.loadingData')}</span>
         </div>
       </div>
     )
@@ -546,7 +548,7 @@ export default function InventoryPage() {
           <div className="flex items-center">
             <div className="text-red-600 text-xl mr-3">⚠️</div>
             <div>
-              <h3 className="text-lg font-medium text-red-800">데이터 로딩 오류</h3>
+              <h3 className="text-lg font-medium text-red-800">{t('inventory.dataLoadingError')}</h3>
               <p className="text-red-600 mt-1">{error}</p>
             </div>
           </div>
@@ -567,7 +569,7 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 재고 수량</p>
+              <p className="text-sm font-medium text-gray-600">{t('inventory.totalStockQuantity')}</p>
               <p className="text-2xl font-bold text-gray-900">{stats.totalItems.toLocaleString()}</p>
             </div>
           </div>
@@ -581,7 +583,7 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">위험 CODE</p>
+              <p className="text-sm font-medium text-gray-600">{t('inventory.criticalCode')}</p>
               <p className="text-2xl font-bold text-red-600">{stats.criticalItems}</p>
             </div>
           </div>
@@ -595,7 +597,7 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">부족 CODE</p>
+              <p className="text-sm font-medium text-gray-600">{t('inventory.lowStockCode')}</p>
               <p className="text-2xl font-bold text-yellow-600">{stats.lowStockItems}</p>
             </div>
           </div>
@@ -609,7 +611,7 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 보유 가치</p>
+              <p className="text-sm font-medium text-gray-600">{t('inventory.totalHoldingValue')}</p>
               <p className="text-2xl font-bold text-green-600">
                 {stats.totalValue.toLocaleString()} VND
               </p>
@@ -625,10 +627,10 @@ export default function InventoryPage() {
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl">📥</span>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">입고 관리</h3>
-            <p className="text-gray-600 mb-4">QR 코드 스캔으로 간편한 입고 처리</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('inventory.inboundManagement')}</h3>
+            <p className="text-gray-600 mb-4">{t('inventory.inboundDescription')}</p>
             <div className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-block">
-              📱 입고 처리하기
+              📱 {t('inventory.inboundProcess')}
             </div>
           </div>
         </Link>
@@ -638,10 +640,10 @@ export default function InventoryPage() {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl">📤</span>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">출고 관리</h3>
-            <p className="text-gray-600 mb-4">QR 코드 스캔으로 간편한 출고 처리</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('inventory.outboundManagement')}</h3>
+            <p className="text-gray-600 mb-4">{t('inventory.outboundDescription')}</p>
             <div className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors inline-block">
-              📱 출고 처리하기
+              📱 {t('inventory.outboundProcess')}
             </div>
           </div>
         </Link>
@@ -653,7 +655,7 @@ export default function InventoryPage() {
           <div className="flex gap-4 flex-1">
             <input
               type="text"
-              placeholder="앤드밀 코드 또는 설명 검색..."
+              placeholder={t('inventory.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -663,20 +665,20 @@ export default function InventoryPage() {
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">모든 카테고리</option>
+              <option value="">{t('inventory.allCategories')}</option>
               {availableCategories.map(category => (
                 <option key={category} value={category}>{category}</option>
               ))}
             </select>
-            <select 
+            <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">재고 상태</option>
-              <option value="sufficient">충분</option>
-              <option value="low">부족</option>
-              <option value="critical">위험</option>
+              <option value="">{t('inventory.stockStatusFilter')}</option>
+              <option value="sufficient">{t('inventory.sufficient')}</option>
+              <option value="low">{t('inventory.low')}</option>
+              <option value="critical">{t('inventory.critical')}</option>
             </select>
           </div>
           <div className="flex gap-2">
@@ -684,19 +686,19 @@ export default function InventoryPage() {
               onClick={() => setShowAddModal(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 whitespace-nowrap"
             >
-              + 신규 앤드밀 추가
+              {t('inventory.addNewEndmill')}
             </button>
             <button
               onClick={handleExcelUpload}
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 whitespace-nowrap"
             >
-              📄 엑셀 업로드
+              {t('inventory.excelUpload')}
             </button>
             <button
               onClick={handleExcelDownload}
               className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 whitespace-nowrap"
             >
-              📊 엑셀 다운로드
+              {t('inventory.excelDownload')}
             </button>
           </div>
         </div>
@@ -706,10 +708,10 @@ export default function InventoryPage() {
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">
-            재고 현황 ({flattenedData.length}개 공급업체 정보)
+            {t('inventory.stockStatusList')} ({flattenedData.length}{t('inventory.items')} {t('inventory.supplierInfo')})
           </h2>
           <p className="text-sm text-gray-500 mt-1">
-            페이지 {currentPage} / {totalPages} (1페이지당 {itemsPerPage}개)
+            {t('inventory.page')} {currentPage} / {totalPages} ({t('inventory.itemsPerPage')} {itemsPerPage}{t('inventory.items')})
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -717,49 +719,49 @@ export default function InventoryPage() {
             <thead className="bg-gray-50">
               <tr>
                 <SortableTableHeader
-                  label="앤드밀 코드"
+                  label={t('inventory.endmillCode')}
                   field="code"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="앤드밀 이름"
+                  label={t('inventory.endmillName')}
                   field="name"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="카테고리"
+                  label={t('inventory.category')}
                   field="category"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="현재고"
+                  label={t('inventory.currentStockShort')}
                   field="current_stock"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="상태"
+                  label={t('inventory.status')}
                   field="status"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="단가 (VND)"
+                  label={t('inventory.unitPriceVND')}
                   field="unit_price"
                   currentSortField={sortField}
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  작업
+                  {t('inventory.actions')}
                 </th>
               </tr>
             </thead>
@@ -819,7 +821,7 @@ export default function InventoryPage() {
                         onClick={() => handleViewDetail(searchFilteredInventory.find(item => item.id === row.itemId)!)}
                         className="text-blue-600 hover:text-blue-800 mr-3"
                       >
-                        상세
+                        {t('inventory.detail')}
                       </button>
                       <button
                         onClick={() => {
@@ -830,13 +832,13 @@ export default function InventoryPage() {
                         }}
                         className="text-green-600 hover:text-green-800 mr-3"
                       >
-                        수정
+                        {t('inventory.edit')}
                       </button>
                       <button
                         onClick={() => handleDelete(searchFilteredInventory.find(item => item.id === row.itemId)!)}
                         className="text-red-600 hover:text-red-800"
                       >
-                        삭제
+                        {t('inventory.delete')}
                       </button>
                     </td>
                   </tr>
@@ -855,22 +857,22 @@ export default function InventoryPage() {
                   disabled={currentPage === 1}
                   className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  이전
+                  {t('inventory.previous')}
                 </button>
                 <button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
                   className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  다음
+                  {t('inventory.next')}
                 </button>
               </div>
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    총 <span className="font-medium">{flattenedData.length}</span>개 중{' '}
+                    {t('inventory.showing')} <span className="font-medium">{flattenedData.length}</span>{t('inventory.of')}{' '}
                     <span className="font-medium">{startIndex + 1}</span>-
-                    <span className="font-medium">{Math.min(endIndex, flattenedData.length)}</span>개 표시
+                    <span className="font-medium">{Math.min(endIndex, flattenedData.length)}</span>{t('inventory.displayed')}
                   </p>
                 </div>
                 <div>
@@ -928,8 +930,8 @@ export default function InventoryPage() {
         {/* 검색 결과가 없을 때 */}
         {flattenedData.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-gray-500">검색 조건에 맞는 재고가 없습니다.</p>
-            <button 
+            <p className="text-gray-500">{t('inventory.noMatchingInventory')}</p>
+            <button
               onClick={() => {
                 setSearchTerm('')
                 setCategoryFilter('')
@@ -939,7 +941,7 @@ export default function InventoryPage() {
               }}
               className="mt-2 text-blue-600 hover:text-blue-800"
             >
-              필터 초기화
+              {t('inventory.resetFilters')}
             </button>
           </div>
         )}
@@ -950,8 +952,8 @@ export default function InventoryPage() {
           <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">신규 앤드밀 추가</h3>
-                <button 
+                <h3 className="text-lg font-medium">{t('inventory.addNewEndmillModal')}</h3>
+                <button
                   onClick={() => setShowAddModal(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -959,25 +961,25 @@ export default function InventoryPage() {
                 </button>
               </div>
             </div>
-            
+
             <form onSubmit={handleAddEndmill} className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 코드 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.endmillCodeLabel')} {t('inventory.required')}</label>
                   <div className="relative">
                     <input
                       type="text"
                       value={formData.code}
                       onChange={(e) => handleEndmillCodeChange(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="앤드밀 코드 입력 또는 QR 스캔"
+                      placeholder={t('inventory.enterEndmillCodeOrQRScan')}
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowQRScanner(true)}
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      title="QR 코드 스캔"
+                      title={t('inventory.qrScanHint')}
                     >
                       📷
                     </button>
@@ -1001,7 +1003,7 @@ export default function InventoryPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 이름 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.endmillNameLabel')} {t('inventory.required')}</label>
                   <input
                     type="text"
                     value={formData.name}
@@ -1009,16 +1011,16 @@ export default function InventoryPage() {
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       formData.code ? 'bg-blue-50' : ''
                     }`}
-                    placeholder="앤드밀 코드 선택시 자동 입력"
+                    placeholder={t('inventory.enterEndmillCodeOnSelect')}
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    {formData.code ? '앤드밀 코드 기반 자동입력됨' : '앤드밀 마스터에서 자동으로 입력됩니다'}
+                    {formData.code ? t('inventory.autoInputFromCode') : t('inventory.autoInputFromMaster')}
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">카테고리 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.categoryLabel')} {t('inventory.required')}</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({...formData, category: e.target.value})}
@@ -1027,18 +1029,18 @@ export default function InventoryPage() {
                     }`}
                     required
                   >
-                    <option value="">카테고리 선택</option>
+                    <option value="">{t('inventory.selectCategory')}</option>
                     {categories.map(category => (
                       <option key={category} value={category}>{category}</option>
                     ))}
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    {formData.code ? '앤드밀 코드 기반 자동입력됨' : '앤드밀 마스터에서 자동으로 입력됩니다'}
+                    {formData.code ? t('inventory.autoInputFromCode') : t('inventory.autoInputFromMaster')}
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">사양 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.specificationsLabel')} {t('inventory.required')}</label>
                   <input
                     type="text"
                     value={formData.specifications}
@@ -1046,23 +1048,23 @@ export default function InventoryPage() {
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       formData.code ? 'bg-blue-50' : ''
                     }`}
-                    placeholder="앤드밀 코드 선택시 자동 입력"
+                    placeholder={t('inventory.enterEndmillCodeOnSelect')}
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    {formData.code ? '앤드밀 코드 기반 자동입력됨' : '앤드밀 마스터에서 자동으로 입력됩니다'}
+                    {formData.code ? t('inventory.autoInputFromCode') : t('inventory.autoInputFromMaster')}
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">공급업체 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.supplierLabel')} {t('inventory.required')}</label>
                   <select
                     value={formData.supplier}
                     onChange={(e) => setFormData({...formData, supplier: e.target.value})}
                     className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   >
-                    <option value="">공급업체 선택</option>
+                    <option value="">{t('inventory.selectSupplier')}</option>
                     {availableSuppliers.map(supplier => (
                       <option key={supplier} value={supplier}>{supplier}</option>
                     ))}
@@ -1070,7 +1072,7 @@ export default function InventoryPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">단가 (VND) *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.unitPriceVNDLabel')} {t('inventory.required')}</label>
                   <input
                     type="number"
                     min="0"
@@ -1083,7 +1085,7 @@ export default function InventoryPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">현재 재고 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.currentStockLabel')} {t('inventory.required')}</label>
                   <input
                     type="number"
                     min="0"
@@ -1096,7 +1098,7 @@ export default function InventoryPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">최소 재고 *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.minStockLabel')} {t('inventory.required')}</label>
                   <input
                     type="number"
                     min="0"
@@ -1109,7 +1111,7 @@ export default function InventoryPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">최대 재고</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.maxStockLabel')}</label>
                   <input
                     type="number"
                     min="0"
@@ -1127,13 +1129,13 @@ export default function InventoryPage() {
                   onClick={() => setShowAddModal(false)}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                 >
-                  취소
+                  {t('inventory.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
-                  추가
+                  {t('inventory.add')}
                 </button>
               </div>
             </form>
@@ -1147,8 +1149,8 @@ export default function InventoryPage() {
           <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4">
             <div className="px-6 py-4 border-b">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">📋 앤드밀 상세 정보</h3>
-                <button 
+                <h3 className="text-lg font-medium">{t('inventory.endmillDetail')}</h3>
+                <button
                   onClick={() => setShowDetailModal(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -1156,55 +1158,55 @@ export default function InventoryPage() {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6">
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-4">기본 정보</h4>
+                  <h4 className="font-medium text-gray-900 mb-4">{t('inventory.basicInfo')}</h4>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium text-gray-700">앤드밀 코드</label>
+                      <label className="text-sm font-medium text-gray-700">{t('inventory.endmillCodeLabel')}</label>
                       <p className="mt-1 text-sm text-gray-900 font-mono">{selectedItem.endmill_type?.code}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Type</label>
+                      <label className="text-sm font-medium text-gray-700">{t('inventory.type')}</label>
                       <p className="mt-1 text-sm text-gray-900">{selectedItem.endmill_type?.name}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">카테고리</label>
+                      <label className="text-sm font-medium text-gray-700">{t('inventory.category')}</label>
                       <p className="mt-1 text-sm text-gray-900">{selectedItem.endmill_type?.endmill_categories?.name_ko || selectedItem.endmill_type?.endmill_categories?.code}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">앤드밀 이름</label>
+                      <label className="text-sm font-medium text-gray-700">{t('inventory.endmillNameInfo')}</label>
                       <p className="mt-1 text-sm text-gray-900">{selectedItem.endmill_type?.description_ko || selectedItem.endmill_type?.description_vi || ''}</p>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-4">재고 정보</h4>
+                  <h4 className="font-medium text-gray-900 mb-4">{t('inventory.stockInfo')}</h4>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium text-gray-700">현재고</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedItem.current_stock}개</p>
+                      <label className="text-sm font-medium text-gray-700">{t('inventory.currentStockInfo')}</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedItem.current_stock}{t('inventory.pieces')}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">최소재고</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedItem.min_stock}개</p>
+                      <label className="text-sm font-medium text-gray-700">{t('inventory.minStockInfo')}</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedItem.min_stock}{t('inventory.pieces')}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">최대재고</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedItem.max_stock}개</p>
+                      <label className="text-sm font-medium text-gray-700">{t('inventory.maxStockInfo')}</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedItem.max_stock}{t('inventory.pieces')}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">상태</label>
+                      <label className="text-sm font-medium text-gray-700">{t('inventory.statusInfo')}</label>
                       <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
                         selectedItem.current_stock <= selectedItem.min_stock * 1.5 ? 'bg-red-100 text-red-800' :
                         selectedItem.current_stock <= selectedItem.min_stock ? 'bg-yellow-100 text-yellow-800' :
                         'bg-green-100 text-green-800'
                       }`}>
-                        {selectedItem.current_stock <= selectedItem.min_stock * 1.5 ? '위험' :
-                         selectedItem.current_stock <= selectedItem.min_stock ? '부족' : '충분'}
+                        {selectedItem.current_stock <= selectedItem.min_stock * 1.5 ? t('inventory.critical') :
+                         selectedItem.current_stock <= selectedItem.min_stock ? t('inventory.low') : t('inventory.sufficient')}
                       </span>
                     </div>
                   </div>
@@ -1212,7 +1214,7 @@ export default function InventoryPage() {
               </div>
 
               <div className="mt-6 pt-6 border-t">
-                <h4 className="font-medium text-gray-900 mb-4">공급업체별 단가 정보</h4>
+                <h4 className="font-medium text-gray-900 mb-4">{t('inventory.supplierPriceInfo')}</h4>
                 <SupplierPriceInfo endmillTypeId={selectedItem.endmill_type_id} />
               </div>
 
@@ -1221,7 +1223,7 @@ export default function InventoryPage() {
                   onClick={() => setShowDetailModal(false)}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                 >
-                  닫기
+                  {t('inventory.close')}
                 </button>
               </div>
             </div>
@@ -1235,8 +1237,8 @@ export default function InventoryPage() {
           <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">✏️ 앤드밀 정보 수정</h3>
-                <button 
+                <h3 className="text-lg font-medium">{t('inventory.editEndmillInfo')}</h3>
+                <button
                   onClick={() => setShowEditModal(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -1244,11 +1246,11 @@ export default function InventoryPage() {
                 </button>
               </div>
             </div>
-            
+
             <form onSubmit={handleSaveEdit} className="p-6">
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 코드</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.endmillCodeLabel')}</label>
                   <input
                     type="text"
                     value={editFormData.endmill_type?.code || ''}
@@ -1257,7 +1259,7 @@ export default function InventoryPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 이름</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.endmillNameLabel')}</label>
                   <input
                     type="text"
                     value={editFormData.endmill_type?.name || ''}
@@ -1266,7 +1268,7 @@ export default function InventoryPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.categoryLabel')}</label>
                   <input
                     type="text"
                     value={editFormData.endmill_type?.endmill_categories?.name_ko || editFormData.endmill_type?.endmill_categories?.code || ''}
@@ -1275,7 +1277,7 @@ export default function InventoryPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">현재 재고</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.currentStockLabel')}</label>
                   <input
                     type="number"
                     value={editFormData.current_stock || 0}
@@ -1285,7 +1287,7 @@ export default function InventoryPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">최소재고</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.minStockLabel')}</label>
                   <input
                     type="number"
                     value={editFormData.min_stock || 0}
@@ -1296,7 +1298,7 @@ export default function InventoryPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">최대재고</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.maxStockLabel')}</label>
                   <input
                     type="number"
                     value={editFormData.max_stock || 0}
@@ -1314,13 +1316,13 @@ export default function InventoryPage() {
                   onClick={() => setShowEditModal(false)}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                 >
-                  취소
+                  {t('inventory.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
-                  저장
+                  {t('inventory.save')}
                 </button>
               </div>
                          </form>
@@ -1334,8 +1336,8 @@ export default function InventoryPage() {
           <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">📄 앤드밀 마스터 데이터 엑셀 업로드</h3>
-                <button 
+                <h3 className="text-lg font-medium">{t('inventory.excelMasterDataUpload')}</h3>
+                <button
                   onClick={() => setShowExcelUploadModal(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -1343,22 +1345,22 @@ export default function InventoryPage() {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6">
               {/* 업로드 안내 */}
               <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                <h4 className="text-sm font-medium text-blue-900 mb-2">📋 업로드 형식 안내</h4>
+                <h4 className="text-sm font-medium text-blue-900 mb-2">{t('inventory.uploadFormatGuide')}</h4>
                 <div className="text-xs text-blue-800 space-y-1">
-                  <p>• 엑셀 파일(.xlsx, .xls)만 업로드 가능합니다</p>
-                  <p>• 필수 컬럼: 앤드밀코드, Type, 카테고리, 앤드밀이름, 직경(mm), 날수</p>
-                  <p>• 선택 컬럼: 코팅, 소재, 공차, 나선각, 표준수명, 최소재고, 최대재고</p>
-                  <p>• 공급업체 정보: 공급업체1, 공급업체1단가(VND), 공급업체2, 공급업체2단가(VND)...</p>
+                  <p>• {t('inventory.excelFileOnly')}</p>
+                  <p>• {t('inventory.requiredColumns')}</p>
+                  <p>• {t('inventory.optionalColumns')}</p>
+                  <p>• {t('inventory.supplierInfoColumns')}</p>
                 </div>
               </div>
 
               {/* 파일 선택 */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">엑셀 파일 선택</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.selectExcelFile')}</label>
                 <input
                   type="file"
                   accept=".xlsx,.xls"
@@ -1367,7 +1369,7 @@ export default function InventoryPage() {
                 />
                 {excelFile && (
                   <p className="mt-2 text-sm text-green-600">
-                    ✅ 선택된 파일: {excelFile.name}
+                    {t('inventory.selectedFile')} {excelFile.name}
                   </p>
                 )}
               </div>
@@ -1377,7 +1379,7 @@ export default function InventoryPage() {
                 <div className="mb-6 p-4 bg-yellow-50 rounded-lg">
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
-                    <span className="text-sm text-yellow-800">파일을 처리하고 있습니다...</span>
+                    <span className="text-sm text-yellow-800">{t('inventory.fileProcessing')}</span>
                   </div>
                 </div>
               )}
@@ -1385,21 +1387,21 @@ export default function InventoryPage() {
               {/* 결과 표시 */}
               {(!uploadProgress.processing && (uploadProgress.success > 0 || uploadProgress.updated > 0 || uploadProgress.errors.length > 0)) && (
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">📊 처리 결과</h4>
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">{t('inventory.processingResult')}</h4>
                   <div className="grid grid-cols-2 gap-4 mb-3">
                     <div className="text-center p-3 bg-green-100 rounded-lg">
                       <div className="text-lg font-bold text-green-800">{uploadProgress.success}</div>
-                      <div className="text-xs text-green-600">신규 추가</div>
+                      <div className="text-xs text-green-600">{t('inventory.newlyAdded')}</div>
                     </div>
                     <div className="text-center p-3 bg-blue-100 rounded-lg">
                       <div className="text-lg font-bold text-blue-800">{uploadProgress.updated}</div>
-                      <div className="text-xs text-blue-600">업데이트</div>
+                      <div className="text-xs text-blue-600">{t('inventory.updated')}</div>
                     </div>
                   </div>
-                  
+
                   {uploadProgress.errors.length > 0 && (
                     <div className="mt-4">
-                      <h5 className="text-sm font-medium text-red-800 mb-2">⚠️ 오류 목록</h5>
+                      <h5 className="text-sm font-medium text-red-800 mb-2">{t('inventory.errorList')}</h5>
                       <div className="max-h-32 overflow-y-auto">
                         {uploadProgress.errors.map((error, index) => (
                           <p key={index} className="text-xs text-red-600 mb-1">• {error}</p>
@@ -1417,14 +1419,14 @@ export default function InventoryPage() {
                   onClick={() => setShowExcelUploadModal(false)}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                 >
-                  닫기
+                  {t('inventory.close')}
                 </button>
                 <button
                   onClick={handleProcessExcel}
                   disabled={!excelFile || uploadProgress.processing}
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  {uploadProgress.processing ? '처리 중...' : '📄 업로드 처리'}
+                  {uploadProgress.processing ? t('inventory.loading') : t('inventory.processUpload')}
                 </button>
               </div>
             </div>
@@ -1438,7 +1440,7 @@ export default function InventoryPage() {
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
             <div className="px-6 py-4 border-b">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">QR 코드 스캔</h3>
+                <h3 className="text-lg font-medium">{t('inventory.qrCodeScan')}</h3>
                 <button
                   onClick={() => setShowQRScanner(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -1453,13 +1455,13 @@ export default function InventoryPage() {
                 <div className="w-24 h-24 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                   <span className="text-4xl">📷</span>
                 </div>
-                <p className="text-gray-600 mb-4">앤드밀 QR 코드를 스캔해주세요</p>
+                <p className="text-gray-600 mb-4">{t('inventory.scanEndmillQR')}</p>
 
                 {/* 임시로 수동 입력 필드 제공 */}
                 <div className="mb-4">
                   <input
                     type="text"
-                    placeholder="또는 수동으로 앤드밀 코드 입력"
+                    placeholder={t('inventory.orManualInput')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter') {
@@ -1471,12 +1473,12 @@ export default function InventoryPage() {
                     }}
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    Enter 키를 눌러서 코드를 입력하세요
+                    {t('inventory.pressEnterToInput')}
                   </p>
                 </div>
 
                 <div className="text-sm text-gray-500">
-                  📋 QR 코드 스캔 기능은 향후 카메라 접근 권한이 있을 때 구현됩니다.
+                  {t('inventory.qrFeatureNotice')}
                 </div>
               </div>
 
@@ -1485,7 +1487,7 @@ export default function InventoryPage() {
                   onClick={() => setShowQRScanner(false)}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                 >
-                  닫기
+                  {t('inventory.close')}
                 </button>
               </div>
             </div>

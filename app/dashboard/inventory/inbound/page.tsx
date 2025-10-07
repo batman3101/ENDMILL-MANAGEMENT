@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useToast } from '../../../../components/shared/Toast'
 import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
 import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
+import { useTranslations } from '../../../../lib/hooks/useTranslations'
 import { supabase } from '../../../../lib/supabase/client'
 
 // 앤드밀 데이터 타입 정의
@@ -30,6 +31,7 @@ interface InboundItem {
 }
 
 export default function InboundPage() {
+  const { t } = useTranslations()
   const { showSuccess, showError, showWarning } = useToast()
   const confirmation = useConfirmation()
   const [isScanning, setIsScanning] = useState(false)
