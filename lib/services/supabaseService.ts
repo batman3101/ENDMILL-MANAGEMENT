@@ -382,23 +382,40 @@ export class InventoryService {
   async getStats() {
     const { data, error } = await this.supabase
       .from('inventory')
-      .select('current_stock, min_stock, max_stock')
+      .select(`
+        current_stock,
+        min_stock,
+        max_stock,
+        status,
+        endmill_type:endmill_types(unit_cost)
+      `)
 
     if (error) throw error
 
     const totalItems = data.length
-    const criticalItems = data.filter(item => (item.current_stock || 0) <= (item.min_stock || 0)).length
-    const lowItems = data.filter(item => 
-      (item.current_stock || 0) > (item.min_stock || 0) && 
-      (item.current_stock || 0) <= (item.min_stock || 0) * 1.5
-    ).length
-    const sufficientItems = totalItems - criticalItems - lowItems
+
+    // status 필드 기반으로 집계 (데이터베이스에서 이미 계산된 status 사용)
+    const criticalItems = data.filter(item => item.status === 'critical').length
+    const lowItems = data.filter(item => item.status === 'low').length
+    const sufficientItems = data.filter(item => item.status === 'sufficient').length
+
+    // 총 재고 수량 계산
+    const totalStock = data.reduce((sum, item) => sum + (item.current_stock || 0), 0)
+
+    // 총 재고 가치 계산
+    const totalValue = data.reduce((sum, item) => {
+      const stock = item.current_stock || 0
+      const unitCost = item.endmill_type?.unit_cost || 0
+      return sum + (stock * parseFloat(unitCost.toString()))
+    }, 0)
 
     return {
       totalItems,
       criticalItems,
       lowItems,
-      sufficientItems
+      sufficientItems,
+      totalStock,
+      totalValue
     }
   }
 

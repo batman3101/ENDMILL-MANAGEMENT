@@ -1,11 +1,48 @@
 import { NextRequest } from 'next/server'
-import { createServerSupabaseClient } from '../../../lib/services/supabaseService'
+import { createClient } from '@supabase/supabase-js'
 
 export async function GET(request: NextRequest) {
   console.log('🚀 대시보드 API 호출됨:', new Date().toISOString())
   try {
-    const supabase = createServerSupabaseClient()
-    console.log('✅ Supabase 클라이언트 생성 완료')
+    // Service Role Key를 직접 사용하여 Supabase 클라이언트 생성
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('❌ 환경변수 누락:', {
+        url: !!supabaseUrl,
+        key: !!supabaseServiceKey
+      })
+      throw new Error('Supabase 환경변수가 설정되지 않았습니다.')
+    }
+
+    console.log('🔑 환경변수 확인:', {
+      url: supabaseUrl,
+      serviceKeyLength: supabaseServiceKey.length,
+      serviceKeyPrefix: supabaseServiceKey.substring(0, 20) + '...'
+    })
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      },
+      db: {
+        schema: 'public'
+      }
+    })
+    console.log('✅ Supabase 클라이언트 생성 완료 (Service Role Key 사용)')
+
+    // 연결 테스트 - equipment 테이블 조회
+    const { data: testData, error: testError } = await supabase
+      .from('equipment')
+      .select('id')
+      .limit(1)
+
+    console.log('🧪 연결 테스트:', {
+      testDataCount: testData?.length || 0,
+      testError: testError?.message || null
+    })
 
     // 병렬로 모든 데이터 조회
     const [
@@ -91,14 +128,34 @@ async function getEquipmentStats(supabase: any) {
 
 // 엔드밀 사용 현황 통계 (수량 기반)
 async function getEndmillUsageStats(supabase: any) {
-  const { data: toolPositions, error } = await supabase
+  // .neq() 메서드가 작동하지 않으므로 전체 데이터를 가져와서 JavaScript로 필터링
+  const { data: allPositions, error } = await supabase
     .from('tool_positions')
     .select('current_life, total_life, status')
-    .neq('status', 'empty')
 
   if (error) {
     console.error('tool_positions 조회 오류:', error)
     throw error
+  }
+
+  // JavaScript로 필터링: empty가 아닌 것만
+  const toolPositions = (allPositions || []).filter((pos: any) => pos.status !== 'empty')
+
+  console.log('📊 tool_positions 조회 및 필터링 완료:', {
+    totalCount: allPositions?.length || 0,
+    filteredCount: toolPositions.length,
+    sample: toolPositions.slice(0, 3)
+  })
+
+  if (!toolPositions || toolPositions.length === 0) {
+    console.warn('⚠️ tool_positions가 비어있습니다!')
+    return {
+      total: 0,
+      normal: 0,
+      warning: 0,
+      critical: 0,
+      usageRate: 0
+    }
   }
 
   // 잔여 수명 비율에 따라 상태 분류
@@ -119,6 +176,8 @@ async function getEndmillUsageStats(supabase: any) {
   const totalInUse = stats.normal + stats.warning + stats.critical
   const usageRate = totalInUse > 0 ? Math.round((stats.normal / totalInUse) * 100) : 0
 
+  console.log('✅ 엔드밀 통계 계산 완료:', { totalInUse, stats, usageRate })
+
   return {
     total: totalInUse,
     normal: stats.normal,
@@ -132,20 +191,53 @@ async function getEndmillUsageStats(supabase: any) {
 async function getInventoryStats(supabase: any) {
   const { data: inventory, error } = await supabase
     .from('inventory')
-    .select('current_stock, min_stock, max_stock, status')
+    .select('current_stock, min_stock, max_stock')
+
+  console.log('📦 inventory 조회 결과:', {
+    count: inventory?.length || 0,
+    sample: inventory?.slice(0, 5),
+    error: error?.message || null
+  })
 
   if (error) throw error
 
-  const statusCounts = inventory.reduce((acc: any, item: any) => {
-    acc[item.status] = (acc[item.status] || 0) + 1
+  // status 필드를 신뢰하지 않고, 실제 재고 수량으로 직접 계산
+  const stats = inventory.reduce((acc: any, item: any) => {
+    // 재고 상태 계산 로직:
+    // - current_stock >= min_stock * 1.5: sufficient (충분)
+    // - min_stock <= current_stock < min_stock * 1.5: low (부족)
+    // - current_stock < min_stock: critical (위험)
+    if (item.current_stock >= item.min_stock * 1.5) {
+      acc.sufficient++
+    } else if (item.current_stock >= item.min_stock) {
+      acc.low++
+    } else {
+      acc.critical++
+    }
     return acc
-  }, {})
+  }, { sufficient: 0, low: 0, critical: 0 })
+
+  console.log('📊 재고 상태별 집계 (재계산):', stats)
+
+  // 실제 데이터 샘플 출력
+  const sufficientSamples = inventory
+    .filter((i: any) => i.current_stock >= i.min_stock * 1.5)
+    .slice(0, 3)
+    .map((i: any) => ({ stock: i.current_stock, min: i.min_stock }))
+
+  const criticalSamples = inventory
+    .filter((i: any) => i.current_stock < i.min_stock)
+    .slice(0, 3)
+    .map((i: any) => ({ stock: i.current_stock, min: i.min_stock }))
+
+  console.log('✅ sufficient 샘플:', sufficientSamples)
+  console.log('⚠️ critical 샘플:', criticalSamples)
 
   return {
     total: inventory.length,
-    sufficient: statusCounts['sufficient'] || 0,
-    low: statusCounts['low'] || 0,
-    critical: statusCounts['critical'] || 0
+    sufficient: stats.sufficient,
+    low: stats.low,
+    critical: stats.critical
   }
 }
 
@@ -154,18 +246,30 @@ async function getToolChangeStats(supabase: any) {
   const today = new Date().toISOString().split('T')[0]
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  const { data: todayChanges, error: todayError } = await supabase
-    .from('tool_changes')
-    .select('*')
-    .gte('change_date', today)
+  console.log('📅 교체 실적 조회:', { today, yesterday })
 
-  const { data: yesterdayChanges, error: yesterdayError } = await supabase
+  // .gte()가 작동하지 않을 수 있으므로 전체 데이터를 가져와서 JavaScript로 필터링
+  const { data: allChanges, error } = await supabase
     .from('tool_changes')
-    .select('*')
-    .gte('change_date', yesterday)
-    .lt('change_date', today)
+    .select('id, change_date, equipment_number, t_number')
 
-  if (todayError || yesterdayError) throw todayError || yesterdayError
+  if (error) {
+    console.error('tool_changes 조회 오류:', error)
+    throw error
+  }
+
+  // JavaScript로 필터링
+  const todayChanges = (allChanges || []).filter((change: any) => change.change_date >= today)
+  const yesterdayChanges = (allChanges || []).filter((change: any) =>
+    change.change_date >= yesterday && change.change_date < today
+  )
+
+  console.log('📊 교체 실적 집계:', {
+    totalCount: allChanges?.length || 0,
+    todayCount: todayChanges.length,
+    yesterdayCount: yesterdayChanges.length,
+    todaySample: todayChanges.slice(0, 3)
+  })
 
   const todayCount = todayChanges.length
   const yesterdayCount = yesterdayChanges.length
@@ -186,24 +290,33 @@ async function getCostAnalysis(supabase: any) {
   const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1
   const currentYear = new Date().getFullYear()
   const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear
+  const currentMonthStart = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`
+  const lastMonthStart = `${lastMonthYear}-${lastMonth.toString().padStart(2, '0')}-01`
 
-  // 이번달 교체 내역
-  const { data: currentMonthChanges, error: currentError } = await supabase
+  console.log('💰 비용 분석 시작:', { currentMonth, lastMonth, currentMonthStart, lastMonthStart })
+
+  // .gte()가 작동하지 않을 수 있으므로 전체 데이터를 가져와서 JavaScript로 필터링
+  const { data: allChanges, error } = await supabase
     .from('tool_changes')
-    .select('endmill_code')
-    .gte('change_date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
+    .select('endmill_code, change_date')
 
-  // 지난달 교체 내역
-  const { data: lastMonthChanges, error: lastError } = await supabase
-    .from('tool_changes')
-    .select('endmill_code')
-    .gte('change_date', `${lastMonthYear}-${lastMonth.toString().padStart(2, '0')}-01`)
-    .lt('change_date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
-
-  if (currentError || lastError) {
-    console.error('tool_changes 조회 오류:', currentError || lastError)
-    throw currentError || lastError
+  if (error) {
+    console.error('tool_changes 조회 오류:', error)
+    throw error
   }
+
+  // JavaScript로 필터링
+  const currentMonthChanges = (allChanges || []).filter((change: any) => change.change_date >= currentMonthStart)
+  const lastMonthChanges = (allChanges || []).filter((change: any) =>
+    change.change_date >= lastMonthStart && change.change_date < currentMonthStart
+  )
+
+  console.log('📊 비용 분석 데이터 집계:', {
+    totalCount: allChanges?.length || 0,
+    currentMonthCount: currentMonthChanges.length,
+    lastMonthCount: lastMonthChanges.length,
+    currentMonthSample: currentMonthChanges.slice(0, 3)
+  })
 
   // endmill_types 조회
   const { data: endmillTypes, error: etError } = await supabase
@@ -238,6 +351,13 @@ async function getCostAnalysis(supabase: any) {
   const savings = lastMonthCost - currentMonthCost
   const savingsPercent = lastMonthCost > 0 ? Math.round((savings / lastMonthCost) * 100) : 0
 
+  console.log('💵 비용 계산 완료:', {
+    currentMonthCost,
+    lastMonthCost,
+    savings,
+    savingsPercent
+  })
+
   return {
     currentMonth: currentMonthCost,
     lastMonth: lastMonthCost,
@@ -251,16 +371,26 @@ async function getCostAnalysis(supabase: any) {
 async function getFrequencyAnalysis(supabase: any) {
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  // tool_changes 조회
-  const { data: weeklyChanges, error: tcError } = await supabase
+  console.log('📈 frequencyAnalysis 시작:', { oneWeekAgo })
+
+  // .gte()가 작동하지 않으므로 전체 데이터를 가져와서 JavaScript로 필터링
+  const { data: allChanges, error: tcError } = await supabase
     .from('tool_changes')
     .select('equipment_number, change_date, production_model')
-    .gte('change_date', oneWeekAgo)
 
   if (tcError) {
     console.error('tool_changes 조회 오류:', tcError)
     throw tcError
   }
+
+  // JavaScript로 필터링: oneWeekAgo 이후 데이터만
+  const weeklyChanges = (allChanges || []).filter((change: any) => change.change_date >= oneWeekAgo)
+
+  console.log('📊 주간 tool_changes 조회 및 필터링 완료:', {
+    totalCount: allChanges?.length || 0,
+    filteredCount: weeklyChanges.length,
+    sample: weeklyChanges.slice(0, 3)
+  })
 
   // equipment 조회
   const { data: equipment, error: eqError } = await supabase
@@ -385,17 +515,28 @@ async function getLifespanAnalysis(supabase: any) {
 async function getModelCostAnalysis(supabase: any) {
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
+  const startDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`
 
-  // tool_changes 조회
-  const { data: monthlyChanges, error: tcError } = await supabase
+  console.log('💰 modelCostAnalysis 시작:', { currentMonth, currentYear, startDate })
+
+  // .gte()가 작동하지 않으므로 전체 데이터를 가져와서 JavaScript로 필터링
+  const { data: allChanges, error: tcError } = await supabase
     .from('tool_changes')
-    .select('equipment_number, endmill_code, production_model')
-    .gte('change_date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
+    .select('equipment_number, endmill_code, production_model, change_date')
 
   if (tcError) {
     console.error('tool_changes 조회 오류:', tcError)
     throw tcError
   }
+
+  // JavaScript로 필터링: startDate 이후 데이터만
+  const monthlyChanges = (allChanges || []).filter((change: any) => change.change_date >= startDate)
+
+  console.log('📊 월간 tool_changes 조회 및 필터링 완료:', {
+    totalCount: allChanges?.length || 0,
+    filteredCount: monthlyChanges.length,
+    sample: monthlyChanges.slice(0, 3)
+  })
 
   // equipment 조회
   const { data: equipment, error: eqError } = await supabase
@@ -449,117 +590,126 @@ async function getModelCostAnalysis(supabase: any) {
 
 // 최근 경고 및 알림 조회
 async function getRecentAlerts(supabase: any) {
+  console.log('🚨 최근 알림 조회 시작')
+
   const alerts = []
 
-  // 1. 비정상 마모 감지: 표준 수명보다 빠르게 소진된 교체 이력
-  const { data: abnormalWear, error: wearError } = await supabase
+  // 1. 비정상 파손 감지: 파손 사유로 교체된 최근 이력 (가장 중요하므로 먼저)
+  const { data: allChanges, error: changesError } = await supabase
     .from('tool_changes')
-    .select('equipment_number, t_number, tool_life, endmill_type_id, created_at, endmill_types(standard_life, name)')
-    .not('tool_life', 'is', null)
-    .not('endmill_type_id', 'is', null)
-    .order('created_at', { ascending: false })
-    .limit(10)
+    .select('equipment_number, t_number, change_reason, created_at, tool_life, endmill_type_id')
 
-  if (!wearError && abnormalWear && abnormalWear.length > 0) {
-    for (const change of abnormalWear) {
-      const standardLife = change.endmill_types?.standard_life || 800
-      const actualLife = change.tool_life || 0
+  if (changesError) {
+    console.error('tool_changes 조회 오류:', changesError)
+  } else {
+    // JavaScript로 필터링: 파손 사유만 & 최신순 정렬
+    const brokenTools = (allChanges || [])
+      .filter((change: any) => change.change_reason === '파손')
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
-      // 표준 수명의 50% 미만으로 사용했으면 비정상 마모
-      if (actualLife > 0 && actualLife < standardLife * 0.5) {
-        const minutesAgo = Math.floor((new Date().getTime() - new Date(change.created_at).getTime()) / 60000)
-        alerts.push({
-          type: 'abnormal_wear',
-          severity: 'high',
-          equipmentNumber: change.equipment_number,
-          tNumber: change.t_number,
-          actualLife,
-          standardLife,
-          minutesAgo,
-          color: 'red'
-        })
-        break // 첫 번째만 추가
+    console.log('🔨 파손 이력 조회 결과:', {
+      totalChanges: allChanges?.length || 0,
+      brokenCount: brokenTools.length,
+      latestBroken: brokenTools[0] || null
+    })
+
+    if (brokenTools.length > 0) {
+      const change = brokenTools[0]
+      const minutesAgo = Math.floor((new Date().getTime() - new Date(change.created_at).getTime()) / 60000)
+
+      console.log('⚠️ 최근 파손 발견:', {
+        equipment: change.equipment_number,
+        tNumber: change.t_number,
+        createdAt: change.created_at,
+        minutesAgo
+      })
+
+      alerts.push({
+        type: 'abnormal_damage',
+        severity: 'warning',
+        equipmentNumber: change.equipment_number,
+        tNumber: change.t_number,
+        minutesAgo,
+        color: 'orange'
+      })
+    }
+
+    // 2. 비정상 마모 감지: 표준 수명보다 빠르게 소진된 교체 이력
+    const recentChangesWithLife = (allChanges || [])
+      .filter((change: any) => change.tool_life != null && change.endmill_type_id != null)
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 10)
+
+    // endmill_types 조회 (standard_life 필요)
+    const { data: endmillTypes, error: etError } = await supabase
+      .from('endmill_types')
+      .select('id, standard_life, name')
+
+    if (!etError && endmillTypes) {
+      const endmillMap = new Map(endmillTypes.map((et: any) => [et.id, et]))
+
+      for (const change of recentChangesWithLife) {
+        const endmillType = endmillMap.get(change.endmill_type_id)
+        const standardLife = endmillType?.standard_life || 800
+        const actualLife = change.tool_life || 0
+
+        // 표준 수명의 50% 미만으로 사용했으면 비정상 마모
+        if (actualLife > 0 && actualLife < standardLife * 0.5) {
+          const minutesAgo = Math.floor((new Date().getTime() - new Date(change.created_at).getTime()) / 60000)
+          alerts.push({
+            type: 'abnormal_wear',
+            severity: 'high',
+            equipmentNumber: change.equipment_number,
+            tNumber: change.t_number,
+            actualLife,
+            standardLife,
+            minutesAgo,
+            color: 'red'
+          })
+          break // 첫 번째만 추가
+        }
       }
     }
   }
 
-  // 2. 비정상 파손 감지: 파손 사유로 교체된 최근 이력
-  const { data: brokenTools, error: brokenError } = await supabase
-    .from('tool_changes')
-    .select('equipment_number, t_number, change_reason, created_at')
-    .eq('change_reason', '파손')
-    .order('created_at', { ascending: false })
-    .limit(1)
-
-  if (!brokenError && brokenTools && brokenTools.length > 0) {
-    const change = brokenTools[0]
-    const minutesAgo = Math.floor((new Date().getTime() - new Date(change.created_at).getTime()) / 60000)
-    alerts.push({
-      type: 'abnormal_damage',
-      severity: 'warning',
-      equipmentNumber: change.equipment_number,
-      tNumber: change.t_number,
-      minutesAgo,
-      color: 'orange'
-    })
-  }
-
   // 3. 재고 부족 경보: 최소 재고 이하인 항목
-  const { data: lowStock, error: stockError } = await supabase
+  const { data: inventory, error: invError } = await supabase
     .from('inventory')
-    .select('endmill_type_id, current_stock, min_stock, last_updated, endmill_types(code, name)')
-    .eq('status', 'critical')
-    .order('last_updated', { ascending: false })
-    .limit(1)
+    .select('endmill_type_id, current_stock, min_stock, last_updated')
 
-  if (!stockError && lowStock && lowStock.length > 0) {
-    const item = lowStock[0]
-    const minutesAgo = Math.floor((new Date().getTime() - new Date(item.last_updated).getTime()) / 60000)
-    alerts.push({
-      type: 'low_stock',
-      severity: 'medium',
-      endmillCode: item.endmill_types?.code,
-      endmillName: item.endmill_types?.name,
-      currentStock: item.current_stock,
-      minStock: item.min_stock,
-      minutesAgo,
-      color: 'yellow'
-    })
-  }
+  if (!invError && inventory) {
+    // JavaScript로 필터링: critical (current_stock < min_stock)
+    const criticalItems = (inventory || [])
+      .filter((item: any) => item.current_stock < item.min_stock)
+      .sort((a: any, b: any) => new Date(b.last_updated).getTime() - new Date(a.last_updated).getTime())
 
-  // 4. 최근 증가 교체사유: 파손 사유 증가 추세
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    console.log('📦 재고 부족 항목:', { criticalCount: criticalItems.length })
 
-  const { data: recentBreaks, error: recentError } = await supabase
-    .from('tool_changes')
-    .select('id')
-    .eq('change_reason', '파손')
-    .gte('change_date', sevenDaysAgo)
+    if (criticalItems.length > 0) {
+      const item = criticalItems[0]
 
-  const { data: previousBreaks, error: prevError } = await supabase
-    .from('tool_changes')
-    .select('id')
-    .eq('change_reason', '파손')
-    .gte('change_date', fourteenDaysAgo)
-    .lt('change_date', sevenDaysAgo)
+      // endmill_types 정보 조회
+      const { data: endmillType, error: etError } = await supabase
+        .from('endmill_types')
+        .select('code, name')
+        .eq('id', item.endmill_type_id)
+        .single()
 
-  if (!recentError && !prevError && recentBreaks && previousBreaks) {
-    const recentCount = recentBreaks.length
-    const previousCount = previousBreaks.length
-
-    if (recentCount > previousCount && previousCount > 0) {
-      const increase = Math.round(((recentCount - previousCount) / previousCount) * 100)
+      const minutesAgo = Math.floor((new Date().getTime() - new Date(item.last_updated).getTime()) / 60000)
       alerts.push({
-        type: 'trend_increase',
-        severity: 'info',
-        recentCount,
-        increase,
-        minutesAgo: 60, // 1시간 전으로 고정
-        color: 'blue'
+        type: 'low_stock',
+        severity: 'medium',
+        endmillCode: endmillType?.code || 'Unknown',
+        endmillName: endmillType?.name || 'Unknown',
+        currentStock: item.current_stock,
+        minStock: item.min_stock,
+        minutesAgo,
+        color: 'yellow'
       })
     }
   }
+
+  console.log('✅ 최근 알림 조회 완료:', { alertCount: alerts.length })
 
   return alerts
 }
