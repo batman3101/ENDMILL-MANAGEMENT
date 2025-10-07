@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useCAMSheets, type CAMSheet, type EndmillInfo } from '../../../lib/hooks/useCAMSheets'
 import CAMSheetForm from '../../../components/features/CAMSheetForm'
 import ExcelUploader from '../../../components/features/ExcelUploader'
@@ -11,14 +12,15 @@ import { useSettings } from '../../../lib/hooks/useSettings'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 
 export default function CAMSheetsPage() {
-  const { 
-    camSheets, 
-    loading, 
-    error, 
-    createCAMSheet, 
+  const { t } = useTranslation()
+  const {
+    camSheets,
+    loading,
+    error,
+    createCAMSheet,
     createCAMSheetsBatch,
-    updateCAMSheet, 
-    deleteCAMSheet 
+    updateCAMSheet,
+    deleteCAMSheet
   } = useCAMSheets()
   const { showSuccess, showError, showWarning } = useToast()
   const confirmation = useConfirmation()
@@ -268,7 +270,7 @@ export default function CAMSheetsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">로딩 중...</div>
+        <div className="text-lg text-gray-600">{t('camSheets.loading')}</div>
       </div>
     )
   }
@@ -292,7 +294,7 @@ export default function CAMSheetsPage() {
               📋
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">총 CAM Sheet</p>
+              <p className="text-sm font-medium text-gray-600">{t('camSheets.totalSheets')}</p>
               <p className="text-2xl font-bold text-gray-900">{camSheets.length}</p>
             </div>
           </div>
@@ -304,7 +306,7 @@ export default function CAMSheetsPage() {
               🏭
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">등록 모델</p>
+              <p className="text-sm font-medium text-gray-600">{t('camSheets.registeredModel')}</p>
               <p className="text-2xl font-bold text-green-600">
                 {new Set(camSheets.map(s => s.model)).size}
               </p>
@@ -318,7 +320,7 @@ export default function CAMSheetsPage() {
               🔧
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">등록 앤드밀</p>
+              <p className="text-sm font-medium text-gray-600">{t('camSheets.registeredEndmills')}</p>
               <p className="text-2xl font-bold text-purple-600">
                 {camSheets.reduce((total, sheet) => total + (sheet.cam_sheet_endmills?.length || 0), 0)}
               </p>
@@ -332,7 +334,7 @@ export default function CAMSheetsPage() {
               ⚡
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">효율성 지수</p>
+              <p className="text-sm font-medium text-gray-600">{t('camSheets.efficiencyIndex')}</p>
               <p className="text-2xl font-bold text-yellow-600">
                 {camSheets.length > 0 
                   ? `${Math.round((camSheets.reduce((acc, sheet) => acc + (sheet.cam_sheet_endmills?.length || 0), 0) / Math.max(camSheets.length * 10, 1)) * 100)}%`
@@ -354,17 +356,17 @@ export default function CAMSheetsPage() {
                 🎯
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Tool Life 예측 정확도</p>
+                <p className="text-sm font-medium text-gray-600">{t('camSheets.toolLifeAccuracy')}</p>
                 <p className="text-2xl font-bold text-emerald-600">{insights.toolLifeAccuracy}%</p>
               </div>
             </div>
           </div>
-          <div className="text-xs text-gray-500 mb-2">CAM 설정 vs 실제 교체</div>
+          <div className="text-xs text-gray-500 mb-2">{t('camSheets.camVsActual')}</div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div className="bg-emerald-600 h-2 rounded-full" style={{width: `${insights.toolLifeAccuracy}%`}}></div>
           </div>
           <div className="mt-2 text-xs text-gray-600">
-            가장 정확: {bestProcess[0]} ({bestProcess[1]}%)
+            {t('camSheets.mostAccurate')}: {bestProcess[0]} ({bestProcess[1]}%)
           </div>
         </div>
 
@@ -376,24 +378,24 @@ export default function CAMSheetsPage() {
                 📊
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">교체 주기 분석</p>
-                <p className="text-2xl font-bold text-blue-600">{insights.averageChangeInterval}시간</p>
+                <p className="text-sm font-medium text-gray-600">{t('camSheets.replacementCycle')}</p>
+                <p className="text-2xl font-bold text-blue-600">{insights.averageChangeInterval}{t('camSheets.hours')}</p>
               </div>
             </div>
           </div>
-          <div className="text-xs text-gray-500 mb-2">평균 교체 주기</div>
+          <div className="text-xs text-gray-500 mb-2">{t('camSheets.averageCycle')}</div>
           <div className="space-y-1">
             <div className="flex justify-between text-xs">
               <span className="text-gray-600">FLAT</span>
-              <span className="font-medium">{insights.endmillTypeIntervals.FLAT}시간</span>
+              <span className="font-medium">{insights.endmillTypeIntervals.FLAT}{t('camSheets.hours')}</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-gray-600">BALL</span>
-              <span className="font-medium">{insights.endmillTypeIntervals.BALL}시간</span>
+              <span className="font-medium">{insights.endmillTypeIntervals.BALL}{t('camSheets.hours')}</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-gray-600">T-CUT</span>
-              <span className="font-medium">{insights.endmillTypeIntervals['T-CUT']}시간</span>
+              <span className="font-medium">{insights.endmillTypeIntervals['T-CUT']}{t('camSheets.hours')}</span>
             </div>
           </div>
         </div>
@@ -406,24 +408,24 @@ export default function CAMSheetsPage() {
                 🔗
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">재고 연동률</p>
+                <p className="text-sm font-medium text-gray-600">{t('camSheets.inventoryLink')}</p>
                 <p className="text-2xl font-bold text-orange-600">{insights.inventoryLinkage}%</p>
               </div>
             </div>
           </div>
-          <div className="text-xs text-gray-500 mb-2">CAM Sheet 등록 앤드밀</div>
+          <div className="text-xs text-gray-500 mb-2">{t('camSheets.registeredEndmill')}</div>
           <div className="space-y-1">
             <div className="flex justify-between text-xs">
-              <span className="text-gray-600">재고 확보</span>
-              <span className="font-medium text-green-600">{insights.inventoryStatus.secured}개</span>
+              <span className="text-gray-600">{t('camSheets.secured')}</span>
+              <span className="font-medium text-green-600">{insights.inventoryStatus.secured}{t('camSheets.items')}</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-gray-600">재고 부족</span>
-              <span className="font-medium text-red-600">{insights.inventoryStatus.shortage}개</span>
+              <span className="text-gray-600">{t('camSheets.shortage')}</span>
+              <span className="font-medium text-red-600">{insights.inventoryStatus.shortage}{t('camSheets.items')}</span>
             </div>
           </div>
           <div className="mt-2 text-xs text-amber-600">
-            ⚠️ 위험도: {insights.inventoryLinkage >= 90 ? '낮음' : insights.inventoryLinkage >= 80 ? '보통' : '높음'}
+            ⚠️ {t('camSheets.riskLevel')}: {insights.inventoryLinkage >= 90 ? t('camSheets.low') : insights.inventoryLinkage >= 80 ? t('camSheets.medium') : t('camSheets.high')}
           </div>
         </div>
 
@@ -435,23 +437,23 @@ export default function CAMSheetsPage() {
                 📐
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">표준화 지수</p>
+                <p className="text-sm font-medium text-gray-600">{t('camSheets.standardization')}</p>
                 <p className="text-2xl font-bold text-indigo-600">{insights.standardization}%</p>
               </div>
             </div>
           </div>
-          <div className="text-xs text-gray-500 mb-2">앤드밀 타입 표준화</div>
+          <div className="text-xs text-gray-500 mb-2">{t('camSheets.endmillStandardization')}</div>
           <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
             <div className="bg-indigo-600 h-2 rounded-full" style={{width: `${insights.standardization}%`}}></div>
           </div>
           <div className="space-y-1">
             <div className="flex justify-between text-xs">
-              <span className="text-gray-600">표준 타입</span>
-              <span className="font-medium">{insights.standardizationDetails.standard}개</span>
+              <span className="text-gray-600">{t('camSheets.standardType')}</span>
+              <span className="font-medium">{insights.standardizationDetails.standard}{t('camSheets.items')}</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-gray-600">중복 타입</span>
-              <span className="font-medium text-yellow-600">{insights.standardizationDetails.duplicate}개</span>
+              <span className="text-gray-600">{t('camSheets.duplicateType')}</span>
+              <span className="font-medium text-yellow-600">{insights.standardizationDetails.duplicate}{t('camSheets.items')}</span>
             </div>
           </div>
         </div>
@@ -463,27 +465,27 @@ export default function CAMSheetsPage() {
           <div className="flex gap-4 flex-1">
             <input
               type="text"
-              placeholder="모델명, CAM 버전 검색..."
+              placeholder={t('camSheets.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <select 
+            <select
               value={modelFilter}
               onChange={(e) => setModelFilter(e.target.value)}
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">모든 모델</option>
+              <option value="">{t('camSheets.allModel')}</option>
               {Array.from(new Set(camSheets.map(s => s.model))).map(model => (
                 <option key={model} value={model}>{model}</option>
               ))}
             </select>
-            <select 
+            <select
               value={processFilter}
               onChange={(e) => setProcessFilter(e.target.value)}
               className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">모든 공정</option>
+              <option value="">{t('camSheets.allProcess')}</option>
               {availableProcesses.map(process => (
                 <option key={process} value={process}>{process}</option>
               ))}
@@ -494,13 +496,13 @@ export default function CAMSheetsPage() {
               onClick={() => setShowExcelUploader(true)}
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
             >
-              📁 엑셀 일괄 등록
+              📁 {t('camSheets.bulkRegister')}
             </button>
             <button
               onClick={() => setShowAddForm(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              + CAM Sheet 등록
+              + {t('camSheets.individualRegister')}
             </button>
           </div>
         </div>
@@ -509,18 +511,18 @@ export default function CAMSheetsPage() {
       {/* CAM Sheet 목록 */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">CAM Sheet 목록</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('camSheets.sheetList')}</h2>
           <div className="text-sm text-gray-500">
-            총 {filteredSheets.length}개
+            {t('camSheets.totalCount')} {filteredSheets.length}{t('camSheets.items')}
             {sortField && (
               <span className="ml-2 text-blue-600">
                 ({
-                  sortField === 'model' ? '모델' :
-                  sortField === 'process' ? '공정' :
-                  sortField === 'cam_version' ? 'CAM 버전' :
-                  sortField === 'endmillCount' ? '앤드밀 개수' :
-                  '마지막 수정'
-                } {sortOrder === 'asc' ? '오름차순' : '내림차순'})
+                  sortField === 'model' ? t('camSheets.model') :
+                  sortField === 'process' ? t('camSheets.process') :
+                  sortField === 'cam_version' ? t('camSheets.version') :
+                  sortField === 'endmillCount' ? t('camSheets.endmillCount') :
+                  t('camSheets.lastModified')
+                } {sortOrder === 'asc' ? t('camSheets.sortAscending') : t('camSheets.sortDescending')})
               </span>
             )}
           </div>
@@ -530,42 +532,42 @@ export default function CAMSheetsPage() {
             <thead className="bg-gray-50">
               <tr>
                 <SortableTableHeader
-                  label="모델"
+                  label={t('camSheets.model')}
                   field="model"
                   currentSortField={sortField}
                   currentSortOrder={sortOrder}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="공정"
+                  label={t('camSheets.process')}
                   field="process"
                   currentSortField={sortField}
                   currentSortOrder={sortOrder}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="CAM 버전"
+                  label={t('camSheets.version')}
                   field="cam_version"
                   currentSortField={sortField}
                   currentSortOrder={sortOrder}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="등록 앤드밀"
+                  label={t('camSheets.endmillCount')}
                   field="endmillCount"
                   currentSortField={sortField}
                   currentSortOrder={sortOrder}
                   onSort={handleSort}
                 />
                 <SortableTableHeader
-                  label="마지막 수정"
+                  label={t('camSheets.lastModified')}
                   field="updated_at"
                   currentSortField={sortField}
                   currentSortOrder={sortOrder}
                   onSort={handleSort}
                 />
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  작업
+                  {t('camSheets.actions')}
                 </th>
               </tr>
             </thead>
@@ -585,10 +587,10 @@ export default function CAMSheetsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{(sheet.cam_sheet_endmills || []).length}개</div>
+                    <div className="text-sm text-gray-900">{(sheet.cam_sheet_endmills || []).length}{t('camSheets.items')}</div>
                     <div className="text-sm text-gray-500">
-                      {(sheet.cam_sheet_endmills || []).length > 0 ? 
-                        `T${Math.min(...(sheet.cam_sheet_endmills || []).map((e: EndmillInfo) => e.t_number))}-T${Math.max(...(sheet.cam_sheet_endmills || []).map((e: EndmillInfo) => e.t_number))}` : 
+                      {(sheet.cam_sheet_endmills || []).length > 0 ?
+                        `T${Math.min(...(sheet.cam_sheet_endmills || []).map((e: EndmillInfo) => e.t_number))}-T${Math.max(...(sheet.cam_sheet_endmills || []).map((e: EndmillInfo) => e.t_number))}` :
                         '-'
                       }
                     </div>
@@ -597,23 +599,23 @@ export default function CAMSheetsPage() {
                     {new Date(sheet.updated_at).toLocaleDateString('ko-KR')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <button 
+                    <button
                       onClick={() => setSelectedSheet(sheet)}
                       className="text-blue-600 hover:text-blue-800 mr-3"
                     >
-                      상세
+                      {t('camSheets.detail')}
                     </button>
                     <button
                       onClick={() => setEditingSheet(sheet)}
                       className="text-green-600 hover:text-green-800 mr-3"
                     >
-                      수정
+                      {t('camSheets.edit')}
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDelete(sheet.id)}
                       className="text-red-600 hover:text-red-800"
                     >
-                      삭제
+                      {t('camSheets.delete')}
                     </button>
                   </td>
                 </tr>
@@ -629,8 +631,8 @@ export default function CAMSheetsPage() {
           <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">CAM Sheet 상세 - {selectedSheet.model}</h3>
-                <button 
+                <h3 className="text-lg font-medium">{t('camSheets.camSheetDetail')} - {selectedSheet.model}</h3>
+                <button
                   onClick={() => setSelectedSheet(null)}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -641,33 +643,33 @@ export default function CAMSheetsPage() {
             <div className="p-6">
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">모델</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('camSheets.model')}</label>
                   <p className="text-lg font-semibold">{selectedSheet.model}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">공정</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('camSheets.process')}</label>
                   <p className="text-lg font-semibold">{selectedSheet.process}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">CAM 버전</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('camSheets.version')}</label>
                   <p className="text-lg font-semibold">{selectedSheet.cam_version}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">버전 변경일자</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('camSheets.versionDate')}</label>
                   <p className="text-lg font-semibold">{selectedSheet.version_date}</p>
                 </div>
               </div>
 
-              <h4 className="text-lg font-semibold mb-4">등록된 앤드밀</h4>
+              <h4 className="text-lg font-semibold mb-4">{t('camSheets.registered')}</h4>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">T번호</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">앤드밀 코드</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">앤드밀 이름</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">사용 현황</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tool Life</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.tNumber')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.endmillCode')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.endmillName')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.usageStatus')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.toolLife')}</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -690,16 +692,16 @@ export default function CAMSheetsPage() {
                         <td className="px-4 py-2 text-sm">
                           <div className="flex items-center gap-2">
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              활성
+                              {t('camSheets.active')}
                             </span>
                             <span className="text-xs text-gray-500">
-                              현재 모델: {selectedSheet.model}
+                              {t('camSheets.currentModel')}: {selectedSheet.model}
                             </span>
                           </div>
                         </td>
                         <td className="px-4 py-2 text-sm">
                           <span className="font-medium text-green-600">
-                            {endmill.tool_life.toLocaleString()}회
+                            {endmill.tool_life.toLocaleString()}{t('camSheets.times')}
                           </span>
                         </td>
                       </tr>

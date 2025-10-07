@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import * as XLSX from 'xlsx'
 import { CAMSheet, EndmillInfo, useCAMSheets } from '../../lib/hooks/useCAMSheets'
 import { downloadExcelTemplate, validateExcelData } from '../../lib/utils/excelTemplate'
@@ -22,6 +23,7 @@ interface ExcelRow {
 }
 
 export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderProps) {
+  const { t } = useTranslation()
   const { camSheets } = useCAMSheets() // 기존 CAM Sheet 데이터 가져오기
   const [isDragOver, setIsDragOver] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -33,7 +35,7 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
 
   const handleFileUpload = async (file: File) => {
     if (!file.name.match(/\.(xlsx|xls)$/)) {
-      alert('엑셀 파일(.xlsx, .xls)만 업로드 가능합니다.')
+      alert(t('camSheets.excelFileOnly'))
       return
     }
 
@@ -83,7 +85,7 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
       
     } catch (error) {
       console.error('파일 처리 중 오류:', error)
-      alert('파일 처리 중 오류가 발생했습니다.')
+      alert(t('camSheets.fileProcessError'))
     }
     
     setIsProcessing(false)
@@ -196,8 +198,8 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
       <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">📁 엑셀 파일로 CAM Sheet 일괄 등록</h3>
-            <button 
+            <h3 className="text-lg font-medium">📁 {t('camSheets.excelBulkUploadTitle')}</h3>
+            <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"
             >
@@ -229,19 +231,19 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
             
             <div className="mb-4">
               <p className="text-lg font-medium text-gray-900">
-                엑셀 파일을 드래그 앤 드롭하거나 클릭하여 업로드
+                {t('camSheets.dragDropUpload')}
               </p>
               <p className="text-sm text-gray-500 mt-2">
-                .xlsx, .xls 파일 지원
+                {t('camSheets.fileSupport')}
               </p>
             </div>
-            
+
             <button
               onClick={() => fileInputRef.current?.click()}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               disabled={isProcessing}
             >
-              {isProcessing ? '처리 중...' : '파일 선택'}
+              {isProcessing ? t('camSheets.processing') : t('camSheets.selectFile')}
             </button>
             
             <input
@@ -256,25 +258,25 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
           {/* 예상 데이터 형식 가이드 */}
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <div className="flex justify-between items-center mb-2">
-              <h4 className="font-medium text-blue-900">📋 예상 엑셀 데이터 형식</h4>
+              <h4 className="font-medium text-blue-900">📋 {t('camSheets.expectedDataFormat')}</h4>
               <button
                 onClick={downloadExcelTemplate}
                 className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
               >
-                📥 템플릿 다운로드
+                📥 {t('camSheets.downloadTemplate')}
               </button>
             </div>
             <div className="text-sm text-blue-800">
-              <p className="mb-2">엑셀 파일의 첫 번째 시트에서 다음 컬럼들을 찾습니다:</p>
+              <p className="mb-2">{t('camSheets.excelColumnsInfo')}</p>
               <div className="grid grid-cols-2 gap-2">
-                <div><code className="bg-blue-200 px-1 rounded">Model</code> - 모델명</div>
-                <div><code className="bg-blue-200 px-1 rounded">Process</code> - 공정</div>
-                <div><code className="bg-blue-200 px-1 rounded">CAM Version</code> - CAM 버전</div>
-                <div><code className="bg-blue-200 px-1 rounded">T Number</code> - T번호</div>
-                <div><code className="bg-blue-200 px-1 rounded">Endmill Code</code> - 앤드밀 코드</div>
-                <div><code className="bg-blue-200 px-1 rounded">Endmill Name</code> - 앤드밀 타입</div>
-                <div><code className="bg-blue-200 px-1 rounded">Specifications</code> - 앤드밀 상세사양</div>
-                <div><code className="bg-blue-200 px-1 rounded">Tool Life</code> - Tool Life</div>
+                <div><code className="bg-blue-200 px-1 rounded">Model</code> - {t('camSheets.modelName')}</div>
+                <div><code className="bg-blue-200 px-1 rounded">Process</code> - {t('camSheets.processName')}</div>
+                <div><code className="bg-blue-200 px-1 rounded">CAM Version</code> - {t('camSheets.camVersionName')}</div>
+                <div><code className="bg-blue-200 px-1 rounded">T Number</code> - {t('camSheets.tNumberName')}</div>
+                <div><code className="bg-blue-200 px-1 rounded">Endmill Code</code> - {t('camSheets.endmillCodeName')}</div>
+                <div><code className="bg-blue-200 px-1 rounded">Endmill Name</code> - {t('camSheets.endmillTypeName')}</div>
+                <div><code className="bg-blue-200 px-1 rounded">Specifications</code> - {t('camSheets.specificationsName')}</div>
+                <div><code className="bg-blue-200 px-1 rounded">Tool Life</code> - {t('camSheets.toolLifeName')}</div>
               </div>
             </div>
           </div>
@@ -284,7 +286,7 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
             <div className="mt-6">
               {validationResult.errors.length > 0 && (
                 <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
-                  <h4 className="font-medium text-red-900 mb-2">❌ 오류 ({validationResult.errors.length}개)</h4>
+                  <h4 className="font-medium text-red-900 mb-2">❌ {t('camSheets.errors')} ({validationResult.errors.length}{t('camSheets.items')})</h4>
                   <ul className="text-sm text-red-800 space-y-1">
                     {validationResult.errors.map((error, index) => (
                       <li key={index}>• {error}</li>
@@ -295,7 +297,7 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
 
               {validationResult.warnings.length > 0 && (
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
-                  <h4 className="font-medium text-yellow-900 mb-2">⚠️ 경고 ({validationResult.warnings.length}개)</h4>
+                  <h4 className="font-medium text-yellow-900 mb-2">⚠️ {t('camSheets.warnings')} ({validationResult.warnings.length}{t('camSheets.items')})</h4>
                   <ul className="text-sm text-yellow-800 space-y-1">
                     {validationResult.warnings.map((warning, index) => (
                       <li key={index}>• {warning}</li>
@@ -306,8 +308,8 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
 
               {validationResult.isValid && (
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg mb-4">
-                  <h4 className="font-medium text-green-900">✅ 검증 통과</h4>
-                  <p className="text-sm text-green-800">데이터가 올바른 형식입니다. 중복 확인을 진행합니다.</p>
+                  <h4 className="font-medium text-green-900">✅ {t('camSheets.validationPassed')}</h4>
+                  <p className="text-sm text-green-800">{t('camSheets.validationPassedMessage')}</p>
                 </div>
               )}
             </div>
@@ -319,10 +321,10 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
               {duplicateInfo.duplicates.length > 0 && (
                 <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg mb-4">
                   <h4 className="font-medium text-orange-900 mb-2">
-                    🔄 중복 CAM Sheet 발견 ({duplicateInfo.duplicates.length}개)
+                    🔄 {t('camSheets.duplicateFound')} ({duplicateInfo.duplicates.length}{t('camSheets.items')})
                   </h4>
                   <p className="text-sm text-orange-800 mb-2">
-                    다음 CAM Sheet들은 이미 등록되어 있어 제외됩니다:
+                    {t('camSheets.duplicateExcluded')}
                   </p>
                   <ul className="text-sm text-orange-800 space-y-1">
                     {duplicateInfo.duplicates.map((duplicate, index) => (
@@ -335,10 +337,10 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
               {duplicateInfo.newSheets.length > 0 && (
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
                   <h4 className="font-medium text-blue-900">
-                    ✨ 새로 등록될 CAM Sheet ({duplicateInfo.newSheets.length}개)
+                    ✨ {t('camSheets.newSheetsToRegister')} ({duplicateInfo.newSheets.length}{t('camSheets.items')})
                   </h4>
                   <p className="text-sm text-blue-800">
-                    기존 데이터는 유지되고 새로운 CAM Sheet만 추가됩니다.
+                    {t('camSheets.existingDataKept')}
                   </p>
                 </div>
               )}
@@ -346,10 +348,10 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
               {duplicateInfo.newSheets.length === 0 && duplicateInfo.duplicates.length > 0 && (
                 <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg mb-4">
                   <h4 className="font-medium text-gray-900">
-                    ℹ️ 새로 등록될 CAM Sheet가 없습니다
+                    ℹ️ {t('camSheets.noNewSheets')}
                   </h4>
                   <p className="text-sm text-gray-700">
-                    업로드된 모든 CAM Sheet가 이미 등록되어 있습니다.
+                    {t('camSheets.allDuplicates')}
                   </p>
                 </div>
               )}
@@ -359,7 +361,7 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
           {/* 미리보기 데이터 */}
           {previewData.length > 0 && (
             <div className="mt-6">
-              <h4 className="font-medium text-gray-900 mb-3">📊 업로드된 데이터 미리보기 (처음 10개 행)</h4>
+              <h4 className="font-medium text-gray-900 mb-3">📊 {t('camSheets.dataPreview')}</h4>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
                   <thead className="bg-gray-50">
@@ -391,7 +393,7 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
           {parsedCAMSheets.length > 0 && (
             <div className="mt-6">
               <h4 className="font-medium text-gray-900 mb-3">
-                🔄 변환된 CAM Sheet ({parsedCAMSheets.length}개)
+                🔄 {t('camSheets.convertedSheets')} ({parsedCAMSheets.length}{t('camSheets.items')})
               </h4>
               <div className="space-y-4">
                 {parsedCAMSheets.map((sheet, index) => (
@@ -402,12 +404,12 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
                           {sheet.model} - {sheet.process} ({sheet.cam_version})
                         </h5>
                         <p className="text-sm text-gray-500">
-                          {sheet.cam_sheet_endmills?.length || 0}개 앤드밀 등록
+                          {sheet.cam_sheet_endmills?.length || 0}{t('camSheets.endmillsRegistered')}
                         </p>
                       </div>
                     </div>
                     <div className="text-sm text-gray-600">
-                      T번호: {sheet.cam_sheet_endmills?.map((e: any) => `T${e.t_number.toString().padStart(2, '0')}`).join(', ') || '-'}
+                      {t('camSheets.tNumberName')}: {sheet.cam_sheet_endmills?.map((e: any) => `T${e.t_number.toString().padStart(2, '0')}`).join(', ') || '-'}
                     </div>
                   </div>
                 ))}
@@ -421,16 +423,16 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
               onClick={onClose}
               className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
             >
-              취소
+              {t('camSheets.cancel')}
             </button>
             {parsedCAMSheets.length > 0 && (
               <button
                 onClick={handleImport}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
               >
-                {parsedCAMSheets.length}개 새로운 CAM Sheet 등록
+                {parsedCAMSheets.length}{t('camSheets.registerNewSheets')}
                 {duplicateInfo?.duplicates && duplicateInfo.duplicates.length > 0 &&
-                  ` (${duplicateInfo.duplicates.length}개 중복 제외)`
+                  ` (${duplicateInfo.duplicates.length}{t('camSheets.duplicatesExcluded')})`
                 }
               </button>
             )}
