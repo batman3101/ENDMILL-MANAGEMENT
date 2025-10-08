@@ -13,6 +13,7 @@ const SETTINGS_HISTORY_KEY = 'endmill_settings_history'
 
 // 전역에서 싱글톤 인스턴스 유지를 위한 타입 확장
 declare global {
+  // eslint-disable-next-line no-var
   var __settingsManagerInstance: SettingsManager | undefined
 }
 

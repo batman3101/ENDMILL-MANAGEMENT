@@ -2216,7 +2216,7 @@ function SettingsPageContent() {
                         </p>
                         {!formData.translations?.autoTranslate && (
                           <p className="text-xs text-yellow-600 mt-1">
-                            ⚠️ 자동 번역이 비활성화되어 있어 "스캔 + 자동번역" 기능을 사용할 수 없습니다.
+                            ⚠️ 자동 번역이 비활성화되어 있어 &quot;스캔 + 자동번역&quot; 기능을 사용할 수 없습니다.
                           </p>
                         )}
                       </div>

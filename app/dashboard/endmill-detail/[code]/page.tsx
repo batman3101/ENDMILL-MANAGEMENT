@@ -168,7 +168,7 @@ export default function EndmillDetailPage() {
             <span className="text-2xl">❌</span>
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">앤드밀을 찾을 수 없습니다</h2>
-          <p className="text-gray-600">코드 '{endmillCode}'에 해당하는 앤드밀이 없습니다.</p>
+          <p className="text-gray-600">코드 &apos;{endmillCode}&apos;에 해당하는 앤드밀이 없습니다.</p>
         </div>
       </div>
     )

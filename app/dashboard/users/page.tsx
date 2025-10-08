@@ -2261,7 +2261,7 @@ function UsersPageContent() {
                   </div>
                   <div>
                     <h3 className="text-lg font-medium text-gray-900">권한 템플릿 적용</h3>
-                    <p className="text-sm text-gray-500">"{selectedTemplate.name}" 템플릿을 사용자에게 적용</p>
+                    <p className="text-sm text-gray-500">&quot;{selectedTemplate.name}&quot; 템플릿을 사용자에게 적용</p>
                   </div>
                 </div>
                 <button 

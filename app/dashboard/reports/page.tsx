@@ -282,7 +282,7 @@ export default function ReportsPage() {
             </div>
             <p className="text-lg text-gray-600 mb-2">생성된 리포트가 없습니다</p>
             <p className="text-sm text-gray-500">
-              위에서 리포트 타입을 선택하고 설정 후 '리포트 생성' 버튼을 클릭하여 새 리포트를 생성하세요.
+              위에서 리포트 타입을 선택하고 설정 후 &apos;리포트 생성&apos; 버튼을 클릭하여 새 리포트를 생성하세요.
             </p>
           </div>
         </div>
