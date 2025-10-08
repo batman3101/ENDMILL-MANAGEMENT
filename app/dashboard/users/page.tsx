@@ -18,17 +18,18 @@ export default function UsersPage() {
 }
 
 function UsersPageContent() {
-  const { 
-    getUserStats, 
-    getFilteredUsers, 
-    roles, 
+  const {
+    getUserStats,
+    getFilteredUsers,
+    roles,
     isLoading,
     getUserById,
     createUser,
     updateUser,
     deleteUser,
     toggleUserStatus,
-    changeUserRole
+    changeUserRole,
+    loadUsers
   } = useUsers()
   
   const confirmation = useConfirmation()
@@ -360,10 +361,8 @@ function UsersPageContent() {
   // 권한 편집 관련 핸들러
   const handleEditPermissions = (user: User) => {
     setSelectedUserForPermission(user)
-    const userRole = getUserRole(user.roleId)
-    if (userRole) {
-      setPermissionFormData(userRole.permissions)
-    }
+    // 사용자 개인 권한 사용 (user.permissions)
+    setPermissionFormData(user.permissions || {})
     setShowPermissionModal(true)
   }
 
@@ -373,25 +372,37 @@ function UsersPageContent() {
 
     setIsSubmitting(true)
     try {
-      // 새로운 권한으로 사용자 역할 업데이트
-      const userRole = getUserRole(selectedUserForPermission.roleId)
-      if (userRole) {
-        const updatedRole = {
-          ...userRole,
-          permissions: permissionFormData,
-          updatedAt: new Date().toISOString()
-        }
-        
-        // 실제로는 API 호출해야 하지만 지금은 로컬 업데이트
-        // TODO: API 연동 필요
-        
+      // API를 통해 권한 업데이트
+      const response = await fetch(`/api/users/${selectedUserForPermission.id}/permissions`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          permissions: permissionFormData
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '권한 업데이트에 실패했습니다.')
+      }
+
+      const result = await response.json()
+
+      if (result.success) {
         showSuccess('권한 업데이트 완료', `${selectedUserForPermission.name}의 권한이 성공적으로 업데이트되었습니다.`)
         setShowPermissionModal(false)
         setSelectedUserForPermission(null)
         setPermissionFormData({})
+
+        // 사용자 목록 새로고침
+        await loadUsers()
+      } else {
+        throw new Error(result.error || '권한 업데이트에 실패했습니다.')
       }
     } catch (error) {
-      showError('권한 업데이트 실패', '권한 업데이트 중 오류가 발생했습니다.')
+      showError('권한 업데이트 실패', error instanceof Error ? error.message : '권한 업데이트 중 오류가 발생했습니다.')
     } finally {
       setIsSubmitting(false)
     }
@@ -1035,12 +1046,12 @@ function UsersPageContent() {
                         </td>
                         
                         {/* 모듈별 권한 */}
-                        {Object.entries(userRole?.permissions || {}).map(([module, actions]) => (
+                        {Object.entries(user.permissions || {}).map(([module, actions]) => (
                           <td key={module} className="px-4 py-4 text-center border-r border-gray-200">
                             <div className="flex flex-wrap justify-center gap-1">
                               {actions.length > 0 ? (
                                 actions.map((action: string) => (
-                                  <span 
+                                  <span
                                     key={action}
                                     className="inline-flex items-center justify-center w-6 h-6 text-xs bg-green-100 text-green-600 rounded-full"
                                     title={getActionDisplayName(action)}

@@ -549,8 +549,8 @@ export class ToolChangeService {
         // 순수 숫자인 경우 설비번호로 검색
         query = query.eq('equipment_number', parseInt(filters.searchTerm))
       } else {
-        // 문자열인 경우 엔드밀 코드 또는 이름으로 검색
-        query = query.or(`endmill_code.ilike.%${filters.searchTerm}%,endmill_name.ilike.%${filters.searchTerm}%`)
+        // 문자열인 경우 생산모델, 공정, 엔드밀 코드, 엔드밀 이름으로 검색
+        query = query.or(`production_model.ilike.%${filters.searchTerm}%,process.ilike.%${filters.searchTerm}%,endmill_code.ilike.%${filters.searchTerm}%,endmill_name.ilike.%${filters.searchTerm}%`)
       }
     }
 
@@ -628,7 +628,7 @@ export class ToolChangeService {
   }) {
     let query = this.supabase
       .from('tool_changes')
-      .select('*', { count: 'exact', head: true })
+      .select('*, user_profiles(name, employee_id)', { count: 'exact', head: true })
 
     // 설비 번호 필터
     if (filters.equipmentNumber) {
@@ -659,8 +659,8 @@ export class ToolChangeService {
         // 순수 숫자인 경우 설비번호로 검색
         query = query.eq('equipment_number', parseInt(filters.searchTerm))
       } else {
-        // 문자열인 경우 엔드밀 코드 또는 이름으로 검색
-        query = query.or(`endmill_code.ilike.%${filters.searchTerm}%,endmill_name.ilike.%${filters.searchTerm}%`)
+        // 문자열인 경우 생산모델, 공정, 엔드밀 코드, 엔드밀 이름으로 검색
+        query = query.or(`production_model.ilike.%${filters.searchTerm}%,process.ilike.%${filters.searchTerm}%,endmill_code.ilike.%${filters.searchTerm}%,endmill_name.ilike.%${filters.searchTerm}%`)
       }
     }
 

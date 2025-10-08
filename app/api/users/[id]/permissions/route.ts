@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/client'
+import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
 import { hasPermission, isAdmin } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
+import { Database } from '@/lib/types/database'
 
 // GET /api/users/[id]/permissions - 사용자의 권한 매트릭스 조회
 export async function GET(
@@ -9,17 +12,36 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createServerClient()
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options })
+          },
+        },
+      }
+    )
+
     const userId = params.id
 
-    // 현재 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    // 현재 사용자 세션 확인
+    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    if (authError || !session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
+    const user = session.user
 
     // 사용자 프로필 조회 (권한 확인용)
     const { data: currentUserProfile } = await supabase
@@ -44,22 +66,22 @@ export async function GET(
       )
     }
 
-    // 대상 사용자의 역할 정보 조회
+    // 대상 사용자 프로필 조회
     const { data: targetProfile, error } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('id', userId)
       .single()
 
-    if (error || !targetProfile || !targetProfile.user_roles) {
+    if (error || !targetProfile) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       )
     }
 
-    // 권한 매트릭스 반환
-    const permissions = targetProfile.user_roles.permissions || {}
+    // 개인 권한 반환 (user_profiles.permissions 사용)
+    const permissions = targetProfile.permissions || {}
 
     return NextResponse.json({
       success: true,
@@ -88,17 +110,36 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createServerClient()
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options })
+          },
+        },
+      }
+    )
+
     const userId = params.id
 
-    // 현재 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    // 현재 사용자 세션 확인
+    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    if (authError || !session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
+    const user = session.user
 
     // 사용자 프로필 조회 (권한 확인용)
     const { data: currentUserProfile } = await supabase
@@ -133,14 +174,14 @@ export async function PUT(
       )
     }
 
-    // 대상 사용자의 역할 정보 조회
+    // 대상 사용자 프로필 조회
     const { data: targetProfile } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('id', userId)
       .single()
 
-    if (!targetProfile || !targetProfile.user_roles) {
+    if (!targetProfile) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -148,26 +189,37 @@ export async function PUT(
     }
 
     // 시스템 관리자의 권한은 수정 불가
-    if (targetProfile.user_roles.type === 'system_admin') {
+    if (targetProfile.user_roles?.type === 'system_admin') {
       return NextResponse.json(
         { error: 'Cannot modify system admin permissions' },
         { status: 403 }
       )
     }
 
-    // 역할의 권한 업데이트
-    const { data: updatedRole, error: updateError } = await supabase
-      .from('user_roles')
+    // 사용자 개인 권한 업데이트 (Service Role 사용)
+    const adminSupabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
+    const { data: updatedProfile, error: updateError } = await adminSupabase
+      .from('user_profiles')
       .update({
         permissions,
         updated_at: new Date().toISOString()
       })
-      .eq('id', targetProfile.user_roles.id)
-      .select()
+      .eq('id', userId)
+      .select('*, user_roles(*)')
       .single()
 
     if (updateError) {
-      logger.error('Error updating role permissions:', updateError)
+      logger.error('Error updating user permissions:', updateError)
       return NextResponse.json(
         { error: 'Failed to update permissions', details: updateError.message },
         { status: 500 }
@@ -177,12 +229,12 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       data: {
-        userId: targetProfile.id,
-        userName: targetProfile.name,
-        roleId: updatedRole.id,
-        roleName: updatedRole.name,
-        roleType: updatedRole.type,
-        permissions: updatedRole.permissions
+        userId: updatedProfile.id,
+        userName: updatedProfile.name,
+        roleId: updatedProfile.user_roles?.id || '',
+        roleName: updatedProfile.user_roles?.name || '',
+        roleType: updatedProfile.user_roles?.type || '',
+        permissions: updatedProfile.permissions
       },
       message: 'Permissions updated successfully'
     })
@@ -202,17 +254,36 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createServerClient()
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options })
+          },
+        },
+      }
+    )
+
     const userId = params.id
 
-    // 현재 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    // 현재 사용자 세션 확인
+    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    if (authError || !session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
+    const user = session.user
 
     // 사용자 프로필 조회 (권한 확인용)
     const { data: currentUserProfile } = await supabase
@@ -275,8 +346,19 @@ export async function POST(
       )
     }
 
-    // 사용자의 역할을 템플릿 역할로 변경
-    const { data: updatedProfile, error: updateError } = await supabase
+    // 사용자의 역할을 템플릿 역할로 변경 (Service Role 사용)
+    const adminSupabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
+    const { data: updatedProfile, error: updateError } = await adminSupabase
       .from('user_profiles')
       .update({
         role_id: templateRoleId,

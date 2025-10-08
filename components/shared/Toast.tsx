@@ -35,6 +35,8 @@ interface ToastProviderProps {
   children: ReactNode
 }
 
+let toastCounter = 0
+
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
@@ -43,7 +45,8 @@ export function ToastProvider({ children }: ToastProviderProps) {
   }
 
   const showToast = (toast: Omit<Toast, 'id'>) => {
-    const id = Date.now().toString()
+    toastCounter += 1
+    const id = `${Date.now()}-${toastCounter}`
     const newToast: Toast = {
       ...toast,
       id,

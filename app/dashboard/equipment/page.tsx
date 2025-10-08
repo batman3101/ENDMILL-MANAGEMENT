@@ -117,11 +117,16 @@ export default function EquipmentPage() {
   // 필터링 및 정렬된 설비 목록
   const filteredEquipments = useMemo(() => {
     let filtered = equipments.filter(equipment => {
+      // 포맷팅된 설비번호 생성 (C001, C002 형식)
+      const formattedNumber = `C${equipment.equipment_number?.toString().padStart(3, '0')}`
+
       const matchesSearch = searchTerm === '' ||
         equipment.equipment_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        formattedNumber.toLowerCase().includes(searchTerm.toLowerCase()) || // 포맷팅된 번호로도 검색
         equipment.current_model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         equipment.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        equipment.process?.toLowerCase().includes(searchTerm.toLowerCase())
+        equipment.process?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        equipment.status?.toLowerCase().includes(searchTerm.toLowerCase()) // 상태도 검색 가능
 
       const matchesStatus = statusFilter === '' || equipment.status === statusFilter
       const matchesModel = modelFilter === '' || equipment.current_model === modelFilter

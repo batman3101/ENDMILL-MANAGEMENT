@@ -46,6 +46,7 @@ export interface User {
   createdAt: string | null
   updatedAt: string | null
   createdBy?: string
+  permissions?: Record<string, string[]> // 사용자 개인 권한 (역할 권한 오버라이드)
 }
 
 // 사용자 통계

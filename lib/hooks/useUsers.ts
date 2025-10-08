@@ -93,7 +93,8 @@ export const useUsers = () => {
     phone: profile.phone || undefined,
     isActive: profile.is_active ?? true,
     createdAt: profile.created_at,
-    updatedAt: profile.updated_at
+    updatedAt: profile.updated_at,
+    permissions: profile.permissions || {} // 사용자 개인 권한 추가
   }))
 
   // 역할 데이터 변환
@@ -329,6 +330,7 @@ export const useUsers = () => {
     toggleUserStatus,
     changeUserRole,
     resetUserPassword,
+    loadUsers: refetchUsers, // 사용자 목록 새로고침 함수
     // Mutation 상태들
     isCreating: createUserMutation.isPending,
     isUpdating: updateUserMutation.isPending,

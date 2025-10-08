@@ -65,10 +65,20 @@ export default function EndmillPage() {
   // 설정에서 값 가져오기
   const { settings } = useSettings()
   const itemsPerPage = settings.system.itemsPerPage
-  const categories = settings.inventory.categories
   const equipmentLocations = settings.equipment.locations
   const totalEquipmentCount = settings.equipment.totalCount
   const toolPositionCount = settings.equipment.toolPositionCount
+
+  // 실제 DB에서 사용 중인 카테고리 동적으로 추출
+  const categories = useMemo(() => {
+    const uniqueCategories = new Set<string>()
+    endmills.forEach(endmill => {
+      if (endmill.category) {
+        uniqueCategories.add(endmill.category)
+      }
+    })
+    return Array.from(uniqueCategories).sort()
+  }, [endmills])
 
   // Throttled refresh function to prevent excessive API calls
   const throttledRefresh = useCallback(() => {
