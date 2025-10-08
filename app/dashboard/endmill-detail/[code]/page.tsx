@@ -27,14 +27,12 @@ export default function EndmillDetailPage() {
       
       if (foundEndmill) {
         // specifications JSONB에서 상세 정보 추출
-        const specs = foundEndmill.endmill_types?.specifications || {}
-        
-        // 실제 데이터베이스 구조에 맞는 형태로 변환
+        const specs = (foundEndmill.endmill_type?.specifications || {}) as any
         const data: EndmillDetailInfo = {
-          code: foundEndmill.endmill_types?.code || endmillCode,
-          name: foundEndmill.endmill_types?.description_ko || foundEndmill.endmill_types?.description_vi || '',
-          category: foundEndmill.endmill_types?.endmill_categories?.code || '',
-          specifications: foundEndmill.endmill_types?.specifications ? JSON.stringify(foundEndmill.endmill_types.specifications) : '',
+          code: foundEndmill.endmill_type?.code || endmillCode,
+          name: foundEndmill.endmill_type?.name || '',
+          category: foundEndmill.endmill_type?.endmill_categories?.code || '',
+          specifications: foundEndmill.endmill_type?.specifications ? JSON.stringify(foundEndmill.endmill_type.specifications) : '',
           diameter: specs.diameter || 0,
           flutes: specs.flutes || 0,
           coating: specs.coating || '',
@@ -45,14 +43,14 @@ export default function EndmillDetailPage() {
           currentStock: foundEndmill.current_stock || 0,
           minStock: foundEndmill.min_stock || 0,
           maxStock: foundEndmill.max_stock || 0,
-          unitPrice: foundEndmill.endmill_types?.unit_cost || 0,
-          standardLife: foundEndmill.endmill_types?.standard_life || 0,
-          stockStatus: (foundEndmill.current_stock || 0) <= (foundEndmill.min_stock || 0) ? 'critical' : 
+          unitPrice: foundEndmill.endmill_type?.unit_cost || 0,
+          standardLife: foundEndmill.endmill_type?.standard_life || 0,
+          stockStatus: (foundEndmill.current_stock || 0) <= (foundEndmill.min_stock || 0) ? 'critical' :
                       (foundEndmill.current_stock || 0) <= (foundEndmill.min_stock || 0) * 1.5 ? 'low' : 'sufficient',
           supplier: '기본 공급업체', // 기본값
           // 가짜 데이터 (실제로는 별도 테이블에서 가져와야 함)
           totalUsageCount: 1250,
-          averageLifespan: foundEndmill.endmill_types?.standard_life || 2000,
+          averageLifespan: foundEndmill.endmill_type?.standard_life || 2000,
           lastUsedDate: new Date().toISOString(),
           replacementFrequency: 4.2,
           defectRate: 1.8,
@@ -61,7 +59,7 @@ export default function EndmillDetailPage() {
           suppliers: [
             {
               supplierName: '베트남 공급업체 A',
-              unitPrice: foundEndmill.endmill_types?.unit_cost || 125000,
+              unitPrice: foundEndmill.endmill_type?.unit_cost || 125000,
               currentStock: foundEndmill.current_stock || 0,
               minOrderQuantity: 50,
               leadTime: 14,

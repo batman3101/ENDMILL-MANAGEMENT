@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { Database } from '../../../lib/types/database'
 import { SettingsManager } from '../../../lib/data/settingsManager'
 import { SystemSettings, SettingsCategory, SettingsValidationResult } from '../../../lib/types/settings'
+import { logger } from '@/lib/utils/logger'
 
 // Supabase 클라이언트 생성
 const supabase = createClient<Database>(
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
       const { data: historyData, error } = await query
       
       if (error) {
-        console.error('히스토리 조회 실패:', error)
+        logger.error('히스토리 조회 실패:', error)
         // 폴백: 로컬 매니저 사용
         const settingsManager = SettingsManager.getInstance()
         const localHistory = settingsManager.getHistory(category || undefined, limit)
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
         })
       }
     } catch (dbError) {
-      console.warn('DB 설정 조회 실패, 로컬 사용:', dbError)
+      logger.warn('DB 설정 조회 실패, 로컬 사용:', dbError)
     }
 
     // 폴백: 로컬 설정 사용
@@ -118,7 +119,7 @@ export async function GET(request: NextRequest) {
     */
 
   } catch (error) {
-    console.error('설정 조회 에러:', error)
+    logger.error('설정 조회 에러:', error)
     return NextResponse.json(
       {
         success: false,
@@ -231,12 +232,12 @@ export async function PUT(request: NextRequest) {
         })
       }
     } catch (dbError) {
-      console.warn('DB 조회 실패, 로컬 설정 반환:', dbError)
+      logger.warn('DB 조회 실패, 로컬 설정 반환:', dbError)
     }
     */
 
   } catch (error) {
-    console.error('설정 업데이트 에러:', error)
+    logger.error('설정 업데이트 에러:', error)
     return NextResponse.json(
       {
         success: false,
@@ -332,7 +333,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('설정 POST 작업 에러:', error)
+    logger.error('설정 POST 작업 에러:', error)
     return NextResponse.json(
       {
         success: false,
@@ -361,7 +362,7 @@ export async function DELETE(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('설정 히스토리 삭제 에러:', error)
+    logger.error('설정 히스토리 삭제 에러:', error)
     return NextResponse.json(
       {
         success: false,

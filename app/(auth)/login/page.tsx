@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useAuth } from '../../../lib/hooks/useAuth'
 import { useTranslation } from '../../../lib/hooks/useTranslations'
+import { clientLogger } from '@/lib/utils/logger'
 
 function LoginForm() {
   const { t, changeLanguage, currentLanguage } = useTranslation()
@@ -50,7 +51,7 @@ function LoginForm() {
         setError(result.error || t('auth.loginError'))
       }
     } catch (error) {
-      console.error('로그인 오류:', error)
+      clientLogger.error('로그인 오류:', error)
       setError(t('auth.loginError'))
     } finally {
       setLoading(false)

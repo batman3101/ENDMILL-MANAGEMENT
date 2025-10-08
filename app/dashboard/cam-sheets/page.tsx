@@ -10,7 +10,7 @@ import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createSaveConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useSettings } from '../../../lib/hooks/useSettings'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
-import { logger } from '@/lib/utils/logger'
+import { logger, clientLogger } from '@/lib/utils/logger'
 
 export default function CAMSheetsPage() {
   const { t } = useTranslation()
@@ -52,7 +52,7 @@ export default function CAMSheetsPage() {
           setToolChanges(result.data || [])
         }
       } catch (error) {
-        console.error('교체 실적 데이터 로드 실패:', error)
+        clientLogger.error('교체 실적 데이터 로드 실패:', error)
       }
     }
     fetchToolChanges()
@@ -69,7 +69,7 @@ export default function CAMSheetsPage() {
           setInventoryData(result.data || result.inventory || [])
         }
       } catch (error) {
-        console.error('재고 데이터 로드 실패:', error)
+        clientLogger.error('재고 데이터 로드 실패:', error)
       }
     }
     fetchInventory()
@@ -360,11 +360,12 @@ export default function CAMSheetsPage() {
   const bestProcess = [bestProcessKey, insights.processAccuracy[bestProcessKey] || 0]
 
   // 정렬 처리
-  const handleSort = (field: 'model' | 'process' | 'cam_version' | 'endmillCount' | 'updated_at') => {
-    if (sortField === field) {
+  const handleSort = (field: string) => {
+    const validField = field as 'model' | 'process' | 'cam_version' | 'endmillCount' | 'updated_at'
+    if (sortField === validField) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
-      setSortField(field)
+      setSortField(validField)
       setSortOrder('asc')
     }
   }
@@ -838,7 +839,7 @@ export default function CAMSheetsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(sheet.updated_at).toLocaleDateString('ko-KR')}
+                    {sheet.updated_at ? new Date(sheet.updated_at).toLocaleDateString('ko-KR') : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <button
@@ -922,7 +923,7 @@ export default function CAMSheetsPage() {
                           <button
                             onClick={() => {
                               // 엔드밀 관리 페이지로 이동하면서 해당 엔드밀 검색
-                              const url = `/dashboard/endmill?search=${encodeURIComponent(endmill.endmill_code)}`
+                              const url = `/dashboard/endmill?search=${encodeURIComponent(endmill.endmill_code || '')}`
                               window.location.href = url
                             }}
                             className="text-blue-600 hover:text-blue-800 hover:underline"
@@ -943,7 +944,7 @@ export default function CAMSheetsPage() {
                         </td>
                         <td className="px-4 py-2 text-sm">
                           <span className="font-medium text-green-600">
-                            {endmill.tool_life.toLocaleString()}{t('camSheets.times')}
+                            {endmill.tool_life ? endmill.tool_life.toLocaleString() : '0'}{t('camSheets.times')}
                           </span>
                         </td>
                       </tr>

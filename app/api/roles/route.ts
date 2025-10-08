@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
 import { isAdmin, isSystemAdmin } from '@/lib/auth/permissions'
+import { logger } from '@/lib/utils/logger'
 
 // GET /api/roles - 모든 역할 조회
 export async function GET(request: NextRequest) {
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: true })
 
     if (error) {
-      console.error('Error fetching roles:', error)
+      logger.error('Error fetching roles:', error)
       return NextResponse.json(
         { error: 'Failed to fetch roles', details: error.message },
         { status: 500 }
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in GET /api/roles:', error)
+    logger.error('Unexpected error in GET /api/roles:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (createError) {
-      console.error('Error creating role:', createError)
+      logger.error('Error creating role:', createError)
       return NextResponse.json(
         { error: 'Failed to create role', details: createError.message },
         { status: 500 }
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error: any) {
-    console.error('Unexpected error in POST /api/roles:', error)
+    logger.error('Unexpected error in POST /api/roles:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }

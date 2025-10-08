@@ -10,6 +10,7 @@ import {
   ToolLifeAnalysisData,
   PerformanceReportData
 } from '../types/reports'
+import { clientLogger } from '../utils/logger'
 
 export const useReports = () => {
   const [generatedReport, setGeneratedReport] = useState<any>(null)
@@ -31,11 +32,11 @@ export const useReports = () => {
       return response.json()
     },
     onSuccess: (data: MonthlyReportData) => {
-      console.log('✅ 월간 리포트 생성 성공:', data)
+      clientLogger.log('✅ 월간 리포트 생성 성공:', data)
       setGeneratedReport(data)
     },
     onError: (error: Error) => {
-      console.error('❌ 월간 리포트 생성 실패:', error)
+      clientLogger.error('❌ 월간 리포트 생성 실패:', error)
     }
   })
 
@@ -56,11 +57,11 @@ export const useReports = () => {
       return response.json()
     },
     onSuccess: (data: CostAnalysisData) => {
-      console.log('✅ 비용 분석 생성 성공:', data)
+      clientLogger.log('✅ 비용 분석 생성 성공:', data)
       setGeneratedReport(data)
     },
     onError: (error: Error) => {
-      console.error('❌ 비용 분석 생성 실패:', error)
+      clientLogger.error('❌ 비용 분석 생성 실패:', error)
     }
   })
 
@@ -81,11 +82,11 @@ export const useReports = () => {
       return response.json()
     },
     onSuccess: (data: ToolLifeAnalysisData) => {
-      console.log('✅ Tool Life 분석 생성 성공:', data)
+      clientLogger.log('✅ Tool Life 분석 생성 성공:', data)
       setGeneratedReport(data)
     },
     onError: (error: Error) => {
-      console.error('❌ Tool Life 분석 생성 실패:', error)
+      clientLogger.error('❌ Tool Life 분석 생성 실패:', error)
     }
   })
 
@@ -106,11 +107,11 @@ export const useReports = () => {
       return response.json()
     },
     onSuccess: (data: PerformanceReportData) => {
-      console.log('✅ 성능 리포트 생성 성공:', data)
+      clientLogger.log('✅ 성능 리포트 생성 성공:', data)
       setGeneratedReport(data)
     },
     onError: (error: Error) => {
-      console.error('❌ 성능 리포트 생성 실패:', error)
+      clientLogger.error('❌ 성능 리포트 생성 실패:', error)
     }
   })
 

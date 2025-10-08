@@ -167,7 +167,9 @@ export default function EquipmentPage() {
   }, [searchTerm, statusFilter, modelFilter, sortField, sortOrder])
 
   // 상태별 색상
-  const getStatusBadge = (status: Equipment['status']) => {
+  const getStatusBadge = (status: Equipment['status'] | null | undefined) => {
+    if (!status) return 'bg-gray-100 text-gray-800'
+
     switch (status) {
       case '가동중':
         return 'bg-green-100 text-green-800'
@@ -180,7 +182,9 @@ export default function EquipmentPage() {
     }
   }
 
-  const getStatusIcon = (status: Equipment['status']) => {
+  const getStatusIcon = (status: Equipment['status'] | null | undefined) => {
+    if (!status) return '❓'
+
     switch (status) {
       case '가동중':
         return '🟢'
@@ -269,7 +273,7 @@ export default function EquipmentPage() {
       showSuccess('설비 추가 완료', `설비 ${addFormData.equipmentNumber}가 성공적으로 추가되었습니다.`)
 
     } catch (error) {
-      console.error('설비 추가 에러:', error)
+      clientLogger.error('설비 추가 에러:', error)
       showError('설비 추가 실패', error instanceof Error ? error.message : '설비 추가 중 오류가 발생했습니다.')
     } finally {
       setIsSubmitting(false)
@@ -455,7 +459,10 @@ export default function EquipmentPage() {
                   </label>
                   <select
                     value={addFormData.status}
-                    onChange={(e) => setAddFormData(prev => ({ ...prev, status: e.target.value as Equipment['status'] }))}
+                    onChange={(e) => {
+                      const value = e.target.value as '가동중' | '점검중' | '셋업중'
+                      setAddFormData(prev => ({ ...prev, status: value }))
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={isSubmitting}
                     required
@@ -1171,7 +1178,10 @@ export default function EquipmentPage() {
                 </label>
                                   <select
                     value={addFormData.status}
-                    onChange={(e) => setAddFormData(prev => ({ ...prev, status: e.target.value as Equipment['status'] }))}
+                    onChange={(e) => {
+                      const value = e.target.value as '가동중' | '점검중' | '셋업중'
+                      setAddFormData(prev => ({ ...prev, status: value }))
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={isSubmitting}
                     required

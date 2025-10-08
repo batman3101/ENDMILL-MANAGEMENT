@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '../../../../lib/types/database'
+import { logger } from '@/lib/utils/logger'
 
 // Supabase 클라이언트 생성
 const supabase = createClient<Database>(
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Error fetching validation options:', error)
+    logger.error('Error fetching validation options:', error)
     return NextResponse.json(
       {
         success: false,
@@ -48,7 +49,7 @@ async function getCategoriesFromSettings() {
     .single()
 
   if (error || !data) {
-    console.error('Error fetching categories from settings:', error)
+    logger.error('Error fetching categories from settings:', error)
     return []
   }
 
@@ -64,7 +65,7 @@ async function getSuppliersFromSettings() {
     .single()
 
   if (error || !data) {
-    console.error('Error fetching suppliers from settings:', error)
+    logger.error('Error fetching suppliers from settings:', error)
     return []
   }
 

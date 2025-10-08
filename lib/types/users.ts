@@ -26,8 +26,8 @@ export interface UserRole {
   permissions: ModulePermissions
   isSystemRole: boolean // 시스템 기본 역할인지 (수정 불가)
   isActive: boolean
-  createdAt: string
-  updatedAt: string
+  createdAt: string | null
+  updatedAt: string | null
 }
 
 // 사용자 정보
@@ -43,9 +43,9 @@ export interface User {
   phone?: string
   isActive: boolean
   lastLogin?: string
-  createdAt: string
-  updatedAt: string
-  createdBy: string
+  createdAt: string | null
+  updatedAt: string | null
+  createdBy?: string
 }
 
 // 사용자 통계

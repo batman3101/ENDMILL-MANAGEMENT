@@ -119,12 +119,16 @@ export function useSettings(): UseSettingsReturn {
           setSettings(mergedSettings)
         } else {
           // API 실패 시 로컬 설정 사용
-          setSettings(settingsManagerRef.current.getSettings())
+          if (settingsManagerRef.current) {
+            setSettings(settingsManagerRef.current.getSettings())
+          }
         }
       } catch (error) {
         console.warn('API에서 설정 로드 실패, 로컬 설정 사용:', error)
         // 폴백: 로컬 설정 사용
-        setSettings(settingsManagerRef.current.getSettings())
+        if (settingsManagerRef.current) {
+          setSettings(settingsManagerRef.current.getSettings())
+        }
       } finally {
         setIsLoading(false)
       }

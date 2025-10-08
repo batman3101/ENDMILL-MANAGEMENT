@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import * as XLSX from 'xlsx'
 import { CAMSheet, EndmillInfo, useCAMSheets } from '../../lib/hooks/useCAMSheets'
 import { downloadExcelTemplate, validateExcelData } from '../../lib/utils/excelTemplate'
+import { clientLogger } from '@/lib/utils/logger'
 
 interface ExcelUploaderProps {
   onDataParsed: (camSheets: Omit<CAMSheet, 'id' | 'createdAt' | 'updatedAt'>[]) => void
@@ -84,7 +85,7 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
       }
       
     } catch (error) {
-      console.error('파일 처리 중 오류:', error)
+      clientLogger.error('파일 처리 중 오류:', error)
       alert(t('camSheets.fileProcessError'))
     }
     
@@ -154,12 +155,14 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
       process: sheet.process,
       cam_version: sheet.camVersion,
       version_date: new Date().toISOString().split('T')[0],
+      created_by: null,
       cam_sheet_endmills: sheet.endmills.map((endmill: EndmillInfo) => ({
         id: Date.now().toString() + Math.random(),
         cam_sheet_id: '', // 나중에 서버에서 설정
         t_number: endmill.t_number,
         endmill_code: endmill.endmill_code,
         endmill_name: endmill.endmill_name,
+        endmill_type_id: null,
         specifications: endmill.specifications,
         tool_life: endmill.tool_life,
         created_at: new Date().toISOString()

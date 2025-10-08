@@ -143,59 +143,6 @@ const resources = {
         target: '목표',
       },
 
-      // 설비 관리
-      equipment: {
-        title: '설비 관리',
-        subtitle: '800대 CNC 설비 현황 및 관리',
-        equipmentNumber: '설비번호',
-        model: '모델',
-        process: '공정',
-        location: '위치',
-        status: '상태',
-        lastMaintenance: '마지막 정비',
-        toolPositions: '툴 포지션',
-
-        // 상태
-        operating: '가동중',
-        maintenance: '점검중',
-        setup: '셋업중',
-
-        // 메시지
-        statusChanged: '설비 상태가 변경되었습니다.',
-        addEquipment: '설비 추가',
-        bulkAdd: '일괄 추가',
-        totalEquipment: '총 설비',
-        operatingEquipment: '가동설비',
-        modelDeployment: '모델별 설비 배치',
-        processDeployment: '공정별 설비 배치',
-        searchPlaceholder: '설비번호, 모델, 장소, 공정 검색...',
-        allStatus: '모든 상태',
-        allModel: '모든 모델',
-        equipmentList: '설비 목록',
-        perPage: '페이지당',
-        items: '개',
-      },
-
-      // 앤드밀 관리
-      endmill: {
-        title: '앤드밀 관리',
-        subtitle: '앤드밀 별 모델, 설비, 공정의 사용 현황',
-        endmillCode: '앤드밀 코드',
-        endmillName: '앤드밀 이름',
-        specifications: '사양',
-        toolLife: 'Tool Life',
-        currentLife: '현재 수명',
-        totalLife: '총 수명',
-        tNumber: 'T번호',
-        installDate: '설치일',
-
-        // 상태
-        new: '신규',
-        normal: '정상',
-        warning: '교체 권장',
-        critical: '즉시 교체',
-      },
-
       // 재고 관리
       inventory: {
         title: '재고 관리',
@@ -471,24 +418,11 @@ const resources = {
         cancelOutboundError: '출고 취소 중 오류가 발생했습니다.',
         keep: '유지',
         stock: '재고',
-        stockInfo: '재고 정보 불러오기 실패',
 
         // 공통
         uncategorized: '미분류',
         selectPurpose: '목적 선택',
         outboundNotePrefix: '출고 처리:',
-      },
-
-      // CAM SHEET 관리
-      camSheets: {
-        title: 'CAM SHEET 관리',
-        subtitle: 'CAM SHEET 등록 및 엔드밀 정보 관리',
-        camVersion: 'CAM 버전',
-        versionDate: '버전 변경일자',
-        registeredEndmills: '등록 앤드밀',
-        lastModified: '마지막 수정',
-        addCAMSheet: 'CAM Sheet 등록',
-        excelBulkUpload: '엑셀 일괄 등록',
       },
 
       // 교체 실적
@@ -532,13 +466,10 @@ const resources = {
         // 테이블 컬럼
         changeDateTime: '교체일시',
         equipmentNumber: '설비번호',
-        productionModel: '생산모델',
-        process: '공정',
         tNumber: 'T번호',
         endmillCode: '앤드밀 코드',
         endmillName: '앤드밀 이름',
         replacedBy: '교체자',
-        changeReason: '교체사유',
         toolLife: 'Tool Life',
         actions: '작업',
         actualLife: '실제',
@@ -562,7 +493,6 @@ const resources = {
 
         // 새 교체 실적 입력 모달
         newChangeRecordInput: '새 교체 실적 입력',
-        changeDate: '교체일자',
         autoFilledDateTime: '자동으로 현재 날짜/시간이 입력됩니다',
         equipmentNumberFormat: 'C001-C800 형식으로 입력해주세요',
         autoFilledModelProcess: '설비번호 입력시 생산모델과 공정이 자동으로 입력됩니다',
@@ -614,36 +544,6 @@ const resources = {
         toolLifeShort: '짧음',
         toolLifeNormal: '보통',
         toolLifeGood: '양호',
-      },
-
-      // 리포트
-      reports: {
-        title: '분석 & 리포트',
-        subtitle: '데이터 분석 및 리포트 생성',
-        generateReport: '리포트 생성',
-        dailyReport: '일일 리포트',
-        weeklyReport: '주간 리포트',
-        monthlyReport: '월간 리포트',
-      },
-
-      // 설정
-      settings: {
-        title: '설정',
-        subtitle: '시스템 설정 관리',
-        systemSettings: '시스템 설정',
-        equipmentSettings: '설비 설정',
-        inventorySettings: '재고 설정',
-        translationSettings: '번역 설정',
-
-        // 번역 설정
-        languageManagement: '언어 관리',
-        defaultLanguage: '기본 언어',
-        fallbackLanguage: '대체 언어',
-        autoTranslate: '자동 번역',
-        googleApiKey: 'Google API 키',
-        cacheSettings: '캐시 설정',
-        translationCache: '번역 캐시',
-        cacheExpiry: '캐시 만료 시간',
       },
 
       // 사용자 관리
@@ -724,7 +624,7 @@ const resources = {
         passwordChangeError: '비밀번호 변경 중 오류가 발생했습니다.',
       },
 
-      // 설비 관리 (추가 키)
+      // 설비 관리
       equipment: {
         title: '설비 관리',
         subtitle: '800대 CNC 설비 현황 및 관리',
@@ -854,7 +754,6 @@ const resources = {
         noUploadData: '업로드할 데이터가 없습니다.',
         templateDownloaded: '엑셀 템플릿이 다운로드되었습니다.',
         downloadFailedMsg: '템플릿 다운로드에 실패했습니다.',
-        previous: '이전',
         reset: '초기화',
         selectFile: '파일 선택',
         noFileSelected: '선택된 파일 없음',
@@ -865,7 +764,7 @@ const resources = {
         confirmChange: '변경',
       },
 
-      // 앤드밀 관리 (추가 키)
+      // 앤드밀 관리
       endmill: {
         title: '앤드밀 관리',
         subtitle: '앤드밀 별 모델, 설비, 공정의 사용 현황',
@@ -993,7 +892,6 @@ const resources = {
         loadDataFailedMessage: '엔드밀 데이터를 불러오는데 실패했습니다.',
         loadDataError: '오류 발생',
         loadDataErrorMessage: '엔드밀 데이터를 불러오는 중 오류가 발생했습니다.',
-        endmillStatusList: '앤드밀 현황',
         endmillCodeLabel: '앤드밀 코드',
         categoryLabel: '카테고리',
         nameLabel: '이름',
@@ -1078,7 +976,6 @@ const resources = {
 
         // 공급업체 가격 추가 모달
         addSupplierPriceTitle: '공급업체 가격 추가',
-        endmillCodeLabel: '엔드밀 코드',
         supplierRequired: '공급업체',
         loadingSuppliers: '공급업체 목록 로딩 중...',
         selectSupplierOption: '선택하세요',
@@ -1137,14 +1034,13 @@ const resources = {
         excelProcessError: '엑셀 파일을 처리하는 중 오류가 발생했습니다.',
         uploadFailed: '업로드 실패',
         validationRequiredError: '먼저 유효성 검사를 통과해야 합니다.',
-        uploadComplete: '업로드 완료',
         uploadSuccessMessage: '개의 엔드밀이 성공적으로 등록되었습니다.',
         uploadError: '엔드밀 등록 중 오류가 발생했습니다.',
         mappingDataLoadError: '카테고리 및 공급업체 정보를 불러오는데 실패했습니다.',
         fileReadError: '파일 읽기 실패',
       },
 
-      // CAM Sheet 관리 (추가 키)
+      // CAM SHEET 관리
       camSheets: {
         title: 'CAM SHEET 관리',
         subtitle: 'CAM SHEET 등록 및 엔드밀 정보 관리',
@@ -1184,7 +1080,6 @@ const resources = {
         model: '모델',
         process: '공정',
         version: 'CAM 버전',
-        versionDate: '버전 변경일자',
         endmillCount: '등록 앤드밀',
         details: '상세보기',
         createComplete: 'CAM Sheet 생성 완료',
@@ -1289,7 +1184,7 @@ const resources = {
 
       // 교체 실적 (추가 키)
 
-      // 리포트 (추가 키)
+      // 리포트
       reports: {
         title: '분석 & 리포트',
         subtitle: '데이터 분석 및 리포트 생성',
@@ -1379,7 +1274,7 @@ const resources = {
         recordsCount: '건',
       },
 
-      // 설정 (신규 - 일부만 추가)
+      // 설정
       settings: {
         title: '설정',
         subtitle: '시스템 설정 관리',
@@ -1437,7 +1332,7 @@ const resources = {
         translationBasicDesc: '다국어 지원을 위한 기본 언어 및 자동 번역 설정',
         googleApi: 'Google Translate API 설정',
         googleApiDesc: '자동 번역을 위한 Google Cloud Translation API 설정',
-        translationCache: '번역 캐시 설정',
+        translationCacheSettings: '번역 캐시 설정',
         saving: '저장 중...',
         saveSetting: '설정 저장',
         resetToDefault: '기본값으로 초기화',
@@ -1507,7 +1402,6 @@ const resources = {
         price: 'Giá',
         required: 'Bắt buộc',
         optional: 'Tùy chọn',
-        type: 'Loại',
         avgCount: 'Trung bình',
 
         // 시스템 정보
@@ -1722,7 +1616,6 @@ const resources = {
         noUploadData: 'Không có dữ liệu để tải lên.',
         templateDownloaded: 'Mẫu Excel đã được tải xuống.',
         downloadFailedMsg: 'Tải mẫu thất bại.',
-        previous: 'Trước',
         reset: 'Đặt lại',
         selectFile: 'Chọn tệp',
         noFileSelected: 'Chưa chọn tệp',
@@ -1861,7 +1754,6 @@ const resources = {
         loadDataFailedMessage: 'Không thể tải dữ liệu dao phay.',
         loadDataError: 'Xảy ra lỗi',
         loadDataErrorMessage: 'Đã xảy ra lỗi khi tải dữ liệu dao phay.',
-        endmillStatusList: 'Tình trạng dao phay',
         endmillCodeLabel: 'Mã dao phay',
         categoryLabel: 'Danh mục',
         nameLabel: 'Tên',
@@ -1946,7 +1838,6 @@ const resources = {
 
         // 공급업체 가격 추가 모달
         addSupplierPriceTitle: 'Thêm giá nhà cung cấp',
-        endmillCodeLabel: 'Mã dao phay',
         supplierRequired: 'Nhà cung cấp',
         loadingSuppliers: 'Đang tải danh sách nhà cung cấp...',
         selectSupplierOption: 'Chọn',
@@ -2005,7 +1896,6 @@ const resources = {
         excelProcessError: 'Đã xảy ra lỗi khi xử lý tệp Excel.',
         uploadFailed: 'Tải lên thất bại',
         validationRequiredError: 'Bạn phải vượt qua kiểm tra tính hợp lệ trước.',
-        uploadComplete: 'Tải lên hoàn tất',
         uploadSuccessMessage: 'dao phay đã được đăng ký thành công.',
         uploadError: 'Đã xảy ra lỗi khi đăng ký dao phay.',
         mappingDataLoadError: 'Không thể tải thông tin danh mục và nhà cung cấp.',
@@ -2287,7 +2177,6 @@ const resources = {
         cancelOutboundError: 'Đã xảy ra lỗi trong quá trình hủy xuất kho.',
         keep: 'Giữ',
         stock: 'Tồn kho',
-        stockInfo: 'Tải thông tin tồn kho thất bại',
 
         // 공통
         uncategorized: 'Không phân loại',
@@ -2478,13 +2367,10 @@ const resources = {
         // 테이블 컬럼
         changeDateTime: 'Thời gian thay thế',
         equipmentNumber: 'Số thiết bị',
-        productionModel: 'Mẫu sản xuất',
-        process: 'Quy trình',
         tNumber: 'Số T',
         endmillCode: 'Mã dao phay',
         endmillName: 'Tên dao phay',
         replacedBy: 'Người thay thế',
-        changeReason: 'Lý do thay thế',
         toolLife: 'Tool Life',
         actions: 'Thao tác',
         actualLife: 'Thực tế',
@@ -2508,7 +2394,6 @@ const resources = {
 
         // 새 교체 실적 입력 모달
         newChangeRecordInput: 'Nhập kết quả thay thế mới',
-        changeDate: 'Ngày thay thế',
         autoFilledDateTime: 'Tự động nhập ngày/giờ hiện tại',
         equipmentNumberFormat: 'Nhập theo định dạng C001-C800',
         autoFilledModelProcess: 'Mẫu sản xuất và quy trình sẽ tự động nhập khi nhập số thiết bị',
@@ -2594,26 +2479,6 @@ const resources = {
         performanceReport: 'Báo cáo hiệu suất',
         performanceDescription: 'Hiệu suất theo thiết bị',
         monthlyDescription: 'Tình trạng thay thế hàng tháng và phân tích chi phí',
-      },
-
-      // 설정
-      settings: {
-        title: 'Cài đặt',
-        subtitle: 'Quản lý cài đặt hệ thống',
-        systemSettings: 'Cài đặt hệ thống',
-        equipmentSettings: 'Cài đặt thiết bị',
-        inventorySettings: 'Cài đặt tồn kho',
-        translationSettings: 'Cài đặt dịch thuật',
-
-        // 번역 설정
-        languageManagement: 'Quản lý ngôn ngữ',
-        defaultLanguage: 'Ngôn ngữ mặc định',
-        fallbackLanguage: 'Ngôn ngữ dự phòng',
-        autoTranslate: 'Dịch tự động',
-        googleApiKey: 'Khóa API Google',
-        cacheSettings: 'Cài đặt bộ nhớ cache',
-        translationCache: 'Bộ nhớ cache dịch thuật',
-        cacheExpiry: 'Thời gian hết hạn cache',
       },
 
       // 사용자 관리
@@ -2750,7 +2615,7 @@ const resources = {
         recordsCount: 'bản ghi',
       },
 
-      // 설정 (신규)
+      // 설정
       settings: {
         title: 'Cài đặt',
         subtitle: 'Quản lý cài đặt hệ thống',

@@ -9,6 +9,7 @@ import CostAnalysisView from '../../../components/reports/CostAnalysisView'
 import ToolLifeAnalysisView from '../../../components/reports/ToolLifeAnalysisView'
 import PerformanceReportView from '../../../components/reports/PerformanceReportView'
 import { useToast } from '../../../components/shared/Toast'
+import { clientLogger } from '@/lib/utils/logger'
 
 export default function ReportsPage() {
   const { settings } = useSettings()
@@ -46,7 +47,7 @@ export default function ReportsPage() {
       showSuccess('리포트가 생성되었습니다')
     } catch (err) {
       showError('리포트 생성에 실패했습니다')
-      console.error('리포트 생성 오류:', err)
+      clientLogger.error('리포트 생성 오류:', err)
     }
   }
 

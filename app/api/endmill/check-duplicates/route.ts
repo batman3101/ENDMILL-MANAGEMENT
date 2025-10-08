@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '../../../../lib/supabase/client'
+import { logger } from '@/lib/utils/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
       .in('code', codes)
 
     if (error) {
-      console.error('엔드밀 중복 검사 오류:', error)
+      logger.error('엔드밀 중복 검사 오류:', error)
       return NextResponse.json(
         { error: '데이터베이스 조회 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('엔드밀 중복 검사 API 오류:', error)
+    logger.error('엔드밀 중복 검사 API 오류:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

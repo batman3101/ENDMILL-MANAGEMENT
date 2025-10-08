@@ -4,16 +4,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { clientSupabaseService } from '../services/supabaseService'
 import { Database } from '../types/database'
+import { clientLogger } from '../utils/logger'
 
 // Database 타입에서 가져오기
+type EndmillSupplierPrice = Database['public']['Tables']['endmill_supplier_prices']['Row']
+
 type Inventory = Database['public']['Tables']['inventory']['Row'] & {
   endmill_type?: Database['public']['Tables']['endmill_types']['Row'] & {
     endmill_categories?: Database['public']['Tables']['endmill_categories']['Row']
+    endmill_supplier_prices?: EndmillSupplierPrice[]
   }
 }
 
 type EndmillType = Database['public']['Tables']['endmill_types']['Row'] & {
   endmill_categories?: Database['public']['Tables']['endmill_categories']['Row']
+  endmill_supplier_prices?: EndmillSupplierPrice[]
 }
 
 // 타입 export
@@ -91,8 +96,8 @@ export const useInventory = (filter?: InventoryFilter) => {
   // 실시간 구독 설정
   useEffect(() => {
     const subscription = clientSupabaseService.inventory.subscribeToChanges((payload) => {
-      console.log('Inventory 실시간 업데이트:', payload)
-      
+      clientLogger.log('Inventory 실시간 업데이트:', payload)
+
       // React Query 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ['inventory'] })
     })
@@ -110,7 +115,13 @@ export const useInventory = (filter?: InventoryFilter) => {
       min_stock: number
       max_stock: number
       location?: string
-      suppliers?: any[]
+      suppliers?: Array<{
+        supplier_id: string
+        unit_price: number
+        is_preferred?: boolean
+        lead_time_days?: number
+        min_order_quantity?: number
+      }>
     }) => {
       const response = await fetch('/api/inventory', {
         method: 'POST',
@@ -141,7 +152,13 @@ export const useInventory = (filter?: InventoryFilter) => {
       min_stock: number
       max_stock: number
       location: string
-      suppliers: any[]
+      suppliers: Array<{
+        supplier_id: string
+        unit_price: number
+        is_preferred?: boolean
+        lead_time_days?: number
+        min_order_quantity?: number
+      }>
     }>) => {
       const response = await fetch('/api/inventory', {
         method: 'PUT',
@@ -235,8 +252,8 @@ export const useInventory = (filter?: InventoryFilter) => {
       // 공급업체 가격이 있으면 최저가 찾기
       if (endmillType.endmill_supplier_prices && Array.isArray(endmillType.endmill_supplier_prices) && endmillType.endmill_supplier_prices.length > 0) {
         const prices = endmillType.endmill_supplier_prices
-          .map((sp: any) => sp.unit_price)
-          .filter((price: any) => price && price > 0)
+          .map((sp) => sp.unit_price)
+          .filter((price): price is number => typeof price === 'number' && price > 0)
         if (prices.length > 0) {
           lowestPrice = Math.min(...prices)
         }
@@ -269,8 +286,8 @@ export const useInventory = (filter?: InventoryFilter) => {
         // 공급업체 가격이 있으면 최저가 찾기
         if (item.endmill_type?.endmill_supplier_prices && Array.isArray(item.endmill_type.endmill_supplier_prices) && item.endmill_type.endmill_supplier_prices.length > 0) {
           const prices = item.endmill_type.endmill_supplier_prices
-            .map((sp: any) => sp.unit_price)
-            .filter((price: any) => price && price > 0)
+            .map((sp) => sp.unit_price)
+            .filter((price): price is number => typeof price === 'number' && price > 0)
           if (prices.length > 0) {
             lowestPrice = Math.min(...prices)
           }
@@ -293,8 +310,14 @@ export const useInventory = (filter?: InventoryFilter) => {
   }
 
   // 사용 가능한 카테고리 목록
-  const getAvailableCategories = () => {
-    return Array.from(new Set(endmillTypes.map(e => e.endmill_categories?.code).filter(Boolean))).sort()
+  const getAvailableCategories = (): string[] => {
+    return Array.from(
+      new Set(
+        endmillTypes
+          .map(e => e.endmill_categories?.code)
+          .filter((code): code is string => Boolean(code))
+      )
+    ).sort()
   }
 
   // 앤드밀 타입 데이터 조회 (호환성을 위해)
@@ -331,19 +354,19 @@ export const useInventory = (filter?: InventoryFilter) => {
 export const useInventoryAlerts = () => {
   const { inventory } = useInventory()
 
-  const getCriticalItems = () => {
-    return inventory.filter(item => 
+  const getCriticalItems = (): Inventory[] => {
+    return inventory.filter(item =>
       calculateStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0) === 'critical'
     )
   }
 
-  const getLowStockItems = () => {
-    return inventory.filter(item => 
+  const getLowStockItems = (): Inventory[] => {
+    return inventory.filter(item =>
       calculateStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0) === 'low'
     )
   }
 
-  const getAlertCount = () => {
+  const getAlertCount = (): { critical: number; low: number; total: number } => {
     const critical = getCriticalItems().length
     const low = getLowStockItems().length
     return {
@@ -363,20 +386,20 @@ export const useInventoryAlerts = () => {
 export const useInventorySearch = () => {
   const { inventory, endmillTypes } = useInventory()
 
-  const searchByCode = (code: string) => {
-    return inventory.filter(item => 
-      item.endmill_type?.code.toLowerCase().includes(code.toLowerCase())
+  const searchByCode = (code: string): Inventory[] => {
+    return inventory.filter(item =>
+      item.endmill_type?.code?.toLowerCase().includes(code.toLowerCase())
     )
   }
 
-  const searchByName = (name: string) => {
-    return inventory.filter(item => 
+  const searchByName = (name: string): Inventory[] => {
+    return inventory.filter(item =>
       item.endmill_type?.name?.toLowerCase().includes(name.toLowerCase())
     )
   }
 
-  const searchByCategory = (category: string) => {
-    return inventory.filter(item => 
+  const searchByCategory = (category: string): Inventory[] => {
+    return inventory.filter(item =>
       item.endmill_type?.endmill_categories?.code === category
     )
   }

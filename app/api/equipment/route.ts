@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
             tool_usage_percentage: totalPositions > 0 ? Math.round((usedPositions / totalPositions) * 100) : 0
           }
         } catch (error) {
-          console.error(`설비 ${equipment.id} 툴 포지션 정보 조회 실패:`, error)
+          logger.error(`설비 ${equipment.id} 툴 포지션 정보 조회 실패:`, error)
           return {
             ...equipment,
             used_tool_positions: 0,
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('설비 API 에러:', error);
+    logger.error('설비 API 에러:', error);
     return NextResponse.json(
       { error: '서버 에러가 발생했습니다.' },
       { status: 500 }
@@ -152,8 +152,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    console.error('설비 생성 API 에러:', error);
+
+    logger.error('설비 생성 API 에러:', error);
     return NextResponse.json(
       { error: '서버 에러가 발생했습니다.' },
       { status: 500 }
@@ -187,7 +187,7 @@ export async function PUT(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('설비 업데이트 API 에러:', error);
+    logger.error('설비 업데이트 API 에러:', error);
     return NextResponse.json(
       { error: '서버 에러가 발생했습니다.' },
       { status: 500 }

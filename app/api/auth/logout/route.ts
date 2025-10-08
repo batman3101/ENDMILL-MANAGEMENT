@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { logger } from '@/lib/utils/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
     const { error } = await supabase.auth.signOut()
 
     if (error) {
-      console.error('로그아웃 오류:', error)
+      logger.error('로그아웃 오류:', error)
       return NextResponse.json(
         {
           success: false,
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('로그아웃 API 오류:', error)
+    logger.error('로그아웃 API 오류:', error)
     return NextResponse.json(
       {
         success: false,

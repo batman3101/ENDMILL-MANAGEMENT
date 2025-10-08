@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { Database } from '../../../../lib/types/database'
 import { z } from 'zod'
+import { logger } from '../../../../lib/utils/logger'
 
 // 회원가입 요청 스키마
 const registerSchema = z.object({
@@ -61,8 +62,8 @@ export async function POST(request: NextRequest) {
     })
 
     if (authError) {
-      console.error('사용자 생성 오류:', authError)
-      
+      logger.error('사용자 생성 오류:', authError)
+
       let errorMessage = '회원가입 중 오류가 발생했습니다.'
       if (authError.message.includes('already registered')) {
         errorMessage = '이미 등록된 이메일입니다.'
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (roleQueryError) {
-      console.error('역할 조회 오류:', roleQueryError)
+      logger.error('역할 조회 오류:', roleQueryError)
       // 사용자 삭제
       await supabase.auth.admin.deleteUser(authData.user.id)
       
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
       })
 
     if (profileError) {
-      console.error('프로필 생성 오류:', profileError)
+      logger.error('프로필 생성 오류:', profileError)
       // 사용자는 생성되었지만 프로필 생성 실패 - 사용자 삭제
       await supabase.auth.admin.deleteUser(authData.user.id)
       
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('✅ 사용자 생성 성공:', {
+    logger.log('✅ 사용자 생성 성공:', {
       id: authData.user.id,
       email: authData.user.email,
       name,
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('회원가입 API 오류:', error)
+    logger.error('회원가입 API 오류:', error)
     return NextResponse.json(
       {
         success: false,

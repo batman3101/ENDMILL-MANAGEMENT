@@ -232,7 +232,7 @@ export const useCAMSheets = (filter?: CAMSheetFilter) => {
       return ['PA1', 'PA2', 'PS', 'B7', 'Q7'] // 기본값
     }
 
-    const uniqueModels = [...new Set(camSheets.map(sheet => sheet.model))]
+    const uniqueModels = Array.from(new Set(camSheets.map(sheet => sheet.model)))
       .filter(model => model && model.trim())
       .sort()
 
@@ -245,7 +245,7 @@ export const useCAMSheets = (filter?: CAMSheetFilter) => {
       return ['CNC1', 'CNC2', 'CNC2-1'] // 기본값
     }
 
-    const uniqueProcesses = [...new Set(camSheets.map(sheet => sheet.process))]
+    const uniqueProcesses = Array.from(new Set(camSheets.map(sheet => sheet.process)))
       .filter(process => process && process.trim())
       .sort()
 

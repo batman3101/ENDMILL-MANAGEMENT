@@ -129,5 +129,5 @@ function getDefaultSettings(): SystemSettings {
       supportedLanguages: ['ko', 'vi'],
       fallbackLanguage: 'ko'
     }
-  } as SystemSettings
+  } as unknown as SystemSettings
 }

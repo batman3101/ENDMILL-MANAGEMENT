@@ -14,7 +14,7 @@ import EndmillSupplierPrices from '../../../components/features/EndmillSupplierP
 import { downloadEndmillTemplate } from '../../../lib/utils/endmillExcelTemplate'
 import { supabase } from '../../../lib/supabase/client'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
-import { logger } from '@/lib/utils/logger'
+import { logger, clientLogger } from '@/lib/utils/logger'
 
 // 앤드밀 인스턴스 타입 정의
 interface EndmillInstance {
@@ -195,7 +195,7 @@ export default function EndmillPage() {
         showError(t('endmill.loadDataFailed'), t('endmill.loadDataFailedMessage'))
       }
     } catch (error) {
-      console.error('엔드밀 데이터 로드 오류:', error)
+      clientLogger.error('엔드밀 데이터 로드 오류:', error)
       showError(t('endmill.loadDataError'), t('endmill.loadDataErrorMessage'))
     } finally {
       setIsLoading(false)
@@ -213,10 +213,10 @@ export default function EndmillPage() {
       if (result.success) {
         setEquipments(result.data)
       } else {
-        console.error('설비 데이터 로드 실패:', result.error)
+        clientLogger.error('설비 데이터 로드 실패:', result.error)
       }
     } catch (error) {
-      console.error('설비 데이터 로드 오류:', error)
+      clientLogger.error('설비 데이터 로드 오류:', error)
     }
   }
 

@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    // Warning을 무시하고 빌드 진행 (프로덕션 배포 전 수정 권장)
-    ignoreDuringBuilds: true,
+    // ESLint 오류 검사 활성화
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    // TypeScript 오류를 무시하고 빌드 진행 (프로덕션 배포 전 수정 권장)
-    ignoreBuildErrors: true,
+    // TypeScript 오류 검사 활성화
+    ignoreBuildErrors: false,
   },
   experimental: {
     serverComponentsExternalPackages: ['@supabase/supabase-js']

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../../lib/supabase/client'
 import { PerformanceReportData, ReportFilter } from '../../../../lib/types/reports'
+import { logger } from '@/lib/utils/logger'
 import {
   getDateRangeFromFilter,
   calculateAverage,
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
     const { data: toolChanges, error: tcError } = await tcQuery
 
     if (tcError) {
-      console.error('tool_changes 조회 오류:', tcError)
+      logger.error('tool_changes 조회 오류:', tcError)
       return NextResponse.json({ error: 'Failed to fetch tool changes', details: tcError }, { status: 500 })
     }
 
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
       .select('code, name, unit_cost, standard_life')
 
     if (etError) {
-      console.error('endmill_types 조회 오류:', etError)
+      logger.error('endmill_types 조회 오류:', etError)
     }
 
     // 3. equipment 데이터 조회
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
       .select('equipment_number, model_code, location')
 
     if (eqError) {
-      console.error('equipment 조회 오류:', eqError)
+      logger.error('equipment 조회 오류:', eqError)
     }
 
     // 4. 데이터 병합
@@ -336,7 +337,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(reportData)
   } catch (error) {
-    console.error('성능 리포트 생성 오류:', error)
+    logger.error('성능 리포트 생성 오류:', error)
     return NextResponse.json(
       { error: 'Failed to generate performance report' },
       { status: 500 }

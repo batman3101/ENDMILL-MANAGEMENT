@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '../../../lib/services/supabaseService'
+import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
       data: data || []
     })
   } catch (error) {
-    console.error('User profiles API 에러:', error)
+    logger.error('User profiles API 에러:', error)
     return NextResponse.json(
       {
         success: false,

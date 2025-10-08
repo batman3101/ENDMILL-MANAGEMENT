@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../shared/Toast'
+import { clientLogger } from '@/lib/utils/logger'
 
 interface Supplier {
   id: string
@@ -56,7 +57,7 @@ export default function AddSupplierPriceModal({
         throw new Error(result.error || t('endmill.dataLoadFailed'))
       }
     } catch (error) {
-      console.error('공급업체 목록 로드 오류:', error)
+      clientLogger.error('공급업체 목록 로드 오류:', error)
       showError(t('common.error'), t('endmill.suppliersLoadError'))
     } finally {
       setLoadingSuppliers(false)
@@ -107,7 +108,7 @@ export default function AddSupplierPriceModal({
 
       onSuccess()
     } catch (error) {
-      console.error('가격 정보 등록 오류:', error)
+      clientLogger.error('가격 정보 등록 오류:', error)
       showError(t('endmill.priceAddFailed'), t('endmill.priceAddError'))
     } finally {
       setLoading(false)

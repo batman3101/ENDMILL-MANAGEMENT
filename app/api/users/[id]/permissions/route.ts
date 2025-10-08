@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
 import { hasPermission, isAdmin } from '@/lib/auth/permissions'
+import { logger } from '@/lib/utils/logger'
 
 // GET /api/users/[id]/permissions - 사용자의 권한 매트릭스 조회
 export async function GET(
@@ -73,7 +74,7 @@ export async function GET(
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in GET /api/users/[id]/permissions:', error)
+    logger.error('Unexpected error in GET /api/users/[id]/permissions:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
@@ -166,7 +167,7 @@ export async function PUT(
       .single()
 
     if (updateError) {
-      console.error('Error updating role permissions:', updateError)
+      logger.error('Error updating role permissions:', updateError)
       return NextResponse.json(
         { error: 'Failed to update permissions', details: updateError.message },
         { status: 500 }
@@ -187,7 +188,7 @@ export async function PUT(
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in PUT /api/users/[id]/permissions:', error)
+    logger.error('Unexpected error in PUT /api/users/[id]/permissions:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
@@ -286,7 +287,7 @@ export async function POST(
       .single()
 
     if (updateError) {
-      console.error('Error applying template:', updateError)
+      logger.error('Error applying template:', updateError)
       return NextResponse.json(
         { error: 'Failed to apply template', details: updateError.message },
         { status: 500 }
@@ -307,7 +308,7 @@ export async function POST(
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in POST /api/users/[id]/permissions:', error)
+    logger.error('Unexpected error in POST /api/users/[id]/permissions:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }

@@ -214,7 +214,7 @@ export const validateEquipmentData = (data: EquipmentExcelData[], availableModel
   )
 
   if (duplicates.length > 0) {
-    errors.push(`중복된 설비번호: ${[...new Set(duplicates)].join(', ')}`)
+    errors.push(`중복된 설비번호: ${Array.from(new Set(duplicates)).join(', ')}`)
   }
 
   return {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { Database } from '@/lib/types/database'
+import { logger } from '@/lib/utils/logger'
 
 export async function PUT(request: NextRequest) {
   try {
@@ -56,7 +57,7 @@ export async function PUT(request: NextRequest) {
       .eq('id', user.id)
 
     if (updateError) {
-      console.error('Error updating user:', updateError)
+      logger.error('Error updating user:', updateError)
       return NextResponse.json(
         { success: false, error: updateError.message },
         { status: 500 }
@@ -70,7 +71,7 @@ export async function PUT(request: NextRequest) {
       })
 
       if (authError) {
-        console.error('Error updating email:', authError)
+        logger.error('Error updating email:', authError)
         return NextResponse.json(
           { success: false, error: authError.message },
           { status: 500 }
@@ -83,7 +84,7 @@ export async function PUT(request: NextRequest) {
       message: 'Profile updated successfully'
     })
   } catch (error) {
-    console.error('Error in PUT /api/profile:', error)
+    logger.error('Error in PUT /api/profile:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to update profile' },
       { status: 500 }

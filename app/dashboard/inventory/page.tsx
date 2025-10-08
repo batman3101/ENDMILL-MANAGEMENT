@@ -11,10 +11,11 @@ import SupplierPriceInfo from '../../../components/inventory/SupplierPriceInfo'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { useTranslations } from '../../../lib/hooks/useTranslations'
 import * as XLSX from 'xlsx'
+import { clientLogger } from '../../../lib/utils/logger'
 
 export default function InventoryPage() {
   const { t } = useTranslations()
-  const { showSuccess, showError } = useToast()
+  const { showSuccess, showError, showWarning } = useToast()
   const confirmation = useConfirmation()
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -68,7 +69,7 @@ export default function InventoryPage() {
         }
       }
     } catch (error) {
-      console.error('공급업체 데이터 로드 오류:', error)
+      clientLogger.error('공급업체 데이터 로드 오류:', error)
     }
   }
 
@@ -83,7 +84,7 @@ export default function InventoryPage() {
         }
       }
     } catch (error) {
-      console.error('카테고리 데이터 로드 오류:', error)
+      clientLogger.error('카테고리 데이터 로드 오류:', error)
     }
   }
 
@@ -133,7 +134,7 @@ export default function InventoryPage() {
         }
       }
     } catch (error) {
-      console.error('앤드밀 마스터 데이터 로드 오류:', error)
+      clientLogger.error('앤드밀 마스터 데이터 로드 오류:', error)
     }
   }
 
@@ -361,7 +362,7 @@ export default function InventoryPage() {
   }
 
   const handleEdit = (item: any) => {
-    console.log('Edit clicked for item:', item)
+    clientLogger.log('Edit clicked for item:', item)
     setEditFormData(item)
     setShowEditModal(true)
   }
@@ -465,7 +466,7 @@ export default function InventoryPage() {
       showSuccess(t('inventory.downloadComplete'), `${endmillData.length}${t('inventory.downloadSuccessMessage')}`)
     } catch (error) {
       showError(t('inventory.downloadFailed'), t('inventory.downloadFailedMessage'))
-      console.error('Excel download error:', error)
+      clientLogger.error('Excel download error:', error)
     }
   }
 
@@ -511,7 +512,7 @@ export default function InventoryPage() {
         } catch (error) {
           setUploadProgress({ processing: false, success: 0, updated: 0, errors: [t('inventory.processingFileError')] })
           showError(t('inventory.fileProcessingError'), t('inventory.fileProcessingErrorMessage'))
-          console.error('Excel processing error:', error)
+          clientLogger.error('Excel processing error:', error)
         }
       }
 
@@ -524,7 +525,7 @@ export default function InventoryPage() {
     } catch (error) {
       setUploadProgress({ processing: false, success: 0, updated: 0, errors: [t('inventory.uploadingFileError')] })
       showError(t('inventory.uploadError'), t('inventory.uploadErrorMessage'))
-      console.error('File upload error:', error)
+      clientLogger.error('File upload error:', error)
     }
   }
 

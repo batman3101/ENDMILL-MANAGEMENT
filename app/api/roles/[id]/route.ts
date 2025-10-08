@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
 import { isAdmin, isSystemAdmin } from '@/lib/auth/permissions'
+import { logger } from '@/lib/utils/logger'
 
 // GET /api/roles/[id] - 특정 역할 조회
 export async function GET(
@@ -51,7 +52,7 @@ export async function GET(
       .single()
 
     if (error || !role) {
-      console.error('Error fetching role:', error)
+      logger.error('Error fetching role:', error)
       return NextResponse.json(
         { error: 'Role not found' },
         { status: 404 }
@@ -73,7 +74,7 @@ export async function GET(
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in GET /api/roles/[id]:', error)
+    logger.error('Unexpected error in GET /api/roles/[id]:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
@@ -169,7 +170,7 @@ export async function PUT(
       .single()
 
     if (updateError) {
-      console.error('Error updating role:', updateError)
+      logger.error('Error updating role:', updateError)
       return NextResponse.json(
         { error: 'Failed to update role', details: updateError.message },
         { status: 500 }
@@ -183,7 +184,7 @@ export async function PUT(
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in PUT /api/roles/[id]:', error)
+    logger.error('Unexpected error in PUT /api/roles/[id]:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
@@ -274,7 +275,7 @@ export async function DELETE(
       .eq('id', roleId)
 
     if (deleteError) {
-      console.error('Error deleting role:', deleteError)
+      logger.error('Error deleting role:', deleteError)
       return NextResponse.json(
         { error: 'Failed to delete role', details: deleteError.message },
         { status: 500 }
@@ -287,7 +288,7 @@ export async function DELETE(
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in DELETE /api/roles/[id]:', error)
+    logger.error('Unexpected error in DELETE /api/roles/[id]:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }

@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { downloadEndmillMasterTemplate, validateEndmillMasterData } from '../../lib/utils/excelTemplate'
 import { useToast } from '../shared/Toast'
+import { clientLogger } from '@/lib/utils/logger'
 
 interface EndmillMasterData {
   code: string
@@ -61,7 +62,7 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
       const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
       // 데이터 검증
-      const validation = validateEndmillMasterData(jsonData)
+      const validation = await validateEndmillMasterData(jsonData)
       setValidationResult(validation)
       setShowValidation(true)
 
@@ -71,7 +72,7 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
         showError('데이터 검증 실패', `${validation.errors.length}개의 오류가 발견되었습니다.`)
       }
     } catch (error) {
-      console.error('Excel parsing error:', error)
+      clientLogger.error('Excel parsing error:', error)
       showError('파일 처리 오류', '엑셀 파일을 읽는 중 오류가 발생했습니다.')
     } finally {
       setProcessing(false)

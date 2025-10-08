@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { serverSupabaseService } from '../../../../lib/services/supabaseService'
+import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
           }
         }
       } catch (error) {
-        console.error('Equipment 조회 오류:', error)
+        logger.error('Equipment 조회 오류:', error)
       }
     }
 
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
           }
         }
       } catch (error) {
-        console.error('CAM Sheet 조회 오류:', error)
+        logger.error('CAM Sheet 조회 오류:', error)
       }
     }
 
@@ -82,7 +83,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('자동입력 API 오류:', error)
+    logger.error('자동입력 API 오류:', error)
     return NextResponse.json({
       success: false,
       error: '자동입력 정보 조회 중 오류가 발생했습니다.'

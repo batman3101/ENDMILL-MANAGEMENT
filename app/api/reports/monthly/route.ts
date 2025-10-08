@@ -9,6 +9,7 @@ import {
   sumBy,
   maxBy
 } from '../../../../lib/utils/reportCalculations'
+import { logger } from '../../../../lib/utils/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
     const { data: toolChanges, error: tcError } = await tcQuery
 
     if (tcError) {
-      console.error('tool_changes 조회 오류:', tcError)
+      logger.error('tool_changes 조회 오류:', tcError)
       return NextResponse.json({ error: 'Failed to fetch tool changes', details: tcError }, { status: 500 })
     }
 
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
       `)
 
     if (etError) {
-      console.error('endmill_types 조회 오류:', etError)
+      logger.error('endmill_types 조회 오류:', etError)
     }
 
     // 3. user_profiles 데이터 조회
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
       .select('id, name')
 
     if (upError) {
-      console.error('user_profiles 조회 오류:', upError)
+      logger.error('user_profiles 조회 오류:', upError)
     }
 
     // 4. 데이터 병합
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (filteredChanges.length === 0) {
-      console.log('데이터가 없습니다. 필터:', filter)
+      logger.log('데이터가 없습니다. 필터:', filter)
       return NextResponse.json({
         error: 'No data found for the specified filter',
         filter,
@@ -260,7 +261,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(reportData)
   } catch (error) {
-    console.error('월간 리포트 생성 오류:', error)
+    logger.error('월간 리포트 생성 오류:', error)
     return NextResponse.json(
       { error: 'Failed to generate monthly report' },
       { status: 500 }

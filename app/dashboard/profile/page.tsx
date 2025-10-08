@@ -6,6 +6,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useToast } from '../../../components/shared/Toast'
 import { PermissionGuard } from '../../../components/auth/PermissionGuard'
 import { useTranslation } from 'react-i18next'
+import { clientLogger } from '@/lib/utils/logger'
 
 interface ProfileFormData {
   name: string
@@ -133,7 +134,7 @@ export default function ProfilePage() {
         await refreshSession()
       }
     } catch (error) {
-      console.error('프로필 업데이트 오류:', error)
+      clientLogger.error('프로필 업데이트 오류:', error)
       showError(t('profile.profileUpdateError'), t('profile.profileUpdateError'))
     } finally {
       setLoading(false)
@@ -181,7 +182,7 @@ export default function ProfilePage() {
         })
       }
     } catch (error) {
-      console.error('비밀번호 변경 오류:', error)
+      clientLogger.error('비밀번호 변경 오류:', error)
       showError(t('profile.passwordChangeError'), t('profile.passwordChangeError'))
     } finally {
       setPasswordLoading(false)

@@ -58,6 +58,22 @@ export interface DashboardData {
     cost: number
     percentage: number
   }>
+  recentAlerts?: Array<{
+    type: string
+    equipmentNumber?: string
+    tNumber?: number
+    actualLife?: number
+    standardLife?: number
+    endmillCode?: string
+    endmillName?: string
+    currentStock?: number
+    minStock?: number
+    recentCount?: number
+    increase?: number
+    minutesAgo: number
+    color: string
+    severity: string
+  }>
   lastUpdated: string
   dataSource: string
 }

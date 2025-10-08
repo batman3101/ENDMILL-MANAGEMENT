@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/services/supabaseService'
+import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query
 
     if (error) {
-      console.error('Error fetching disposals:', error)
+      logger.error('Error fetching disposals:', error)
       return NextResponse.json(
         { success: false, error: error.message },
         { status: 500 }
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, data })
   } catch (error) {
-    console.error('Error in GET /api/endmill-disposals:', error)
+    logger.error('Error in GET /api/endmill-disposals:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to fetch disposals' },
       { status: 500 }
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
         .upload(filePath, imageFile)
 
       if (uploadError) {
-        console.error('Error uploading image:', uploadError)
+        logger.error('Error uploading image:', uploadError)
       } else {
         const { data: { publicUrl } } = supabase.storage
           .from('endmill-images')
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error creating disposal:', error)
+      logger.error('Error creating disposal:', error)
       return NextResponse.json(
         { success: false, error: error.message },
         { status: 500 }
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data })
   } catch (error) {
-    console.error('Error in POST /api/endmill-disposals:', error)
+    logger.error('Error in POST /api/endmill-disposals:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to create disposal' },
       { status: 500 }
@@ -147,7 +148,7 @@ export async function PUT(request: NextRequest) {
         .upload(filePath, imageFile)
 
       if (uploadError) {
-        console.error('Error uploading image:', uploadError)
+        logger.error('Error uploading image:', uploadError)
       } else {
         const { data: { publicUrl } } = supabase.storage
           .from('endmill-images')
@@ -179,7 +180,7 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error updating disposal:', error)
+      logger.error('Error updating disposal:', error)
       return NextResponse.json(
         { success: false, error: error.message },
         { status: 500 }
@@ -188,7 +189,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true, data })
   } catch (error) {
-    console.error('Error in PUT /api/endmill-disposals:', error)
+    logger.error('Error in PUT /api/endmill-disposals:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to update disposal' },
       { status: 500 }
@@ -217,7 +218,7 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id)
 
     if (error) {
-      console.error('Error deleting disposal:', error)
+      logger.error('Error deleting disposal:', error)
       return NextResponse.json(
         { success: false, error: error.message },
         { status: 500 }
@@ -226,7 +227,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error in DELETE /api/endmill-disposals:', error)
+    logger.error('Error in DELETE /api/endmill-disposals:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to delete disposal' },
       { status: 500 }

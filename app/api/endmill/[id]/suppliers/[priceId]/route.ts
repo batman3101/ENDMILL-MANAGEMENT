@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../../../../lib/supabase/client'
+import { logger } from '@/lib/utils/logger'
 
 export async function DELETE(
   request: NextRequest,
@@ -24,7 +25,7 @@ export async function DELETE(
       .eq('endmill_type_id', endmillId)
 
     if (error) {
-      console.error('가격 정보 삭제 오류:', error)
+      logger.error('가격 정보 삭제 오류:', error)
       return NextResponse.json(
         { error: '가격 정보 삭제 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -37,7 +38,7 @@ export async function DELETE(
     })
 
   } catch (error) {
-    console.error('가격 정보 삭제 API 오류:', error)
+    logger.error('가격 정보 삭제 API 오류:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -88,7 +89,7 @@ export async function PUT(
       .single()
 
     if (error) {
-      console.error('가격 정보 수정 오류:', error)
+      logger.error('가격 정보 수정 오류:', error)
       return NextResponse.json(
         { error: '가격 정보 수정 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -102,7 +103,7 @@ export async function PUT(
     })
 
   } catch (error) {
-    console.error('가격 정보 수정 API 오류:', error)
+    logger.error('가격 정보 수정 API 오류:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

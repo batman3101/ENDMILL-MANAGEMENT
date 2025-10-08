@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useInventorySearch } from '../../lib/hooks/useInventory'
-import { useToast } from '../shared/Toast'
+import { useToast } from '../../components/shared/Toast'
 
 interface EndmillInfo {
   tNumber: number
@@ -63,19 +63,19 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
       
       if (foundEndmill) {
         // 자동으로 이름과 사양 설정, Tool Life는 기본값 유지 (수동 입력 가능)
-        const specifications = foundEndmill.endmill_types?.specifications 
-          ? JSON.stringify(foundEndmill.endmill_types.specifications) 
+        const specifications = foundEndmill.endmill_type?.specifications 
+          ? JSON.stringify(foundEndmill.endmill_type.specifications) 
           : ''
         
         setNewEndmill(prev => ({
           ...prev,
-          endmillCode: foundEndmill.endmill_types?.code || code,
-          endmillName: foundEndmill.endmill_types?.description_ko || foundEndmill.endmill_types?.description_vi || '',
+          endmillCode: foundEndmill.endmill_type?.code || code,
+          endmillName: foundEndmill.endmill_type?.name || '',
           specifications: specifications,
           // toolLife는 기존 값 유지 (수동 입력)
         }))
         setAutoLoadedInfo({
-          name: foundEndmill.endmill_types?.description_ko || foundEndmill.endmill_types?.description_vi || '',
+          name: foundEndmill.endmill_type?.name || '',
           specifications: specifications
         })
       } else {
@@ -250,7 +250,7 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('camSheets.tNumberLabel')}</label>
                   <select
                     value={newEndmill.tNumber}
-                    onChange={(e) => setNewEndmill({...newEndmill, tNumber: parseInt(e.target.value)})}
+                    onChange={(e) => setNewEndmill({...newEndmill, tNumber: parseInt(e.target.value) || 1})}
                     className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {Array.from({length: 21}, (_, i) => i + 1).map(num => (
@@ -298,7 +298,7 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
                     type="number"
                     placeholder="2000"
                     value={newEndmill.toolLife}
-                    onChange={(e) => setNewEndmill({...newEndmill, toolLife: parseInt(e.target.value)})}
+                    onChange={(e) => setNewEndmill({...newEndmill, toolLife: parseInt(e.target.value) || 2000})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     min="1"
                   />

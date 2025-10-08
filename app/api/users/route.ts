@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
 import { hasPermission } from '@/lib/auth/permissions'
+import { logger } from '@/lib/utils/logger'
 
 // GET /api/users - 모든 사용자 조회
 export async function GET(request: NextRequest) {
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
     const { data: profiles, error } = await query
 
     if (error) {
-      console.error('Error fetching users:', error)
+      logger.error('Error fetching users:', error)
       return NextResponse.json(
         { error: 'Failed to fetch users', details: error.message },
         { status: 500 }
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in GET /api/users:', error)
+    logger.error('Unexpected error in GET /api/users:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
@@ -211,7 +212,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (authCreateError || !authData.user) {
-      console.error('Error creating auth user:', authCreateError)
+      logger.error('Error creating auth user:', authCreateError)
       return NextResponse.json(
         { error: 'Failed to create user account', details: authCreateError?.message },
         { status: 500 }
@@ -236,7 +237,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (profileError) {
-      console.error('Error creating user profile:', profileError)
+      logger.error('Error creating user profile:', profileError)
 
       // 프로필 생성 실패 시 Auth 사용자 삭제 (롤백)
       await supabase.auth.admin.deleteUser(authData.user.id)
@@ -257,7 +258,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error: any) {
-    console.error('Unexpected error in POST /api/users:', error)
+    logger.error('Unexpected error in POST /api/users:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }

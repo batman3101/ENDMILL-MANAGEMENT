@@ -1,6 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { TranslationNamespace } from '../types/translations'
+
+// TranslationNamespace 타입 정의
+type TranslationNamespace = 'common' | 'navigation' | 'dashboard' | 'equipment' | 'endmill' | 'inventory' | 'toolChanges' | 'camSheets' | 'users' | 'settings' | 'reports'
 
 /**
  * 한국어 텍스트 스캔 및 추출 서비스
@@ -46,7 +48,7 @@ export class TextScanService {
     '/dashboard/reports/': 'reports',
     '/dashboard/settings/': 'settings',
     '/dashboard/users/': 'users',
-    '/(auth)/': 'auth',
+    '/(auth)/': 'common',
     '/layout.tsx': 'navigation',
     '/components/': 'common'
   }

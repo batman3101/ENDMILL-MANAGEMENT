@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { serverSupabaseService } from '../../../../lib/services/supabaseService'
 import { z } from 'zod'
+import { logger } from '@/lib/utils/logger'
 
 // 동적 스키마 생성 함수 및 CAM Sheet 데이터 가져오기
 const createEquipmentSchema = async () => {
@@ -48,7 +49,7 @@ const getToolPositionCount = async (model: string, process: string) => {
 
     return 21 // 기본값
   } catch (error) {
-    console.error('툴 포지션 수 계산 에러:', error)
+    logger.error('툴 포지션 수 계산 에러:', error)
     return 21 // 기본값
   }
 }
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.error('설비 일괄 업로드 에러:', error)
+    logger.error('설비 일괄 업로드 에러:', error)
     return NextResponse.json(
       {
         success: false,
@@ -211,7 +212,7 @@ export async function GET() {
     })
 
   } catch (error) {
-    console.error('템플릿 생성 에러:', error)
+    logger.error('템플릿 생성 에러:', error)
     return NextResponse.json(
       {
         success: false,

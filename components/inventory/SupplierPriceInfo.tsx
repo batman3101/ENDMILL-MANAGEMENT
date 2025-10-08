@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { clientLogger } from '@/lib/utils/logger'
 
 interface SupplierPriceInfoProps {
   endmillTypeId?: string
@@ -43,7 +44,7 @@ export default function SupplierPriceInfo({ endmillTypeId }: SupplierPriceInfoPr
         }
       }
     } catch (error) {
-      console.error('공급업체 가격 정보 로드 오류:', error)
+      clientLogger.error('공급업체 가격 정보 로드 오류:', error)
     } finally {
       setLoading(false)
     }

@@ -5,6 +5,7 @@ import { useToast } from '@/components/shared/Toast'
 import { useTranslations } from '@/lib/hooks/useTranslations'
 import ConfirmationModal from '@/components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation } from '@/lib/hooks/useConfirmation'
+import { clientLogger } from '@/lib/utils/logger'
 
 interface EndmillDisposal {
   id: string
@@ -56,7 +57,7 @@ export default function EndmillDisposalPage() {
       if (!response.ok) throw new Error(result.error)
       setDisposals(result.data || [])
     } catch (error) {
-      console.error('Error loading disposals:', error)
+      clientLogger.error('Error loading disposals:', error)
       showError(t('common.error'), t('endmillDisposal.loadError'))
     } finally {
       setIsLoading(false)
@@ -119,7 +120,7 @@ export default function EndmillDisposalPage() {
       setImagePreview(null)
       loadDisposals()
     } catch (error) {
-      console.error('Error adding disposal:', error)
+      clientLogger.error('Error adding disposal:', error)
       showError(t('common.error'), t('endmillDisposal.registerError'))
     }
   }
@@ -181,7 +182,7 @@ export default function EndmillDisposalPage() {
       setImagePreview(null)
       loadDisposals()
     } catch (error) {
-      console.error('Error updating disposal:', error)
+      clientLogger.error('Error updating disposal:', error)
       showError(t('common.error'), t('endmillDisposal.updateError'))
     }
   }
@@ -204,7 +205,7 @@ export default function EndmillDisposalPage() {
         showSuccess(t('common.success'), t('endmillDisposal.deleteSuccess'))
         loadDisposals()
       } catch (error) {
-        console.error('Error deleting disposal:', error)
+        clientLogger.error('Error deleting disposal:', error)
         showError(t('common.error'), t('endmillDisposal.deleteError'))
       }
     }

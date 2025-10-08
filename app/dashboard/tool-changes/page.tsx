@@ -9,6 +9,7 @@ import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, cr
 import { useSettings } from '../../../lib/hooks/useSettings'
 import { useToolChanges, type ToolChange, type ToolChangeFilters } from '../../../lib/hooks/useToolChanges'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
+import { clientLogger } from '@/lib/utils/logger'
 
 export default function ToolChangesPage() {
   const { t } = useTranslation()
@@ -154,12 +155,12 @@ export default function ToolChangesPage() {
         const { model, process } = result.data.equipmentInfo
         setFormData(prev => ({
           ...prev,
-          productionModel: model || '',
+          production_model: model || '',
           process: process || ''
         }))
       }
     } catch (error) {
-      console.error('설비번호 자동입력 오류:', error)
+      clientLogger.error('설비번호 자동입력 오류:', error)
     }
   }, [])
 
@@ -175,12 +176,12 @@ export default function ToolChangesPage() {
         const { endmillCode, endmillName } = result.data.endmillInfo
         setFormData(prev => ({
           ...prev,
-          endmillCode: endmillCode || '',
-          endmillName: endmillName || ''
+          endmill_code: endmillCode || '',
+          endmill_name: endmillName || ''
         }))
       }
     } catch (error) {
-      console.error('T번호 자동입력 오류:', error)
+      clientLogger.error('T번호 자동입력 오류:', error)
     }
   }, [])
 
@@ -219,17 +220,30 @@ export default function ToolChangesPage() {
     return `${year}-${month}-${day}`
   }
 
-  const [formData, setFormData] = useState({
+  interface ToolChangeFormData {
+    change_date: string
+    equipment_number: string
+    production_model: string
+    process: string
+    t_number: number
+    endmill_code: string | null
+    endmill_name: string | null
+    tool_life: number
+    change_reason: string
+    changed_by: string
+  }
+
+  const [formData, setFormData] = useState<ToolChangeFormData>({
     change_date: getCurrentDateTime(),
-    equipmentNumber: '',
-    productionModel: '',
+    equipment_number: '',
+    production_model: '',
     process: '',
-    tNumber: 1,
-    endmillCode: '',
-    endmillName: '',
-    actualToolLife: 0,
-    changeReason: '',
-    changedBy: '' // 교체자 ID 추가
+    t_number: 1,
+    endmill_code: null,
+    endmill_name: null,
+    tool_life: 0,
+    change_reason: '',
+    changed_by: ''
   })
 
   // CAM SHEET에서 사용 가능한 모델과 공정 목록 로드
@@ -248,7 +262,7 @@ export default function ToolChangesPage() {
           setAvailableUsers(result.data)
         }
       } catch (error) {
-        console.error('사용자 목록 로드 오류:', error)
+        clientLogger.error('사용자 목록 로드 오류:', error)
       }
     }
     loadUsers()
@@ -256,28 +270,28 @@ export default function ToolChangesPage() {
 
   // 설비번호 변경시 생산모델, 공정 자동입력
   useEffect(() => {
-    if (formData.equipmentNumber.trim() && formData.equipmentNumber.match(/^C[0-9]{3}$/)) {
-      autoFillByEquipmentNumber(formData.equipmentNumber)
+    if (formData.equipment_number.trim() && formData.equipment_number.match(/^C[0-9]{3}$/)) {
+      autoFillByEquipmentNumber(formData.equipment_number)
     }
-  }, [formData.equipmentNumber, autoFillByEquipmentNumber])
+  }, [formData.equipment_number, autoFillByEquipmentNumber])
 
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (추가 폼)
   useEffect(() => {
-    if (formData.productionModel && formData.process && formData.tNumber && !isManualEndmillInput) {
+    if (formData.production_model && formData.process && formData.t_number && !isManualEndmillInput) {
       // API 기반 자동입력 시도
-      autoFillByTNumber(formData.productionModel, formData.process, formData.tNumber)
+      autoFillByTNumber(formData.production_model, formData.process, formData.t_number)
 
       // 기존 CAM Sheet 기반 자동입력도 백업으로 유지
-      const endmillInfo = autoFillEndmillInfo(formData.productionModel, formData.process, formData.tNumber)
+      const endmillInfo = autoFillEndmillInfo(formData.production_model, formData.process, formData.t_number)
       if (endmillInfo) {
         setFormData(prev => ({
           ...prev,
-          endmillCode: prev.endmillCode || endmillInfo.endmillCode,
-          endmillName: prev.endmillName || endmillInfo.endmillName
+          endmill_code: prev.endmill_code || endmillInfo.endmillCode || null,
+          endmill_name: prev.endmill_name || endmillInfo.endmillName || null
         }))
       }
     }
-  }, [formData.productionModel, formData.process, formData.tNumber, isManualEndmillInput, autoFillByTNumber, autoFillEndmillInfo])
+  }, [formData.production_model, formData.process, formData.t_number, isManualEndmillInput, autoFillByTNumber, autoFillEndmillInfo])
 
   // 수정 모달: 설비번호 기반 자동입력 함수
   const autoFillEditByEquipmentNumber = useCallback(async (equipmentNumber: string) => {
@@ -291,12 +305,12 @@ export default function ToolChangesPage() {
         const { model, process } = result.data.equipmentInfo
         setEditingItem(prev => prev ? ({
           ...prev,
-          productionModel: model || '',
+          production_model: model || '',
           process: process || ''
         }) : null)
       }
     } catch (error) {
-      console.error('수정 모달 설비번호 자동입력 오류:', error)
+      clientLogger.error('수정 모달 설비번호 자동입력 오류:', error)
     }
   }, [])
 
@@ -312,60 +326,60 @@ export default function ToolChangesPage() {
         const { endmillCode, endmillName } = result.data.endmillInfo
         setEditingItem(prev => prev ? ({
           ...prev,
-          endmillCode: endmillCode || '',
-          endmillName: endmillName || ''
+          endmill_code: endmillCode || '',
+          endmill_name: endmillName || ''
         }) : null)
       }
     } catch (error) {
-      console.error('수정 모달 T번호 자동입력 오류:', error)
+      clientLogger.error('수정 모달 T번호 자동입력 오류:', error)
     }
   }, [])
 
   // 수정 모달: 설비번호 변경시 자동입력
   useEffect(() => {
-    if (editingItem?.equipmentNumber && editingItem.equipmentNumber.match(/^C[0-9]{3}$/)) {
-      autoFillEditByEquipmentNumber(editingItem.equipmentNumber)
+    if (editingItem?.equipment_number && String(editingItem.equipment_number).match(/^C[0-9]{3}$/)) {
+      autoFillEditByEquipmentNumber(String(editingItem.equipment_number))
     }
-  }, [editingItem?.equipmentNumber, autoFillEditByEquipmentNumber])
+  }, [editingItem?.equipment_number, autoFillEditByEquipmentNumber])
 
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (수정 모달)
   useEffect(() => {
-    if (editingItem && editingItem.productionModel && editingItem.process && editingItem.tNumber && !isEditManualEndmillInput) {
+    if (editingItem && editingItem.production_model && editingItem.process && editingItem.t_number && !isEditManualEndmillInput) {
       // API 기반 자동입력 시도
-      autoFillEditByTNumber(editingItem.productionModel, editingItem.process, editingItem.tNumber)
+      autoFillEditByTNumber(editingItem.production_model, editingItem.process, editingItem.t_number)
 
       // 기존 CAM Sheet 기반 자동입력도 백업으로 유지
-      const endmillInfo = autoFillEndmillInfo(editingItem.productionModel, editingItem.process, editingItem.tNumber)
+      const endmillInfo = autoFillEndmillInfo(editingItem.production_model, editingItem.process, editingItem.t_number)
       if (endmillInfo) {
         setEditingItem(prev => prev ? ({
           ...prev,
-          endmillCode: prev.endmillCode || endmillInfo.endmillCode,
-          endmillName: prev.endmillName || endmillInfo.endmillName
+          endmill_code: prev.endmill_code || endmillInfo.endmillCode,
+          endmill_name: prev.endmill_name || endmillInfo.endmillName
         }) : null)
       }
     }
-  }, [editingItem?.productionModel, editingItem?.process, editingItem?.tNumber, isEditManualEndmillInput, autoFillEditByTNumber, autoFillEndmillInfo])
+  }, [editingItem?.production_model, editingItem?.process, editingItem?.t_number, isEditManualEndmillInput, autoFillEditByTNumber, autoFillEndmillInfo])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const confirmed = await confirmation.showConfirmation(
-      createSaveConfirmation(`${formData.equipmentNumber} T${formData.tNumber.toString().padStart(2, '0')} 교체 실적`)
+      createSaveConfirmation(`${formData.equipment_number} T${formData.t_number.toString().padStart(2, '0')} 교체 실적`)
     )
 
     if (confirmed) {
       try {
         // API 데이터 구조에 맞게 변환
         const toolChangeData = {
-          equipment_number: formData.equipmentNumber,
-          production_model: formData.productionModel,
+          equipment_number: parseInt(formData.equipment_number.replace(/^C/, '')) || 0,
+          production_model: formData.production_model,
           process: formData.process,
-          t_number: typeof formData.tNumber === 'string' ? parseInt(formData.tNumber.replace(/^T/, '')) : formData.tNumber,
-          endmill_code: formData.endmillCode,
-          endmill_name: formData.endmillName,
-          tool_life: formData.actualToolLife,
-          change_reason: formData.changeReason,
-          changed_by: formData.changedBy || undefined
+          t_number: formData.t_number,
+          endmill_code: formData.endmill_code || '',
+          endmill_name: formData.endmill_name || '',
+          tool_life: formData.tool_life,
+          change_reason: formData.change_reason,
+          changed_by: formData.changed_by || undefined
         }
 
         // API 호출하여 교체 실적 저장
@@ -390,27 +404,28 @@ export default function ToolChangesPage() {
 
           showSuccess(
             '교체 실적 등록 완료',
-            `${formData.equipmentNumber} T${formData.tNumber.toString().padStart(2, '0')} 교체 실적이 등록되었습니다.`
+            `${formData.equipment_number} T${formData.t_number.toString().padStart(2, '0')} 교체 실적이 등록되었습니다.`
           )
 
           // 폼 초기화
           setFormData({
             change_date: getCurrentDateTime(),
-            equipmentNumber: '',
-            productionModel: '',
+            equipment_number: '',
+            production_model: '',
             process: '',
-            tNumber: 1,
-            endmillCode: '',
-            endmillName: '',
-            actualToolLife: 0,
-            changeReason: ''
+            t_number: 1,
+            endmill_code: null,
+            endmill_name: null,
+            tool_life: 0,
+            change_reason: '',
+            changed_by: ''
           })
           setIsManualEndmillInput(false)
         } else {
           showError('등록 실패', result.error || '교체 실적 등록에 실패했습니다.')
         }
       } catch (error) {
-        console.error('교체 실적 등록 오류:', error)
+        clientLogger.error('교체 실적 등록 오류:', error)
         showError(
           '등록 실패',
           error instanceof Error ? error.message : '교체 실적 등록 중 오류가 발생했습니다.'
@@ -453,18 +468,7 @@ export default function ToolChangesPage() {
 
   // 수정 모달 열기
   const handleEdit = (item: ToolChange) => {
-    // Convert the database structure to the expected form structure
-    const editItem = {
-      ...item,
-      equipmentNumber: item.equipment_number ? `C${item.equipment_number.toString().padStart(3, '0')}` : '',
-      productionModel: item.production_model,
-      tNumber: item.t_number,
-      endmillCode: item.endmill_code,
-      endmillName: item.endmill_name,
-      toolLife: item.tool_life,
-      changeReason: item.change_reason
-    }
-    setEditingItem(editItem)
+    setEditingItem(item)
     setIsEditManualEndmillInput(false) // 수동 입력 모드 초기화
     setShowEditModal(true)
   }
@@ -475,7 +479,7 @@ export default function ToolChangesPage() {
     if (!editingItem) return
 
     const confirmed = await confirmation.showConfirmation(
-      createUpdateConfirmation(`${editingItem.equipmentNumber} T${editingItem.tNumber.toString().padStart(2, '0')} 교체 실적`)
+      createUpdateConfirmation(`${editingItem.equipment_number} T${editingItem.t_number.toString().padStart(2, '0')} 교체 실적`)
     )
 
     if (confirmed) {
@@ -485,17 +489,15 @@ export default function ToolChangesPage() {
         // API 데이터 구조에 맞게 변환
         const updateData = {
           id: editingItem.id,
-          equipment_number: typeof editingItem.equipmentNumber === 'string'
-            ? parseInt(editingItem.equipmentNumber.replace(/^C/, ''))
-            : editingItem.equipmentNumber,
-          production_model: editingItem.productionModel,
+          equipment_number: editingItem.equipment_number,
+          production_model: editingItem.production_model,
           process: editingItem.process,
-          t_number: editingItem.tNumber,
-          endmill_code: editingItem.endmillCode,
-          endmill_name: editingItem.endmillName,
-          tool_life: editingItem.actualToolLife,
-          change_reason: editingItem.changeReason,
-          changed_by: editingItem.changedBy || undefined
+          t_number: editingItem.t_number,
+          endmill_code: editingItem.endmill_code,
+          endmill_name: editingItem.endmill_name,
+          tool_life: editingItem.tool_life,
+          change_reason: editingItem.change_reason,
+          changed_by: editingItem.changed_by || undefined
         }
 
         // API 호출하여 수정 처리
@@ -522,11 +524,11 @@ export default function ToolChangesPage() {
 
           showSuccess(
             '교체 실적 수정 완료',
-            `${editingItem.equipmentNumber} T${editingItem.tNumber.toString().padStart(2, '0')} 교체 실적이 수정되었습니다.`
+            `${editingItem.equipment_number} T${editingItem.t_number.toString().padStart(2, '0')} 교체 실적이 수정되었습니다.`
           )
         }
       } catch (error) {
-        console.error('수정 오류:', error)
+        clientLogger.error('수정 오류:', error)
         showError(
           '수정 실패',
           error instanceof Error ? error.message : '교체 실적 수정 중 오류가 발생했습니다.'
@@ -575,7 +577,7 @@ export default function ToolChangesPage() {
           )
         }
       } catch (error) {
-        console.error('삭제 오류:', error)
+        clientLogger.error('삭제 오류:', error)
         showError(
           '삭제 실패',
           error instanceof Error ? error.message : '교체 실적 삭제 중 오류가 발생했습니다.'
@@ -678,7 +680,7 @@ export default function ToolChangesPage() {
           
           // 모델별 교체 수량 계산
           const modelCounts = todayChanges.reduce((acc: Record<string, number>, tc) => {
-            const model = tc.production_model || tc.productionModel || 'Unknown'
+            const model = tc.production_model || 'Unknown'
             acc[model] = (acc[model] || 0) + 1
             return acc
           }, {})
@@ -759,10 +761,10 @@ export default function ToolChangesPage() {
                 <input
                   type="text"
                   placeholder="C001"
-                  value={formData.equipmentNumber}
+                  value={formData.equipment_number}
                   onChange={(e) => {
                     const value = e.target.value.toUpperCase()
-                    setFormData({...formData, equipmentNumber: value})
+                    setFormData({...formData, equipment_number: value})
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   pattern="C[0-9]{3}"
@@ -775,10 +777,10 @@ export default function ToolChangesPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.productionModel')}</label>
                 <select
-                  value={formData.productionModel}
-                  onChange={(e) => setFormData({...formData, productionModel: e.target.value})}
+                  value={formData.production_model}
+                  onChange={(e) => setFormData({...formData, production_model: e.target.value})}
                   className={`w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    formData.equipmentNumber ? 'bg-blue-50' : ''
+                    formData.equipment_number ? 'bg-blue-50' : ''
                   }`}
                   required
                 >
@@ -788,7 +790,7 @@ export default function ToolChangesPage() {
                   ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  {formData.equipmentNumber ? t('toolChanges.autoFilledByEquipment') : t('toolChanges.registeredCAMSheetModels')}
+                  {formData.equipment_number ? t('toolChanges.autoFilledByEquipment') : t('toolChanges.registeredCAMSheetModels')}
                 </p>
               </div>
 
@@ -798,7 +800,7 @@ export default function ToolChangesPage() {
                   value={formData.process}
                   onChange={(e) => setFormData({...formData, process: e.target.value})}
                   className={`w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    formData.equipmentNumber ? 'bg-blue-50' : ''
+                    formData.equipment_number ? 'bg-blue-50' : ''
                   }`}
                   required
                 >
@@ -808,15 +810,15 @@ export default function ToolChangesPage() {
                   <option value="CNC2-1">CNC2-1</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  {formData.equipmentNumber ? t('toolChanges.autoFilledByEquipment') : t('toolChanges.selectProcessPrompt')}
+                  {formData.equipment_number ? t('toolChanges.autoFilledByEquipment') : t('toolChanges.selectProcessPrompt')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.tNumber')}</label>
                                     <select
-                      value={formData.tNumber}
-                      onChange={(e) => setFormData({...formData, tNumber: parseInt(e.target.value)})}
+                      value={formData.t_number}
+                      onChange={(e) => setFormData({...formData, t_number: parseInt(e.target.value)})}
                       className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     >
@@ -832,27 +834,27 @@ export default function ToolChangesPage() {
                   <input
                     type="text"
                     placeholder={isManualEndmillInput ? t('toolChanges.enterEndmillCode') : t('toolChanges.autoFilledEndmillCode')}
-                    value={formData.endmillCode}
-                    onChange={(e) => isManualEndmillInput && setFormData({...formData, endmillCode: e.target.value})}
+                    value={formData.endmill_code || ''}
+                    onChange={(e) => isManualEndmillInput && setFormData({...formData, endmill_code: e.target.value})}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
                       isManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
                     }`}
                     readOnly={!isManualEndmillInput}
                     required
                   />
-                  {formData.productionModel && formData.process && formData.tNumber && (
+                  {formData.production_model && formData.process && formData.t_number && (
                     <button
                       type="button"
                       onClick={() => {
                         if (isManualEndmillInput) {
                           // 자동입력 모드로 전환하고 CAM SHEET 데이터로 자동 채우기
                           setIsManualEndmillInput(false)
-                          const endmillInfo = autoFillEndmillInfo(formData.productionModel, formData.process, formData.tNumber)
+                          const endmillInfo = autoFillEndmillInfo(formData.production_model, formData.process, formData.t_number)
                           if (endmillInfo) {
                             setFormData(prev => ({
                               ...prev,
-                              endmillCode: endmillInfo.endmillCode,
-                              endmillName: endmillInfo.endmillName
+                              endmill_code: endmillInfo.endmillCode,
+                              endmill_name: endmillInfo.endmillName
                             }))
                           }
                         } else {
@@ -877,27 +879,27 @@ export default function ToolChangesPage() {
                   <input
                     type="text"
                     placeholder={isManualEndmillInput ? t('toolChanges.enterEndmillName') : t('toolChanges.autoFilledEndmillName')}
-                    value={formData.endmillName}
-                    onChange={(e) => isManualEndmillInput && setFormData({...formData, endmillName: e.target.value})}
+                    value={formData.endmill_name || ''}
+                    onChange={(e) => isManualEndmillInput && setFormData({...formData, endmill_name: e.target.value})}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
                       isManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
                     }`}
                     readOnly={!isManualEndmillInput}
                     required
                   />
-                  {formData.productionModel && formData.process && formData.tNumber && (
+                  {formData.production_model && formData.process && formData.t_number && (
                     <button
                       type="button"
                       onClick={() => {
                         if (isManualEndmillInput) {
                           // 자동입력 모드로 전환하고 CAM SHEET 데이터로 자동 채우기
                           setIsManualEndmillInput(false)
-                          const endmillInfo = autoFillEndmillInfo(formData.productionModel, formData.process, formData.tNumber)
+                          const endmillInfo = autoFillEndmillInfo(formData.production_model, formData.process, formData.t_number)
                           if (endmillInfo) {
                             setFormData(prev => ({
                               ...prev,
-                              endmillCode: endmillInfo.endmillCode,
-                              endmillName: endmillInfo.endmillName
+                              endmill_code: endmillInfo.endmillCode,
+                              endmill_name: endmillInfo.endmillName
                             }))
                           }
                         } else {
@@ -921,8 +923,8 @@ export default function ToolChangesPage() {
                 <input
                   type="number"
                   placeholder="2500"
-                  value={formData.actualToolLife}
-                  onChange={(e) => setFormData({...formData, actualToolLife: parseInt(e.target.value) || 0})}
+                  value={formData.tool_life}
+                  onChange={(e) => setFormData({...formData, tool_life: parseInt(e.target.value) || 0})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   min="0"
                   max="10000"
@@ -934,8 +936,8 @@ export default function ToolChangesPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.changeReason')}</label>
                 <select
-                  value={formData.changeReason}
-                  onChange={(e) => setFormData({...formData, changeReason: e.target.value})}
+                  value={formData.change_reason}
+                  onChange={(e) => setFormData({...formData, change_reason: e.target.value})}
                   className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
@@ -949,8 +951,8 @@ export default function ToolChangesPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.replacedBy')}</label>
                 <select
-                  value={formData.changedBy}
-                  onChange={(e) => setFormData({...formData, changedBy: e.target.value})}
+                  value={formData.changed_by}
+                  onChange={(e) => setFormData({...formData, changed_by: e.target.value})}
                   className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
@@ -1160,7 +1162,7 @@ export default function ToolChangesPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{change.user_profiles?.name || '-'}</div>
+                      <div className="text-sm text-gray-900">{change.user?.name || '-'}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getReasonBadge(change.change_reason || change.reason || '')}`}>
@@ -1312,10 +1314,11 @@ export default function ToolChangesPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editEquipmentNumber')}</label>
                     <input
                       type="text"
-                      value={editingItem.equipmentNumber}
+                      value={`C${editingItem.equipment_number.toString().padStart(3, '0')}`}
                       onChange={(e) => {
-                        const value = e.target.value.toUpperCase()
-                        setEditingItem({...editingItem, equipmentNumber: value})
+                        const value = e.target.value.toUpperCase().replace(/^C/, '')
+                        const numValue = parseInt(value) || 0
+                        setEditingItem({...editingItem, equipment_number: numValue})
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       pattern="C[0-9]{3}"
@@ -1328,10 +1331,10 @@ export default function ToolChangesPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editProductionModel')}</label>
                     <select
-                      value={editingItem.productionModel}
-                      onChange={(e) => setEditingItem({...editingItem, productionModel: e.target.value})}
+                      value={editingItem.production_model}
+                      onChange={(e) => setEditingItem({...editingItem, production_model: e.target.value})}
                       className={`w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        editingItem.equipmentNumber ? 'bg-blue-50' : ''
+                        editingItem.equipment_number ? 'bg-blue-50' : ''
                       }`}
                       required
                     >
@@ -1341,7 +1344,7 @@ export default function ToolChangesPage() {
                       ))}
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
-                      {editingItem.equipmentNumber ? t('toolChanges.autoFilledBasis') : t('toolChanges.camSheetModels')}
+                      {editingItem.equipment_number ? t('toolChanges.autoFilledBasis') : t('toolChanges.camSheetModels')}
                     </p>
                   </div>
 
@@ -1351,7 +1354,7 @@ export default function ToolChangesPage() {
                       value={editingItem.process}
                       onChange={(e) => setEditingItem({...editingItem, process: e.target.value})}
                       className={`w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        editingItem.equipmentNumber ? 'bg-blue-50' : ''
+                        editingItem.equipment_number ? 'bg-blue-50' : ''
                       }`}
                       required
                     >
@@ -1360,15 +1363,15 @@ export default function ToolChangesPage() {
                       <option value="CNC2-1">CNC2-1</option>
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
-                      {editingItem.equipmentNumber ? t('toolChanges.autoFilledBasis') : t('toolChanges.selectProcessOption')}
+                      {editingItem.equipment_number ? t('toolChanges.autoFilledBasis') : t('toolChanges.selectProcessOption')}
                     </p>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editTNumber')}</label>
                     <select
-                      value={editingItem.tNumber}
-                      onChange={(e) => setEditingItem({...editingItem, tNumber: parseInt(e.target.value)})}
+                      value={editingItem.t_number}
+                      onChange={(e) => setEditingItem({...editingItem, t_number: parseInt(e.target.value)})}
                       className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     >
@@ -1384,27 +1387,27 @@ export default function ToolChangesPage() {
                       <input
                         type="text"
                         placeholder={isEditManualEndmillInput ? t('toolChanges.endmillCodeInputPrompt') : t('toolChanges.endmillCodeAutoFill')}
-                        value={editingItem.endmillCode}
-                        onChange={(e) => isEditManualEndmillInput && setEditingItem({...editingItem, endmillCode: e.target.value})}
+                        value={editingItem.endmill_code || ''}
+                        onChange={(e) => isEditManualEndmillInput && setEditingItem({...editingItem, endmill_code: e.target.value})}
                         className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
                           isEditManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
                         }`}
                         readOnly={!isEditManualEndmillInput}
                         required
                       />
-                      {editingItem.productionModel && editingItem.process && editingItem.tNumber && (
+                      {editingItem.production_model && editingItem.process && editingItem.t_number && (
                         <button
                           type="button"
                           onClick={() => {
                             if (isEditManualEndmillInput) {
                               // 자동입력 모드로 전환하고 CAM SHEET 데이터로 자동 채우기
                               setIsEditManualEndmillInput(false)
-                              const endmillInfo = autoFillEndmillInfo(editingItem.productionModel, editingItem.process, editingItem.tNumber)
+                              const endmillInfo = autoFillEndmillInfo(editingItem.production_model, editingItem.process, editingItem.t_number)
                               if (endmillInfo) {
                                 setEditingItem(prev => prev ? ({
                                   ...prev,
-                                  endmillCode: endmillInfo.endmillCode,
-                                  endmillName: endmillInfo.endmillName
+                                  endmill_code: endmillInfo.endmillCode,
+                                  endmill_name: endmillInfo.endmillName
                                 }) : null)
                               }
                             } else {
@@ -1429,27 +1432,27 @@ export default function ToolChangesPage() {
                       <input
                         type="text"
                         placeholder={isEditManualEndmillInput ? t('toolChanges.endmillNameInputPrompt') : t('toolChanges.endmillNameAutoFill')}
-                        value={editingItem.endmillName}
-                        onChange={(e) => isEditManualEndmillInput && setEditingItem({...editingItem, endmillName: e.target.value})}
+                        value={editingItem.endmill_name || ''}
+                        onChange={(e) => isEditManualEndmillInput && setEditingItem({...editingItem, endmill_name: e.target.value})}
                         className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
                           isEditManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
                         }`}
                         readOnly={!isEditManualEndmillInput}
                         required
                       />
-                      {editingItem.productionModel && editingItem.process && editingItem.tNumber && (
+                      {editingItem.production_model && editingItem.process && editingItem.t_number && (
                         <button
                           type="button"
                           onClick={() => {
                             if (isEditManualEndmillInput) {
                               // 자동입력 모드로 전환하고 CAM SHEET 데이터로 자동 채우기
                               setIsEditManualEndmillInput(false)
-                              const endmillInfo = autoFillEndmillInfo(editingItem.productionModel, editingItem.process, editingItem.tNumber)
+                              const endmillInfo = autoFillEndmillInfo(editingItem.production_model, editingItem.process, editingItem.t_number)
                               if (endmillInfo) {
                                 setEditingItem(prev => prev ? ({
                                   ...prev,
-                                  endmillCode: endmillInfo.endmillCode,
-                                  endmillName: endmillInfo.endmillName
+                                  endmill_code: endmillInfo.endmillCode,
+                                  endmill_name: endmillInfo.endmillName
                                 }) : null)
                               }
                             } else {
@@ -1472,8 +1475,8 @@ export default function ToolChangesPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editToolLife')}</label>
                     <input
                       type="number"
-                      value={editingItem.toolLife || 0}
-                      onChange={(e) => setEditingItem({...editingItem, toolLife: parseInt(e.target.value) || 0})}
+                      value={editingItem.tool_life || 0}
+                      onChange={(e) => setEditingItem({...editingItem, tool_life: parseInt(e.target.value) || 0})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       min="0"
                       max="10000"
@@ -1484,8 +1487,8 @@ export default function ToolChangesPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.editChangeReason')}</label>
                     <select
-                      value={editingItem.changeReason}
-                      onChange={(e) => setEditingItem({...editingItem, changeReason: e.target.value})}
+                      value={editingItem.change_reason}
+                      onChange={(e) => setEditingItem({...editingItem, change_reason: e.target.value})}
                       className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     >

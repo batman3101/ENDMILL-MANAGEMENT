@@ -1408,25 +1408,25 @@ function UsersPageContent() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700">등록일</label>
                     <p className="mt-1 text-sm text-gray-900">
-                      {new Date(selectedUser.createdAt).toLocaleDateString('ko-KR', {
+                      {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString('ko-KR', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
-                      })}
+                      }) : '-'}
                     </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">최종 수정일</label>
                     <p className="mt-1 text-sm text-gray-900">
-                      {new Date(selectedUser.updatedAt).toLocaleDateString('ko-KR', {
+                      {selectedUser.updatedAt ? new Date(selectedUser.updatedAt).toLocaleDateString('ko-KR', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
-                      })}
+                      }) : '-'}
                     </p>
                   </div>
                   <div>

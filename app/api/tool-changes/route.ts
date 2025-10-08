@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { serverSupabaseService } from '../../../lib/services/supabaseService'
 import { z } from 'zod'
+import { logger } from '../../../lib/utils/logger'
 
 // 교체 실적 생성 스키마
 const createToolChangeSchema = z.object({
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     const sortField = searchParams.get('sort_field')
     const sortDirection = searchParams.get('sort_direction') as 'asc' | 'desc'
 
-    console.log('GET /api/tool-changes params:', {
+    logger.log('GET /api/tool-changes params:', {
       equipmentNumber,
       endmillType,
       searchTerm,
@@ -68,11 +69,11 @@ export async function GET(request: NextRequest) {
       totalCount: countResult || 0
     })
   } catch (error: any) {
-    console.error('Error fetching tool changes:', error)
-    console.error('Error details:', JSON.stringify(error, null, 2))
+    logger.error('Error fetching tool changes:', error)
+    logger.error('Error details:', JSON.stringify(error, null, 2))
     if (error instanceof Error) {
-      console.error('Error message:', error.message)
-      console.error('Error stack:', error.stack)
+      logger.error('Error message:', error.message)
+      logger.error('Error stack:', error.stack)
     }
     return NextResponse.json(
       {
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
       change_date: validatedData.change_date || new Date().toISOString().split('T')[0]
     }
 
-    console.log('Creating tool change with data:', JSON.stringify(toolChangeData, null, 2))
+    logger.log('Creating tool change with data:', JSON.stringify(toolChangeData, null, 2))
 
     // 새 교체 실적 생성
     const newToolChange = await serverSupabaseService.toolChange.create(toolChangeData)
@@ -138,8 +139,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.error('교체 실적 생성 API 에러:', JSON.stringify(error, null, 2))
-    console.error('에러 상세:', error)
+    logger.error('교체 실적 생성 API 에러:', JSON.stringify(error, null, 2))
+    logger.error('에러 상세:', error)
     return NextResponse.json(
       {
         success: false,
@@ -172,11 +173,11 @@ export async function PUT(request: NextRequest) {
       message: '교체 이력이 업데이트되었습니다.'
     })
   } catch (error: any) {
-    console.error('Error updating tool change:', error)
+    logger.error('Error updating tool change:', error)
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to update tool change' 
+      {
+        success: false,
+        error: 'Failed to update tool change'
       },
       { status: 500 }
     )
@@ -202,11 +203,11 @@ export async function DELETE(request: NextRequest) {
       message: '교체 이력이 삭제되었습니다.'
     })
   } catch (error: any) {
-    console.error('Error deleting tool change:', error)
+    logger.error('Error deleting tool change:', error)
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to delete tool change' 
+      {
+        success: false,
+        error: 'Failed to delete tool change'
       },
       { status: 500 }
     )

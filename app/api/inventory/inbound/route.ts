@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../../lib/supabase/client'
+import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
       .order('processed_at', { ascending: false })
 
     if (error) {
-      console.error('입고 내역 조회 오류:', error)
+      logger.error('입고 내역 조회 오류:', error)
       return NextResponse.json(
         { error: '입고 내역을 가져오는 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('입고 내역 조회 API 오류:', error)
+    logger.error('입고 내역 조회 API 오류:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (endmillError || !endmillType) {
-      console.error('앤드밀 타입 조회 오류:', endmillError)
+      logger.error('앤드밀 타입 조회 오류:', endmillError)
       return NextResponse.json(
         { error: '앤드밀 정보를 찾을 수 없습니다.' },
         { status: 404 }
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (createError) {
-        console.error('재고 정보 생성 오류:', createError)
+        logger.error('재고 정보 생성 오류:', createError)
         return NextResponse.json(
           { error: '재고 정보 생성 중 오류가 발생했습니다.' },
           { status: 500 }
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
 
       inventory = newInventory
     } else if (inventoryError) {
-      console.error('재고 정보 조회 오류:', inventoryError)
+      logger.error('재고 정보 조회 오류:', inventoryError)
       return NextResponse.json(
         { error: '재고 정보 조회 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (transactionError) {
-      console.error('입고 트랜잭션 생성 오류:', transactionError)
+      logger.error('입고 트랜잭션 생성 오류:', transactionError)
       return NextResponse.json(
         { error: '입고 처리 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -173,7 +174,7 @@ export async function POST(request: NextRequest) {
       .eq('id', inventory.id)
 
     if (updateError) {
-      console.error('재고 수량 업데이트 오류:', updateError)
+      logger.error('재고 수량 업데이트 오류:', updateError)
       return NextResponse.json(
         { error: '재고 수량 업데이트 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -187,7 +188,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('입고 처리 API 오류:', error)
+    logger.error('입고 처리 API 오류:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { clientSupabaseService } from '../services/supabaseService'
 import { Database } from '../types/database'
+import { clientLogger } from '../utils/logger'
 
 // Database 타입에서 가져오기
 type BaseEquipment = Database['public']['Tables']['equipment']['Row']
@@ -62,8 +63,8 @@ export const useEquipment = (filter?: EquipmentFilter) => {
   // 실시간 구독 설정
   useEffect(() => {
     const subscription = clientSupabaseService.equipment.subscribeToChanges((payload) => {
-      console.log('Equipment 실시간 업데이트:', payload)
-      
+      clientLogger.log('Equipment 실시간 업데이트:', payload)
+
       // React Query 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ['equipment'] })
     })
@@ -201,7 +202,7 @@ export const useEquipment = (filter?: EquipmentFilter) => {
   // 대량 설비 생성 (개발용) - 실제로는 API 호출하지 않음
   const generateEquipments = async (count: number = 800) => {
     // 실제 구현에서는 서버에서 대량 생성하거나 배치로 생성해야 함
-    console.log(`${count}대의 설비 생성은 서버에서 처리되어야 합니다.`)
+    clientLogger.log(`${count}대의 설비 생성은 서버에서 처리되어야 합니다.`)
     return []
   }
 

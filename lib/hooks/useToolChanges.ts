@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRealtime } from './useRealtime'
+import { clientLogger } from '../utils/logger'
 
 export interface ToolChangeFilters {
   equipmentNumber?: number
@@ -23,8 +24,8 @@ export interface ToolChange {
   process: string
   t_number: number
   endmill_type_id?: string
-  endmill_code: string
-  endmill_name: string
+  endmill_code: string | null
+  endmill_name: string | null
   change_date: string
   tool_life: number
   change_reason: string
@@ -147,7 +148,7 @@ export const useToolChanges = (
       setTotalCount(total || newData.length)
 
     } catch (err) {
-      console.error('Tool changes 조회 오류:', err)
+      clientLogger.error('Tool changes 조회 오류:', err)
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
@@ -220,7 +221,7 @@ export const useToolChanges = (
       setHasMore(newData.length === limit)
 
     } catch (err) {
-      console.error('Tool changes 추가 로드 오류:', err)
+      clientLogger.error('Tool changes 추가 로드 오류:', err)
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.')
     }
   }, [hasMore, isLoading, filters, toolChanges.length])
@@ -245,11 +246,11 @@ export const useToolChanges = (
     table: 'tool_changes',
     enabled: enableRealtime,
     onInsert: (payload) => {
-      console.log('New tool change:', payload.new)
+      clientLogger.log('New tool change:', payload.new)
       refreshData()
     },
     onUpdate: (payload) => {
-      console.log('Updated tool change:', payload.new)
+      clientLogger.log('Updated tool change:', payload.new)
       setToolChanges(prev =>
         prev.map(item =>
           item.id === payload.new.id ? { ...item, ...payload.new } : item
@@ -257,7 +258,7 @@ export const useToolChanges = (
       )
     },
     onDelete: (payload) => {
-      console.log('Deleted tool change:', payload.old)
+      clientLogger.log('Deleted tool change:', payload.old)
       setToolChanges(prev =>
         prev.filter(item => item.id !== payload.old.id)
       )

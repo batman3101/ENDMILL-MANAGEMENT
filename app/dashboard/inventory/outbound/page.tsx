@@ -9,6 +9,7 @@ import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/u
 import { useSettings } from '../../../../lib/hooks/useSettings'
 import { useTranslations } from '../../../../lib/hooks/useTranslations'
 import { supabase } from '../../../../lib/supabase/client'
+import { clientLogger } from '../../../../lib/utils/logger'
 
 // 앤드밀 데이터 타입 정의
 interface EndmillData {
@@ -68,7 +69,7 @@ export default function OutboundPage() {
         }
       }
     } catch (error) {
-      console.error('앤드밀 데이터 로드 오류:', error)
+      clientLogger.error('앤드밀 데이터 로드 오류:', error)
     }
   }
 
@@ -86,15 +87,15 @@ export default function OutboundPage() {
 
           // 2단계: model, process로 CAM sheet 조회해서 엔드밀 코드에 해당하는 T번호 찾기
           // CAM sheet의 모든 T번호를 확인해서 해당 엔드밀 코드와 매칭되는 것 찾기
-          for (let t = 1; t <= 24; t++) {
-            const endmillResponse = await fetch(`/api/tool-changes/auto-fill?model=${model}&process=${process}&tNumber=${t}`)
+          for (let tIndex = 1; tIndex <= 24; tIndex++) {
+            const endmillResponse = await fetch(`/api/tool-changes/auto-fill?model=${model}&process=${process}&tNumber=${tIndex}`)
             if (endmillResponse.ok) {
               const endmillResult = await endmillResponse.json()
               if (endmillResult.success && endmillResult.data.endmillInfo) {
                 const { endmillCode: foundEndmillCode } = endmillResult.data.endmillInfo
                 if (foundEndmillCode === endmillCode) {
-                  setTNumber(t)
-                  showSuccess(t('inventory.tNumberAutoInput'), `T${t.toString().padStart(2, '0')}${t('inventory.tNumberAutoInputSuccess')}`)
+                  setTNumber(tIndex)
+                  showSuccess(t('inventory.tNumberAutoInput'), `T${tIndex.toString().padStart(2, '0')}${t('inventory.tNumberAutoInputSuccess')}`)
                   return
                 }
               }
@@ -104,7 +105,7 @@ export default function OutboundPage() {
         }
       }
     } catch (error) {
-      console.error('T번호 자동 입력 오류:', error)
+      clientLogger.error('T번호 자동 입력 오류:', error)
     }
   }
 
@@ -135,7 +136,7 @@ export default function OutboundPage() {
           filter: 'transaction_type=eq.outbound'
         },
         (payload) => {
-          console.log('실시간 출고 업데이트:', payload)
+          clientLogger.log('실시간 출고 업데이트:', payload)
           loadOutboundHistory()
         }
       )
@@ -169,7 +170,7 @@ export default function OutboundPage() {
         }
       }
     } catch (error) {
-      console.error('출고 내역 로드 오류:', error)
+      clientLogger.error('출고 내역 로드 오류:', error)
     }
   }
 
@@ -205,7 +206,7 @@ export default function OutboundPage() {
         let lowestPrice = foundEndmill.unitCost || 0
         if (foundEndmill.suppliers && foundEndmill.suppliers.length > 0) {
           const prices = foundEndmill.suppliers.map((supplier: any) => supplier.unitPrice || 0)
-          lowestPrice = Math.min(...prices.filter(price => price > 0))
+          lowestPrice = Math.min(...prices.filter((price: number) => price > 0))
         }
 
         const endmillInfo: EndmillData = {
@@ -228,13 +229,13 @@ export default function OutboundPage() {
           autoFillTNumber(equipmentNumber, foundEndmill.code)
         }
       } catch (error) {
-        console.error('재고 정보 조회 오류:', error)
+        clientLogger.error('재고 정보 조회 오류:', error)
         // 재고 정보를 못 가져와도 기본 정보는 표시
         // 공급업체별 가격 중 최저가 계산 (에러 케이스)
         let lowestPrice = foundEndmill.unitCost || 0
         if (foundEndmill.suppliers && foundEndmill.suppliers.length > 0) {
           const prices = foundEndmill.suppliers.map((supplier: any) => supplier.unitPrice || 0)
-          lowestPrice = Math.min(...prices.filter(price => price > 0))
+          lowestPrice = Math.min(...prices.filter((price: number) => price > 0))
         }
 
         const endmillInfo: EndmillData = {
@@ -325,7 +326,7 @@ export default function OutboundPage() {
           showError(t('inventory.outboundProcessFailed'), result.error || t('inventory.outboundProcessError'))
         }
       } catch (error) {
-        console.error('출고 처리 오류:', error)
+        clientLogger.error('출고 처리 오류:', error)
         showError(t('inventory.outboundProcessFailed'), t('inventory.outboundProcessError'))
       } finally {
         confirmation.setLoading(false)
@@ -338,7 +339,7 @@ export default function OutboundPage() {
     const confirmed = await confirmation.showConfirmation({
       title: t('inventory.cancelOutbound'),
       message: t('inventory.cancelOutboundConfirm'),
-      type: 'danger',
+      type: 'warning',
       confirmText: t('common.cancel'),
       cancelText: t('inventory.keep')
     })
@@ -358,7 +359,7 @@ export default function OutboundPage() {
           showError(t('inventory.cancelOutboundFailed'), result.error || t('inventory.cancelOutboundError'))
         }
       } catch (error) {
-        console.error('출고 취소 오류:', error)
+        clientLogger.error('출고 취소 오류:', error)
         showError(t('inventory.cancelOutboundFailed'), t('inventory.cancelOutboundError'))
       }
     }
@@ -508,7 +509,7 @@ export default function OutboundPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.tNumberRequired')}</label>
                   <select
                     value={tNumber}
-                    onChange={(e) => setTNumber(parseInt(e.target.value))}
+                    onChange={(e) => setTNumber(parseInt(e.target.value) || 1)}
                     className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   >
@@ -525,7 +526,10 @@ export default function OutboundPage() {
                     min="1"
                     max={endmillData.currentStock}
                     value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value)
+                      setQuantity(isNaN(value) ? 1 : value)
+                    }}
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-lg ${
                       quantity > endmillData.currentStock ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}

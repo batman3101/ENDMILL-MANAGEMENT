@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
     const { data: { session }, error } = await supabase.auth.getSession()
 
     if (error) {
-      console.error('세션 조회 오류:', error)
+      logger.error('세션 조회 오류:', error)
       return NextResponse.json(
         {
           success: false,
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('사용자 정보 조회 API 오류:', error)
+    logger.error('사용자 정보 조회 API 오류:', error)
     return NextResponse.json(
       {
         success: false,

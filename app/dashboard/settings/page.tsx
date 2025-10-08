@@ -5,6 +5,7 @@ import { useSettings } from '../../../lib/hooks/useSettings'
 import { SettingsCategory } from '../../../lib/types/settings'
 import { useToast } from '../../../components/shared/Toast'
 import { AdminGuard } from '../../../components/auth/PermissionGuard'
+import { clientLogger } from '../../../lib/utils/logger'
 
 // 설정 탭 정의
 const SETTINGS_TABS = [
@@ -118,7 +119,10 @@ function SettingsPageContent() {
   const handleReset = async (category: SettingsCategory) => {
     try {
       await resetSettings(category, '관리자')
-      setFormData(prev => ({ ...prev, [category]: settings[category] }))
+      setFormData(prev => {
+        if (!prev || !settings) return prev
+        return { ...prev, [category]: settings[category] }
+      })
       showSuccess('초기화 완료', `${activeTabInfo?.name} 설정이 기본값으로 초기화되었습니다.`)
     } catch (err) {
       showError('초기화 실패', '설정 초기화 중 오류가 발생했습니다.')
@@ -127,13 +131,16 @@ function SettingsPageContent() {
 
   // 폼 데이터 업데이트
   const updateFormData = (category: SettingsCategory, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [field]: value
+    setFormData(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        [category]: {
+          ...prev[category],
+          [field]: value
+        }
       }
-    }))
+    })
   }
 
   // early return 제거 - JSX에서만 조건부 렌더링
@@ -1378,11 +1385,11 @@ function SettingsPageContent() {
                             기본 교대
                           </label>
                           <select
-                            value={formData.organization?.defaultShift || formData.organization?.shifts?.default || 'A'}
+                            value={formData.organization?.defaultShift || (formData.organization?.shifts as any)?.default || 'A'}
                             onChange={(e) => updateFormData('organization', 'defaultShift', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            {(Array.isArray(formData.organization?.shifts?.values) ? formData.organization.shifts.values : ['A', 'B']).map(shift => (
+                            {((Array.isArray(formData.organization?.shifts?.values) ? formData.organization.shifts.values : (Array.isArray(formData.organization?.shifts) ? formData.organization.shifts : ['A', 'B'])) as string[]).map((shift: string) => (
                               <option key={shift} value={shift}>
                                 {shift}교대
                               </option>
@@ -2078,7 +2085,7 @@ function SettingsPageContent() {
                               type="button"
                               onClick={() => {
                                 // 캐시 삭제 로직 (추후 구현)
-                                console.log('캐시 삭제')
+                                clientLogger.log('캐시 삭제')
                               }}
                               disabled={!formData.translations?.enabled || !formData.translations?.cacheEnabled}
                               className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -2310,7 +2317,7 @@ function SettingsPageContent() {
                             type="button"
                             onClick={() => {
                               // 번역 검증 로직 (추후 구현)
-                              console.log('번역 검증')
+                              clientLogger.log('번역 검증')
                             }}
                             disabled={!formData.translations?.enabled}
                             className="flex items-center justify-center px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -2322,7 +2329,7 @@ function SettingsPageContent() {
                             type="button"
                             onClick={() => {
                               // 번역 통계 보기 로직 (추후 구현)
-                              console.log('번역 통계')
+                              clientLogger.log('번역 통계')
                             }}
                             disabled={!formData.translations?.enabled}
                             className="flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -2334,7 +2341,7 @@ function SettingsPageContent() {
                             type="button"
                             onClick={() => {
                               // 누락된 번역 찾기 로직 (추후 구현)
-                              console.log('누락된 번역 찾기')
+                              clientLogger.log('누락된 번역 찾기')
                             }}
                             disabled={!formData.translations?.enabled}
                             className="flex items-center justify-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -2359,7 +2366,7 @@ function SettingsPageContent() {
                               onClick={() => {
                                 if (confirm('정말로 모든 번역 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
                                   // 번역 데이터 초기화 로직 (추후 구현)
-                                  console.log('번역 데이터 초기화')
+                                  clientLogger.log('번역 데이터 초기화')
                                 }
                               }}
                               disabled={!formData.translations?.enabled}

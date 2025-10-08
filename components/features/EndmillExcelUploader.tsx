@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import * as XLSX from 'xlsx'
 import { validateEndmillExcelData, convertToEndmillDBFormat } from '../../lib/utils/endmillExcelTemplate'
 import { useToast } from '../shared/Toast'
+import { clientLogger } from '@/lib/utils/logger'
 
 interface EndmillExcelUploaderProps {
   onUploadSuccess?: (data: any[]) => void
@@ -57,7 +58,7 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
         }
       }
     } catch (error) {
-      console.error('매핑 데이터 로드 실패:', error)
+      clientLogger.error('매핑 데이터 로드 실패:', error)
       showError(t('endmill.dataLoadFailed'), t('endmill.mappingDataLoadError'))
     }
   }
@@ -115,7 +116,7 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
         showWarning(t('endmill.warningsTitle'), `${validation.warnings.length}${t('endmill.warningsFound')}`)
       }
     } catch (error) {
-      console.error('파일 처리 오류:', error)
+      clientLogger.error('파일 처리 오류:', error)
       showError(t('endmill.fileProcessError'), t('endmill.excelProcessError'))
       setValidationResult(null)
     } finally {
@@ -158,7 +159,7 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
         throw new Error(result.error || t('common.unknownError'))
       }
     } catch (error) {
-      console.error('업로드 오류:', error)
+      clientLogger.error('업로드 오류:', error)
       showError(t('endmill.uploadFailed'), t('endmill.uploadError'))
     } finally {
       setLoading(false)

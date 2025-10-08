@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
 import { hasPermission } from '@/lib/auth/permissions'
+import { logger } from '@/lib/utils/logger'
 
 // GET /api/users/[id] - 특정 사용자 조회
 export async function GET(
@@ -51,7 +52,7 @@ export async function GET(
       .single()
 
     if (error || !profile) {
-      console.error('Error fetching user:', error)
+      logger.error('Error fetching user:', error)
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -74,7 +75,7 @@ export async function GET(
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in GET /api/users/[id]:', error)
+    logger.error('Unexpected error in GET /api/users/[id]:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
@@ -189,7 +190,7 @@ export async function PUT(
       .single()
 
     if (updateError) {
-      console.error('Error updating user profile:', updateError)
+      logger.error('Error updating user profile:', updateError)
       return NextResponse.json(
         { error: 'Failed to update user', details: updateError.message },
         { status: 500 }
@@ -204,7 +205,7 @@ export async function PUT(
       )
 
       if (emailUpdateError) {
-        console.warn('Failed to update email:', emailUpdateError)
+        logger.warn('Failed to update email:', emailUpdateError)
       }
     }
 
@@ -225,7 +226,7 @@ export async function PUT(
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in PUT /api/users/[id]:', error)
+    logger.error('Unexpected error in PUT /api/users/[id]:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
@@ -303,7 +304,7 @@ export async function DELETE(
       .eq('id', userId)
 
     if (deleteError) {
-      console.error('Error deleting user profile:', deleteError)
+      logger.error('Error deleting user profile:', deleteError)
       return NextResponse.json(
         { error: 'Failed to delete user', details: deleteError.message },
         { status: 500 }
@@ -317,7 +318,7 @@ export async function DELETE(
       )
 
       if (authDeleteError) {
-        console.warn('Failed to delete auth user:', authDeleteError)
+        logger.warn('Failed to delete auth user:', authDeleteError)
       }
     }
 
@@ -327,7 +328,7 @@ export async function DELETE(
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in DELETE /api/users/[id]:', error)
+    logger.error('Unexpected error in DELETE /api/users/[id]:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }

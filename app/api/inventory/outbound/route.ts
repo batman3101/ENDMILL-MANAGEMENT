@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '../../../../lib/supabase/client'
+import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
     const { data: transactions, error } = await query
 
     if (error) {
-      console.error('출고 내역 조회 오류:', error)
+      logger.error('출고 내역 조회 오류:', error)
       return NextResponse.json(
         { error: '출고 내역을 가져오는 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('출고 내역 조회 API 오류:', error)
+    logger.error('출고 내역 조회 API 오류:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -164,7 +165,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (transactionError) {
-      console.error('출고 트랜잭션 생성 오류:', transactionError)
+      logger.error('출고 트랜잭션 생성 오류:', transactionError)
       return NextResponse.json(
         { error: '출고 처리 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -181,7 +182,7 @@ export async function POST(request: NextRequest) {
       .eq('id', inventory.id)
 
     if (updateError) {
-      console.error('재고 업데이트 오류:', updateError)
+      logger.error('재고 업데이트 오류:', updateError)
       // 트랜잭션 롤백 시도
       await supabase
         .from('inventory_transactions')
@@ -226,7 +227,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('출고 처리 API 오류:', error)
+    logger.error('출고 처리 API 오류:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -301,7 +302,7 @@ export async function DELETE(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('출고 취소 API 오류:', error)
+    logger.error('출고 취소 API 오류:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

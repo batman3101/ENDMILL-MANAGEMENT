@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clientSupabaseService } from '../services/supabaseService'
-import { User, UserRole, UserStats, UserFilter } from '../types/users'
+import { User, UserRole, UserStats, UserFilter, ModulePermissions } from '../types/users'
 import { useRealtime } from './useRealtime'
 import { logger } from '@/lib/utils/logger'
 
@@ -102,7 +102,7 @@ export const useUsers = () => {
     name: role.name,
     type: role.type,
     description: role.description || '',
-    permissions: role.permissions || {},
+    permissions: (role.permissions || {}) as unknown as ModulePermissions,
     isSystemRole: true,
     isActive: role.is_active ?? true,
     createdAt: role.created_at,
@@ -215,7 +215,7 @@ export const useUsers = () => {
           employee_id: userData.employeeId,
           department: userData.department,
           position: userData.position,
-          shift: userData.shift,
+          shift: userData.shift as "A" | "B" | "C",
           role_id: userData.roleId,
           phone: userData.phone,
           is_active: userData.isActive ?? true

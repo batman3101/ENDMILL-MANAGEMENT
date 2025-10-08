@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '../../../../lib/supabase/client'
+import { logger } from '@/lib/utils/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (duplicateError && duplicateError.code !== 'PGRST116') {
-      console.error('중복 검사 오류:', duplicateError)
+      logger.error('중복 검사 오류:', duplicateError)
       return NextResponse.json(
         { error: '중복 검사 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (categoryError || !category) {
-      console.error('카테고리 조회 오류:', categoryError)
+      logger.error('카테고리 조회 오류:', categoryError)
       return NextResponse.json(
         { error: '유효하지 않은 카테고리입니다.' },
         { status: 400 }
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (insertError) {
-      console.error('엔드밀 등록 오류:', insertError)
+      logger.error('엔드밀 등록 오류:', insertError)
       return NextResponse.json(
         { error: '엔드밀 등록 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
       .insert(inventoryData)
 
     if (inventoryError) {
-      console.warn('인벤토리 생성 경고:', inventoryError)
+      logger.warn('인벤토리 생성 경고:', inventoryError)
       // 인벤토리 생성 실패는 경고로만 처리
     }
 
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
         .insert(priceData)
 
       if (priceError) {
-        console.warn('공급업체 가격 정보 저장 경고:', priceError)
+        logger.warn('공급업체 가격 정보 저장 경고:', priceError)
         // 가격 정보 저장 실패는 경고로만 처리
       }
     }
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
               .single()
 
             if (camSheetError) {
-              console.warn('CAM Sheet 생성 경고:', camSheetError)
+              logger.warn('CAM Sheet 생성 경고:', camSheetError)
               continue
             }
             camSheetDbId = newCamSheet.id
@@ -171,10 +172,10 @@ export async function POST(request: NextRequest) {
             })
 
           if (camEndmillError) {
-            console.warn('CAM Sheet Endmill 매핑 생성 경고:', camEndmillError)
+            logger.warn('CAM Sheet Endmill 매핑 생성 경고:', camEndmillError)
           }
         } catch (camError) {
-          console.warn('CAM Sheet 처리 오류:', camError)
+          logger.warn('CAM Sheet 처리 오류:', camError)
           // CAM Sheet 오류는 전체 프로세스를 중단시키지 않음
         }
       }
@@ -187,7 +188,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('엔드밀 생성 API 오류:', error)
+    logger.error('엔드밀 생성 API 오류:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

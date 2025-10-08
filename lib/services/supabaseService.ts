@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '../types/database'
+import { logger } from '../utils/logger'
 
 // Supabase 클라이언트 타입
 type SupabaseClient = ReturnType<typeof createClient<Database>>
@@ -462,7 +463,7 @@ export class ToolChangeService {
 
   // 교체 이력 생성
   async create(toolChange: Database['public']['Tables']['tool_changes']['Insert']) {
-    console.log('ToolChangeService.create called with:', JSON.stringify(toolChange, null, 2))
+    logger.log('ToolChangeService.create called with:', JSON.stringify(toolChange, null, 2))
 
     const { data, error } = await this.supabase
       .from('tool_changes')
@@ -471,12 +472,12 @@ export class ToolChangeService {
       .single()
 
     if (error) {
-      console.error('Supabase insert error:', error)
-      console.error('Error details:', JSON.stringify(error, null, 2))
+      logger.error('Supabase insert error:', error)
+      logger.error('Error details:', JSON.stringify(error, null, 2))
       throw error
     }
 
-    console.log('Tool change created successfully:', data)
+    logger.log('Tool change created successfully:', data)
     return data
   }
 
@@ -949,7 +950,7 @@ export class AuthService {
     role_id: string
     phone?: string
   }) {
-    console.log('🔄 Creating auth user and profile:', { email, userProfileData })
+    logger.log('🔄 Creating auth user and profile:', { email, userProfileData })
 
     // 1. Supabase Auth에 사용자 생성
     const { data: authData, error: authError } = await this.supabase.auth.signUp({
@@ -964,7 +965,7 @@ export class AuthService {
     })
 
     if (authError) {
-      console.error('❌ Auth signup error:', authError)
+      logger.error('❌ Auth signup error:', authError)
       throw authError
     }
 
@@ -972,14 +973,15 @@ export class AuthService {
       throw new Error('회원가입 실패: 사용자 생성 안됨')
     }
 
-    console.log('✅ Auth user created:', authData.user.id)
+    logger.log('✅ Auth user created:', authData.user.id)
 
     // 2. user_profiles 테이블에 프로필 생성
-    const { data: profileData, error: profileError } = await this.supabase
+    const { data: profileData, error: profileError} = await this.supabase
       .from('user_profiles')
       .insert({
         user_id: authData.user.id,
-        ...userProfileData
+        ...userProfileData,
+        shift: userProfileData.shift as "A" | "B" | "C"
       })
       .select(`
         *,
@@ -988,12 +990,12 @@ export class AuthService {
       .single()
 
     if (profileError) {
-      console.error('❌ Profile creation error:', profileError)
+      logger.error('❌ Profile creation error:', profileError)
       // 프로필 생성 실패 시 auth 사용자는 이미 생성되었으므로 에러만 던짐
       throw profileError
     }
 
-    console.log('✅ User profile created:', profileData)
+    logger.log('✅ User profile created:', profileData)
 
     return {
       user: authData.user,

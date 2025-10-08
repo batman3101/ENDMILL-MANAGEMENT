@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('❌ 환경변수 누락:', {
+      logger.error('❌ 환경변수 누락:', {
         url: !!supabaseUrl,
         key: !!supabaseServiceKey
       })

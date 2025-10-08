@@ -6,6 +6,7 @@ import { useToast } from '../shared/Toast'
 import AddSupplierPriceModal from './AddSupplierPriceModal'
 import EditSupplierPriceModal from './EditSupplierPriceModal'
 import { supabase } from '../../lib/supabase/client'
+import { clientLogger } from '../../lib/utils/logger'
 
 interface SupplierPrice {
   id: string
@@ -50,7 +51,7 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
         throw new Error(result.error || t('endmill.dataLoadFailed'))
       }
     } catch (error) {
-      console.error('공급업체별 가격 로드 오류:', error)
+      clientLogger.error('공급업체별 가격 로드 오류:', error)
       showError(t('endmill.dataLoadFailed'), t('endmill.supplierPricesLoadError'))
     } finally {
       setLoading(false)
@@ -73,7 +74,7 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
             filter: `endmill_type_id=eq.${endmillId}`
           },
           (payload) => {
-            console.log('실시간 데이터 변경 감지:', payload)
+            clientLogger.log('실시간 데이터 변경 감지:', payload)
             // 데이터가 변경되면 다시 로드
             loadSupplierPrices()
           }
@@ -129,7 +130,7 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
         throw new Error(result.error || t('endmill.deleteFailed'))
       }
     } catch (error) {
-      console.error('가격 정보 삭제 오류:', error)
+      clientLogger.error('가격 정보 삭제 오류:', error)
       showError(t('endmill.deleteFailed'), t('endmill.deleteFailedMessage'))
     }
   }

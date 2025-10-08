@@ -7,6 +7,7 @@ import { useTranslation } from '../../lib/hooks/useTranslations'
 import { useAuth } from '../../lib/hooks/useAuth'
 import { usePermissions } from '../../lib/hooks/usePermissions'
 import Breadcrumb from '../../components/shared/Breadcrumb'
+import { clientLogger } from '@/lib/utils/logger'
 
 export default function DashboardLayout({
   children,
@@ -42,7 +43,7 @@ export default function DashboardLayout({
       await signOut()
       router.push('/login')
     } catch (error) {
-      console.error('Logout error:', error)
+      clientLogger.error('Logout error:', error)
     }
   }
 

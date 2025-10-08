@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { clientLogger } from '@/lib/utils/logger'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -38,7 +39,7 @@ export default function ForgotPasswordPage() {
         setIsSubmitted(true)
       }
     } catch (error) {
-      console.error('비밀번호 재설정 오류:', error)
+      clientLogger.error('비밀번호 재설정 오류:', error)
       setError('비밀번호 재설정 요청 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)

@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { Database } from '../../../../lib/types/database'
 import { z } from 'zod'
 import { cookies } from 'next/headers'
+import { logger } from '../../../../lib/utils/logger'
 
 // 로그인 요청 스키마
 const loginSchema = z.object({
@@ -56,8 +57,8 @@ export async function POST(request: NextRequest) {
     })
 
     if (error) {
-      console.error('로그인 오류:', error)
-      
+      logger.error('로그인 오류:', error)
+
       let errorMessage = '로그인에 실패했습니다.'
       if (error.message.includes('Invalid login credentials')) {
         errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.'
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (profileError && profileError.code !== 'PGRST116') {
-      console.error('프로필 조회 오류:', profileError)
+      logger.error('프로필 조회 오류:', profileError)
     }
 
     const userInfo = {
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
       language: 'ko',
     }
 
-    console.log('✅ 로그인 성공:', {
+    logger.log('✅ 로그인 성공:', {
       id: userInfo.id,
       email: userInfo.email,
       name: userInfo.name,
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
 
     return response
   } catch (error) {
-    console.error('로그인 API 오류:', error)
+    logger.error('로그인 API 오류:', error)
     return NextResponse.json(
       {
         success: false,

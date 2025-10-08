@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { clientLogger } from '@/lib/utils/logger'
 
 function ResetPasswordForm() {
   const [password, setPassword] = useState('')
@@ -31,7 +32,7 @@ function ResetPasswordForm() {
           setIsValidSession(true)
         }
       } catch (error) {
-        console.error('세션 확인 오류:', error)
+        clientLogger.error('세션 확인 오류:', error)
         setIsValidSession(false)
       } finally {
         setCheckingSession(false)
@@ -88,7 +89,7 @@ function ResetPasswordForm() {
         }, 3000)
       }
     } catch (error) {
-      console.error('비밀번호 변경 오류:', error)
+      clientLogger.error('비밀번호 변경 오류:', error)
       setError('비밀번호 변경 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)

@@ -7,6 +7,7 @@ import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
 import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
 import { useTranslations } from '../../../../lib/hooks/useTranslations'
 import { supabase } from '../../../../lib/supabase/client'
+import { clientLogger } from '../../../../lib/utils/logger'
 
 // 앤드밀 데이터 타입 정의
 interface EndmillData {
@@ -57,7 +58,7 @@ export default function InboundPage() {
         }
       }
     } catch (error) {
-      console.error('입고 내역 로드 오류:', error)
+      clientLogger.error('입고 내역 로드 오류:', error)
     }
   }
 
@@ -79,7 +80,7 @@ export default function InboundPage() {
           filter: 'transaction_type=eq.inbound'
         },
         (payload) => {
-          console.log('Inventory transaction change:', payload)
+          clientLogger.log('Inventory transaction change:', payload)
           // 입고 내역 새로고침
           loadInboundItems()
         }
@@ -101,7 +102,7 @@ export default function InboundPage() {
         }
       }
     } catch (error) {
-      console.error('앤드밀 마스터 데이터 로드 오류:', error)
+      clientLogger.error('앤드밀 마스터 데이터 로드 오류:', error)
     }
   }
 
@@ -115,7 +116,7 @@ export default function InboundPage() {
         }
       }
     } catch (error) {
-      console.error('공급업체 데이터 로드 오류:', error)
+      clientLogger.error('공급업체 데이터 로드 오류:', error)
     }
   }
 
@@ -139,7 +140,7 @@ export default function InboundPage() {
         }
       }
     } catch (error) {
-      console.error('공급업체 가격 로드 오류:', error)
+      clientLogger.error('공급업체 가격 로드 오류:', error)
     }
     return {}
   }
@@ -172,7 +173,7 @@ export default function InboundPage() {
 
       // 해당 앤드밀의 공급업체별 가격 로드
       const prices = await loadSupplierPrices(foundEndmill.code)
-      console.log('Prices loaded for', foundEndmill.code, ':', prices)
+      clientLogger.log('Prices loaded for', foundEndmill.code, ':', prices)
 
       showSuccess(t('inventory.searchComplete'), `${t('inventory.infoLoaded')}: ${foundEndmill.code}`)
     } else {
@@ -242,7 +243,7 @@ export default function InboundPage() {
           throw new Error(result.error || t('inventory.inboundProcessFailed'))
         }
       } catch (error) {
-        console.error('입고 처리 오류:', error)
+        clientLogger.error('입고 처리 오류:', error)
         showError(t('inventory.inboundProcessFailed'), t('inventory.inboundProcessError'))
       } finally {
         confirmation.setLoading(false)

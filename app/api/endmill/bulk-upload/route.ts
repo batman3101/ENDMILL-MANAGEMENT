@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('엔드밀 일괄 등록 API 오류:', error)
+    logger.error('엔드밀 일괄 등록 API 오류:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -282,7 +282,7 @@ async function upsertEndmillTypes(supabase: any, endmillTypesMap: Map<string, an
     .select()
 
   if (error) {
-    console.error('엔드밀 타입 UPSERT 오류:', error)
+    logger.error('엔드밀 타입 UPSERT 오류:', error)
     throw new Error('엔드밀 타입 저장 중 오류가 발생했습니다.')
   }
 
@@ -318,7 +318,7 @@ async function ensureCamSheets(supabase: any, camSheetsMap: Map<string, any>) {
         .single()
 
       if (error) {
-        console.warn('CAM Sheet 생성 오류:', error)
+        logger.warn('CAM Sheet 생성 오류:', error)
       } else {
         results.push(newCamSheet)
       }
@@ -348,7 +348,7 @@ async function upsertSupplierPrices(
     .filter((item, index) => {
       const isValid = item.endmill_type_id && item.supplier_id
       if (!isValid) {
-        console.warn(`Invalid supplier price mapping for item ${index}:`, item)
+        logger.warn(`Invalid supplier price mapping for item ${index}:`, item)
       }
       return isValid
     })
@@ -366,7 +366,7 @@ async function upsertSupplierPrices(
     .select()
 
   if (error) {
-    console.warn('공급업체 가격 UPSERT 오류:', error)
+    logger.warn('공급업체 가격 UPSERT 오류:', error)
     return []
   }
 
@@ -406,7 +406,7 @@ async function upsertCamSheetEndmills(
     .select()
 
   if (error) {
-    console.warn('CAM Sheet 엔드밀 매핑 UPSERT 오류:', error)
+    logger.warn('CAM Sheet 엔드밀 매핑 UPSERT 오류:', error)
     return []
   }
 
@@ -439,7 +439,7 @@ async function createInventoryForNewEndmills(supabase: any, endmills: any[]) {
       .insert(newInventoryData)
 
     if (error) {
-      console.warn('인벤토리 생성 오류:', error)
+      logger.warn('인벤토리 생성 오류:', error)
     }
   }
 }

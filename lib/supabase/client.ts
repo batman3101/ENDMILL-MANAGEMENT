@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/database';
+import { logger } from '../utils/logger';
 
 // 환경변수를 안전하게 가져오는 함수
 const getSupabaseUrl = (): string => {
@@ -32,12 +33,10 @@ const supabaseUrl = getSupabaseUrl();
 const supabaseAnonKey = getSupabaseAnonKey();
 
 // 개발 환경에서만 환경변수 상태 로그 (민감한 정보 제외)
-if (process.env.NODE_ENV === 'development') {
-  console.log('🔍 Supabase 연결 확인:', {
-    url: supabaseUrl ? '✅ 설정됨' : '❌ 없음',
-    key: supabaseAnonKey ? '✅ 설정됨' : '❌ 없음',
-  });
-}
+logger.log('🔍 Supabase 연결 확인:', {
+  url: supabaseUrl ? '✅ 설정됨' : '❌ 없음',
+  key: supabaseAnonKey ? '✅ 설정됨' : '❌ 없음',
+});
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {

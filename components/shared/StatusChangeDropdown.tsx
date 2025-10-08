@@ -18,10 +18,10 @@ interface StatusTransition {
 }
 
 interface StatusChangeDropdownProps {
-  currentStatus: EquipmentStatus
+  currentStatus: EquipmentStatus | string
   equipmentId: string
   equipmentNumber: string
-  onStatusChange: (equipmentId: string, newStatus: EquipmentStatus) => void
+  onStatusChange: (equipmentId: string, newStatus: string) => void
 }
 
 export default function StatusChangeDropdown({
@@ -35,7 +35,7 @@ export default function StatusChangeDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // 현재 상태의 스타일을 반환하는 함수 (설비 페이지 배지 색상과 매칭)
-  const getCurrentStatusStyle = (status: EquipmentStatus) => {
+  const getCurrentStatusStyle = (status: EquipmentStatus | string) => {
     switch (status) {
       case '가동중':
         return {
@@ -65,8 +65,8 @@ export default function StatusChangeDropdown({
   }
 
   // 상태별 전환 가능한 옵션들을 반환하는 함수
-  const getAvailableTransitions = (current: EquipmentStatus): StatusTransition[] => {
-    const allTransitions: Record<EquipmentStatus, StatusTransition[]> = {
+  const getAvailableTransitions = (current: EquipmentStatus | string): StatusTransition[] => {
+    const allTransitions: Record<string, StatusTransition[]> = {
       '가동중': [
         {
           status: '점검중',
@@ -152,7 +152,13 @@ export default function StatusChangeDropdown({
     }
   }, [])
 
-  const currentStyle = getCurrentStatusStyle(currentStatus)
+  const currentStyle = getCurrentStatusStyle(currentStatus) || {
+    icon: '🔵',
+    color: 'text-gray-800',
+    bgColor: 'bg-gray-100',
+    borderColor: 'border-gray-200',
+    hoverColor: 'hover:bg-gray-200'
+  }
   const availableTransitions = getAvailableTransitions(currentStatus)
 
   return (

@@ -20,11 +20,11 @@ export async function GET(request: NextRequest) {
       data: camSheets
     })
   } catch (error) {
-    console.error('Error fetching CAM sheets:', error)
+    logger.error('Error fetching CAM sheets:', error)
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch CAM sheets' 
+      {
+        success: false,
+        error: 'Failed to fetch CAM sheets'
       },
       { status: 500 }
     )
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       })
     }
   } catch (error) {
-    console.error('Error creating CAM sheet:', error)
+    logger.error('Error creating CAM sheet:', error)
     return NextResponse.json(
       {
         success: false,
@@ -109,7 +109,7 @@ async function createCAMSheetWithEndmills(data: any) {
           if (!findError) {
             endmillType = foundEndmill
           } else if (findError.code !== 'PGRST116') {
-            console.warn('엔드밀 타입 검색 오류:', findError)
+            logger.warn('엔드밀 타입 검색 오류:', findError)
           }
         }
 
@@ -128,7 +128,7 @@ async function createCAMSheetWithEndmills(data: any) {
 
         await serverSupabaseService.camSheet.addEndmill(camSheetEndmillData)
       } catch (endmillError) {
-        console.warn(`엔드밀 ${endmill.endmillCode} 추가 실패:`, endmillError)
+        logger.warn(`엔드밀 ${endmill.endmillCode} 추가 실패:`, endmillError)
       }
     }
   }
@@ -145,7 +145,7 @@ async function createCAMSheetWithEndmills(data: any) {
     .single()
 
   if (fetchError) {
-    console.warn('전체 데이터 조회 오류:', fetchError)
+    logger.warn('전체 데이터 조회 오류:', fetchError)
     return newCAMSheet
   }
 
@@ -188,7 +188,7 @@ export async function PUT(request: NextRequest) {
         .eq('cam_sheet_id', id)
 
       if (deleteError) {
-        console.warn('기존 엔드밀 삭제 오류:', deleteError)
+        logger.warn('기존 엔드밀 삭제 오류:', deleteError)
       }
 
       // 새로운 엔드밀 데이터 추가
@@ -209,7 +209,7 @@ export async function PUT(request: NextRequest) {
             if (!findError) {
               endmillType = foundEndmill
             } else if (findError.code !== 'PGRST116') {
-              console.warn('엔드밀 타입 검색 오류:', findError)
+              logger.warn('엔드밀 타입 검색 오류:', findError)
             }
           }
 
@@ -227,7 +227,7 @@ export async function PUT(request: NextRequest) {
 
           await serverSupabaseService.camSheet.addEndmill(camSheetEndmillData)
         } catch (endmillError) {
-          console.warn(`엔드밀 ${endmill.endmillCode} 추가 실패:`, endmillError)
+          logger.warn(`엔드밀 ${endmill.endmillCode} 추가 실패:`, endmillError)
         }
       }
     }
@@ -244,7 +244,7 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (fetchError) {
-      console.warn('전체 데이터 조회 오류:', fetchError)
+      logger.warn('전체 데이터 조회 오류:', fetchError)
       return NextResponse.json({
         success: true,
         data: updatedCAMSheet,
@@ -258,7 +258,7 @@ export async function PUT(request: NextRequest) {
       message: 'CAM Sheet가 업데이트되었습니다.'
     })
   } catch (error) {
-    console.error('Error updating CAM sheet:', error)
+    logger.error('Error updating CAM sheet:', error)
     return NextResponse.json(
       {
         success: false,
@@ -288,11 +288,11 @@ export async function DELETE(request: NextRequest) {
       message: 'CAM Sheet가 삭제되었습니다.'
     })
   } catch (error) {
-    console.error('Error deleting CAM sheet:', error)
+    logger.error('Error deleting CAM sheet:', error)
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to delete CAM sheet' 
+      {
+        success: false,
+        error: 'Failed to delete CAM sheet'
       },
       { status: 500 }
     )

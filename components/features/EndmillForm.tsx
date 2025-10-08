@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../shared/Toast'
+import { clientLogger } from '@/lib/utils/logger'
 
 interface EndmillFormData {
   code: string
@@ -77,7 +78,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
           setSuppliers(supplierResult.data)
         }
       } catch (error) {
-        console.error('초기 데이터 로드 오류:', error)
+        clientLogger.error('초기 데이터 로드 오류:', error)
       }
     }
     loadInitialData()
@@ -207,7 +208,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
         throw new Error(result.error || t('endmill.registerFailed'))
       }
     } catch (error) {
-      console.error('엔드밀 등록 오류:', error)
+      clientLogger.error('엔드밀 등록 오류:', error)
       const errorMessage = error instanceof Error ? error.message : t('endmill.registerError')
       showError(t('endmill.registerFailed'), errorMessage)
     } finally {

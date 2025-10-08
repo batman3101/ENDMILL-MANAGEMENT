@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { serverSupabaseService } from '../../../lib/services/supabaseService';
 import { z } from 'zod';
+import { logger } from '@/lib/utils/logger';
 
 // 재고 업데이트 스키마
 const updateInventorySchema = z.object({
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('재고 API 에러:', error);
+    logger.error('재고 API 에러:', error);
     return NextResponse.json(
       {
         success: false,
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.error('재고 생성 API 에러:', error);
+    logger.error('재고 생성 API 에러:', error);
     return NextResponse.json(
       {
         success: false,
@@ -178,7 +179,7 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    console.error('재고 업데이트 API 에러:', error);
+    logger.error('재고 업데이트 API 에러:', error);
     return NextResponse.json(
       {
         success: false,

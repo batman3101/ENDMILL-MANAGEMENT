@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { supabase } from '../supabase/client'
 import { useToast } from '../../components/shared/Toast'
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
+import { clientLogger } from '../utils/logger'
 
 // 사용자 타입 정의
 interface User {
@@ -50,12 +51,12 @@ export function AuthProvider(props: { children: ReactNode }) {
     try {
       const { data, error } = await supabase.auth.refreshSession()
       if (error) {
-        console.error('세션 새로고침 오류:', error) // 에러는 유지
+        clientLogger.error('세션 새로고침 오류:', error)
       } else if (data.session) {
         setSession(data.session)
       }
     } catch (error) {
-      console.error('세션 새로고침 오류:', error) // 에러는 유지
+      clientLogger.error('세션 새로고침 오류:', error)
     }
   }, [])
 
@@ -63,18 +64,18 @@ export function AuthProvider(props: { children: ReactNode }) {
   const signOut = React.useCallback(async (): Promise<void> => {
     try {
       setLoading(true)
-      
+
       const { error } = await supabase.auth.signOut()
-      
+
       if (error) {
-        console.error('Supabase 로그아웃 오류:', error) // 에러는 유지
+        clientLogger.error('Supabase 로그아웃 오류:', error)
       }
 
       setUser(null)
       setSession(null)
       showSuccess('로그아웃 완료', '안전하게 로그아웃되었습니다.')
     } catch (error) {
-      console.error('로그아웃 오류:', error) // 에러는 유지
+      clientLogger.error('로그아웃 오류:', error)
       showError('로그아웃 실패', '로그아웃 중 오류가 발생했습니다.')
     } finally {
        setLoading(false)
@@ -174,17 +175,17 @@ export function AuthProvider(props: { children: ReactNode }) {
     // 초기 세션 상태 확인
     const checkSession = async () => {
       try {
-        console.log('🔍 Supabase 세션 확인 시작...')
+        clientLogger.log('🔍 Supabase 세션 확인 시작...')
         const { data: { session }, error } = await supabase.auth.getSession()
 
         if (!mounted) return
 
         if (error) {
-          console.error('세션 확인 오류:', error)
+          clientLogger.error('세션 확인 오류:', error)
           setUser(null)
           setSession(null)
         } else if (session?.user) {
-          console.log('✅ Supabase 세션 발견:', session.user.email)
+          clientLogger.log('✅ Supabase 세션 발견:', session.user.email)
           setSession(session)
 
           // user_profiles 테이블에서 사용자 프로필 정보 조회
@@ -195,7 +196,7 @@ export function AuthProvider(props: { children: ReactNode }) {
             .single()
 
           if (userError) {
-            console.error('사용자 정보 조회 오류:', userError)
+            clientLogger.error('사용자 정보 조회 오류:', userError)
           }
 
           const userProfile = {
@@ -210,19 +211,19 @@ export function AuthProvider(props: { children: ReactNode }) {
           }
           setUser(userProfile)
         } else {
-          console.log('❌ 세션 없음')
+          clientLogger.log('❌ 세션 없음')
           setUser(null)
           setSession(null)
         }
       } catch (error) {
-        console.error('세션 확인 오류:', error)
+        clientLogger.error('세션 확인 오류:', error)
         if (mounted) {
           setUser(null)
           setSession(null)
         }
       } finally {
         if (mounted) {
-          console.log('✅ 세션 확인 완료, loading 해제')
+          clientLogger.log('✅ 세션 확인 완료, loading 해제')
           setLoading(false)
         }
       }
@@ -233,9 +234,7 @@ export function AuthProvider(props: { children: ReactNode }) {
     // 인증 상태 변경 리스너
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔄 Auth state changed:', event, session?.user?.email)
-        }
+        clientLogger.log('🔄 Auth state changed:', event, session?.user?.email)
         
         if (!mounted) return
         
@@ -299,7 +298,7 @@ export function AuthProvider(props: { children: ReactNode }) {
         return { success: false, error: result.error }
       }
     } catch (error) {
-      console.error('로그인 오류:', error)
+      clientLogger.error('로그인 오류:', error)
       const errorMessage = '로그인 중 오류가 발생했습니다.'
       showError('로그인 실패', errorMessage)
       return { success: false, error: errorMessage }

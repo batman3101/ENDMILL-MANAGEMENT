@@ -90,8 +90,8 @@ export async function withAuth(
           employee_id: profile.employee_id,
           department: profile.department,
           position: profile.position,
-          role_id: profile.role_id,
-          user_id: profile.user_id,
+          role_id: profile.role_id || '',
+          user_id: profile.user_id || '',
           is_active: profile.is_active
         },
         role: {

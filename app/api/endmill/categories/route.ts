@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '../../../../lib/types/database'
+import { logger } from '@/lib/utils/logger'
 
 // Supabase 클라이언트 생성
 const supabase = createClient<Database>(
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
       .order('code')
 
     if (error) {
-      console.error('Error fetching endmill categories:', error)
+      logger.error('Error fetching endmill categories:', error)
       return NextResponse.json(
         {
           success: false,
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
       data: data || []
     })
   } catch (error) {
-    console.error('Error in endmill categories API:', error)
+    logger.error('Error in endmill categories API:', error)
     return NextResponse.json(
       {
         success: false,

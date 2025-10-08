@@ -12,6 +12,7 @@ import {
   maxBy,
   minBy
 } from '../../../../lib/utils/reportCalculations'
+import { logger } from '../../../../lib/utils/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
     const { data: toolChanges, error: tcError } = await tcQuery
 
     if (tcError) {
-      console.error('tool_changes 조회 오류:', tcError)
+      logger.error('tool_changes 조회 오류:', tcError)
       return NextResponse.json({ error: 'Failed to fetch tool changes', details: tcError }, { status: 500 })
     }
 
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
       `)
 
     if (etError) {
-      console.error('endmill_types 조회 오류:', etError)
+      logger.error('endmill_types 조회 오류:', etError)
     }
 
     // 3. 데이터 병합
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (filteredChanges.length === 0) {
-      console.log('데이터가 없습니다. 필터:', filter)
+      logger.log('데이터가 없습니다. 필터:', filter)
       return NextResponse.json({
         error: 'No data found for the specified filter',
         filter,
@@ -319,7 +320,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(reportData)
   } catch (error) {
-    console.error('Tool Life 분석 생성 오류:', error)
+    logger.error('Tool Life 분석 생성 오류:', error)
     return NextResponse.json(
       { error: 'Failed to generate tool life analysis' },
       { status: 500 }

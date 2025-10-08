@@ -1,0 +1,216 @@
+app/dashboard/cam-sheets/page.tsx(781,19): error TS2322: Type '(field: "model" | "process" | "cam_version" | "endmillCount" | "updated_at") => void' is not assignable to type '(field: string) => void'.
+  Types of parameters 'field' and 'field' are incompatible.
+    Type 'string' is not assignable to type '"cam_version" | "model" | "process" | "updated_at" | "endmillCount"'.
+app/dashboard/cam-sheets/page.tsx(788,19): error TS2322: Type '(field: "model" | "process" | "cam_version" | "endmillCount" | "updated_at") => void' is not assignable to type '(field: string) => void'.
+  Types of parameters 'field' and 'field' are incompatible.
+    Type 'string' is not assignable to type '"cam_version" | "model" | "process" | "updated_at" | "endmillCount"'.
+app/dashboard/cam-sheets/page.tsx(795,19): error TS2322: Type '(field: "model" | "process" | "cam_version" | "endmillCount" | "updated_at") => void' is not assignable to type '(field: string) => void'.
+  Types of parameters 'field' and 'field' are incompatible.
+    Type 'string' is not assignable to type '"cam_version" | "model" | "process" | "updated_at" | "endmillCount"'.
+app/dashboard/cam-sheets/page.tsx(802,19): error TS2322: Type '(field: "model" | "process" | "cam_version" | "endmillCount" | "updated_at") => void' is not assignable to type '(field: string) => void'.
+  Types of parameters 'field' and 'field' are incompatible.
+    Type 'string' is not assignable to type '"cam_version" | "model" | "process" | "updated_at" | "endmillCount"'.
+app/dashboard/cam-sheets/page.tsx(809,19): error TS2322: Type '(field: "model" | "process" | "cam_version" | "endmillCount" | "updated_at") => void' is not assignable to type '(field: string) => void'.
+  Types of parameters 'field' and 'field' are incompatible.
+    Type 'string' is not assignable to type '"cam_version" | "model" | "process" | "updated_at" | "endmillCount"'.
+app/dashboard/cam-sheets/page.tsx(841,31): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'string | null' is not assignable to parameter of type 'string | number | Date'.
+      Type 'null' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'string | null' is not assignable to parameter of type 'string | number'.
+      Type 'null' is not assignable to type 'string | number'.
+app/dashboard/cam-sheets/page.tsx(925,91): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string | number | boolean'.
+  Type 'null' is not assignable to type 'string | number | boolean'.
+app/dashboard/cam-sheets/page.tsx(946,30): error TS18047: 'endmill.tool_life' is possibly 'null'.
+app/dashboard/endmill-detail/[code]/page.tsx(30,36): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+app/dashboard/endmill-detail/[code]/page.tsx(34,30): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+app/dashboard/endmill-detail/[code]/page.tsx(35,30): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+app/dashboard/endmill-detail/[code]/page.tsx(35,76): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+app/dashboard/endmill-detail/[code]/page.tsx(36,34): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+app/dashboard/endmill-detail/[code]/page.tsx(37,40): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+app/dashboard/endmill-detail/[code]/page.tsx(37,100): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+app/dashboard/endmill-detail/[code]/page.tsx(48,35): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+app/dashboard/endmill-detail/[code]/page.tsx(49,38): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+app/dashboard/endmill-detail/[code]/page.tsx(55,41): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+app/dashboard/endmill-detail/[code]/page.tsx(64,39): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+app/dashboard/equipment/page.tsx(458,53): error TS2345: Argument of type '(prev: { equipmentNumber: string; location: "A동" | "B동"; status: "가동중" | "점검중" | "셋업중"; currentModel: string; process: string; }) => { status: "가동중" | "점검중" | "셋업중" | null; equipmentNumber: string; location: "A동" | "B동"; currentModel: string; process: string; }' is not assignable to parameter of type 'SetStateAction<{ equipmentNumber: string; location: "A동" | "B동"; status: "가동중" | "점검중" | "셋업중"; currentModel: string; process: string; }>'.
+  Type '(prev: { equipmentNumber: string; location: "A동" | "B동"; status: "가동중" | "점검중" | "셋업중"; currentModel: string; process: string; }) => { status: "가동중" | "점검중" | "셋업중" | null; equipmentNumber: string; location: "A동" | "B동"; currentModel: string; process: string; }' is not assignable to type '(prevState: { equipmentNumber: string; location: "A동" | "B동"; status: "가동중" | "점검중" | "셋업중"; currentModel: string; process: string; }) => { equipmentNumber: string; location: "A동" | "B동"; status: "가동중" | ... 1 more ... | "셋업중"; currentModel: string; process: string; }'.
+    Call signature return types '{ status: "가동중" | "점검중" | "셋업중" | null; equipmentNumber: string; location: "A동" | "B동"; currentModel: string; process: string; }' and '{ equipmentNumber: string; location: "A동" | "B동"; status: "가동중" | "점검중" | "셋업중"; currentModel: string; process: string; }' are incompatible.
+      The types of 'status' are incompatible between these types.
+        Type '"가동중" | "점검중" | "셋업중" | null' is not assignable to type '"가동중" | "점검중" | "셋업중"'.
+          Type 'null' is not assignable to type '"가동중" | "점검중" | "셋업중"'.
+app/dashboard/equipment/page.tsx(972,27): error TS2322: Type '"" | "가동중" | "점검중" | "셋업중"' is not assignable to type 'EquipmentStatus'.
+  Type '""' is not assignable to type 'EquipmentStatus'.
+app/dashboard/equipment/page.tsx(1174,53): error TS2345: Argument of type '(prev: { equipmentNumber: string; location: "A동" | "B동"; status: "가동중" | "점검중" | "셋업중"; currentModel: string; process: string; }) => { status: "가동중" | "점검중" | "셋업중" | null; equipmentNumber: string; location: "A동" | "B동"; currentModel: string; process: string; }' is not assignable to parameter of type 'SetStateAction<{ equipmentNumber: string; location: "A동" | "B동"; status: "가동중" | "점검중" | "셋업중"; currentModel: string; process: string; }>'.
+  Type '(prev: { equipmentNumber: string; location: "A동" | "B동"; status: "가동중" | "점검중" | "셋업중"; currentModel: string; process: string; }) => { status: "가동중" | "점검중" | "셋업중" | null; equipmentNumber: string; location: "A동" | "B동"; currentModel: string; process: string; }' is not assignable to type '(prevState: { equipmentNumber: string; location: "A동" | "B동"; status: "가동중" | "점검중" | "셋업중"; currentModel: string; process: string; }) => { equipmentNumber: string; location: "A동" | "B동"; status: "가동중" | ... 1 more ... | "셋업중"; currentModel: string; process: string; }'.
+    Call signature return types '{ status: "가동중" | "점검중" | "셋업중" | null; equipmentNumber: string; location: "A동" | "B동"; currentModel: string; process: string; }' and '{ equipmentNumber: string; location: "A동" | "B동"; status: "가동중" | "점검중" | "셋업중"; currentModel: string; process: string; }' are incompatible.
+      The types of 'status' are incompatible between these types.
+        Type '"가동중" | "점검중" | "셋업중" | null' is not assignable to type '"가동중" | "점검중" | "셋업중"'.
+          Type 'null' is not assignable to type '"가동중" | "점검중" | "셋업중"'.
+app/dashboard/inventory/outbound/page.tsx(98,31): error TS2349: This expression is not callable.
+  Type 'Number' has no call signatures.
+app/dashboard/inventory/outbound/page.tsx(98,100): error TS2349: This expression is not callable.
+  Type 'Number' has no call signatures.
+app/dashboard/inventory/outbound/page.tsx(209,51): error TS7006: Parameter 'price' implicitly has an 'any' type.
+app/dashboard/inventory/outbound/page.tsx(238,51): error TS7006: Parameter 'price' implicitly has an 'any' type.
+app/dashboard/inventory/outbound/page.tsx(342,7): error TS2322: Type '"danger"' is not assignable to type 'ConfirmationType'.
+app/dashboard/inventory/page.tsx(190,7): error TS2304: Cannot find name 'showWarning'.
+app/dashboard/page.tsx(447,18): error TS2339: Property 'recentAlerts' does not exist on type 'DashboardData'.
+app/dashboard/page.tsx(447,39): error TS2339: Property 'recentAlerts' does not exist on type 'DashboardData'.
+app/dashboard/page.tsx(449,21): error TS2339: Property 'recentAlerts' does not exist on type 'DashboardData'.
+app/dashboard/settings/page.tsx(1382,106): error TS2339: Property 'default' does not exist on type 'string[]'.
+app/dashboard/settings/page.tsx(1386,136): error TS2339: Property 'map' does not exist on type 'string[] | (() => ArrayIterator<string>)'.
+  Property 'map' does not exist on type '() => ArrayIterator<string>'.
+app/dashboard/settings/page.tsx(1386,140): error TS7006: Parameter 'shift' implicitly has an 'any' type.
+app/dashboard/tool-changes/page.tsx(274,21): error TS2345: Argument of type '(prev: { change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }) => { ...; }' is not assignable to parameter of type 'SetStateAction<{ change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }>'.
+  Type '(prev: { change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }) => { ...; }' is not assignable to type '(prevState: { change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }) => { ...; }'.
+    Call signature return types '{ endmillCode: string | null; endmillName: string | null; change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; actualToolLife: number; changeReason: string; changedBy: string; }' and '{ change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }' are incompatible.
+      The types of 'endmillCode' are incompatible between these types.
+        Type 'string | null' is not assignable to type 'string'.
+          Type 'null' is not assignable to type 'string'.
+app/dashboard/tool-changes/page.tsx(327,22): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(327,53): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(328,49): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(330,20): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(334,36): error TS2551: Property 'productionModel' does not exist on type 'ToolChange'. Did you mean 'production_model'?
+app/dashboard/tool-changes/page.tsx(334,90): error TS2551: Property 'tNumber' does not exist on type 'ToolChange'. Did you mean 't_number'?
+app/dashboard/tool-changes/page.tsx(336,41): error TS2551: Property 'productionModel' does not exist on type 'ToolChange'. Did you mean 'production_model'?
+app/dashboard/tool-changes/page.tsx(336,91): error TS2551: Property 'tNumber' does not exist on type 'ToolChange'. Did you mean 't_number'?
+app/dashboard/tool-changes/page.tsx(339,59): error TS2551: Property 'productionModel' does not exist on type 'ToolChange'. Did you mean 'production_model'?
+app/dashboard/tool-changes/page.tsx(339,109): error TS2551: Property 'tNumber' does not exist on type 'ToolChange'. Did you mean 't_number'?
+app/dashboard/tool-changes/page.tsx(343,29): error TS2551: Property 'endmillCode' does not exist on type 'ToolChange'. Did you mean 'endmill_code'?
+app/dashboard/tool-changes/page.tsx(344,29): error TS2551: Property 'endmillName' does not exist on type 'ToolChange'. Did you mean 'endmill_name'?
+app/dashboard/tool-changes/page.tsx(348,20): error TS2551: Property 'productionModel' does not exist on type 'ToolChange'. Did you mean 'production_model'?
+app/dashboard/tool-changes/page.tsx(348,72): error TS2551: Property 'tNumber' does not exist on type 'ToolChange'. Did you mean 't_number'?
+app/dashboard/tool-changes/page.tsx(364,86): error TS2339: Property 'replace' does not exist on type 'never'.
+app/dashboard/tool-changes/page.tsx(398,23): error TS2345: Argument of type '{ change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; }' is not assignable to parameter of type 'SetStateAction<{ change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }>'.
+  Property 'changedBy' is missing in type '{ change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; }' but required in type '{ change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }'.
+app/dashboard/tool-changes/page.tsx(479,47): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(479,79): error TS2551: Property 'tNumber' does not exist on type 'ToolChange'. Did you mean 't_number'?
+app/dashboard/tool-changes/page.tsx(489,48): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(490,36): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(491,27): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(492,41): error TS2551: Property 'productionModel' does not exist on type 'ToolChange'. Did you mean 'production_model'?
+app/dashboard/tool-changes/page.tsx(494,33): error TS2551: Property 'tNumber' does not exist on type 'ToolChange'. Did you mean 't_number'?
+app/dashboard/tool-changes/page.tsx(495,37): error TS2551: Property 'endmillCode' does not exist on type 'ToolChange'. Did you mean 'endmill_code'?
+app/dashboard/tool-changes/page.tsx(496,37): error TS2551: Property 'endmillName' does not exist on type 'ToolChange'. Did you mean 'endmill_name'?
+app/dashboard/tool-changes/page.tsx(497,34): error TS2339: Property 'actualToolLife' does not exist on type 'ToolChange'.
+app/dashboard/tool-changes/page.tsx(498,38): error TS2551: Property 'changeReason' does not exist on type 'ToolChange'. Did you mean 'change_reason'?
+app/dashboard/tool-changes/page.tsx(499,35): error TS2551: Property 'changedBy' does not exist on type 'ToolChange'. Did you mean 'changed_by'?
+app/dashboard/tool-changes/page.tsx(526,28): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(526,60): error TS2551: Property 'tNumber' does not exist on type 'ToolChange'. Did you mean 't_number'?
+app/dashboard/tool-changes/page.tsx(682,53): error TS2551: Property 'productionModel' does not exist on type 'ToolChange'. Did you mean 'production_model'?
+app/dashboard/tool-changes/page.tsx(853,41): error TS2345: Argument of type '(prev: { change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }) => { ...; }' is not assignable to parameter of type 'SetStateAction<{ change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }>'.
+  Type '(prev: { change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }) => { ...; }' is not assignable to type '(prevState: { change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }) => { ...; }'.
+    Call signature return types '{ endmillCode: string | null; endmillName: string | null; change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; actualToolLife: number; changeReason: string; changedBy: string; }' and '{ change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }' are incompatible.
+      The types of 'endmillCode' are incompatible between these types.
+        Type 'string | null' is not assignable to type 'string'.
+          Type 'null' is not assignable to type 'string'.
+app/dashboard/tool-changes/page.tsx(898,41): error TS2345: Argument of type '(prev: { change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }) => { ...; }' is not assignable to parameter of type 'SetStateAction<{ change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }>'.
+  Type '(prev: { change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }) => { ...; }' is not assignable to type '(prevState: { change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }) => { ...; }'.
+    Call signature return types '{ endmillCode: string | null; endmillName: string | null; change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; actualToolLife: number; changeReason: string; changedBy: string; }' and '{ change_date: string; equipmentNumber: string; productionModel: string; process: string; tNumber: number; endmillCode: string; endmillName: string; actualToolLife: number; changeReason: string; changedBy: string; }' are incompatible.
+      The types of 'endmillCode' are incompatible between these types.
+        Type 'string | null' is not assignable to type 'string'.
+          Type 'null' is not assignable to type 'string'.
+app/dashboard/tool-changes/page.tsx(1164,70): error TS2339: Property 'user_profiles' does not exist on type 'ToolChange'.
+app/dashboard/tool-changes/page.tsx(1316,42): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(1319,57): error TS2353: Object literal may only specify known properties, and 'equipmentNumber' does not exist in type 'ToolChange | ((prevState: ToolChange | null) => ToolChange | null)'.
+app/dashboard/tool-changes/page.tsx(1332,42): error TS2551: Property 'productionModel' does not exist on type 'ToolChange'. Did you mean 'production_model'?
+app/dashboard/tool-changes/page.tsx(1333,72): error TS2353: Object literal may only specify known properties, and 'productionModel' does not exist in type 'ToolChange | ((prevState: ToolChange | null) => ToolChange | null)'.
+app/dashboard/tool-changes/page.tsx(1335,37): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(1345,36): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(1355,37): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(1364,36): error TS2551: Property 'equipmentNumber' does not exist on type 'ToolChange'. Did you mean 'equipment_number'?
+app/dashboard/tool-changes/page.tsx(1371,42): error TS2551: Property 'tNumber' does not exist on type 'ToolChange'. Did you mean 't_number'?
+app/dashboard/tool-changes/page.tsx(1372,72): error TS2353: Object literal may only specify known properties, and 'tNumber' does not exist in type 'ToolChange | ((prevState: ToolChange | null) => ToolChange | null)'.
+app/dashboard/tool-changes/page.tsx(1388,44): error TS2551: Property 'endmillCode' does not exist on type 'ToolChange'. Did you mean 'endmill_code'?
+app/dashboard/tool-changes/page.tsx(1389,102): error TS2353: Object literal may only specify known properties, and 'endmillCode' does not exist in type 'ToolChange | ((prevState: ToolChange | null) => ToolChange | null)'.
+app/dashboard/tool-changes/page.tsx(1396,36): error TS2551: Property 'productionModel' does not exist on type 'ToolChange'. Did you mean 'production_model'?
+app/dashboard/tool-changes/page.tsx(1396,90): error TS2551: Property 'tNumber' does not exist on type 'ToolChange'. Did you mean 't_number'?
+app/dashboard/tool-changes/page.tsx(1403,83): error TS2551: Property 'productionModel' does not exist on type 'ToolChange'. Did you mean 'production_model'?
+app/dashboard/tool-changes/page.tsx(1403,133): error TS2551: Property 'tNumber' does not exist on type 'ToolChange'. Did you mean 't_number'?
+app/dashboard/tool-changes/page.tsx(1433,44): error TS2551: Property 'endmillName' does not exist on type 'ToolChange'. Did you mean 'endmill_name'?
+app/dashboard/tool-changes/page.tsx(1434,102): error TS2353: Object literal may only specify known properties, and 'endmillName' does not exist in type 'ToolChange | ((prevState: ToolChange | null) => ToolChange | null)'.
+app/dashboard/tool-changes/page.tsx(1441,36): error TS2551: Property 'productionModel' does not exist on type 'ToolChange'. Did you mean 'production_model'?
+app/dashboard/tool-changes/page.tsx(1441,90): error TS2551: Property 'tNumber' does not exist on type 'ToolChange'. Did you mean 't_number'?
+app/dashboard/tool-changes/page.tsx(1448,83): error TS2551: Property 'productionModel' does not exist on type 'ToolChange'. Did you mean 'production_model'?
+app/dashboard/tool-changes/page.tsx(1448,133): error TS2551: Property 'tNumber' does not exist on type 'ToolChange'. Did you mean 't_number'?
+app/dashboard/tool-changes/page.tsx(1476,42): error TS2551: Property 'toolLife' does not exist on type 'ToolChange'. Did you mean 'tool_life'?
+app/dashboard/tool-changes/page.tsx(1477,72): error TS2353: Object literal may only specify known properties, and 'toolLife' does not exist in type 'ToolChange | ((prevState: ToolChange | null) => ToolChange | null)'.
+app/dashboard/tool-changes/page.tsx(1488,42): error TS2551: Property 'changeReason' does not exist on type 'ToolChange'. Did you mean 'change_reason'?
+app/dashboard/tool-changes/page.tsx(1489,72): error TS2353: Object literal may only specify known properties, and 'changeReason' does not exist in type 'ToolChange | ((prevState: ToolChange | null) => ToolChange | null)'.
+components/features/CAMSheetForm.tsx(66,45): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+components/features/CAMSheetForm.tsx(67,41): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+components/features/CAMSheetForm.tsx(72,37): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+components/features/CAMSheetForm.tsx(73,37): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+components/features/CAMSheetForm.tsx(73,83): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+components/features/CAMSheetForm.tsx(78,30): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+components/features/CAMSheetForm.tsx(78,76): error TS2551: Property 'endmill_types' does not exist on type 'Inventory'. Did you mean 'endmill_type'?
+components/features/EndmillMasterUploader.tsx(69,22): error TS2339: Property 'isValid' does not exist on type 'Promise<{ isValid: boolean; errors: string[]; warnings: string[]; validData: any[]; }>'.
+components/features/EndmillMasterUploader.tsx(70,48): error TS2339: Property 'validData' does not exist on type 'Promise<{ isValid: boolean; errors: string[]; warnings: string[]; validData: any[]; }>'.
+components/features/EndmillMasterUploader.tsx(72,46): error TS2339: Property 'errors' does not exist on type 'Promise<{ isValid: boolean; errors: string[]; warnings: string[]; validData: any[]; }>'.
+components/features/ExcelUploader.tsx(153,5): error TS2322: Type '{ model: string; process: string; cam_version: string; version_date: string; cam_sheet_endmills: { id: string; cam_sheet_id: string; t_number: number; endmill_code: string | null; endmill_name: string | null; specifications: string | null; tool_life: number | null; created_at: string; }[]; created_at: string; update...' is not assignable to type 'Omit<CAMSheet, "id" | "createdAt" | "updatedAt">[]'.
+  Property 'created_by' is missing in type '{ model: string; process: string; cam_version: string; version_date: string; cam_sheet_endmills: { id: string; cam_sheet_id: string; t_number: number; endmill_code: string | null; endmill_name: string | null; specifications: string | null; tool_life: number | null; created_at: string; }[]; created_at: string; update...' but required in type 'Omit<CAMSheet, "id" | "createdAt" | "updatedAt">'.
+lib/auth/middleware.ts(93,11): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+lib/auth/middleware.ts(94,11): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+lib/hooks/useCAMSheets.ts(235,30): error TS2802: Type 'Set<string>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+lib/hooks/useCAMSheets.ts(248,33): error TS2802: Type 'Set<string>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+lib/hooks/useInventory.ts(237,23): error TS2339: Property 'endmill_supplier_prices' does not exist on type '{ category_id: string | null; code: string; created_at: string | null; id: string; name: string; specifications: Json; standard_life: number | null; unit_cost: number | null; updated_at: string | null; } & { ...; }'.
+lib/hooks/useInventory.ts(237,76): error TS2339: Property 'endmill_supplier_prices' does not exist on type '{ category_id: string | null; code: string; created_at: string | null; id: string; name: string; specifications: Json; standard_life: number | null; unit_cost: number | null; updated_at: string | null; } & { ...; }'.
+lib/hooks/useInventory.ts(237,116): error TS2339: Property 'endmill_supplier_prices' does not exist on type '{ category_id: string | null; code: string; created_at: string | null; id: string; name: string; specifications: Json; standard_life: number | null; unit_cost: number | null; updated_at: string | null; } & { ...; }'.
+lib/hooks/useInventory.ts(238,36): error TS2339: Property 'endmill_supplier_prices' does not exist on type '{ category_id: string | null; code: string; created_at: string | null; id: string; name: string; specifications: Json; standard_life: number | null; unit_cost: number | null; updated_at: string | null; } & { ...; }'.
+lib/hooks/useInventory.ts(271,32): error TS2339: Property 'endmill_supplier_prices' does not exist on type '{ category_id: string | null; code: string; created_at: string | null; id: string; name: string; specifications: Json; standard_life: number | null; unit_cost: number | null; updated_at: string | null; } & { ...; }'.
+lib/hooks/useInventory.ts(271,91): error TS2339: Property 'endmill_supplier_prices' does not exist on type '{ category_id: string | null; code: string; created_at: string | null; id: string; name: string; specifications: Json; standard_life: number | null; unit_cost: number | null; updated_at: string | null; } & { ...; }'.
+lib/hooks/useInventory.ts(271,137): error TS2339: Property 'endmill_supplier_prices' does not exist on type '{ category_id: string | null; code: string; created_at: string | null; id: string; name: string; specifications: Json; standard_life: number | null; unit_cost: number | null; updated_at: string | null; } & { ...; }'.
+lib/hooks/useInventory.ts(272,44): error TS2339: Property 'endmill_supplier_prices' does not exist on type '{ category_id: string | null; code: string; created_at: string | null; id: string; name: string; specifications: Json; standard_life: number | null; unit_cost: number | null; updated_at: string | null; } & { ...; }'.
+lib/hooks/useSettings.ts(122,23): error TS18048: 'settingsManagerRef.current' is possibly 'undefined'.
+lib/hooks/useSettings.ts(127,21): error TS18048: 'settingsManagerRef.current' is possibly 'undefined'.
+lib/hooks/useUsers.ts(84,9): error TS2322: Type '{ id: string; name: string; email: string; employeeId: string; department: string; position: string; shift: "A" | "B" | "C"; roleId: string; phone: string | undefined; isActive: boolean; createdAt: string | null; updatedAt: string | null; }[]' is not assignable to type 'User[]'.
+  Property 'createdBy' is missing in type '{ id: string; name: string; email: string; employeeId: string; department: string; position: string; shift: "A" | "B" | "C"; roleId: string; phone: string | undefined; isActive: boolean; createdAt: string | null; updatedAt: string | null; }' but required in type 'User'.
+lib/hooks/useUsers.ts(100,9): error TS2322: Type '{ id: string; name: string; type: "system_admin" | "admin" | "user"; description: string; permissions: string | number | true | { [key: string]: Json | undefined; } | Json[]; isSystemRole: true; isActive: boolean; createdAt: string | null; updatedAt: string | null; }[]' is not assignable to type 'UserRole[]'.
+  Type '{ id: string; name: string; type: "system_admin" | "admin" | "user"; description: string; permissions: string | number | true | { [key: string]: Json | undefined; } | Json[]; isSystemRole: true; isActive: boolean; createdAt: string | null; updatedAt: string | null; }' is not assignable to type 'UserRole'.
+    Types of property 'permissions' are incompatible.
+      Type 'string | number | true | { [key: string]: Json | undefined; } | Json[]' is not assignable to type 'ModulePermissions'.
+        Type 'string' is not assignable to type 'ModulePermissions'.
+lib/hooks/useUsers.ts(224,71): error TS2345: Argument of type '{ name: string; employee_id: string; department: string; position: string; shift: string; role_id: string; phone: string | undefined; is_active: boolean; }' is not assignable to parameter of type '{ created_at?: string | null | undefined; department: string; employee_id: string; id?: string | undefined; is_active?: boolean | null | undefined; name: string; phone?: string | null | undefined; ... 4 more ...; user_id?: string | ... 1 more ... | undefined; }'.
+  Types of property 'shift' are incompatible.
+    Type 'string' is not assignable to type '"A" | "B" | "C"'.
+lib/i18n.ts(474,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(535,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(541,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(565,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(728,7): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(857,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(869,7): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(996,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(1081,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(1140,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(1148,7): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(1187,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(1293,7): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(1383,7): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(1440,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(1510,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(1725,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(1864,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(1949,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(2008,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(2290,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(2481,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(2487,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(2511,9): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/i18n.ts(2754,7): error TS1117: An object literal cannot have multiple properties with the same name.
+lib/providers/SettingsProvider.tsx(82,10): error TS2352: Conversion of type '{ system: { language: string; defaultLanguage: "ko"; currency: "VND"; timezone: { value: string; }; dateFormat: string; date_format: { value: string; }; session_timeout: { value: number; unit: string; }; ... 4 more ...; maxFileSize: number; }; ... 6 more ...; translations: { ...; }; }' to type 'SystemSettings' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ system: { language: string; defaultLanguage: "ko"; currency: "VND"; timezone: { value: string; }; dateFormat: string; date_format: { value: string; }; session_timeout: { value: number; unit: string; }; ... 4 more ...; maxFileSize: number; }; ... 6 more ...; translations: { ...; }; }' is missing the following properties from type 'SystemSettings': toolChanges, ui
+lib/services/supabaseService.ts(981,8): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { created_at?: string | null | undefined; department: string; employee_id: string; id?: string | undefined; is_active?: boolean | null | undefined; name: string; phone?: string | null | undefined; ... 4 more ...; user_id?: string | ... 1 more ... | undefined; }, options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ name: string; employee_id: string; department: string; position: string; shift: string; role_id: string; phone?: string; user_id: string; }' is not assignable to parameter of type '{ created_at?: string | null | undefined; department: string; employee_id: string; id?: string | undefined; is_active?: boolean | null | undefined; name: string; phone?: string | null | undefined; ... 4 more ...; user_id?: string | ... 1 more ... | undefined; }'.
+      Types of property 'shift' are incompatible.
+        Type 'string' is not assignable to type '"A" | "B" | "C"'.
+  Overload 2 of 2, '(values: { created_at?: string | null | undefined; department: string; employee_id: string; id?: string | undefined; is_active?: boolean | null | undefined; name: string; phone?: string | null | undefined; ... 4 more ...; user_id?: string | ... 1 more ... | undefined; }[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'user_id' does not exist in type '{ created_at?: string | null | undefined; department: string; employee_id: string; id?: string | undefined; is_active?: boolean | null | undefined; name: string; phone?: string | null | undefined; ... 4 more ...; user_id?: string | ... 1 more ... | undefined; }[]'.
+lib/services/textScanService.ts(3,38): error TS2307: Cannot find module '../types/translations' or its corresponding type declarations.
+lib/utils/equipmentExcelTemplate.ts(217,34): error TS2802: Type 'Set<string>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.

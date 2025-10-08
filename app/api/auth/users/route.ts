@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../../lib/supabase/client'
 import { z } from 'zod'
+import { logger } from '@/lib/utils/logger'
 
 // 사용자 생성 스키마
 const createUserSchema = z.object({
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.admin.listUsers()
 
     if (error) {
-      console.error('사용자 목록 조회 오류:', error)
+      logger.error('사용자 목록 조회 오류:', error)
       return NextResponse.json(
         { success: false, error: '사용자 목록 조회에 실패했습니다.' },
         { status: 500 }
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('사용자 목록 API 오류:', error)
+    logger.error('사용자 목록 API 오류:', error)
     return NextResponse.json(
       { success: false, error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -128,8 +129,8 @@ export async function POST(request: NextRequest) {
     })
 
     if (error) {
-      console.error('사용자 생성 오류:', error)
-      
+      logger.error('사용자 생성 오류:', error)
+
       let errorMessage = '사용자 생성에 실패했습니다.'
       if (error.message.includes('already registered')) {
         errorMessage = '이미 등록된 이메일 주소입니다.'
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('사용자 생성 API 오류:', error)
+    logger.error('사용자 생성 API 오류:', error)
     return NextResponse.json(
       { success: false, error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -219,7 +220,7 @@ export async function PUT(request: NextRequest) {
     })
 
     if (error) {
-      console.error('사용자 업데이트 오류:', error)
+      logger.error('사용자 업데이트 오류:', error)
       return NextResponse.json(
         { success: false, error: '사용자 정보 업데이트에 실패했습니다.' },
         { status: 500 }
@@ -237,7 +238,7 @@ export async function PUT(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('사용자 업데이트 API 오류:', error)
+    logger.error('사용자 업데이트 API 오류:', error)
     return NextResponse.json(
       { success: false, error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -273,7 +274,7 @@ export async function DELETE(request: NextRequest) {
     const { data, error } = await supabase.auth.admin.deleteUser(userId)
 
     if (error) {
-      console.error('사용자 삭제 오류:', error)
+      logger.error('사용자 삭제 오류:', error)
       return NextResponse.json(
         { success: false, error: '사용자 삭제에 실패했습니다.' },
         { status: 500 }
@@ -286,7 +287,7 @@ export async function DELETE(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('사용자 삭제 API 오류:', error)
+    logger.error('사용자 삭제 API 오류:', error)
     return NextResponse.json(
       { success: false, error: '서버 오류가 발생했습니다.' },
       { status: 500 }

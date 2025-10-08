@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../../../lib/supabase/client'
+import { logger } from '@/lib/utils/logger'
 
 export async function GET(
   request: NextRequest,
@@ -33,7 +34,7 @@ export async function GET(
       .eq('endmill_type_id', endmillId)
 
     if (error) {
-      console.error('공급업체별 가격 조회 오류:', error)
+      logger.error('공급업체별 가격 조회 오류:', error)
       return NextResponse.json(
         { error: '공급업체별 가격 정보를 가져오는 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -68,7 +69,7 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error('공급업체별 가격 조회 API 오류:', error)
+    logger.error('공급업체별 가격 조회 API 오류:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -109,7 +110,7 @@ export async function POST(
       .single()
 
     if (duplicateError && duplicateError.code !== 'PGRST116') {
-      console.error('중복 검사 오류:', duplicateError)
+      logger.error('중복 검사 오류:', duplicateError)
       return NextResponse.json(
         { error: '중복 검사 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -151,7 +152,7 @@ export async function POST(
       .single()
 
     if (insertError) {
-      console.error('가격 정보 추가 오류:', insertError)
+      logger.error('가격 정보 추가 오류:', insertError)
       return NextResponse.json(
         { error: '가격 정보 추가 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -165,7 +166,7 @@ export async function POST(
     })
 
   } catch (error) {
-    console.error('공급업체 가격 추가 API 오류:', error)
+    logger.error('공급업체 가격 추가 API 오류:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

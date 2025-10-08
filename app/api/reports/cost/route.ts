@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../../lib/supabase/client'
 import { CostAnalysisData, ReportFilter } from '../../../../lib/types/reports'
+import { logger } from '@/lib/utils/logger'
 import {
   getDateRangeFromFilter,
   calculateAverage,
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
     const { data: toolChanges, error: tcError } = await tcQuery
 
     if (tcError) {
-      console.error('비용 분석 데이터 조회 오류:', tcError)
+      logger.error('비용 분석 데이터 조회 오류:', tcError)
       return NextResponse.json({ error: 'Failed to fetch tool changes' }, { status: 500 })
     }
 
@@ -238,7 +239,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(reportData)
   } catch (error) {
-    console.error('비용 분석 생성 오류:', error)
+    logger.error('비용 분석 생성 오류:', error)
     return NextResponse.json(
       { error: 'Failed to generate cost analysis' },
       { status: 500 }

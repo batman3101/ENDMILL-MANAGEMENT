@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useToast } from '../shared/Toast'
+import { clientLogger } from '@/lib/utils/logger'
 
 interface SupplierPrice {
   id: string
@@ -77,7 +78,7 @@ export default function EditSupplierPriceModal({
 
       onSuccess()
     } catch (error) {
-      console.error('가격 정보 수정 오류:', error)
+      clientLogger.error('가격 정보 수정 오류:', error)
       showError('수정 실패', '가격 정보 수정 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)
