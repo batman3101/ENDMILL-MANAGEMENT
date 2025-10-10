@@ -234,7 +234,7 @@ export async function PUT(
         roleId: updatedProfile.user_roles?.id || '',
         roleName: updatedProfile.user_roles?.name || '',
         roleType: updatedProfile.user_roles?.type || '',
-        permissions: updatedProfile.permissions
+        permissions: permissions
       },
       message: 'Permissions updated successfully'
     })
