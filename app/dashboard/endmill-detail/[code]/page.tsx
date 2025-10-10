@@ -12,103 +12,35 @@ export default function EndmillDetailPage() {
   const router = useRouter()
   const endmillCode = params.code as string
   const { showSuccess, showError, showWarning } = useToast()
-  const { searchByCode } = useInventorySearch()
-  
-  const [endmillData, setEndmillData] = useState<EndmillDetailInfo | null>(null)
+
+  const [endmillData, setEndmillData] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showExcelUploader, setShowExcelUploader] = useState(false)
 
   useEffect(() => {
-    // 실제 데이터 로딩
-    const timer = setTimeout(() => {
-      const foundEndmills = searchByCode(endmillCode)
-      const foundEndmill = foundEndmills[0] // 첫 번째 매치된 아이템 사용
-      
-      if (foundEndmill) {
-        // specifications JSONB에서 상세 정보 추출
-        const specs = (foundEndmill.endmill_type?.specifications || {}) as any
-        const data: EndmillDetailInfo = {
-          code: foundEndmill.endmill_type?.code || endmillCode,
-          name: foundEndmill.endmill_type?.name || '',
-          category: foundEndmill.endmill_type?.endmill_categories?.code || '',
-          specifications: foundEndmill.endmill_type?.specifications ? JSON.stringify(foundEndmill.endmill_type.specifications) : '',
-          diameter: specs.diameter || 0,
-          flutes: specs.flutes || 0,
-          coating: specs.coating || '',
-          material: specs.material || '',
-          tolerance: specs.tolerance || '',
-          helix: specs.helix_angle || specs.helix || '',
-          qualityGrade: 'A', // 기본값
-          currentStock: foundEndmill.current_stock || 0,
-          minStock: foundEndmill.min_stock || 0,
-          maxStock: foundEndmill.max_stock || 0,
-          unitPrice: foundEndmill.endmill_type?.unit_cost || 0,
-          standardLife: foundEndmill.endmill_type?.standard_life || 0,
-          stockStatus: (foundEndmill.current_stock || 0) <= (foundEndmill.min_stock || 0) ? 'critical' :
-                      (foundEndmill.current_stock || 0) <= (foundEndmill.min_stock || 0) * 1.5 ? 'low' : 'sufficient',
-          supplier: '기본 공급업체', // 기본값
-          // 가짜 데이터 (실제로는 별도 테이블에서 가져와야 함)
-          totalUsageCount: 1250,
-          averageLifespan: foundEndmill.endmill_type?.standard_life || 2000,
-          lastUsedDate: new Date().toISOString(),
-          replacementFrequency: 4.2,
-          defectRate: 1.8,
-          performanceRating: 85,
-          costEfficiency: 78,
-          suppliers: [
-            {
-              supplierName: '베트남 공급업체 A',
-              unitPrice: foundEndmill.endmill_type?.unit_cost || 125000,
-              currentStock: foundEndmill.current_stock || 0,
-              minOrderQuantity: 50,
-              leadTime: 14,
-              stockStatus: (foundEndmill.current_stock || 0) <= (foundEndmill.min_stock || 0) ? 'critical' : 'sufficient',
-              lastOrderDate: '2024-11-15',
-              averageDeliveryTime: 12,
-              qualityRating: 4.2,
-              isPreferred: true
-            }
-          ],
-          equipmentUsage: [
-            {
-              equipmentNumber: 'C001',
-              process: 'CNC1',
-              tNumber: 1,
-              installDate: '2024-12-01',
-              currentLife: 850,
-              totalLife: 2000,
-              usageStatus: 'active',
-              lastMaintenanceDate: '2024-11-20'
-            }
-          ],
-          recentChanges: [
-            {
-              id: '1',
-              changeDate: '2024-12-15',
-              equipmentNumber: 'C001',
-              tNumber: 1,
-              changeReason: '정기 교체',
-              previousLife: 1950,
-              changedBy: 'system'
-            }
-          ],
-          predictedNextChange: '2024-12-25',
-          recommendedStock: Math.ceil((foundEndmill.min_stock || 0) * 1.5),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isActive: true,
-          tags: ['고성능', 'CNC 전용', '표준']
+    const fetchEndmillData = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/endmill?code=${endmillCode}`)
+        const result = await response.json()
+
+        if (result.success && result.data.length > 0) {
+          setEndmillData(result.data[0])
+        } else {
+          setEndmillData(null)
         }
-        setEndmillData(data)
-      } else {
+      } catch (error) {
+        console.error('앤드밀 데이터 로딩 오류:', error)
+        showError('데이터 오류', '앤드밀 정보를 불러오는데 실패했습니다.')
         setEndmillData(null)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
-    }, 500)
-    
-    return () => clearTimeout(timer)
-  }, [endmillCode, searchByCode])
+    }
+
+    fetchEndmillData()
+  }, [endmillCode, showError])
 
   // 버튼 핸들러들
   const handleEdit = () => {

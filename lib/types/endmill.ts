@@ -41,9 +41,12 @@ export interface EndmillDetailInfo extends EndmillMaster {
   // 공급업체별 상세 정보
   suppliers: EndmillSupplierInfo[]
   
-  // 설비 사용 현황
+  // 설비 사용 현황 (기존 - 유지)
   equipmentUsage: EndmillEquipmentUsage[]
-  
+
+  // 실시간 사용 현황 (신규 - tool_positions 기반)
+  currentUsage?: EndmillCurrentUsage[]
+
   // 최근 교체 이력
   recentChanges: EndmillChangeHistory[]
   
@@ -72,7 +75,7 @@ export interface EndmillSupplierInfo {
   isPreferred: boolean
 }
 
-// 설비별 사용 현황
+// 설비별 사용 현황 (기존 - 유지)
 export interface EndmillEquipmentUsage {
   equipmentNumber: string
   process: string
@@ -82,6 +85,20 @@ export interface EndmillEquipmentUsage {
   totalLife: number
   usageStatus: 'new' | 'active' | 'warning' | 'critical'
   lastMaintenanceDate: string
+}
+
+// 실시간 사용 현황 (신규 - tool_positions 기반)
+export interface EndmillCurrentUsage {
+  equipmentNumber: string
+  equipmentModel: string
+  equipmentProcess: string
+  positionNumber: number
+  currentLife: number
+  totalLife: number
+  installDate: string
+  status: string
+  specToolLife: number | null
+  usagePercentage: number
 }
 
 // 교체 이력
