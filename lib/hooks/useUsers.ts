@@ -94,7 +94,7 @@ export const useUsers = () => {
     isActive: profile.is_active ?? true,
     createdAt: profile.created_at,
     updatedAt: profile.updated_at,
-    permissions: profile.permissions || {} // 사용자 개인 권한 추가
+    permissions: (profile as any).permissions || {} // 사용자 개인 권한 추가
   }))
 
   // 역할 데이터 변환
