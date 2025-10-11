@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
               process
             )
           ),
-          inventory(
+          inventory!inventory_endmill_type_id_fkey(
             current_stock,
             min_stock,
             max_stock,
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
               process
             )
           ),
-          inventory(
+          inventory!inventory_endmill_type_id_fkey(
             current_stock,
             min_stock,
             max_stock,
@@ -152,12 +152,12 @@ export async function GET(request: NextRequest) {
         })) || [],
         camSheets,           // CAM Sheet 사양 정보 (정적)
         currentUsage,        // 실시간 사용 현황 (동적)
-        inventory: endmill.inventory ? {
-          currentStock: endmill.inventory.current_stock,
-          minStock: endmill.inventory.min_stock,
-          maxStock: endmill.inventory.max_stock,
-          status: endmill.inventory.status,
-          location: endmill.inventory.location
+        inventory: (endmill.inventory && (Array.isArray(endmill.inventory) ? endmill.inventory[0] : endmill.inventory)) ? {
+          current_stock: (Array.isArray(endmill.inventory) ? endmill.inventory[0]?.current_stock : endmill.inventory.current_stock) || 0,
+          min_stock: (Array.isArray(endmill.inventory) ? endmill.inventory[0]?.min_stock : endmill.inventory.min_stock) || 0,
+          max_stock: (Array.isArray(endmill.inventory) ? endmill.inventory[0]?.max_stock : endmill.inventory.max_stock) || 0,
+          status: (Array.isArray(endmill.inventory) ? endmill.inventory[0]?.status : endmill.inventory.status) || 'unknown',
+          location: (Array.isArray(endmill.inventory) ? endmill.inventory[0]?.location : endmill.inventory.location) || ''
         } : null,
         createdAt: endmill.created_at,
         updatedAt: endmill.updated_at

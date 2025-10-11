@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
@@ -42,6 +43,7 @@ interface EndmillInstance {
 // 실제 데이터베이스에서 앤드밀 인스턴스 데이터를 가져오는 함수로 교체 예정
 
 export default function EndmillPage() {
+  const router = useRouter()
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [endmills, setEndmills] = useState<EndmillInstance[]>([])
@@ -392,7 +394,8 @@ export default function EndmillPage() {
 
   // 상세 버튼 클릭 핸들러 수정
   const handleViewDetail = (item: EndmillInstance) => {
-    setSelectedEndmill(item)
+    // Next.js 라우터를 사용하여 클라이언트 사이드 네비게이션
+    router.push(`/dashboard/endmill-detail/${item.code}`)
   }
 
   const handleImmediateReplace = async (item: EndmillInstance) => {

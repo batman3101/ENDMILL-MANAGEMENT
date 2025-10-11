@@ -1,11 +1,10 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import { EndmillDetailInfo } from '../../../../lib/types/endmill'
-import { useInventorySearch } from '../../../../lib/hooks/useInventory'
+import { useState, useEffect, useMemo } from 'react'
 import { useToast } from '../../../../components/shared/Toast'
 import EndmillMasterUploader from '../../../../components/features/EndmillMasterUploader'
+import EndmillSupplierPrices from '../../../../components/features/EndmillSupplierPrices'
 
 export default function EndmillDetailPage() {
   const params = useParams()
@@ -17,6 +16,12 @@ export default function EndmillDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showExcelUploader, setShowExcelUploader] = useState(false)
+
+  // 실시간 사용 현황 테이블 정렬 및 페이지네이션
+  const [currentPage, setCurrentPage] = useState(1)
+  const [sortField, setSortField] = useState<'equipmentModel' | 'equipmentProcess' | 'specToolLife' | 'equipmentNumber'>('equipmentNumber')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const itemsPerPage = 10
 
   useEffect(() => {
     const fetchEndmillData = async () => {
@@ -58,6 +63,49 @@ export default function EndmillDetailPage() {
     showSuccess('수정 완료', `${endmillCode} 정보가 성공적으로 수정되었습니다.`)
   }
 
+  // 정렬 토글 함수
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+  }
+
+  // 정렬된 사용 현황 데이터
+  const sortedCurrentUsage = useMemo(() => {
+    if (!endmillData?.currentUsage) return []
+
+    const sorted = [...endmillData.currentUsage].sort((a: any, b: any) => {
+      let aValue: any = a[sortField]
+      let bValue: any = b[sortField]
+
+      // 숫자 필드는 숫자로 비교
+      if (sortField === 'specToolLife') {
+        aValue = aValue || 0
+        bValue = bValue || 0
+      }
+
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+
+    return sorted
+  }, [endmillData?.currentUsage, sortField, sortOrder])
+
+  // 페이지네이션 계산
+  const totalPages = Math.ceil(sortedCurrentUsage.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentUsageItems = sortedCurrentUsage.slice(startIndex, endIndex)
+
+  // 정렬이 변경되면 첫 페이지로 이동
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [sortField, sortOrder])
+
   const handleExcelUpload = () => {
     setShowExcelUploader(true)
   }
@@ -68,15 +116,11 @@ export default function EndmillDetailPage() {
       '마스터 데이터 업데이트 완료',
       `${data.length}개의 데이터가 처리되었습니다. (Supabase 연동 후 실제 기능 구현)`
     )
-    
+
     setShowExcelUploader(false)
-    
+
     // 현재 앤드밀 정보 새로고침
-    const foundEndmills = searchByCode(endmillCode)
-    if (foundEndmills.length > 0) {
-      // 데이터 새로고침 로직 (실제로는 React Query의 invalidate 사용)
-      window.location.reload()
-    }
+    window.location.reload()
   }
 
   if (loading) {
@@ -144,14 +188,12 @@ export default function EndmillDetailPage() {
 
       {/* 메인 콘텐츠 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* 좌측 - 주요 정보 */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* 기본 정보 섹션 */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* 기본 정보 컨테이너 */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-6">📋 기본 정보</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+              <div className="grid grid-cols-1 gap-6">
                 {/* 기본 식별 정보 */}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-900 border-b pb-2">식별 정보</h3>
@@ -161,187 +203,215 @@ export default function EndmillDetailPage() {
                       <p className="text-lg font-mono font-bold text-blue-600">{endmillData.code}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Type</label>
-                      <p className="text-gray-900">{endmillData.name}</p>
-                    </div>
-                    <div>
                       <label className="text-sm font-medium text-gray-700">카테고리</label>
                       <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
-                        {endmillData.category}
+                        {endmillData.categoryName || endmillData.category}
                       </span>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700">앤드밀 이름</label>
-                      <p className="text-gray-900">{endmillData.specifications}</p>
+                      <p className="text-gray-900">{endmillData.name}</p>
                     </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">품질 등급</label>
-                      <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                        endmillData.qualityGrade === 'A+' ? 'bg-green-100 text-green-800' :
-                        endmillData.qualityGrade === 'A' ? 'bg-green-100 text-green-700' :
-                        endmillData.qualityGrade === 'B+' ? 'bg-yellow-100 text-yellow-800' :
-                        endmillData.qualityGrade === 'B' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {endmillData.qualityGrade}
-                      </span>
-                    </div>
+                    {endmillData.qualityGrade && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">품질 등급</label>
+                        <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
+                          endmillData.qualityGrade === 'A+' ? 'bg-green-100 text-green-800' :
+                          endmillData.qualityGrade === 'A' ? 'bg-green-100 text-green-700' :
+                          endmillData.qualityGrade === 'B+' ? 'bg-yellow-100 text-yellow-800' :
+                          endmillData.qualityGrade === 'B' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {endmillData.qualityGrade}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* 기술 사양 */}
-                <div className="space-y-4">
-                  <h3 className="font-medium text-gray-900 border-b pb-2">기술 사양</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">직경</label>
-                      <p className="text-gray-900">{endmillData.diameter}mm</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">날 수</label>
-                      <p className="text-gray-900">{endmillData.flutes}날</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">코팅</label>
-                      <p className="text-gray-900">{endmillData.coating}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">소재</label>
-                      <p className="text-gray-900">{endmillData.material}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">공차</label>
-                      <p className="text-gray-900">{endmillData.tolerance}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">나선각</label>
-                      <p className="text-gray-900">{endmillData.helix}</p>
+                {(endmillData.diameter || endmillData.flutes || endmillData.coating) && (
+                  <div className="space-y-4">
+                    <h3 className="font-medium text-gray-900 border-b pb-2">기술 사양</h3>
+                    <div className="space-y-3">
+                      {endmillData.diameter && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">직경</label>
+                          <p className="text-gray-900">{endmillData.diameter}mm</p>
+                        </div>
+                      )}
+                      {endmillData.flutes && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">날 수</label>
+                          <p className="text-gray-900">{endmillData.flutes}날</p>
+                        </div>
+                      )}
+                      {endmillData.coating && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">코팅</label>
+                          <p className="text-gray-900">{endmillData.coating}</p>
+                        </div>
+                      )}
+                      {endmillData.material && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">소재</label>
+                          <p className="text-gray-900">{endmillData.material}</p>
+                        </div>
+                      )}
+                      {endmillData.tolerance && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">공차</label>
+                          <p className="text-gray-900">{endmillData.tolerance}</p>
+                        </div>
+                      )}
+                      {endmillData.helix && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">나선각</label>
+                          <p className="text-gray-900">{endmillData.helix}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* 성능 지표 */}
-                <div className="space-y-4">
-                  <h3 className="font-medium text-gray-900 border-b pb-2">성능 지표</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">성능 점수</label>
-                      <div className="flex items-center space-x-2">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${
-                              endmillData.performanceRating >= 90 ? 'bg-green-600' :
-                              endmillData.performanceRating >= 80 ? 'bg-blue-600' :
-                              endmillData.performanceRating >= 70 ? 'bg-yellow-600' :
-                              'bg-red-600'
-                            }`}
-                            style={{width: `${endmillData.performanceRating}%`}}
-                          ></div>
+                {(endmillData.performanceRating || endmillData.standardLife) && (
+                  <div className="space-y-4">
+                    <h3 className="font-medium text-gray-900 border-b pb-2">성능 지표</h3>
+                    <div className="space-y-3">
+                      {endmillData.performanceRating && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">성능 점수</label>
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-1 bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full ${
+                                  endmillData.performanceRating >= 90 ? 'bg-green-600' :
+                                  endmillData.performanceRating >= 80 ? 'bg-blue-600' :
+                                  endmillData.performanceRating >= 70 ? 'bg-yellow-600' :
+                                  'bg-red-600'
+                                }`}
+                                style={{width: `${endmillData.performanceRating}%`}}
+                              ></div>
+                            </div>
+                            <span className="text-sm font-medium">{endmillData.performanceRating}</span>
+                          </div>
                         </div>
-                        <span className="text-sm font-medium">{endmillData.performanceRating}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">비용 효율성</label>
-                      <div className="flex items-center space-x-2">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="h-2 rounded-full bg-blue-600"
-                            style={{width: `${endmillData.costEfficiency}%`}}
-                          ></div>
+                      )}
+                      {endmillData.costEfficiency && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">비용 효율성</label>
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-1 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="h-2 rounded-full bg-blue-600"
+                                style={{width: `${endmillData.costEfficiency}%`}}
+                              ></div>
+                            </div>
+                            <span className="text-sm font-medium">{endmillData.costEfficiency}</span>
+                          </div>
                         </div>
-                        <span className="text-sm font-medium">{endmillData.costEfficiency}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">불량률</label>
-                      <p className={`text-sm font-medium ${
-                        endmillData.defectRate < 1 ? 'text-green-600' :
-                        endmillData.defectRate < 3 ? 'text-yellow-600' :
-                        'text-red-600'
-                      }`}>
-                        {endmillData.defectRate.toFixed(2)}%
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">교체 빈도</label>
-                      <p className="text-gray-900">{endmillData.replacementFrequency}회/월</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">평균 수명</label>
-                      <p className="text-gray-900">{endmillData.averageLifespan.toLocaleString()}회</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">표준 수명</label>
-                      <p className="text-gray-900">{endmillData.standardLife.toLocaleString()}회</p>
+                      )}
+                      {endmillData.defectRate !== undefined && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">불량률</label>
+                          <p className={`text-sm font-medium ${
+                            endmillData.defectRate < 1 ? 'text-green-600' :
+                            endmillData.defectRate < 3 ? 'text-yellow-600' :
+                            'text-red-600'
+                          }`}>
+                            {endmillData.defectRate.toFixed(2)}%
+                          </p>
+                        </div>
+                      )}
+                      {endmillData.replacementFrequency && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">교체 빈도</label>
+                          <p className="text-gray-900">{endmillData.replacementFrequency}회/월</p>
+                        </div>
+                      )}
+                      {endmillData.averageLifespan && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">평균 수명</label>
+                          <p className="text-gray-900">{endmillData.averageLifespan.toLocaleString()}회</p>
+                        </div>
+                      )}
+                      {endmillData.standardLife && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">표준 수명</label>
+                          <p className="text-gray-900">{endmillData.standardLife.toLocaleString()}회</p>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* 태그 */}
-              <div className="mt-6 pt-6 border-t">
-                <label className="text-sm font-medium text-gray-700 mb-2 block">태그</label>
-                <div className="flex flex-wrap gap-2">
-                  {endmillData.tags.map((tag, index) => (
-                    <span 
-                      key={index}
-                      className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
+              {endmillData.tags && endmillData.tags.length > 0 && (
+                <div className="mt-6 pt-6 border-t">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">태그</label>
+                  <div className="flex flex-wrap gap-2">
+                    {endmillData.tags.map((tag: string, index: number) => (
+                      <span
+                        key={index}
+                        className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </div>
-            
-            {/* 성능 분석 섹션 */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+              )}
+          </div>
+
+          {/* 성능 분석 컨테이너 */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-6">📊 성능 분석</h2>
-              
+
               {/* 재고 현황 카드 */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-blue-700">현재 재고</p>
-                      <p className="text-2xl font-bold text-blue-900">{endmillData.currentStock}</p>
+                      <p className="text-2xl font-bold text-blue-900">{endmillData.inventory?.current_stock || 0}</p>
                     </div>
                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                       📦
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-yellow-700">최소 재고</p>
-                      <p className="text-2xl font-bold text-yellow-900">{endmillData.minStock}</p>
+                      <p className="text-2xl font-bold text-yellow-900">{endmillData.inventory?.min_stock || 0}</p>
                     </div>
                     <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
                       ⚠️
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-green-700">사용 중</p>
-                      <p className="text-2xl font-bold text-green-900">{endmillData.equipmentUsage.length}</p>
+                      <p className="text-2xl font-bold text-green-900">{endmillData.currentUsage?.length || 0}</p>
                     </div>
                     <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                       🏭
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-purple-700">총 사용횟수</p>
-                      <p className="text-2xl font-bold text-purple-900">{endmillData.totalUsageCount}</p>
+                      <p className="text-2xl font-bold text-purple-900">{endmillData.totalUsageCount || 0}</p>
                     </div>
                     <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
                       📈
@@ -351,140 +421,311 @@ export default function EndmillDetailPage() {
               </div>
 
               {/* 공급업체별 정보 */}
-              <div className="mb-8">
-                <h3 className="font-medium text-gray-900 mb-4">🚚 공급업체별 정보</h3>
-                <div className="overflow-x-auto">
+              {endmillData.suppliers && endmillData.suppliers.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="font-medium text-gray-900 mb-4">🚚 공급업체별 정보</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">공급업체</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">단가 (VND)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {endmillData.suppliers.map((supplier: any, index: number) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="font-medium text-gray-900">{supplier.name || supplier.code}</div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="text-gray-900">{supplier.unitPrice?.toLocaleString() || 0}</div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* 예측 정보 */}
+              {(endmillData.predictedNextChange || endmillData.recommendedStock) && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-gray-900 mb-3">🔮 예측 정보</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {endmillData.predictedNextChange && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">다음 교체 예상일</label>
+                        <p className="text-lg font-medium text-blue-600">{endmillData.predictedNextChange}</p>
+                      </div>
+                    )}
+                    {endmillData.recommendedStock && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">권장 재고량</label>
+                        <p className="text-lg font-medium text-green-600">{endmillData.recommendedStock}개</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+          </div>
+
+          {/* 공급업체 정보 컨테이너 */}
+          {endmillData && endmillData.id && (
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">🚚 공급업체 정보</h2>
+                <EndmillSupplierPrices
+                  endmillId={endmillData.id}
+                  endmillCode={endmillData.code}
+                />
+            </div>
+          )}
+
+          {/* 등록된 CAM Sheet 사양 컨테이너 */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">📋 등록된 CAM Sheet 사양</h2>
+              <div className="space-y-3">
+                {endmillData.camSheets && endmillData.camSheets.length > 0 ? (
+                  endmillData.camSheets.map((cam: any, index: number) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <span className="font-medium text-gray-900">{cam.model}</span>
+                          <span className="mx-2 text-gray-400">·</span>
+                          <span className="text-sm text-gray-600">{cam.process}</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-gray-600">T번호: </span>
+                          <span className="font-medium text-blue-600">T{cam.tNumber?.toString().padStart(2, '0') || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">수명: </span>
+                          <span className="font-medium text-gray-900">{cam.toolLife?.toLocaleString() || 'N/A'}회</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="text-sm">등록된 CAM Sheet 사양이 없습니다</p>
+                  </div>
+                )}
+              </div>
+          </div>
+
+          {/* 실시간 사용 현황 테이블 컨테이너 - 전체 너비 */}
+          <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">🏭 실시간 사용 현황</h2>
+              <div className="overflow-x-auto">
+                {sortedCurrentUsage && sortedCurrentUsage.length > 0 ? (
+                  <>
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">공급업체</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">단가 (VND)</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">재고</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">최소주문량</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">리드타임</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">품질평가</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">선호도</th>
+                        <th
+                          className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort('equipmentModel')}
+                        >
+                          <div className="flex items-center">
+                            생산모델
+                            <span className="ml-1">
+                              {sortField === 'equipmentModel' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </span>
+                          </div>
+                        </th>
+                        <th
+                          className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort('equipmentProcess')}
+                        >
+                          <div className="flex items-center">
+                            공정
+                            <span className="ml-1">
+                              {sortField === 'equipmentProcess' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </span>
+                          </div>
+                        </th>
+                        <th
+                          className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort('specToolLife')}
+                        >
+                          <div className="flex items-center">
+                            CAM Tool Life
+                            <span className="ml-1">
+                              {sortField === 'specToolLife' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </span>
+                          </div>
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">실제 평균수명</th>
+                        <th
+                          className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort('equipmentNumber')}
+                        >
+                          <div className="flex items-center">
+                            사용중 설비
+                            <span className="ml-1">
+                              {sortField === 'equipmentNumber' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </span>
+                          </div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {endmillData.suppliers.map((supplier, index) => (
+                      {currentUsageItems.map((usage: any, index: number) => (
                         <tr key={index} className="hover:bg-gray-50">
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="font-medium text-gray-900">{supplier.supplierName}</div>
+                          <td className="px-3 py-4 whitespace-nowrap">
+                            <span className="text-sm font-medium text-gray-900">{usage.equipmentModel || 'N/A'}</span>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-gray-900">{supplier.unitPrice.toLocaleString()}</div>
+                          <td className="px-3 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900">{usage.equipmentProcess || 'N/A'}</span>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-gray-900">{supplier.currentStock}개</div>
+                          <td className="px-3 py-4 whitespace-nowrap">
+                            <span className="text-sm font-medium text-blue-600">
+                              {usage.specToolLife ? `${usage.specToolLife.toLocaleString()}회` : 'N/A'}
+                            </span>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-gray-900">{supplier.minOrderQuantity}개</div>
+                          <td className="px-3 py-4 whitespace-nowrap">
+                            <span className="text-sm font-medium text-gray-900">
+                              {endmillData.averageLifespan ? `${endmillData.averageLifespan.toLocaleString()}회` : 'N/A'}
+                            </span>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-gray-900">{supplier.leadTime}일</div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex space-x-1">
-                                {Array.from({length: 5}, (_, i) => (
-                                  <span 
-                                    key={i} 
-                                    className={i < Math.floor(supplier.qualityRating) ? 'text-yellow-400' : 'text-gray-300'}
-                                  >
-                                    ⭐
-                                  </span>
-                                ))}
-                              </div>
-                              <span className="ml-2 text-sm text-gray-600">
-                                {supplier.qualityRating.toFixed(1)}
+                          <td className="px-3 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm font-medium text-gray-900">
+                                {usage.equipmentNumber?.toString().startsWith('C')
+                                  ? usage.equipmentNumber
+                                  : `C${usage.equipmentNumber?.toString().padStart(3, '0')}`}
                               </span>
+                              <span className="text-xs text-gray-500">T{usage.positionNumber?.toString().padStart(2, '0')}</span>
                             </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            {supplier.isPreferred ? (
-                              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                선호
-                              </span>
-                            ) : (
-                              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                일반
-                              </span>
-                            )}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                </div>
-              </div>
 
-              {/* 예측 정보 */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-medium text-gray-900 mb-3">🔮 예측 정보</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">다음 교체 예상일</label>
-                    <p className="text-lg font-medium text-blue-600">{endmillData.predictedNextChange}</p>
+                  {/* 페이지네이션 */}
+                  {totalPages > 1 && (
+                    <div className="bg-white px-6 py-3 flex items-center justify-between border-t mt-4">
+                      <div className="flex-1 flex justify-between sm:hidden">
+                        <button
+                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          disabled={currentPage === 1}
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          이전
+                        </button>
+                        <button
+                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                          disabled={currentPage === totalPages}
+                          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          다음
+                        </button>
+                      </div>
+                      <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm text-gray-700">
+                            총 <span className="font-medium">{sortedCurrentUsage.length}</span>개 중{' '}
+                            <span className="font-medium">{startIndex + 1}</span>
+                            {' '}~{' '}
+                            <span className="font-medium">{Math.min(endIndex, sortedCurrentUsage.length)}</span>
+                            {' '}표시
+                          </p>
+                        </div>
+                        <div>
+                          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                            <button
+                              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                              disabled={currentPage === 1}
+                              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              ‹
+                            </button>
+
+                            {/* 페이지 번호들 */}
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                              let pageNum;
+                              if (totalPages <= 5) {
+                                pageNum = i + 1;
+                              } else if (currentPage <= 3) {
+                                pageNum = i + 1;
+                              } else if (currentPage >= totalPages - 2) {
+                                pageNum = totalPages - 4 + i;
+                              } else {
+                                pageNum = currentPage - 2 + i;
+                              }
+
+                              return (
+                                <button
+                                  key={pageNum}
+                                  onClick={() => setCurrentPage(pageNum)}
+                                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                    currentPage === pageNum
+                                      ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  {pageNum}
+                                </button>
+                              );
+                            })}
+
+                            <button
+                              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                              disabled={currentPage === totalPages}
+                              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              ›
+                            </button>
+                          </nav>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <div className="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <span className="text-2xl">🔧</span>
+                    </div>
+                    <p className="text-sm">현재 사용 중인 설비가 없습니다</p>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">권장 재고량</label>
-                    <p className="text-lg font-medium text-green-600">{endmillData.recommendedStock}개</p>
-                  </div>
-                </div>
+                )}
               </div>
-            </div>
           </div>
 
-          {/* 우측 - 사이드바 */}
-          <div className="space-y-8">
-            {/* 현재 사용 현황 */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">🏭 현재 사용 현황</h2>
-              <div className="space-y-4">
-                {endmillData.equipmentUsage.slice(0, 5).map((usage, index) => {
-                  const lifePercentage = Math.round((usage.currentLife / usage.totalLife) * 100)
-                  const getStatusColor = (status: string) => {
-                    switch (status) {
-                      case 'critical': return 'bg-red-100 text-red-800'
-                      case 'warning': return 'bg-yellow-100 text-yellow-800'
-                      case 'new': return 'bg-blue-100 text-blue-800'
-                      default: return 'bg-green-100 text-green-800'
-                    }
-                  }
-                  
-                  return (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-gray-900">{usage.equipmentNumber}</span>
-                          <span className="text-sm text-gray-600">T{usage.tNumber.toString().padStart(2, '0')}</span>
-                        </div>
-                        <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusColor(usage.usageStatus)}`}>
-                          {usage.usageStatus === 'critical' ? '위험' :
-                           usage.usageStatus === 'warning' ? '경고' :
-                           usage.usageStatus === 'new' ? '신규' : '정상'}
-                        </span>
-                      </div>
-                      <div className="mb-2">
-                        <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
-                          <span>Tool Life</span>
-                          <span>{lifePercentage}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${
-                              usage.usageStatus === 'critical' ? 'bg-red-600' :
-                              usage.usageStatus === 'warning' ? 'bg-yellow-600' :
-                              usage.usageStatus === 'new' ? 'bg-blue-600' : 'bg-green-600'
-                            }`}
-                            style={{width: `${Math.min(lifePercentage, 100)}%`}}
-                          ></div>
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        <div>공정: {usage.process}</div>
-                        <div>설치일: {usage.installDate}        </div>
+          {/* 최근 교체 이력 컨테이너 - 전체 너비 */}
+          <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">📈 최근 교체 이력</h2>
+              <div className="space-y-3">
+                {endmillData.recentChanges && endmillData.recentChanges.slice(0, 8).map((change: any, index: number) => (
+                  <div key={index} className="border-l-4 border-blue-200 pl-4 py-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-gray-900">{change.equipmentNumber}</span>
+                      <span className="text-xs text-gray-500">{change.changeDate}</span>
+                    </div>
+                    <div className="text-sm text-gray-600 mb-1">
+                      T{change.tNumber?.toString().padStart(2, '0')} - {change.changeReason}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      교체자: {change.changedBy} | 수명: {change.previousLife?.toLocaleString()}회
+                    </div>
+                  </div>
+                ))}
+
+                {endmillData.recentChanges && endmillData.recentChanges.length > 8 && (
+                  <div className="text-center pt-2">
+                    <button className="text-blue-600 hover:text-blue-800 text-sm">
+                      전체 이력 보기
+                    </button>
+                  </div>
+                )}
+              </div>
+          </div>
+        </div>
       </div>
 
       {/* 수정 모달 */}
@@ -504,69 +745,41 @@ export default function EndmillDetailPage() {
             </div>
             <div className="p-6">
               <div className="space-y-6">
-                {/* 기본 정보 섹션 */}
+                {/* 기본 정보 섹션 - 수정불가 필드 */}
                 <div>
                   <h4 className="text-md font-semibold text-gray-900 mb-4">기본 정보</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 코드</label>
                       <input
                         type="text"
                         value={endmillData.code}
                         disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
-                      <select
-                        defaultValue={endmillData.category}
-                        className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="FLAT">FLAT</option>
-                        <option value="BALL">BALL</option>
-                        <option value="T-CUT">T-CUT</option>
-                        <option value="C-CUT">C-CUT</option>
-                        <option value="REAMER">REAMER</option>
-                        <option value="DRILL">DRILL</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
                       <input
                         type="text"
-                        defaultValue={endmillData.name}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={endmillData.categoryName || endmillData.category}
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">직경 (mm)</label>
-                      <input
-                        type="number"
-                        defaultValue={endmillData.diameter}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">날 수</label>
-                      <input
-                        type="number"
-                        defaultValue={endmillData.flutes}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">코팅</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 이름</label>
                       <input
                         type="text"
-                        defaultValue={endmillData.coating}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={endmillData.name || ''}
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* 재고 관리 섹션 */}
+                {/* 재고 관리 섹션 - 수정 가능 */}
                 <div>
                   <h4 className="text-md font-semibold text-gray-900 mb-4">재고 관리</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -574,7 +787,7 @@ export default function EndmillDetailPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">최소 재고</label>
                       <input
                         type="number"
-                        defaultValue={endmillData.minStock}
+                        defaultValue={endmillData.inventory?.min_stock || ''}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -582,7 +795,7 @@ export default function EndmillDetailPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">최대 재고</label>
                       <input
                         type="number"
-                        defaultValue={endmillData.maxStock}
+                        defaultValue={endmillData.inventory?.max_stock || ''}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -590,42 +803,9 @@ export default function EndmillDetailPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">권장 재고</label>
                       <input
                         type="number"
-                        defaultValue={endmillData.recommendedStock}
+                        defaultValue={endmillData.recommendedStock || ''}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 사양 정보 */}
-                <div>
-                  <h4 className="text-md font-semibold text-gray-900 mb-4">상세 사양</h4>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 이름</label>
-                      <input
-                        type="text"
-                        defaultValue={endmillData.specifications}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">소재</label>
-                        <input
-                          type="text"
-                          defaultValue={endmillData.material}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">공차</label>
-                        <input
-                          type="text"
-                          defaultValue={endmillData.tolerance}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -658,51 +838,6 @@ export default function EndmillDetailPage() {
           onClose={() => setShowExcelUploader(false)}
         />
       )}
-    </div>
-  )
-})}
-                
-                {endmillData.equipmentUsage.length > 5 && (
-                  <div className="text-center">
-                    <button className="text-blue-600 hover:text-blue-800 text-sm">
-                      +{endmillData.equipmentUsage.length - 5}개 더 보기
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* 최근 교체 이력 */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">📈 최근 교체 이력</h2>
-              <div className="space-y-3">
-                {endmillData.recentChanges.slice(0, 8).map((change, index) => (
-                  <div key={index} className="border-l-4 border-blue-200 pl-4 py-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-gray-900">{change.equipmentNumber}</span>
-                      <span className="text-xs text-gray-500">{change.changeDate}</span>
-                    </div>
-                    <div className="text-sm text-gray-600 mb-1">
-                      T{change.tNumber.toString().padStart(2, '0')} - {change.changeReason}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      교체자: {change.changedBy} | 수명: {change.previousLife.toLocaleString()}회
-                    </div>
-                  </div>
-                ))}
-                
-                {endmillData.recentChanges.length > 8 && (
-                  <div className="text-center pt-2">
-                    <button className="text-blue-600 hover:text-blue-800 text-sm">
-                      전체 이력 보기
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
