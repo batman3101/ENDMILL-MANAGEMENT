@@ -412,10 +412,10 @@ async function getFrequencyAnalysis(supabase: any) {
     sample: weeklyChanges.slice(0, 3)
   })
 
-  // equipment 조회
+  // equipment 조회 (current_model 추가)
   const { data: equipment, error: eqError } = await supabase
     .from('equipment')
-    .select('equipment_number, model_code')
+    .select('equipment_number, model_code, current_model')
 
   if (eqError) {
     console.error('equipment 조회 오류:', eqError)
@@ -427,8 +427,9 @@ async function getFrequencyAnalysis(supabase: any) {
 
   const modelStats = weeklyChanges.reduce((acc: any, change: any) => {
     const equipment: any = equipmentMap.get(change.equipment_number)
-    const model = equipment?.model_code || change.production_model || 'Unknown'
-    const series = model.split('-')[0] // PA-xxx -> PA
+    // current_model을 우선 사용, 없으면 model_code, 그것도 없으면 production_model 사용
+    const model = equipment?.current_model || equipment?.model_code || change.production_model || 'Unknown'
+    const series = model.split('-')[0] // PA1-xxx -> PA1, R13-xxx -> R13
 
     if (!acc[series]) {
       acc[series] = { count: 0, dates: [] }
@@ -558,10 +559,10 @@ async function getModelCostAnalysis(supabase: any) {
     sample: monthlyChanges.slice(0, 3)
   })
 
-  // equipment 조회
+  // equipment 조회 (current_model 추가)
   const { data: equipment, error: eqError } = await supabase
     .from('equipment')
-    .select('equipment_number, model_code')
+    .select('equipment_number, model_code, current_model')
 
   if (eqError) {
     console.error('equipment 조회 오류:', eqError)
@@ -584,8 +585,9 @@ async function getModelCostAnalysis(supabase: any) {
 
   const modelCosts = monthlyChanges.reduce((acc: any, change: any) => {
     const equipment: any = equipmentMap.get(change.equipment_number)
-    const model = equipment?.model_code || change.production_model || 'Unknown'
-    const series = model.split('-')[0] // PA-xxx -> PA
+    // current_model을 우선 사용, 없으면 model_code, 그것도 없으면 production_model 사용
+    const model = equipment?.current_model || equipment?.model_code || change.production_model || 'Unknown'
+    const series = model.split('-')[0] // PA1-xxx -> PA1, R13-xxx -> R13
 
     const endmill: any = endmillMap.get(change.endmill_code)
     const unitCostString = endmill?.unit_cost || '50000'
@@ -798,11 +800,41 @@ async function getEndmillByEquipmentCount(supabase: any) {
   return results
 }
 
-// Phase 4.1: 모델별 앤드밀 사용 현황
+// Phase 4.1: 모델별 앤드밀 사용 현황 (CAM Sheet 기준)
 async function getModelEndmillUsage(supabase: any) {
-  logger.log('📊 모델별 앤드밀 사용 현황 조회 시작')
+  logger.log('📊 모델별 앤드밀 사용 현황 조회 시작 (CAM Sheet 기준)')
 
-  // equipment 조회 (current_model 사용)
+  // CAM Sheet에서 모델/공정별 T번호 개수 조회
+  const { data: camSheets, error: camError } = await supabase
+    .from('cam_sheets')
+    .select(`
+      id,
+      model,
+      process,
+      cam_sheet_endmills (
+        t_number
+      )
+    `)
+
+  if (camError) {
+    console.error('cam_sheets 조회 오류:', camError)
+    throw camError
+  }
+
+  // CAM Sheet별 T번호 개수 계산
+  const camSheetMap = new Map()
+  camSheets?.forEach((sheet: any) => {
+    const key = `${sheet.model}-${sheet.process}`
+    const tNumbers = new Set(sheet.cam_sheet_endmills?.map((e: any) => e.t_number) || [])
+    camSheetMap.set(key, tNumbers.size)
+  })
+
+  logger.log('📊 CAM Sheet T번호 개수:', {
+    camSheetCount: camSheets?.length || 0,
+    sampleCounts: Array.from(camSheetMap.entries()).slice(0, 5)
+  })
+
+  // equipment 조회
   const { data: equipment, error: eqError } = await supabase
     .from('equipment')
     .select('id, equipment_number, current_model, process')
@@ -812,61 +844,49 @@ async function getModelEndmillUsage(supabase: any) {
     throw eqError
   }
 
-  // tool_positions 조회 (사용 중인 것만)
-  const { data: allPositions, error: tpError } = await supabase
-    .from('tool_positions')
-    .select('equipment_id, endmill_type_id, status')
-
-  if (tpError) {
-    console.error('tool_positions 조회 오류:', tpError)
-    throw tpError
-  }
-
-  const inUsePositions = (allPositions || []).filter((pos: any) => pos.status === 'in_use' && pos.endmill_type_id)
-
-  logger.log('📊 모델별 사용 현황 조회:', {
-    equipmentCount: equipment?.length || 0,
-    totalPositionsCount: allPositions?.length || 0,
-    inUsePositionsCount: inUsePositions.length,
-    samplePositions: inUsePositions.slice(0, 5).map((p: any) => ({
-      equipment_id: p.equipment_id,
-      status: p.status,
-      has_endmill: !!p.endmill_type_id
-    }))
-  })
-
-  // equipment_id로 매핑
-  const equipmentMap = new Map(equipment?.map((eq: any) => [eq.id, eq]) || [])
-
-  // 모델별로 그룹화 (current_model 기준)
-  const modelUsage = inUsePositions.reduce((acc: any, pos: any) => {
-    const eq: any = equipmentMap.get(pos.equipment_id)
-    if (!eq) return acc
-
+  // 모델별로 그룹화 (CAM Sheet 기준)
+  const modelUsage = (equipment || []).reduce((acc: any, eq: any) => {
     const model = eq.current_model || 'Unknown'
+    const process = eq.process || ''
+    const key = `${model}-${process}`
+    const tNumberCount = camSheetMap.get(key) || 0
 
     if (!acc[model]) {
       acc[model] = {
-        equipmentCount: new Set(),
-        endmillCount: 0
+        equipmentIds: new Set(),
+        totalEndmills: 0,
+        processes: new Set()
       }
     }
 
-    acc[model].equipmentCount.add(pos.equipment_id)
-    acc[model].endmillCount++
+    acc[model].equipmentIds.add(eq.id)
+    acc[model].totalEndmills += tNumberCount
+    acc[model].processes.add(process)
 
     return acc
   }, {})
 
   // 결과 변환
-  const results = Object.entries(modelUsage).map(([model, data]: [string, any]) => ({
-    model,
-    equipmentCount: data.equipmentCount.size,
-    endmillCount: data.endmillCount,
-    avgEndmillPerEquipment: Math.round((data.endmillCount / data.equipmentCount.size) * 10) / 10
-  })).sort((a, b) => b.endmillCount - a.endmillCount)
+  const results = Object.entries(modelUsage)
+    .map(([model, data]: [string, any]) => {
+      const equipmentCount = data.equipmentIds.size
+      const endmillCount = data.totalEndmills
+      return {
+        model,
+        equipmentCount,
+        endmillCount,
+        avgEndmillPerEquipment: equipmentCount > 0
+          ? Math.round((endmillCount / equipmentCount) * 10) / 10
+          : 0
+      }
+    })
+    .filter((item) => item.equipmentCount > 0) // 설비가 있는 모델만
+    .sort((a, b) => b.endmillCount - a.endmillCount)
 
-  logger.log('✅ 모델별 앤드밀 사용 현황 계산 완료:', { count: results.length })
+  logger.log('✅ 모델별 앤드밀 사용 현황 계산 완료 (CAM Sheet 기준):', {
+    count: results.length,
+    sampleResults: results.slice(0, 3)
+  })
 
   return results
 }

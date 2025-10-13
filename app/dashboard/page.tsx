@@ -432,7 +432,7 @@ export default function DashboardPage() {
         {/* 코드별 장착 설비수 Top5 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('common.code')}별 장착 {t('equipment.title')}{t('common.count')} Top5</h4>
+            <h4 className="text-lg font-semibold text-gray-800">{t('common.code')}별 장착 설비{t('common.count')} Top5</h4>
             <span className="text-2xl">🔧</span>
           </div>
           {isLoading ? (
@@ -450,7 +450,7 @@ export default function DashboardPage() {
                     <div className="text-xs text-gray-500 truncate">{item.endmillName}</div>
                   </div>
                   <div className="text-right ml-2">
-                    <div className="font-bold text-blue-600">{item.equipmentCount}{t('equipment.title')}</div>
+                    <div className="font-bold text-blue-600">{item.equipmentCount}설비</div>
                     <div className="text-xs text-gray-500">{item.totalPositions}{t('dashboard.positions')}</div>
                   </div>
                 </div>
@@ -468,7 +468,7 @@ export default function DashboardPage() {
         {/* 모델별 사용 앤드밀 분포 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('equipment.model')}별 사용 {t('endmill.title')} 분포</h4>
+            <h4 className="text-lg font-semibold text-gray-800">{t('equipment.model')}별 사용 엔드밀 분포</h4>
             <span className="text-2xl">📊</span>
           </div>
           {isLoading ? (
@@ -484,10 +484,10 @@ export default function DashboardPage() {
                   <span className="font-medium text-gray-900">{item.model}</span>
                   <div className="text-right">
                     <div className="font-bold text-green-600">
-                      {item.endmillCount}{t('endmill.title')}
+                      {item.endmillCount}엔드밀
                     </div>
                     <div className="text-xs text-gray-500">
-                      {item.equipmentCount}{t('equipment.title')} (평균 {item.avgEndmillPerEquipment}/대)
+                      {item.equipmentCount}설비 (평균 {item.avgEndmillPerEquipment}/대)
                     </div>
                   </div>
                 </div>
@@ -505,7 +505,7 @@ export default function DashboardPage() {
         {/* 앤드밀 소진율 높은 설비 Top5 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('endmill.title')} {t('dashboard.lifeConsumption')} 높은 {t('equipment.title')} Top5</h4>
+            <h4 className="text-lg font-semibold text-gray-800">엔드밀 {t('dashboard.lifeConsumption')} 높은 설비 Top5</h4>
             <span className="text-2xl">⚙️</span>
           </div>
           {isLoading ? (
@@ -518,24 +518,21 @@ export default function DashboardPage() {
             <div className="space-y-2">
               {(data?.equipmentLifeConsumption || []).slice(0, 5).map((item, index) => (
                 <div key={index} className="space-y-1 p-2 bg-gray-50 rounded">
-                  <div className="flex justify-between items-start text-sm">
+                  <div className="flex justify-between items-center">
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">
-                        {item.toolCount}{t('endmill.title')} {t('dashboard.management')} / {item.model} / ({(item as any).process || t('common.unknown')})
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        C{String(item.equipmentNumber).padStart(3, '0')} - {(item as any).changeCount}{t('dashboard.changeCount')}
+                      <div className="font-semibold text-base text-gray-900">
+                        C{String(item.equipmentNumber).padStart(3, '0')} / {item.model} / ({(item as any).process || t('common.unknown')})
                       </div>
                     </div>
-                    <div className="text-right ml-2">
-                      <span className={`font-bold text-lg ${
+                    <div className="text-right ml-3">
+                      <span className={`font-bold text-2xl ${
                         (item as any).changeCount >= 20 ? 'text-red-600' :
                         (item as any).changeCount >= 10 ? 'text-yellow-600' :
                         'text-green-600'
                       }`}>
                         {(item as any).changeCount}
                       </span>
-                      <div className="text-[10px] text-gray-500">{t('dashboard.times')}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">교체실적</div>
                     </div>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-1.5">
