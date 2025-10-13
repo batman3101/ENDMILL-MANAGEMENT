@@ -10,10 +10,14 @@ export default function QueryProvider({ children }: { children: React.ReactNode 
       new QueryClient({
         defaultOptions: {
           queries: {
-            // 5분 캐시
+            // 기본 캐시 시간: 5분
             staleTime: 5 * 60 * 1000,
-            // 백그라운드에서 자동 재실행
+            // 캐시 유지 시간: 10분 (메모리 효율성)
+            gcTime: 10 * 60 * 1000,
+            // 백그라운드에서 자동 재실행 비활성화 (수동 새로고침 권장)
             refetchOnWindowFocus: false,
+            // 마운트 시 자동 재실행 비활성화 (성능 최적화)
+            refetchOnMount: false,
             // 에러 재시도 설정
             retry: (failureCount, error: any) => {
               // 401 에러는 재시도하지 않음

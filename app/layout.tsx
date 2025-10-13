@@ -21,7 +21,10 @@ export const metadata: Metadata = {
   description: '800대 CNC 설비를 위한 포괄적인 앤드밀 교체 및 재고 관리 플랫폼',
   keywords: ['CNC', '앤드밀', '공구관리', '재고관리', '제조업', '생산관리'],
   authors: [{ name: 'CNC Management Team' }],
-  metadataBase: new URL('http://localhost:3000'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  ),
   openGraph: {
     title: 'CNC 앤드밀 관리 시스템',
     description: '800대 CNC 설비를 위한 포괄적인 앤드밀 교체 및 재고 관리 플랫폼',
@@ -73,22 +76,16 @@ export default function RootLayout({
         <main id="main-content" className="min-h-screen">
           <I18nProvider>
             <ToastProvider>
-              <AuthProvider>
-                <SettingsProvider>
-                  <QueryProvider>
+              <QueryProvider>
+                <AuthProvider>
+                  <SettingsProvider>
                     {children}
-                  </QueryProvider>
-                </SettingsProvider>
-              </AuthProvider>
+                  </SettingsProvider>
+                </AuthProvider>
+              </QueryProvider>
             </ToastProvider>
           </I18nProvider>
         </main>
-        
-        {/* Toast 알림을 위한 컨테이너 */}
-        <div id="toast-container" />
-        
-        {/* 로딩 인디케이터를 위한 컨테이너 */}
-        <div id="loading-container" />
       </body>
     </html>
   );
