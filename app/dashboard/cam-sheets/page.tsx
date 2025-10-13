@@ -23,7 +23,7 @@ export default function CAMSheetsPage() {
     updateCAMSheet,
     deleteCAMSheet
   } = useCAMSheets()
-  const { showSuccess, showError, showWarning } = useToast()
+  const { showSuccess, showError } = useToast()
   const confirmation = useConfirmation()
   const [showAddForm, setShowAddForm] = useState(false)
   const [showExcelUploader, setShowExcelUploader] = useState(false)
@@ -409,10 +409,10 @@ export default function CAMSheetsPage() {
         })
         setShowExcelUploader(false)
         showSuccess(
-          '엑셀 일괄 등록 완료', 
+          '엑셀 일괄 등록 완료',
           `${camSheets.length}개의 CAM Sheet가 성공적으로 등록되었습니다.`
         )
-      } catch (error) {
+      } catch (_error) {
         showError('일괄 등록 실패', '일괄 등록 중 오류가 발생했습니다.')
       } finally {
         confirmation.setLoading(false)

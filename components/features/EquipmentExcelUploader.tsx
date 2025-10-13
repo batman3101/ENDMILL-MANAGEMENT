@@ -48,7 +48,7 @@ export default function EquipmentExcelUploader({
       }
 
       showSuccess(t('equipment.downloadTemplate'), t('equipment.templateDownloaded'))
-    } catch (error) {
+    } catch (_error) {
       showError(t('equipment.downloadFailed'), t('equipment.downloadFailedMsg'))
     }
   }
@@ -98,8 +98,8 @@ export default function EquipmentExcelUploader({
       setParsedData(data)
       showSuccess(t('equipment.fileValidationComplete'), `${data.length}${t('equipment.dataConfirmed')}`)
 
-    } catch (error) {
-      showError(t('equipment.fileReadError'), error instanceof Error ? error.message : t('equipment.cannotReadFile'))
+    } catch (_error) {
+      showError(t('equipment.fileReadError'), _error instanceof Error ? _error.message : t('equipment.cannotReadFile'))
       setParsedData([])
       setValidationErrors([])
     }

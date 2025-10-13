@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { useToast } from '@/components/shared/Toast'
 import { useTranslations } from '@/lib/hooks/useTranslations'
 import ConfirmationModal from '@/components/shared/ConfirmationModal'
@@ -66,6 +67,7 @@ export default function EndmillDisposalPage() {
 
   useEffect(() => {
     loadDisposals()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange])
 
   // 이미지 선택 핸들러
@@ -392,11 +394,14 @@ export default function EndmillDisposalPage() {
               {imagePreview && (
                 <div className="md:col-span-3">
                   <p className="text-sm font-medium text-gray-700 mb-2">{t('endmillDisposal.preview')}</p>
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-48 h-48 object-cover rounded-lg border"
-                  />
+                  <div className="relative w-48 h-48">
+                    <Image
+                      src={imagePreview}
+                      alt="Preview"
+                      fill
+                      className="object-cover rounded-lg border"
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -538,11 +543,14 @@ export default function EndmillDisposalPage() {
               {imagePreview && (
                 <div className="md:col-span-3">
                   <p className="text-sm font-medium text-gray-700 mb-2">{t('endmillDisposal.preview')}</p>
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-48 h-48 object-cover rounded-lg border"
-                  />
+                  <div className="relative w-48 h-48">
+                    <Image
+                      src={imagePreview}
+                      alt="Preview"
+                      fill
+                      className="object-cover rounded-lg border"
+                    />
+                  </div>
                 </div>
               )}
             </div>

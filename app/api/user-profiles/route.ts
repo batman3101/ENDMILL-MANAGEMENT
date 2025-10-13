@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // 활성 상태인 모든 사용자 프로필 조회
     const supabase = createServerClient()

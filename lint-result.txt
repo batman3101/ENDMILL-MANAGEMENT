@@ -1,0 +1,71 @@
+
+> cnc-endmill-management@1.0.0 lint
+> next lint
+
+
+./app/dashboard/endmill/page.tsx
+10:10  Warning: 'useCAMSheets' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+290:9  Warning: 'statusStats' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+301:9  Warning: 'getStatusBadge' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+316:9  Warning: 'getStatusText' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+331:9  Warning: 'getStatusIcon' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+400:9  Warning: 'handleImmediateReplace' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+419:9  Warning: 'handleScheduleReplace' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+436:9  Warning: 'handleMaintenance' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+832:23  Warning: 'usage' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/dashboard/equipment/page.tsx
+8:27  Warning: 'createStatusChangeConfirmation' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+31:10  Warning: 'isRealtimeConnected' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+53:21  Warning: 'updateCategorySettings' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+57:9  Warning: 'toolPositionCount' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+111:11  Warning: 'camSheets' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+173:6  Warning: React Hook useMemo has unnecessary dependencies: 'modelFilter', 'searchTerm', 'sortField', 'sortOrder', and 'statusFilter'. Either exclude them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/dashboard/equipment/[id]/page.tsx
+51:11  Warning: 't' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+94:6  Warning: React Hook useEffect has a missing dependency: 'fetchEquipment'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+105:6  Warning: React Hook useEffect has a missing dependency: 'fetchEquipment'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/dashboard/inventory/inbound/page.tsx
+36:35  Warning: 'showWarning' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/dashboard/inventory/outbound/page.tsx
+43:11  Warning: 'searchByCode' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+279:11  Warning: 'totalValue' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/dashboard/inventory/page.tsx
+8:79  Warning: 'createSaveConfirmation' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+23:10  Warning: 'supplierFilter' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+38:5  Warning: 'getFilteredInventory' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+40:5  Warning: 'getAvailableCategories' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+42:5  Warning: 'isCreating' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+43:5  Warning: 'isUpdating' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+44:5  Warning: 'isDeleting' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+47:11  Warning: 'searchByCode' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+47:25  Warning: 'searchByName' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+47:39  Warning: 'searchByCategory' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+48:11  Warning: 'getCriticalItems' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+48:29  Warning: 'getLowStockItems' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+48:47  Warning: 'getAlertCount' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+197:63  Warning: 'max' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+391:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+405:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+441:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+770:38  Warning: 'index' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+991:59  Warning: 'index' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/dashboard/page.tsx
+3:20  Warning: 'useEffect' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+6:8  Warning: 'LandingStatusCard' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+10:10  Warning: 'PermissionGuard' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+11:10  Warning: 'useRealtime' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+15:3  Warning: 'formatNumber' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+28:10  Warning: 'realtimeData' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+28:24  Warning: 'setRealtimeData' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+71:11  Warning: 'connections' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+71:24  Warning: 'errors' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+89:9  Warning: 'totalEquipments' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+90:9  Warning: 'toolPositions' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules

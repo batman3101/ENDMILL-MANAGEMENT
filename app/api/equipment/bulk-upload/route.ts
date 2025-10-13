@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // 동적 스키마 생성 및 CAM Sheet 데이터 가져오기
-    const { schema: equipmentSchema, camSheets } = await createEquipmentSchema()
+    const { schema: equipmentSchema } = await createEquipmentSchema()
     const bulkUploadSchema = createBulkUploadSchema(equipmentSchema)
 
     // 데이터 검증

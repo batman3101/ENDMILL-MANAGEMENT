@@ -32,7 +32,7 @@ export interface AuthContext {
  * API 라우트에서 인증 확인 및 사용자 정보 가져오기
  */
 export async function withAuth(
-  request: NextRequest
+  _request: NextRequest
 ): Promise<{ success: true; context: AuthContext } | { success: false; response: NextResponse }> {
   try {
     const supabase = createServerClient()

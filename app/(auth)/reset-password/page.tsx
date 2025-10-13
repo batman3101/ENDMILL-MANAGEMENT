@@ -17,7 +17,7 @@ function ResetPasswordForm() {
   const [checkingSession, setCheckingSession] = useState(true)
   
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const _searchParams = useSearchParams()
   const supabase = createClientComponentClient()
 
   // 세션 확인
@@ -40,6 +40,7 @@ function ResetPasswordForm() {
     }
 
     checkSession()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const validatePassword = (password: string) => {

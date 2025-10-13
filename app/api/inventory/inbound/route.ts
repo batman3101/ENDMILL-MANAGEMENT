@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../../lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = createServerClient()
 
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const supabase = createServerClient()
     const body = await request.json()
 
-    const { endmill_code, endmill_name, supplier, quantity, unit_price, total_amount } = body
+    const { endmill_code, supplier, quantity, unit_price, total_amount } = body
 
     // 필수 필드 검증
     if (!endmill_code || !quantity || !unit_price || !supplier) {
@@ -93,13 +93,15 @@ export async function POST(request: NextRequest) {
     }
 
     // 재고 정보 조회 또는 생성
-    let { data: inventory, error: inventoryError } = await supabase
+    const { data: inventory, error } = await supabase
       .from('inventory')
       .select('id, current_stock')
       .eq('endmill_type_id', endmillType.id)
       .single()
 
-    if (inventoryError && inventoryError.code === 'PGRST116') {
+    let finalInventory = inventory
+
+    if (error && error.code === 'PGRST116') {
       // 재고 정보가 없으면 새로 생성
       const { data: newInventory, error: createError } = await supabase
         .from('inventory')
@@ -122,9 +124,9 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      inventory = newInventory
-    } else if (inventoryError) {
-      logger.error('재고 정보 조회 오류:', inventoryError)
+      finalInventory = newInventory
+    } else if (error) {
+      logger.error('재고 정보 조회 오류:', error)
       return NextResponse.json(
         { error: '재고 정보 조회 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -132,7 +134,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 입고 트랜잭션 생성
-    if (!inventory) {
+    if (!finalInventory) {
       return NextResponse.json(
         { error: '재고 정보를 찾을 수 없습니다.' },
         { status: 404 }
@@ -142,7 +144,7 @@ export async function POST(request: NextRequest) {
     const { data: transaction, error: transactionError } = await supabase
       .from('inventory_transactions')
       .insert({
-        inventory_id: inventory.id,
+        inventory_id: finalInventory.id,
         transaction_type: 'inbound',
         quantity: quantity,
         unit_price: unit_price,
@@ -163,7 +165,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 재고 수량 업데이트
-    const newStock = (inventory.current_stock || 0) + quantity
+    const newStock = (finalInventory.current_stock || 0) + quantity
     const { error: updateError } = await supabase
       .from('inventory')
       .update({
@@ -171,7 +173,7 @@ export async function POST(request: NextRequest) {
         last_updated: new Date().toISOString(),
         status: newStock >= 50 ? 'sufficient' : newStock >= 20 ? 'low' : 'critical'
       })
-      .eq('id', inventory.id)
+      .eq('id', finalInventory.id)
 
     if (updateError) {
       logger.error('재고 수량 업데이트 오류:', updateError)

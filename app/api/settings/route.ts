@@ -1,116 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { SettingsManager } from '../../../lib/data/settingsManager'
-import { SystemSettings, SettingsCategory, SettingsValidationResult } from '../../../lib/types/settings'
+import { createServerClient } from '@/lib/supabase/client'
+import { SettingsCategory } from '@/lib/types/settings'
 import { logger } from '@/lib/utils/logger'
-
-// DB 연동 비활성화 상태 유지 (필요 시 createServerClient 사용)
 
 // GET: 설정 조회
 export async function GET(request: NextRequest) {
   try {
-    // 임시로 로컬 설정만 사용
+    const supabase = createServerClient()
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category') as SettingsCategory | null
-    const settingsManager = SettingsManager.getInstance()
-    const allSettings = settingsManager.getSettings()
 
-    return NextResponse.json({
-      success: true,
-      data: category ? allSettings[category] : allSettings,
-      message: '설정을 조회했습니다. (로컬)'
+    // app_settings 테이블에서 설정 조회
+    let query = supabase
+      .from('app_settings' as any)
+      .select('category, key, value, description, value_type')
+      .order('category')
+      .order('key')
+
+    if (category) {
+      query = query.eq('category', category)
+    }
+
+    const { data: settings, error } = await query
+
+    if (error) {
+      logger.error('설정 조회 오류:', error)
+      return NextResponse.json(
+        { success: false, error: '설정을 불러오는데 실패했습니다.' },
+        { status: 500 }
+      )
+    }
+
+    // JSONB 데이터를 SystemSettings 형태로 변환
+    const parsedSettings: any = {}
+
+    settings?.forEach((setting: any) => {
+      if (!parsedSettings[setting.category]) {
+        parsedSettings[setting.category] = {}
+      }
+      parsedSettings[setting.category][setting.key] = setting.value
     })
 
-    /* DB 연동 부분 임시 비활성화
-    const history = searchParams.get('history') === 'true'
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
-
-    if (history) {
-      // 히스토리 조회 (DB에서)
-      let query = supabase
-        .from('settings_history')
-        .select('*')
-        .order('changed_at', { ascending: false })
-
-      if (category) {
-        query = query.eq('category', category)
-      }
-      
-      if (limit) {
-        query = query.limit(limit)
-      }
-
-      const { data: historyData, error } = await query
-      
-      if (error) {
-        logger.error('히스토리 조회 실패:', error)
-        // 폴백: 로컬 매니저 사용
-        const settingsManager = SettingsManager.getInstance()
-        const localHistory = settingsManager.getHistory(category || undefined, limit)
-        return NextResponse.json({
-          success: true,
-          data: localHistory,
-          message: '설정 히스토리를 조회했습니다. (로컬)'
-        })
-      }
-
+    // 특정 카테고리만 요청한 경우
+    if (category) {
       return NextResponse.json({
         success: true,
-        data: historyData || [],
-        message: '설정 히스토리를 조회했습니다.'
+        settings: parsedSettings[category] || {},
+        message: `${category} 설정을 조회했습니다.`
       })
     }
 
-    // 설정 조회 (DB 우선, 실패시 로컬)
-    try {
-      const { data: dbSettings, error } = await supabase
-        .from('app_settings' as any)
-        .select('key, value')
-        .order('key')
-
-      if (!error && dbSettings && dbSettings.length > 0) {
-        // DB 데이터를 SystemSettings 형태로 변환
-        const parsedSettings: { [key: string]: any } = {}
-
-        (dbSettings as any[]).forEach((setting: any) => {
-          // key 형식: "category.key" (예: "equipment.models")
-          const keyParts = setting.key.split('.')
-          if (keyParts.length >= 2) {
-            const categoryKey = keyParts[0]
-            const settingKey = keyParts.slice(1).join('.')
-
-            if (!parsedSettings[categoryKey]) {
-              parsedSettings[categoryKey] = {}
-            }
-            parsedSettings[categoryKey][settingKey] = setting.value
-          }
-        })
-
-        // 기본값과 병합
-        const settingsManager = SettingsManager.getInstance()
-        const defaultSettings = settingsManager.getSettings()
-        const mergedSettings = { ...defaultSettings, ...parsedSettings }
-
-        if (category) {
-          return NextResponse.json({
-            success: true,
-            data: { [category]: mergedSettings[category] || defaultSettings[category] },
-            message: `${category} 카테고리 설정을 조회했습니다.`
-          })
-        }
-
-        return NextResponse.json({
-          success: true,
-          data: mergedSettings,
-          message: '전체 설정을 조회했습니다.'
-        })
-      }
-    } catch (dbError) {
-      logger.warn('DB 설정 조회 실패, 로컬 사용:', dbError)
-    }
-
-    // 폴백: 로컬 설정 사용
-    // (위에서 이미 처리됨)
-    */
+    return NextResponse.json({
+      success: true,
+      settings: parsedSettings,
+      data: parsedSettings, // useSettings 훅 호환성
+      message: '전체 설정을 조회했습니다.'
+    })
 
   } catch (error) {
     logger.error('설정 조회 에러:', error)
@@ -125,110 +70,144 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/* DB 저장 기능 임시 비활성화
-// 설정을 DB에 저장하는 헬퍼 함수
-async function saveSettingsToDB(settings: any, category?: string, changedBy: string = 'api', reason?: string) {
-  // 임시로 로컬만 사용
-  return true
-}
-*/
-
 // PUT: 설정 업데이트
 export async function PUT(request: NextRequest) {
   try {
+    const supabase = createServerClient()
     const body = await request.json()
-    const { updates, category, changedBy = 'api', reason } = body
+    const { updates, category, reason } = body
 
     if (!updates) {
       return NextResponse.json(
-        {
-          success: false,
-          error: '업데이트할 설정 데이터가 필요합니다.'
-        },
+        { success: false, error: '업데이트할 설정 데이터가 필요합니다.' },
         { status: 400 }
       )
     }
 
-    const settingsManager = SettingsManager.getInstance()
+    // 현재 사용자 ID 가져오기
+    const { data: { user } } = await supabase.auth.getUser()
+    const userId = user?.id
 
-    // 유효성 검증
+    // 카테고리별 업데이트
     if (category) {
-      // 카테고리별 업데이트
-      const currentSettings = settingsManager.getSettings()
-      const testSettings = {
-        ...currentSettings,
-        [category]: { ...(currentSettings as any)[category], ...updates }
-      }
-      const validation = settingsManager.validateSettings(testSettings)
-      
-      if (!validation.isValid) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: '설정 유효성 검증에 실패했습니다.',
-            validation
-          },
-          { status: 400 }
-        )
-      }
+      const updatePromises = Object.entries(updates).map(async ([key, value]) => {
+        // 기존 값 조회 (히스토리용)
+        const { data: oldSetting } = await supabase
+          .from('app_settings' as any)
+          .select('value')
+          .eq('category', category)
+          .eq('key', key)
+          .single()
 
-      // 로컬에 저장
-      settingsManager.updateCategorySettings(category, updates, changedBy, reason)
+        // 설정 업데이트 (upsert)
+        const { error: updateError } = await supabase
+          .from('app_settings' as any)
+          .upsert({
+            category,
+            key,
+            value: value as any,
+            value_type: typeof value,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'category,key'
+          })
+
+        if (updateError) {
+          logger.error(`설정 업데이트 오류 (${category}.${key}):`, updateError)
+          throw updateError
+        }
+
+        // 히스토리 기록
+        if (oldSetting) {
+          await supabase
+            .from('settings_history')
+            .insert({
+              category,
+              key,
+              old_value: (oldSetting as any).value,
+              new_value: value as any,
+              changed_by: userId,
+              reason: reason || '설정 변경'
+            })
+        }
+      })
+
+      await Promise.all(updatePromises)
     } else {
       // 전체 설정 업데이트
-      const validation = settingsManager.validateSettings(updates)
-      
-      if (!validation.isValid) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: '설정 유효성 검증에 실패했습니다.',
-            validation
-          },
-          { status: 400 }
-        )
-      }
+      const updatePromises: Promise<any>[] = []
 
-      // 로컬에 저장
-      settingsManager.updateSettings(updates, changedBy, reason)
+      Object.entries(updates).forEach(([cat, categorySettings]) => {
+        Object.entries(categorySettings as any).forEach(([key, value]) => {
+          updatePromises.push(
+            (async () => {
+              // 기존 값 조회
+              const { data: oldSetting } = await supabase
+                .from('app_settings' as any)
+                .select('value')
+                .eq('category', cat)
+                .eq('key', key)
+                .single()
+
+              // 설정 업데이트
+              const { error: updateError } = await supabase
+                .from('app_settings' as any)
+                .upsert({
+                  category: cat,
+                  key,
+                  value: value as any,
+                  value_type: typeof value,
+                  updated_at: new Date().toISOString()
+                }, {
+                  onConflict: 'category,key'
+                })
+
+              if (updateError) {
+                logger.error(`설정 업데이트 오류 (${cat}.${key}):`, updateError)
+                throw updateError
+              }
+
+              // 히스토리 기록
+              if (oldSetting) {
+                await supabase
+                  .from('settings_history')
+                  .insert({
+                    category: cat,
+                    key,
+                    old_value: (oldSetting as any).value,
+                    new_value: value as any,
+                    changed_by: userId,
+                    reason: reason || '설정 변경'
+                  })
+              }
+            })()
+          )
+        })
+      })
+
+      await Promise.all(updatePromises)
     }
 
     // 업데이트된 설정 반환
-    const updatedSettings = settingsManager.getSettings()
-    return NextResponse.json({
-      success: true,
-      data: category ? updatedSettings[category as keyof typeof updatedSettings] : updatedSettings,
-      message: '설정이 성공적으로 업데이트되었습니다.'
+    const { data: updatedSettings } = await supabase
+      .from('app_settings' as any)
+      .select('category, key, value')
+      .order('category')
+      .order('key')
+
+    const parsedSettings: any = {}
+    updatedSettings?.forEach((setting: any) => {
+      if (!parsedSettings[setting.category]) {
+        parsedSettings[setting.category] = {}
+      }
+      parsedSettings[setting.category][setting.key] = setting.value
     })
 
-    /* DB 반환 로직 임시 비활성화
-    try {
-      const { data: dbSettings, error } = await supabase
-        .from('app_settings' as any)
-        .select('key, value')
-        .order('key')
-
-      if (!error && dbSettings && dbSettings.length > 0) {
-        // DB 데이터를 SystemSettings 형태로 변환
-        const settings: { [key: string]: any } = {}
-
-        dbSettings.forEach(setting => {
-          const keyParts = setting.key.split('.')
-          if (keyParts.length >= 2) {
-            const cat = keyParts[0]
-            const settingKey = keyParts.slice(1).join('.')
-
-            if (!settings[cat]) {
-              settings[cat] = {}
-            }
-            settings[cat][settingKey] = setting.value
-          }
-        })
-      }
-    } catch (dbError) {
-      logger.warn('DB 조회 실패, 로컬 설정 반환:', dbError)
-    }
-    */
+    return NextResponse.json({
+      success: true,
+      data: category ? parsedSettings[category] : parsedSettings,
+      message: '설정이 성공적으로 업데이트되었습니다.'
+    })
 
   } catch (error) {
     logger.error('설정 업데이트 에러:', error)
@@ -246,33 +225,30 @@ export async function PUT(request: NextRequest) {
 // POST: 설정 초기화, 가져오기/내보내기
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createServerClient()
     const body = await request.json()
-    const { action, data, category, changedBy = 'api' } = body
-
-    const settingsManager = SettingsManager.getInstance()
+    const { action, data } = body
 
     switch (action) {
       case 'reset':
-        // 설정 초기화
-        settingsManager.resetSettings(category, changedBy)
-        const resetSettings = category 
-          ? settingsManager.getCategorySettings(category)
-          : settingsManager.getSettings()
-        
+        // 설정 초기화 (기본값으로 복원)
+        // 실제 구현은 기본값 테이블이나 설정 파일에서 가져와야 함
         return NextResponse.json({
-          success: true,
-          data: category ? { [category]: resetSettings } : resetSettings,
-          message: category 
-            ? `${category} 카테고리 설정이 초기화되었습니다.`
-            : '모든 설정이 초기화되었습니다.'
-        })
+          success: false,
+          error: '설정 초기화 기능은 아직 구현되지 않았습니다.'
+        }, { status: 501 })
 
       case 'export':
         // 설정 내보내기
-        const exportData = settingsManager.exportSettings()
+        const { data: allSettings } = await supabase
+          .from('app_settings' as any)
+          .select('*')
+          .order('category')
+          .order('key')
+
         return NextResponse.json({
           success: true,
-          data: exportData,
+          data: JSON.stringify(allSettings, null, 2),
           message: '설정이 내보내기되었습니다.'
         })
 
@@ -280,48 +256,39 @@ export async function POST(request: NextRequest) {
         // 설정 가져오기
         if (!data) {
           return NextResponse.json(
-            {
-              success: false,
-              error: '가져올 설정 데이터가 필요합니다.'
-            },
+            { success: false, error: '가져올 설정 데이터가 필요합니다.' },
             { status: 400 }
           )
         }
 
-        settingsManager.importSettings(data, changedBy)
-        const importedSettings = settingsManager.getSettings()
-        
+        const importSettings = JSON.parse(data)
+
+        // 각 설정을 upsert
+        const importPromises = importSettings.map((setting: any) =>
+          supabase
+            .from('app_settings' as any)
+            .upsert({
+              category: setting.category,
+              key: setting.key,
+              value: setting.value,
+              description: setting.description,
+              value_type: setting.value_type,
+              is_encrypted: setting.is_encrypted
+            }, {
+              onConflict: 'category,key'
+            })
+        )
+
+        await Promise.all(importPromises)
+
         return NextResponse.json({
           success: true,
-          data: importedSettings,
           message: '설정이 가져오기되었습니다.'
-        })
-
-      case 'validate':
-        // 설정 유효성 검증
-        if (!data) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: '검증할 설정 데이터가 필요합니다.'
-            },
-            { status: 400 }
-          )
-        }
-
-        const validation = settingsManager.validateSettings(data)
-        return NextResponse.json({
-          success: true,
-          data: validation,
-          message: '설정 유효성 검증이 완료되었습니다.'
         })
 
       default:
         return NextResponse.json(
-          {
-            success: false,
-            error: '지원하지 않는 액션입니다.'
-          },
+          { success: false, error: '지원하지 않는 액션입니다.' },
           { status: 400 }
         )
     }
@@ -342,17 +309,37 @@ export async function POST(request: NextRequest) {
 // DELETE: 설정 히스토리 삭제
 export async function DELETE(request: NextRequest) {
   try {
+    const supabase = createServerClient()
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category') as SettingsCategory | null
 
-    const settingsManager = SettingsManager.getInstance()
-    settingsManager.clearHistory(category || undefined)
+    let query = supabase.from('settings_history').delete()
+
+    if (category) {
+      query = query.eq('category', category)
+    } else {
+      // 전체 삭제는 위험하므로 제한
+      return NextResponse.json(
+        { success: false, error: '전체 히스토리 삭제는 지원하지 않습니다.' },
+        { status: 400 }
+      )
+    }
+
+    const { error } = await query
+
+    if (error) {
+      logger.error('설정 히스토리 삭제 오류:', error)
+      return NextResponse.json(
+        { success: false, error: '설정 히스토리 삭제에 실패했습니다.' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
-      message: category 
+      message: category
         ? `${category} 카테고리의 설정 히스토리가 삭제되었습니다.`
-        : '모든 설정 히스토리가 삭제되었습니다.'
+        : '설정 히스토리가 삭제되었습니다.'
     })
 
   } catch (error) {
@@ -366,4 +353,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     )
   }
-} 
+}

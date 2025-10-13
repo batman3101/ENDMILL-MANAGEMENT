@@ -5,7 +5,7 @@ import { logger } from '@/lib/utils/logger'
 // Supabase 클라이언트 생성 (Service Role)
 const supabase = createServerClient()
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { data, error } = await supabase
       .from('endmill_categories')

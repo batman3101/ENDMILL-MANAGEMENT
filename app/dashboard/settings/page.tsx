@@ -45,17 +45,11 @@ const SETTINGS_TABS = [
     icon: '🎨',
     description: '화면 테마 및 인터페이스 설정'
   },
-  { 
-    id: 'notifications' as SettingsCategory, 
-    name: '알림 설정', 
+  {
+    id: 'notifications' as SettingsCategory,
+    name: '알림 설정',
     icon: '🔔',
     description: '알림 방식 및 스케줄 설정'
-  },
-  { 
-    id: 'translations' as SettingsCategory, 
-    name: '번역 관리', 
-    icon: '🌐',
-    description: '다국어 지원 및 번역 설정'
   }
 ]
 
@@ -108,7 +102,7 @@ function SettingsPageContent() {
       window.dispatchEvent(new CustomEvent('settingsUpdated'))
 
       showSuccess('저장 완료', `${activeTabInfo?.name} 설정이 성공적으로 저장되었습니다.`)
-    } catch (err) {
+    } catch (_err) {
       showError('저장 실패', '설정 저장 중 오류가 발생했습니다.')
     } finally {
       setIsSubmitting(false)
@@ -124,7 +118,7 @@ function SettingsPageContent() {
         return { ...prev, [category]: settings[category] }
       })
       showSuccess('초기화 완료', `${activeTabInfo?.name} 설정이 기본값으로 초기화되었습니다.`)
-    } catch (err) {
+    } catch (_err) {
       showError('초기화 실패', '설정 초기화 중 오류가 발생했습니다.')
     }
   }
@@ -1740,7 +1734,7 @@ function SettingsPageContent() {
                 </div>
               )}
 
-              {activeTab === 'translations' && (
+              {(activeTab as string) === 'translations' && (
                 <div className="space-y-6">
                   {/* 기본 번역 설정 */}
                   <div className="bg-white border border-gray-200 rounded-lg">
@@ -1756,7 +1750,7 @@ function SettingsPageContent() {
                             기본 언어
                           </label>
                           <select
-                            value={formData.translations?.defaultLanguage || 'ko'}
+                            value={(formData as any).translations?.defaultLanguage || 'ko'}
                             onChange={(e) => updateFormData('translations', 'defaultLanguage', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
@@ -1771,7 +1765,7 @@ function SettingsPageContent() {
                             대체 언어
                           </label>
                           <select
-                            value={formData.translations?.fallbackLanguage || 'ko'}
+                            value={(formData as any).translations?.fallbackLanguage || 'ko'}
                             onChange={(e) => updateFormData('translations', 'fallbackLanguage', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
@@ -1794,7 +1788,7 @@ function SettingsPageContent() {
                           <label className="flex items-center">
                             <input
                               type="checkbox"
-                              checked={formData.translations?.enabled !== false}
+                              checked={(formData as any).translations?.enabled !== false}
                               onChange={(e) => updateFormData('translations', 'enabled', e.target.checked)}
                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                             />
@@ -1810,10 +1804,10 @@ function SettingsPageContent() {
                           <label className="flex items-center">
                             <input
                               type="checkbox"
-                              checked={formData.translations?.autoTranslate || false}
+                              checked={(formData as any).translations?.autoTranslate || false}
                               onChange={(e) => updateFormData('translations', 'autoTranslate', e.target.checked)}
                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                              disabled={!formData.translations?.enabled}
+                              disabled={!(formData as any).translations?.enabled}
                             />
                           </label>
                         </div>
@@ -1838,11 +1832,11 @@ function SettingsPageContent() {
                           <div className="flex space-x-3">
                             <input
                               type="password"
-                              value={formData.translations?.googleApiKey || ''}
+                              value={(formData as any).translations?.googleApiKey || ''}
                               onChange={(e) => updateFormData('translations', 'googleApiKey', e.target.value)}
                               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                               placeholder="AIzaSyB1234567890abcdefghijklmnopqrstuvwxyz"
-                              disabled={!formData.translations?.enabled}
+                              disabled={!(formData as any).translations?.enabled}
                             />
                             <button
                               type="button"
@@ -1852,11 +1846,11 @@ function SettingsPageContent() {
                                   showInfo('검증 중...', 'API 키를 검증하고 있습니다.')
                                   // 실제 검증 로직은 GoogleTranslateService에서 처리
                                   showSuccess('검증 완료', 'API 키가 유효합니다.')
-                                } catch (error) {
+                                } catch (_error) {
                                   showError('검증 실패', 'API 키가 유효하지 않거나 권한이 없습니다.')
                                 }
                               }}
-                              disabled={!formData.translations?.googleApiKey || !formData.translations?.enabled}
+                              disabled={!(formData as any).translations?.googleApiKey || !(formData as any).translations?.enabled}
                               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               검증
@@ -1884,11 +1878,11 @@ function SettingsPageContent() {
                           </label>
                           <input
                             type="text"
-                            value={formData.translations?.googleProjectId || ''}
+                            value={(formData as any).translations?.googleProjectId || ''}
                             onChange={(e) => updateFormData('translations', 'googleProjectId', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="my-project-12345"
-                            disabled={!formData.translations?.enabled}
+                            disabled={!(formData as any).translations?.enabled}
                           />
                           <p className="text-xs text-gray-500 mt-1">
                             고급 API (v3) 사용 시 필요한 프로젝트 ID
@@ -1901,10 +1895,10 @@ function SettingsPageContent() {
                             Google Cloud 위치
                           </label>
                           <select
-                            value={formData.translations?.googleLocation || 'global'}
+                            value={(formData as any).translations?.googleLocation || 'global'}
                             onChange={(e) => updateFormData('translations', 'googleLocation', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            disabled={!formData.translations?.enabled}
+                            disabled={!(formData as any).translations?.enabled}
                           >
                             <option value="global">Global</option>
                             <option value="us-central1">US Central (Iowa)</option>
@@ -1927,17 +1921,17 @@ function SettingsPageContent() {
                             <label className="flex items-center">
                               <input
                                 type="checkbox"
-                                checked={formData.translations?.useAdvancedAPI || false}
+                                checked={(formData as any).translations?.useAdvancedAPI || false}
                                 onChange={(e) => updateFormData('translations', 'useAdvancedAPI', e.target.checked)}
                                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                disabled={!formData.translations?.enabled}
+                                disabled={!(formData as any).translations?.enabled}
                               />
                             </label>
                           </div>
-                          {formData.translations?.useAdvancedAPI && (
+                          {(formData as any).translations?.useAdvancedAPI && (
                             <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                               <p className="text-sm text-blue-800">
-                                <span className="font-medium">주의:</span> 고급 API는 프로젝트 ID가 필요하며, 
+                                <span className="font-medium">주의:</span> 고급 API는 프로젝트 ID가 필요하며,
                                 기본 API보다 더 많은 기능을 제공하지만 설정이 복잡할 수 있습니다.
                               </p>
                             </div>
@@ -1965,35 +1959,35 @@ function SettingsPageContent() {
                           <div>
                             <p className="text-gray-500">이번 달 사용량</p>
                             <p className="font-medium">
-                              {formData.translations?.apiUsage?.currentUsage?.toLocaleString() || '0'} / {formData.translations?.apiUsage?.monthlyLimit?.toLocaleString() || '500,000'}자
+                              {(formData as any).translations?.apiUsage?.currentUsage?.toLocaleString() || '0'} / {(formData as any).translations?.apiUsage?.monthlyLimit?.toLocaleString() || '500,000'}자
                             </p>
                           </div>
                           <div>
                             <p className="text-gray-500">남은 할당량</p>
                             <p className={`font-medium ${
-                              ((formData.translations?.apiUsage?.monthlyLimit || 500000) - (formData.translations?.apiUsage?.currentUsage || 0)) > 100000 
-                                ? 'text-green-600' 
+                              (((formData as any).translations?.apiUsage?.monthlyLimit || 500000) - ((formData as any).translations?.apiUsage?.currentUsage || 0)) > 100000
+                                ? 'text-green-600'
                                 : 'text-yellow-600'
                             }`}>
-                              {((formData.translations?.apiUsage?.monthlyLimit || 500000) - (formData.translations?.apiUsage?.currentUsage || 0)).toLocaleString()}자
+                              {(((formData as any).translations?.apiUsage?.monthlyLimit || 500000) - ((formData as any).translations?.apiUsage?.currentUsage || 0)).toLocaleString()}자
                             </p>
                           </div>
                           <div>
                             <p className="text-gray-500">사용률</p>
                             <p className="font-medium">
-                              {(((formData.translations?.apiUsage?.currentUsage || 0) / (formData.translations?.apiUsage?.monthlyLimit || 500000)) * 100).toFixed(1)}%
+                              {((((formData as any).translations?.apiUsage?.currentUsage || 0) / ((formData as any).translations?.apiUsage?.monthlyLimit || 500000)) * 100).toFixed(1)}%
                             </p>
                           </div>
                           <div>
                             <p className="text-gray-500">마지막 리셋</p>
                             <p className="font-medium">
-                              {formData.translations?.apiUsage?.lastResetDate 
-                                ? new Date(formData.translations.apiUsage.lastResetDate).toLocaleDateString('ko-KR')
+                              {(formData as any).translations?.apiUsage?.lastResetDate
+                                ? new Date((formData as any).translations.apiUsage.lastResetDate).toLocaleDateString('ko-KR')
                                 : '-'}
                             </p>
                           </div>
                         </div>
-                        
+
                         {/* 사용량 제한 설정 */}
                         <div className="mt-4 pt-4 border-t border-gray-200">
                           <h5 className="text-sm font-medium text-gray-700 mb-2">월간 사용량 제한</h5>
@@ -2003,27 +1997,27 @@ function SettingsPageContent() {
                               min="10000"
                               max="10000000"
                               step="10000"
-                              value={formData.translations?.apiUsage?.monthlyLimit || 500000}
+                              value={(formData as any).translations?.apiUsage?.monthlyLimit || 500000}
                               onChange={(e) => updateFormData('translations', 'apiUsage', {
-                                ...formData.translations?.apiUsage,
+                                ...(formData as any).translations?.apiUsage,
                                 monthlyLimit: parseInt(e.target.value)
                               })}
                               className="w-32 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              disabled={!formData.translations?.enabled}
+                              disabled={!(formData as any).translations?.enabled}
                             />
                             <span className="text-sm text-gray-500">문자</span>
                             <button
                               type="button"
                               onClick={() => {
                                 updateFormData('translations', 'apiUsage', {
-                                  ...formData.translations?.apiUsage,
+                                  ...(formData as any).translations?.apiUsage,
                                   currentUsage: 0,
                                   lastResetDate: new Date().toISOString()
                                 })
                                 showSuccess('리셋 완료', '사용량이 0으로 초기화되었습니다.')
                               }}
                               className="px-3 py-1 text-xs bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
-                              disabled={!formData.translations?.enabled}
+                              disabled={!(formData as any).translations?.enabled}
                             >
                               사용량 리셋
                             </button>
@@ -2053,10 +2047,10 @@ function SettingsPageContent() {
                           <label className="flex items-center">
                             <input
                               type="checkbox"
-                              checked={formData.translations?.cacheEnabled !== false}
+                              checked={(formData as any).translations?.cacheEnabled !== false}
                               onChange={(e) => updateFormData('translations', 'cacheEnabled', e.target.checked)}
                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                              disabled={!formData.translations?.enabled}
+                              disabled={!(formData as any).translations?.enabled}
                             />
                           </label>
                         </div>
@@ -2068,10 +2062,10 @@ function SettingsPageContent() {
                           </label>
                           <div className="grid grid-cols-2 gap-4">
                             <select
-                              value={formData.translations?.cacheExpiry || 60}
+                              value={(formData as any).translations?.cacheExpiry || 60}
                               onChange={(e) => updateFormData('translations', 'cacheExpiry', parseInt(e.target.value))}
                               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              disabled={!formData.translations?.enabled || !formData.translations?.cacheEnabled}
+                              disabled={!(formData as any).translations?.enabled || !(formData as any).translations?.cacheEnabled}
                             >
                               <option value={30}>30분</option>
                               <option value={60}>1시간</option>
@@ -2087,7 +2081,7 @@ function SettingsPageContent() {
                                 // 캐시 삭제 로직 (추후 구현)
                                 clientLogger.log('캐시 삭제')
                               }}
-                              disabled={!formData.translations?.enabled || !formData.translations?.cacheEnabled}
+                              disabled={!(formData as any).translations?.enabled || !(formData as any).translations?.cacheEnabled}
                               className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               캐시 삭제
@@ -2159,13 +2153,13 @@ function SettingsPageContent() {
                                 } else {
                                   showError('스캔 실패', result.error || '알 수 없는 오류가 발생했습니다.')
                                 }
-                              } catch (error) {
+                              } catch (_error) {
                                 showError('스캔 실패', '네트워크 오류가 발생했습니다.')
                               } finally {
                                 setIsSubmitting(false)
                               }
                             }}
-                            disabled={!formData.translations?.enabled || isSubmitting}
+                            disabled={!(formData as any).translations?.enabled || isSubmitting}
                             className="flex items-center justify-center px-4 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span className="mr-2">🔎</span>
@@ -2177,7 +2171,7 @@ function SettingsPageContent() {
                               try {
                                 setIsSubmitting(true)
                                 showInfo('처리 중...', '프로젝트를 스캔하고 자동 번역을 진행하고 있습니다.')
-                                
+
                                 const response = await fetch('/api/translations', {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
@@ -2191,20 +2185,20 @@ function SettingsPageContent() {
                                     }
                                   })
                                 })
-                                
+
                                 const result = await response.json()
                                 if (result.success) {
                                   showSuccess('완료', `${result.data.scannedTexts}개 텍스트 스캔, ${result.data.registeredKeys}개 번역 키 등록 완료`)
                                 } else {
                                   showError('실패', result.error || '알 수 없는 오류가 발생했습니다.')
                                 }
-                              } catch (error) {
+                              } catch (_error) {
                                 showError('실패', '네트워크 오류가 발생했습니다.')
                               } finally {
                                 setIsSubmitting(false)
                               }
                             }}
-                            disabled={!formData.translations?.enabled || !formData.translations?.autoTranslate || isSubmitting}
+                            disabled={!(formData as any).translations?.enabled || !(formData as any).translations?.autoTranslate || isSubmitting}
                             className="flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span className="mr-2">🚀</span>
@@ -2214,7 +2208,7 @@ function SettingsPageContent() {
                         <p className="text-xs text-gray-500 mt-2">
                           프로젝트 전체에서 하드코딩된 한국어 텍스트를 찾아 번역 키로 자동 등록합니다.
                         </p>
-                        {!formData.translations?.autoTranslate && (
+                        {!(formData as any).translations?.autoTranslate && (
                           <p className="text-xs text-yellow-600 mt-1">
                             ⚠️ 자동 번역이 비활성화되어 있어 &quot;스캔 + 자동번역&quot; 기능을 사용할 수 없습니다.
                           </p>
@@ -2252,11 +2246,11 @@ function SettingsPageContent() {
                                 } else {
                                   showError('내보내기 실패', result.error || '알 수 없는 오류가 발생했습니다.')
                                 }
-                              } catch (error) {
+                              } catch (_error) {
                                 showError('내보내기 실패', '네트워크 오류가 발생했습니다.')
                               }
                             }}
-                            disabled={!formData.translations?.enabled}
+                            disabled={!(formData as any).translations?.enabled}
                             className="flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span className="mr-2">📤</span>
@@ -2271,7 +2265,7 @@ function SettingsPageContent() {
                               onChange={async (e) => {
                                 const file = e.target.files?.[0]
                                 if (!file) return
-                                
+
                                 try {
                                   const text = await file.text()
                                   const response = await fetch('/api/translations', {
@@ -2285,22 +2279,22 @@ function SettingsPageContent() {
                                       }
                                     })
                                   })
-                                  
+
                                   const result = await response.json()
                                   if (result.success) {
                                     showSuccess('가져오기 완료', '번역 데이터를 성공적으로 가져왔습니다.')
                                   } else {
                                     showError('가져오기 실패', result.error || '알 수 없는 오류가 발생했습니다.')
                                   }
-                                } catch (error) {
+                                } catch (_error) {
                                   showError('가져오기 실패', '파일을 읽는 중 오류가 발생했습니다.')
                                 }
-                                
+
                                 // 파일 입력 초기화
                                 e.target.value = ''
                               }}
                               className="hidden"
-                              disabled={!formData.translations?.enabled}
+                              disabled={!(formData as any).translations?.enabled}
                             />
                           </label>
                         </div>
@@ -2319,7 +2313,7 @@ function SettingsPageContent() {
                               // 번역 검증 로직 (추후 구현)
                               clientLogger.log('번역 검증')
                             }}
-                            disabled={!formData.translations?.enabled}
+                            disabled={!(formData as any).translations?.enabled}
                             className="flex items-center justify-center px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span className="mr-2">✅</span>
@@ -2331,7 +2325,7 @@ function SettingsPageContent() {
                               // 번역 통계 보기 로직 (추후 구현)
                               clientLogger.log('번역 통계')
                             }}
-                            disabled={!formData.translations?.enabled}
+                            disabled={!(formData as any).translations?.enabled}
                             className="flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span className="mr-2">📊</span>
@@ -2343,7 +2337,7 @@ function SettingsPageContent() {
                               // 누락된 번역 찾기 로직 (추후 구현)
                               clientLogger.log('누락된 번역 찾기')
                             }}
-                            disabled={!formData.translations?.enabled}
+                            disabled={!(formData as any).translations?.enabled}
                             className="flex items-center justify-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span className="mr-2">🔎</span>
@@ -2369,7 +2363,7 @@ function SettingsPageContent() {
                                   clientLogger.log('번역 데이터 초기화')
                                 }
                               }}
-                              disabled={!formData.translations?.enabled}
+                              disabled={!(formData as any).translations?.enabled}
                               className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               초기화

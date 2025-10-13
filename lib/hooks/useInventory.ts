@@ -41,7 +41,7 @@ export interface InventoryStats {
 }
 
 // 재고 상태 계산
-const calculateStockStatus = (current: number, min: number, max: number): 'sufficient' | 'low' | 'critical' => {
+const calculateStockStatus = (current: number, min: number, _max: number): 'sufficient' | 'low' | 'critical' => {
   if (current <= min) return 'critical'
   if (current <= min * 1.5) return 'low'
   return 'sufficient'
@@ -384,7 +384,7 @@ export const useInventoryAlerts = () => {
 }
 
 export const useInventorySearch = () => {
-  const { inventory, endmillTypes } = useInventory()
+  const { inventory } = useInventory()
 
   const searchByCode = (code: string): Inventory[] => {
     return inventory.filter(item =>

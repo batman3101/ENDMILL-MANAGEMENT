@@ -29,6 +29,7 @@ export default function SupplierPriceInfo({ endmillTypeId }: SupplierPriceInfoPr
     if (endmillTypeId) {
       loadSupplierPrices()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [endmillTypeId])
 
   const loadSupplierPrices = async () => {

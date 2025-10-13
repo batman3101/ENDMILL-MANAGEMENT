@@ -86,6 +86,7 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
         supabase.removeChannel(channel)
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [endmillId])
 
   // 가격 범위 계산

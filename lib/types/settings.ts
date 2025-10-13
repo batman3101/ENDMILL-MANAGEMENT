@@ -12,27 +12,6 @@ export interface SystemSettings {
     maxFileSize: number // MB
   }
 
-  // 번역 관리 설정
-  translations: {
-    enabled: boolean
-    defaultLanguage: 'ko' | 'vi'
-    fallbackLanguage: 'ko' | 'vi'
-    autoTranslate: boolean // 새로운 키 추가 시 자동 번역 여부
-    googleApiKey: string
-    googleProjectId: string // Google Cloud Project ID (고급 API용)
-    googleLocation: string // Google Cloud Location (기본값: global)
-    useAdvancedAPI: boolean // Cloud Translation v3 (Advanced) 사용 여부
-    cacheEnabled: boolean
-    cacheExpiry: number // 캐시 만료 시간 (분)
-    supportedLanguages: ('ko' | 'vi')[]
-    namespaces: string[] // 활성화된 네임스페이스
-    apiUsage: {
-      monthlyLimit: number // 월간 문자 수 제한
-      currentUsage: number // 이번 달 사용량
-      lastResetDate: string // 마지막 리셋 날짜
-    }
-  }
-
   // 설비 관리 설정
   equipment: {
     totalCount: number
@@ -115,6 +94,25 @@ export interface SystemSettings {
       monthlyReport: string
     }
   }
+
+  // 번역 설정
+  translations?: {
+    enabled?: boolean
+    defaultLanguage?: 'ko' | 'vi'
+    fallbackLanguage?: 'ko' | 'vi'
+    autoTranslate?: boolean
+    googleApiKey?: string
+    googleProjectId?: string
+    googleLocation?: string
+    useAdvancedAPI?: boolean
+    apiUsage?: {
+      currentUsage?: number
+      monthlyLimit?: number
+      lastResetDate?: string
+    }
+    cacheEnabled?: boolean
+    cacheExpiry?: number
+  }
 }
 
 // 설비 상태 설정
@@ -156,9 +154,9 @@ export interface NotificationTypeConfig {
 }
 
 // 설정 카테고리 타입
-export type SettingsCategory = 
+export type SettingsCategory =
   | 'system'
-  | 'equipment' 
+  | 'equipment'
   | 'inventory'
   | 'toolChanges'
   | 'organization'
@@ -326,39 +324,6 @@ export const DEFAULT_SETTINGS: SystemSettings = {
       dailyReport: '08:00',
       weeklyReport: '월요일 09:00',
       monthlyReport: '1일 10:00'
-    }
-  },
-
-  translations: {
-    enabled: true,
-    defaultLanguage: 'ko',
-    fallbackLanguage: 'ko',
-    autoTranslate: false,
-    googleApiKey: '',
-    googleProjectId: '',
-    googleLocation: 'global',
-    useAdvancedAPI: false,
-    cacheEnabled: true,
-    cacheExpiry: 60,
-    supportedLanguages: ['ko', 'vi'],
-    namespaces: [
-      'common', 
-      'navigation', 
-      'dashboard', 
-      'equipment', 
-      'endmill', 
-      'inventory', 
-      'camSheets', 
-      'toolChanges', 
-      'reports', 
-      'settings', 
-      'users', 
-      'auth'
-    ],
-    apiUsage: {
-      monthlyLimit: 500000, // 50만 문자
-      currentUsage: 0,
-      lastResetDate: new Date().toISOString()
     }
   }
 } 

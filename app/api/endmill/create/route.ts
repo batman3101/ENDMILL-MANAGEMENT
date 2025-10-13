@@ -126,9 +126,6 @@ export async function POST(request: NextRequest) {
     if (cam_sheet_data && Array.isArray(cam_sheet_data) && cam_sheet_data.length > 0) {
       for (const camData of cam_sheet_data) {
         try {
-          // CAM Sheet ID 생성 (모델 + 프로세스 조합으로 고유 ID 생성)
-          const camSheetId = `${camData.model}_${camData.process}_${Date.now()}`
-
           // CAM Sheet 생성 또는 기존 것 찾기
           const { data: existingCamSheet } = await supabase
             .from('cam_sheets')

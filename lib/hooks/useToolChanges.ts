@@ -229,6 +229,7 @@ export const useToolChanges = (
   // 초기 데이터 로드 및 필터 변경시 재로드
   useEffect(() => {
     fetchToolChanges(true)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     filters.equipmentNumber,
     filters.endmillType,

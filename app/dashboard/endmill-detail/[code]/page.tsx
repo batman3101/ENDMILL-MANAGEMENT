@@ -10,7 +10,7 @@ export default function EndmillDetailPage() {
   const params = useParams()
   const router = useRouter()
   const endmillCode = params.code as string
-  const { showSuccess, showError, showWarning } = useToast()
+  const { showSuccess, showError } = useToast()
 
   const [endmillData, setEndmillData] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)

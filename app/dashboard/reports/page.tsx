@@ -13,7 +13,7 @@ import { clientLogger } from '@/lib/utils/logger'
 
 export default function ReportsPage() {
   const { settings } = useSettings()
-  const { generateReport, generatedReport, setGeneratedReport, isGenerating, error } = useReports()
+  const { generateReport, generatedReport, setGeneratedReport, isGenerating, error: _error } = useReports()
   const { showSuccess, showError } = useToast()
 
   const equipmentModels = settings.equipment.models

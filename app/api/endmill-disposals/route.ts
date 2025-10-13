@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       const filePath = `disposal-images/${fileName}`
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('endmill-images')
         .upload(filePath, imageFile)
 
@@ -143,7 +143,7 @@ export async function PUT(request: NextRequest) {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       const filePath = `disposal-images/${fileName}`
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('endmill-images')
         .upload(filePath, imageFile)
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect, createContext, useContext } from 'react'
 import type { ReactNode } from 'react'
 import { supabase } from '../supabase/client'
 import { useToast } from '../../components/shared/Toast'
-import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
+import type { Session } from '@supabase/supabase-js'
 import { clientLogger } from '../utils/logger'
 
 // 사용자 타입 정의

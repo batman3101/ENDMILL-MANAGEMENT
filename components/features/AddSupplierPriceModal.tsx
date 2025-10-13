@@ -40,6 +40,7 @@ export default function AddSupplierPriceModal({
   // 공급업체 목록 로드
   useEffect(() => {
     loadSuppliers()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadSuppliers = async () => {

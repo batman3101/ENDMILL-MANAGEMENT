@@ -12,7 +12,6 @@ import {
   calculateTrend,
   generateCostRecommendation,
   groupBy,
-  sumBy,
   maxBy,
   minBy
 } from '../../../../lib/utils/reportCalculations'

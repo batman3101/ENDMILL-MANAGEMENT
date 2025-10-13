@@ -35,7 +35,7 @@ interface EndmillMasterUploaderProps {
 }
 
 export default function EndmillMasterUploader({ onDataParsed, onClose }: EndmillMasterUploaderProps) {
-  const { showSuccess, showError, showWarning } = useToast()
+  const { showSuccess, showError } = useToast()
   const [dragActive, setDragActive] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [validationResult, setValidationResult] = useState<any>(null)

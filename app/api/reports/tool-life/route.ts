@@ -7,7 +7,6 @@ import {
   calculatePercentage,
   calculateStdDeviation,
   calculateAchievementRate,
-  generateLifeRecommendation,
   groupBy,
   maxBy,
   minBy

@@ -271,9 +271,9 @@ export const useEquipmentSearch = () => {
     )
   }
 
-    const searchByProcess = (process: string) => {
+    const searchByProcess = (_process: string) => {
     // TODO: 프로세스 검색은 별도 테이블 조인 필요
-    return equipments.filter(eq => true) // 임시로 모든 설비 반환
+    return equipments.filter(_eq => true) // 임시로 모든 설비 반환
   }
 
   return {

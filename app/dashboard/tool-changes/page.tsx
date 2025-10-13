@@ -13,7 +13,7 @@ import { clientLogger } from '@/lib/utils/logger'
 
 export default function ToolChangesPage() {
   const { t } = useTranslation()
-  const { showSuccess, showError, showWarning } = useToast()
+  const { showSuccess, showError } = useToast()
   const { camSheets, getAvailableModels, getAvailableProcesses } = useCAMSheets()
   const confirmation = useConfirmation()
 
@@ -30,7 +30,6 @@ export default function ToolChangesPage() {
     isLoading,
     error: toolChangesError,
     refreshData,
-    loadMore,
     hasMore,
     totalCount
   } = useToolChanges(filters)
@@ -40,7 +39,7 @@ export default function ToolChangesPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingItem, setEditingItem] = useState<ToolChange | null>(null)
   const [availableModels, setAvailableModels] = useState<string[]>([])
-  const [availableProcesses, setAvailableProcesses] = useState<string[]>([])
+  const [, setAvailableProcesses] = useState<string[]>([])
   const [availableUsers, setAvailableUsers] = useState<{id: string, name: string, employee_id: string}[]>([])
   const [availableTNumbers, setAvailableTNumbers] = useState<number[]>([]) // CAM Sheet 기준 T번호 목록 (추가 폼용)
   const [editAvailableTNumbers, setEditAvailableTNumbers] = useState<number[]>([]) // CAM Sheet 기준 T번호 목록 (수정 모달용)
@@ -55,7 +54,6 @@ export default function ToolChangesPage() {
   // 설정에서 값 가져오기
   const { settings } = useSettings()
   const toolChangesReasons = settings.toolChanges.reasons
-  const tNumberRange = settings.toolChanges.tNumberRange
 
   // 교체사유 번역 매핑 함수
   const getReasonTranslation = (reason: string) => {
@@ -143,7 +141,8 @@ export default function ToolChangesPage() {
 
     // 페이지가 1이거나 currentPage 상태가 업데이트된 후 필터 업데이트
     updateFilters()
-  }, [searchTerm, selectedEquipment, selectedEndmillType, dateRange.start, dateRange.end, currentPage, sortField, sortDirection, updateFilters])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, selectedEquipment, selectedEndmillType, dateRange.start, dateRange.end, currentPage, sortField, sortDirection])
 
   // 설비번호 기반 자동입력 함수
   const autoFillByEquipmentNumber = useCallback(async (equipmentNumber: string) => {
@@ -298,7 +297,8 @@ export default function ToolChangesPage() {
     } else {
       setAvailableTNumbers([])
     }
-  }, [formData.production_model, formData.process, camSheets])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.production_model, formData.process])
 
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (추가 폼)
   useEffect(() => {
@@ -316,7 +316,8 @@ export default function ToolChangesPage() {
         }))
       }
     }
-  }, [formData.production_model, formData.process, formData.t_number, isManualEndmillInput, autoFillByTNumber, autoFillEndmillInfo])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.production_model, formData.process, formData.t_number, isManualEndmillInput])
 
   // 수정 모달: 설비번호 기반 자동입력 함수
   const autoFillEditByEquipmentNumber = useCallback(async (equipmentNumber: string) => {
@@ -388,7 +389,8 @@ export default function ToolChangesPage() {
     } else {
       setEditAvailableTNumbers([])
     }
-  }, [editingItem?.production_model, editingItem?.process, camSheets])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingItem?.production_model, editingItem?.process])
 
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (수정 모달)
   useEffect(() => {
@@ -406,7 +408,8 @@ export default function ToolChangesPage() {
         }) : null)
       }
     }
-  }, [editingItem?.production_model, editingItem?.process, editingItem?.t_number, isEditManualEndmillInput, autoFillEditByTNumber, autoFillEndmillInfo])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingItem?.production_model, editingItem?.process, editingItem?.t_number, isEditManualEndmillInput])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -1191,7 +1194,6 @@ export default function ToolChangesPage() {
               {toolChanges.length > 0 ? toolChanges.map((change) => {
                 const toolLifeStatus = getToolLifeStatus(change.tool_life || 0)
                 // Format date properly - change_date is just a date string, not datetime
-                const formattedDate = change.change_date
                 const formattedDateTime = change.created_at ? new Date(change.created_at).toLocaleString('ko-KR') : change.change_date
 
                 return (

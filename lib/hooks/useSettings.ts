@@ -156,6 +156,7 @@ export function useSettings(): UseSettingsReturn {
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('settingsUpdated', handleSettingsUpdate as EventListener)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 카테고리별 설정 조회 - settings state를 직접 사용
@@ -168,7 +169,7 @@ export function useSettings(): UseSettingsReturn {
     category: T,
     key: K
   ): SystemSettings[T][K] => {
-    return settings[category][key]
+    return (settings as any)?.[category]?.[key]
   }, [settings])
 
   // API 호출 헬퍼 함수
@@ -232,6 +233,7 @@ export function useSettings(): UseSettingsReturn {
     } finally {
       setIsLoading(false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [callSettingsAPI])
 
   // 카테고리별 설정 업데이트 (API 연결)
@@ -271,6 +273,7 @@ export function useSettings(): UseSettingsReturn {
     } finally {
       setIsLoading(false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [callSettingsAPI])
 
   // 특정 설정값 업데이트 (API 연결)
@@ -312,6 +315,7 @@ export function useSettings(): UseSettingsReturn {
     } finally {
       setIsLoading(false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [callSettingsAPI])
 
   // 설정 초기화 (API 연결)
@@ -346,6 +350,7 @@ export function useSettings(): UseSettingsReturn {
     } finally {
       setIsLoading(false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [callSettingsAPI])
 
   // 설정 내보내기
@@ -385,6 +390,7 @@ export function useSettings(): UseSettingsReturn {
     } finally {
       setIsLoading(false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [callSettingsAPI])
 
   // 유효성 검증
@@ -497,8 +503,8 @@ export function useSetting<T extends SettingsCategory, K extends keyof SystemSet
   key: K
 ) {
   const { settings, updateSetting, isLoading, error } = useSettings()
-  
-  const value = useMemo(() => settings[category][key], [settings, category, key])
+
+  const value = useMemo(() => (settings as any)?.[category]?.[key], [settings, category, key])
   
   const setValue = useCallback(async (
     newValue: SystemSettings[T][K],

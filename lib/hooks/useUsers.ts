@@ -1,6 +1,5 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clientSupabaseService } from '../services/supabaseService'
 import { User, UserRole, UserStats, UserFilter, ModulePermissions } from '../types/users'
@@ -32,8 +31,7 @@ export const useUsers = () => {
   const {
     data: rawRoles = [],
     isLoading: isLoadingRoles,
-    error: rolesError,
-    refetch: refetchRoles
+    error: rolesError
   } = useQuery({
     queryKey: ['userRoles'],
     queryFn: async () => {

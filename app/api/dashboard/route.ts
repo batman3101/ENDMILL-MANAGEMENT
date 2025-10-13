@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   logger.log('🚀 대시보드 API 호출됨:', new Date().toISOString())
   try {
     // Service Role Key를 직접 사용하여 Supabase 클라이언트 생성
@@ -120,13 +120,26 @@ async function getEquipmentStats(supabase: any) {
 
   const operatingRate = Math.round((statusCounts['가동중'] || 0) / total * 100)
 
+  // tool_positions에서 실제 공구 수명 효율 계산
+  const { data: allPositions } = await supabase
+    .from('tool_positions')
+    .select('current_life, total_life, status')
+
+  const inUsePositions = (allPositions || []).filter((pos: any) => pos.status === 'in_use' && pos.total_life > 0)
+  const toolLifeEfficiency = inUsePositions.length > 0
+    ? Math.round(inUsePositions.reduce((sum: number, pos: any) => {
+        const efficiency = pos.total_life > 0 ? (pos.current_life / pos.total_life) * 100 : 0
+        return sum + efficiency
+      }, 0) / inUsePositions.length)
+    : 0
+
   return {
     total,
     active: statusCounts['가동중'] || 0,
     maintenance: statusCounts['점검중'] || 0,
     setup: statusCounts['셋업중'] || 0,
     operatingRate,
-    toolLifeEfficiency: 75 // 계산된 값 또는 별도 조회
+    toolLifeEfficiency // 실제 계산된 공구 수명 효율
   }
 }
 
@@ -145,14 +158,7 @@ async function getEndmillUsageStats(supabase: any) {
   // JavaScript로 필터링: empty가 아닌 것만
   const toolPositions = (allPositions || []).filter((pos: any) => pos.status !== 'empty')
 
-  console.log('📊 tool_positions 조회 및 필터링 완료:', {
-    totalCount: allPositions?.length || 0,
-    filteredCount: toolPositions.length,
-    sample: toolPositions.slice(0, 3)
-  })
-
   if (!toolPositions || toolPositions.length === 0) {
-    console.warn('⚠️ tool_positions가 비어있습니다!')
     return {
       total: 0,
       normal: 0,
@@ -279,12 +285,22 @@ async function getToolChangeStats(supabase: any) {
   const yesterdayCount = yesterdayChanges.length
   const difference = todayCount - yesterdayCount
 
+  // 일일 교체 실적 목표를 system_settings에서 조회
+  const { data: targetSetting } = await supabase
+    .from('system_settings')
+    .select('value')
+    .eq('category', 'dashboard')
+    .eq('key', 'daily_change_target')
+    .single()
+
+  const dailyTarget = targetSetting?.value || 130 // 기본값 130
+
   return {
     today: todayCount,
     yesterday: yesterdayCount,
     difference,
     trend: difference >= 0 ? `+${difference}` : `${difference}`,
-    target: 130
+    target: dailyTarget
   }
 }
 
@@ -693,7 +709,7 @@ async function getRecentAlerts(supabase: any) {
       const item = criticalItems[0]
 
       // endmill_types 정보 조회
-      const { data: endmillType, error: etError } = await supabase
+      const { data: endmillType } = await supabase
         .from('endmill_types')
         .select('code, name')
         .eq('id', item.endmill_type_id)
@@ -766,12 +782,12 @@ async function getEndmillByEquipmentCount(supabase: any) {
   // 결과 변환
   const results = Object.entries(endmillEquipmentCount)
     .map(([endmillTypeId, equipmentSet]: [string, any]) => {
-      const endmill: any = endmillMap.get(parseInt(endmillTypeId))
+      const endmill: any = endmillMap.get(endmillTypeId)
       return {
         endmillCode: endmill?.code || 'Unknown',
         endmillName: endmill?.name || 'Unknown',
         equipmentCount: equipmentSet.size,
-        totalPositions: inUsePositions.filter((p: any) => p.endmill_type_id === parseInt(endmillTypeId)).length
+        totalPositions: inUsePositions.filter((p: any) => p.endmill_type_id === endmillTypeId).length
       }
     })
     .sort((a, b) => b.equipmentCount - a.equipmentCount)
@@ -786,7 +802,7 @@ async function getEndmillByEquipmentCount(supabase: any) {
 async function getModelEndmillUsage(supabase: any) {
   logger.log('📊 모델별 앤드밀 사용 현황 조회 시작')
 
-  // equipment 조회
+  // equipment 조회 (current_model 사용)
   const { data: equipment, error: eqError } = await supabase
     .from('equipment')
     .select('id, equipment_number, current_model, process')
@@ -810,7 +826,13 @@ async function getModelEndmillUsage(supabase: any) {
 
   logger.log('📊 모델별 사용 현황 조회:', {
     equipmentCount: equipment?.length || 0,
-    inUsePositionsCount: inUsePositions.length
+    totalPositionsCount: allPositions?.length || 0,
+    inUsePositionsCount: inUsePositions.length,
+    samplePositions: inUsePositions.slice(0, 5).map((p: any) => ({
+      equipment_id: p.equipment_id,
+      status: p.status,
+      has_endmill: !!p.endmill_type_id
+    }))
   })
 
   // equipment_id로 매핑
@@ -849,79 +871,86 @@ async function getModelEndmillUsage(supabase: any) {
   return results
 }
 
-// Phase 4.1: 설비별 수명 소진율 통계
+// Phase 4.1: 설비별 교체 실적 통계 (실제 교체 건수 기준)
 async function getEquipmentLifeConsumption(supabase: any) {
-  logger.log('⚙️ 설비별 수명 소진율 통계 조회 시작')
+  logger.log('⚙️ 설비별 교체 실적 통계 조회 시작')
 
-  // equipment 조회
+  // 최근 30일간의 교체 실적 조회
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+  const { data: allChanges, error: tcError } = await supabase
+    .from('tool_changes')
+    .select('equipment_number, change_date, endmill_code, endmill_type_id')
+
+  if (tcError) {
+    console.error('tool_changes 조회 오류:', tcError)
+    throw tcError
+  }
+
+  // JavaScript로 필터링: 최근 30일 데이터만
+  const recentChanges = (allChanges || []).filter((change: any) => change.change_date >= thirtyDaysAgo)
+
+  logger.log('📊 최근 30일 교체 실적 조회:', {
+    totalCount: allChanges?.length || 0,
+    recentCount: recentChanges.length
+  })
+
+  // equipment 조회 (tool_position_count 포함)
   const { data: equipment, error: eqError } = await supabase
     .from('equipment')
-    .select('id, equipment_number, current_model')
+    .select('id, equipment_number, current_model, process, tool_position_count')
 
   if (eqError) {
     console.error('equipment 조회 오류:', eqError)
     throw eqError
   }
 
-  // tool_positions 조회 (사용 중인 것만)
-  const { data: allPositions, error: tpError } = await supabase
-    .from('tool_positions')
-    .select('equipment_id, current_life, total_life, status')
-
-  if (tpError) {
-    console.error('tool_positions 조회 오류:', tpError)
-    throw tpError
-  }
-
-  const inUsePositions = (allPositions || []).filter((pos: any) => pos.status === 'in_use')
-
-  logger.log('📊 설비별 수명 소진율 조회:', {
-    equipmentCount: equipment?.length || 0,
-    inUsePositionsCount: inUsePositions.length
+  logger.log('📊 equipment 조회 완료:', {
+    count: equipment?.length || 0,
+    sample: equipment?.slice(0, 3).map((e: any) => ({
+      equipment_number: e.equipment_number,
+      model: e.current_model,
+      tool_position_count: e.tool_position_count
+    }))
   })
 
-  // equipment_id별로 그룹화하여 수명 소진율 계산
-  const equipmentConsumption = inUsePositions.reduce((acc: any, pos: any) => {
-    if (!pos.equipment_id || !pos.total_life) return acc
-
-    if (!acc[pos.equipment_id]) {
-      acc[pos.equipment_id] = {
-        totalLife: 0,
-        currentLife: 0,
-        count: 0
-      }
+  // equipment_number별로 교체 건수 집계
+  const changeCountByEquipment = recentChanges.reduce((acc: any, change: any) => {
+    const eqNum = change.equipment_number
+    if (!acc[eqNum]) {
+      acc[eqNum] = 0
     }
-
-    acc[pos.equipment_id].totalLife += pos.total_life
-    acc[pos.equipment_id].currentLife += pos.current_life || 0
-    acc[pos.equipment_id].count++
-
+    acc[eqNum]++
     return acc
   }, {})
 
-  // equipment 정보와 결합
-  const equipmentMap = new Map(equipment?.map((eq: any) => [eq.id, eq]) || [])
+  // equipment_number로 매핑
+  const equipmentMap = new Map(equipment?.map((eq: any) => [eq.equipment_number, eq]) || [])
 
-  const results = Object.entries(equipmentConsumption)
-    .map(([equipmentId, data]: [string, any]) => {
-      const eq: any = equipmentMap.get(parseInt(equipmentId))
-      const consumedLife = data.totalLife - data.currentLife
-      const consumptionRate = data.totalLife > 0 ? Math.round((consumedLife / data.totalLife) * 100) : 0
+  // 결과 생성
+  const results = Object.entries(changeCountByEquipment)
+    .map(([equipmentNumber, changeCount]: [string, any]) => {
+      const eq: any = equipmentMap.get(Number(equipmentNumber))
+
+      // CAM Sheet 기반 앤드밀 관리 수량 (tool_position_count 사용)
+      const toolCount = eq?.tool_position_count || 0
+
+      // 교체 건수를 기반으로 소진율 계산 (30일 기준, 높을수록 소진율이 높음)
+      const consumptionRate = Math.min(100, Math.round((changeCount / 30) * 100))
 
       return {
-        equipmentNumber: eq?.equipment_number || 0,
+        equipmentNumber: Number(equipmentNumber),
         model: eq?.current_model || 'Unknown',
-        totalLife: data.totalLife,
-        consumedLife,
-        remainingLife: data.currentLife,
+        process: eq?.process || '',
+        changeCount,
         consumptionRate,
-        toolCount: data.count
+        toolCount
       }
     })
-    .sort((a, b) => b.consumptionRate - a.consumptionRate)
-    .slice(0, 10) // 상위 10개 (수명 소진율 높은 순)
+    .sort((a, b) => b.changeCount - a.changeCount)
+    .slice(0, 10) // 상위 10개 (교체 건수가 많은 순)
 
-  logger.log('✅ 설비별 수명 소진율 계산 완료:', { count: results.length })
+  logger.log('✅ 설비별 교체 실적 통계 계산 완료:', { count: results.length })
 
   return results
 }

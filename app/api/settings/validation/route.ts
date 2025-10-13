@@ -5,7 +5,7 @@ import { logger } from '@/lib/utils/logger'
 // Supabase 클라이언트 생성 (Service Role)
 const supabase = createServerClient()
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // app_settings 테이블에서 모든 설정값을 병렬로 조회
     const [categoriesData, suppliersData, processesData, modelsData] = await Promise.all([

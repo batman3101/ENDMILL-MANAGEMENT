@@ -23,12 +23,10 @@ function UsersPageContent() {
     getFilteredUsers,
     roles,
     isLoading,
-    getUserById,
     createUser,
     updateUser,
     deleteUser,
     toggleUserStatus,
-    changeUserRole,
     loadUsers
   } = useUsers()
   
@@ -234,7 +232,7 @@ function UsersPageContent() {
       } else {
         showError('수정 실패', '사용자 정보 수정에 실패했습니다.')
       }
-    } catch (error) {
+    } catch (_error) {
       showError('수정 실패', '사용자 정보 수정 중 오류가 발생했습니다.')
     } finally {
       setIsSubmitting(false)
@@ -265,7 +263,7 @@ function UsersPageContent() {
         } else {
           showError('삭제 실패', '사용자 삭제에 실패했습니다.')
         }
-      } catch (error) {
+      } catch (_error) {
         showError('삭제 실패', '사용자 삭제 중 오류가 발생했습니다.')
       }
     }
@@ -326,7 +324,7 @@ function UsersPageContent() {
         phone: '',
         isActive: true
       })
-    } catch (error) {
+    } catch (_error) {
       showError('추가 실패', '사용자 추가 중 오류가 발생했습니다.')
     } finally {
       setIsSubmitting(false)
@@ -352,7 +350,7 @@ function UsersPageContent() {
         } else {
           showError(`${action} 실패`, `사용자 ${action}에 실패했습니다.`)
         }
-      } catch (error) {
+      } catch (_error) {
         showError(`${action} 실패`, `사용자 ${action} 중 오류가 발생했습니다.`)
       }
     }
@@ -467,7 +465,7 @@ function UsersPageContent() {
       setShowTemplateModal(false)
       setSelectedTemplate(null)
       setSelectedUsersForTemplate([])
-    } catch (error) {
+    } catch (_error) {
       showError('템플릿 적용 실패', '권한 템플릿 적용 중 오류가 발생했습니다.')
     } finally {
       setIsSubmitting(false)
@@ -525,7 +523,6 @@ function UsersPageContent() {
     if (!role) return '알 수 없음'
     
     // 전체 권한 수 계산
-    const totalActions = Object.values(role.permissions).flat().length
     const uniqueActions = new Set(Object.values(role.permissions).flat()).size
     
     if (uniqueActions >= 4) return '전체 권한'

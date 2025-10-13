@@ -20,12 +20,12 @@ export default function CostAnalysisView({ data }: CostAnalysisViewProps) {
   const [periodSortOrder, setPeriodSortOrder] = useState<SortOrder>('asc')
 
   // 모델별 정렬 상태
-  const [modelSortField, setModelSortField] = useState<SortField>('totalCost')
-  const [modelSortOrder, setModelSortOrder] = useState<SortOrder>('desc')
+  const [modelSortField,] = useState<SortField>('totalCost')
+  const [modelSortOrder,] = useState<SortOrder>('desc')
 
   // 카테고리별 정렬 상태
-  const [categorySortField, setCategorySortField] = useState<SortField>('totalCost')
-  const [categorySortOrder, setCategorySortOrder] = useState<SortOrder>('desc')
+  const [categorySortField,] = useState<SortField>('totalCost')
+  const [categorySortOrder,] = useState<SortOrder>('desc')
 
   // 효율성 정렬 상태
   const [efficiencySortField, setEfficiencySortField] = useState<SortField>('costPerLife')

@@ -141,10 +141,12 @@ export class SettingsManager {
 
   // 특정 설정값 조회
   public getSetting<T extends SettingsCategory, K extends keyof SystemSettings[T]>(
-    category: T, 
+    category: T,
     key: K
-  ): SystemSettings[T][K] {
-    return this.settings[category][key]
+  ): SystemSettings[T][K] | undefined {
+    const categorySettings = this.settings[category] as any
+    if (!categorySettings) return undefined
+    return categorySettings[key] as SystemSettings[T][K] | undefined
   }
 
   // 설정 업데이트
@@ -210,13 +212,13 @@ export class SettingsManager {
   ): void {
     Object.keys(updates).forEach(category => {
       const categoryKey = category as SettingsCategory
-      const currentCategory = current[categoryKey]
-      const updatedCategory = updates[categoryKey]
+      const currentCategory = current[categoryKey] as any
+      const updatedCategory = updates[categoryKey] as any
 
-      if (updatedCategory && typeof updatedCategory === 'object') {
+      if (updatedCategory && typeof updatedCategory === 'object' && currentCategory) {
         Object.keys(updatedCategory).forEach(field => {
-          const oldValue = currentCategory[field as keyof typeof currentCategory]
-          const newValue = updatedCategory[field as keyof typeof updatedCategory]
+          const oldValue = currentCategory[field]
+          const newValue = updatedCategory[field]
 
           if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
             this.history.push({

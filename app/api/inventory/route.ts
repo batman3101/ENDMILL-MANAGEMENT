@@ -191,14 +191,14 @@ export async function PUT(request: NextRequest) {
 }
 
 // 재고 상태 계산 함수
-function getStockStatus(current: number, min: number, max: number): 'sufficient' | 'low' | 'critical' {
+function getStockStatus(current: number, min: number, _max: number): 'sufficient' | 'low' | 'critical' {
   if (current <= min) return 'critical';
   if (current <= min * 1.5) return 'low';
   return 'sufficient';
 }
 
 // 재고 통계 계산 함수
-function calculateInventoryStats(inventory: any[], endmillMaster: any[]) {
+function _calculateInventoryStats(inventory: any[], endmillMaster: any[]) {
   const totalItems = inventory.length;
   const totalValue = inventory.reduce((sum, item) => {
     const endmill = endmillMaster.find(e => e.code === item.endmillCode)

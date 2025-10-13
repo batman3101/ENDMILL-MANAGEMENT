@@ -7,10 +7,7 @@ import {
   calculateAverage,
   calculateAchievementRate,
   calculateEfficiencyScore,
-  groupBy,
-  sumBy,
-  maxBy,
-  minBy
+  groupBy
 } from '../../../../lib/utils/reportCalculations'
 
 export async function POST(request: NextRequest) {

@@ -27,7 +27,7 @@ const updateUserSchema = z.object({
 })
 
 // 권한 체크 함수 (간단한 구현)
-async function checkAdminPermission(request: NextRequest): Promise<boolean> {
+async function checkAdminPermission(_request: NextRequest): Promise<boolean> {
   // TODO: 실제 권한 체크 로직 구현
   // 현재는 임시로 true 반환
   return true
@@ -271,7 +271,7 @@ export async function DELETE(request: NextRequest) {
     const supabase = createServerClient()
 
     // 사용자 삭제
-    const { data, error } = await supabase.auth.admin.deleteUser(userId)
+    const { error } = await supabase.auth.admin.deleteUser(userId)
 
     if (error) {
       logger.error('사용자 삭제 오류:', error)

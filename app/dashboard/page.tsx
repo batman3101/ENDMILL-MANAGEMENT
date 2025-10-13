@@ -429,10 +429,10 @@ export default function DashboardPage() {
 
       {/* Phase 4.1: 새로운 3개 카드 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 앤드밀별 사용 설비 개수 */}
+        {/* 코드별 장착 설비수 Top5 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('endmill.title')} {t('equipment.title')} {t('common.count')}</h4>
+            <h4 className="text-lg font-semibold text-gray-800">{t('common.code')}별 장착 {t('equipment.title')}{t('common.count')} Top5</h4>
             <span className="text-2xl">🔧</span>
           </div>
           {isLoading ? (
@@ -465,10 +465,10 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* 모델별 앤드밀 사용 현황 */}
+        {/* 모델별 사용 앤드밀 분포 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('equipment.model')} {t('endmill.usage')}</h4>
+            <h4 className="text-lg font-semibold text-gray-800">{t('equipment.model')}별 사용 {t('endmill.title')} 분포</h4>
             <span className="text-2xl">📊</span>
           </div>
           {isLoading ? (
@@ -502,10 +502,10 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* 설비별 수명 소진율 */}
+        {/* 앤드밀 소진율 높은 설비 Top5 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('equipment.title')} {t('dashboard.lifeConsumption')}</h4>
+            <h4 className="text-lg font-semibold text-gray-800">{t('endmill.title')} {t('dashboard.lifeConsumption')} 높은 {t('equipment.title')} Top5</h4>
             <span className="text-2xl">⚙️</span>
           </div>
           {isLoading ? (
@@ -517,33 +517,36 @@ export default function DashboardPage() {
           ) : (data?.equipmentLifeConsumption || []).length > 0 ? (
             <div className="space-y-2">
               {(data?.equipmentLifeConsumption || []).slice(0, 5).map((item, index) => (
-                <div key={index} className="space-y-1">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="font-medium text-gray-900">
-                      C{String(item.equipmentNumber).padStart(3, '0')}
-                    </span>
-                    <div className="text-right">
-                      <span className={`font-bold ${
-                        item.consumptionRate >= 70 ? 'text-red-600' :
-                        item.consumptionRate >= 50 ? 'text-yellow-600' :
+                <div key={index} className="space-y-1 p-2 bg-gray-50 rounded">
+                  <div className="flex justify-between items-start text-sm">
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">
+                        {item.toolCount}{t('endmill.title')} {t('dashboard.management')} / {item.model} / ({(item as any).process || t('common.unknown')})
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        C{String(item.equipmentNumber).padStart(3, '0')} - {(item as any).changeCount}{t('dashboard.changeCount')}
+                      </div>
+                    </div>
+                    <div className="text-right ml-2">
+                      <span className={`font-bold text-lg ${
+                        (item as any).changeCount >= 20 ? 'text-red-600' :
+                        (item as any).changeCount >= 10 ? 'text-yellow-600' :
                         'text-green-600'
                       }`}>
-                        {item.consumptionRate}%
+                        {(item as any).changeCount}
                       </span>
+                      <div className="text-[10px] text-gray-500">{t('dashboard.times')}</div>
                     </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 rounded-full h-1.5">
                     <div
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        item.consumptionRate >= 70 ? 'bg-red-500' :
-                        item.consumptionRate >= 50 ? 'bg-yellow-500' :
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        (item as any).changeCount >= 20 ? 'bg-red-500' :
+                        (item as any).changeCount >= 10 ? 'bg-yellow-500' :
                         'bg-green-500'
                       }`}
-                      style={{ width: `${item.consumptionRate}%` }}
+                      style={{ width: `${Math.min(100, ((item as any).changeCount / 30) * 100)}%` }}
                     ></div>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {item.toolCount}{t('endmill.title')} / {item.model}
                   </div>
                 </div>
               ))}

@@ -217,16 +217,16 @@ export class EnvironmentManager {
     const translationSettings = settingsManager.getCategorySettings('translations')
 
     // Google API 설정 동기화
-    if (translationSettings.googleApiKey) {
+    if (translationSettings?.googleApiKey) {
       this.setEnvironmentVariable('GOOGLE_TRANSLATE_API_KEY', translationSettings.googleApiKey)
     }
-    if (translationSettings.googleProjectId) {
+    if (translationSettings?.googleProjectId) {
       this.setEnvironmentVariable('GOOGLE_CLOUD_PROJECT_ID', translationSettings.googleProjectId)
     }
-    if (translationSettings.googleLocation) {
+    if (translationSettings?.googleLocation) {
       this.setEnvironmentVariable('GOOGLE_CLOUD_LOCATION', translationSettings.googleLocation)
     }
-    if (translationSettings.useAdvancedAPI !== undefined) {
+    if (translationSettings?.useAdvancedAPI !== undefined) {
       this.setEnvironmentVariable('USE_ADVANCED_TRANSLATION_API', translationSettings.useAdvancedAPI.toString())
     }
   }

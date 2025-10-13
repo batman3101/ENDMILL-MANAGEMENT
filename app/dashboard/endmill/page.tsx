@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
-import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createCustomConfirmation } from '../../../lib/hooks/useConfirmation'
+import { useConfirmation, createCustomConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
 import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
 import { useSettings } from '../../../lib/hooks/useSettings'
@@ -57,7 +57,6 @@ export default function EndmillPage() {
   const { showSuccess, showError, showWarning } = useToast()
   const [sortColumn, setSortColumn] = useState<string>('')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-  const { camSheets } = useCAMSheets()
   const [selectedEndmill, setSelectedEndmill] = useState<EndmillInstance | null>(null)
   const [showExcelUploader, setShowExcelUploader] = useState(false)
   const [showEndmillForm, setShowEndmillForm] = useState(false)
@@ -67,9 +66,6 @@ export default function EndmillPage() {
   // 설정에서 값 가져오기
   const { settings } = useSettings()
   const itemsPerPage = settings.system.itemsPerPage
-  const equipmentLocations = settings.equipment.locations
-  const totalEquipmentCount = settings.equipment.totalCount
-  const toolPositionCount = settings.equipment.toolPositionCount
 
   // 실제 DB에서 사용 중인 카테고리 동적으로 추출
   const categories = useMemo(() => {
@@ -90,6 +86,7 @@ export default function EndmillPage() {
       loadEndmillData()
       loadEquipmentData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 실제 데이터베이스에서 데이터 로드 및 URL 파라미터 처리
@@ -171,6 +168,7 @@ export default function EndmillPage() {
       supabase.removeChannel(endmillChannel)
       supabase.removeChannel(equipmentChannel)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadEndmillData = async () => {
@@ -285,6 +283,7 @@ export default function EndmillPage() {
   // 필터 상태 변경 시 첫 페이지로 이동
   useMemo(() => {
     setCurrentPage(1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, statusFilter, typeFilter])
 
   // 상태별 통계
@@ -468,7 +467,7 @@ export default function EndmillPage() {
   }
 
   // 엑셀 업로드 성공 핸들러
-  const handleUploadSuccess = (data: any[]) => {
+  const handleUploadSuccess = (_data: any[]) => {
     showSuccess('업로드 완료', '엔드밀 데이터가 성공적으로 등록되었습니다.')
     // CAM Sheet 데이터 새로고침 (일괄 등록 시 CAM Sheet도 생성되므로)
     queryClient.invalidateQueries({ queryKey: ['cam-sheets'] })
@@ -477,7 +476,7 @@ export default function EndmillPage() {
   }
 
   // 개별 등록 성공 핸들러
-  const handleCreateSuccess = (data: any) => {
+  const handleCreateSuccess = (_data: any) => {
     showSuccess('등록 완료', '엔드밀이 성공적으로 등록되었습니다.')
     // CAM Sheet 데이터 새로고침 (엔드밀 등록 시 CAM Sheet도 생성되므로)
     queryClient.invalidateQueries({ queryKey: ['cam-sheets'] })

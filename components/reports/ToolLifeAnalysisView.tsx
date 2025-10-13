@@ -17,14 +17,14 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
   const [toolSortField, setToolSortField] = useState<SortField>('achievementRate')
   const [toolSortOrder, setToolSortOrder] = useState<SortOrder>('desc')
 
-  const [reasonSortField, setReasonSortField] = useState<SortField>('percentage')
-  const [reasonSortOrder, setReasonSortOrder] = useState<SortOrder>('desc')
+  const [reasonSortField,] = useState<SortField>('percentage')
+  const [reasonSortOrder,] = useState<SortOrder>('desc')
 
   const [trendSortField, setTrendSortField] = useState<SortField>('period')
   const [trendSortOrder, setTrendSortOrder] = useState<SortOrder>('asc')
 
-  const [distributionSortField, setDistributionSortField] = useState<SortField>('percentage')
-  const [distributionSortOrder, setDistributionSortOrder] = useState<SortOrder>('desc')
+  const [distributionSortField,] = useState<SortField>('percentage')
+  const [distributionSortOrder,] = useState<SortOrder>('desc')
 
   const [failureSortField, setFailureSortField] = useState<SortField>('failureCount')
   const [failureSortOrder, setFailureSortOrder] = useState<SortOrder>('desc')
@@ -56,7 +56,8 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
     })
   }, [lifeByTool, toolSortField, toolSortOrder])
 
-  const sortedReasonData = useMemo(() => {
+  // Reason data sorted - not used in UI
+  useMemo(() => {
     return [...lifeByReason].sort((a, b) => {
       const aValue = a[reasonSortField as keyof typeof a]
       const bValue = b[reasonSortField as keyof typeof b]
@@ -76,7 +77,8 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
     })
   }, [lifeTrend, trendSortField, trendSortOrder])
 
-  const sortedDistributionData = useMemo(() => {
+  // Distribution data sorted - not used in UI
+  useMemo(() => {
     return [...lifeDistribution].sort((a, b) => {
       const aValue = a[distributionSortField as keyof typeof a]
       const bValue = b[distributionSortField as keyof typeof b]

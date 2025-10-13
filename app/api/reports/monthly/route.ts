@@ -5,9 +5,7 @@ import {
   getDateRangeFromFilter,
   calculateAverage,
   calculatePercentage,
-  groupBy,
-  sumBy,
-  maxBy
+  groupBy
 } from '../../../../lib/utils/reportCalculations'
 import { logger } from '../../../../lib/utils/logger'
 

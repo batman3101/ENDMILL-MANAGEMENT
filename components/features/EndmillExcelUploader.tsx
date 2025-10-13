@@ -22,12 +22,13 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
   const { showSuccess, showError, showWarning } = useToast()
 
   // DB에서 동적으로 가져올 매핑 데이터
-  const [categoryMap, setCategoryMap] = useState<Record<string, string>>({})
-  const [supplierMap, setSupplierMap] = useState<Record<string, string>>({})
+  const [, setCategoryMap] = useState<Record<string, string>>({})
+  const [, setSupplierMap] = useState<Record<string, string>>({})
 
   // 컴포넌트 마운트 시 매핑 데이터 로드
   useEffect(() => {
     loadMappingData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadMappingData = async () => {

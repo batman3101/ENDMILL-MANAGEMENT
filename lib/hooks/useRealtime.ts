@@ -176,6 +176,7 @@ export function useMultiTableRealtime(tables: string[], callbacks?: {
       setConnections({})
       setErrors({})
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tablesKey]) // Use tablesKey instead of tables and callbacks
 
   const isAllConnected = tables.every(table => connections[table] === true)

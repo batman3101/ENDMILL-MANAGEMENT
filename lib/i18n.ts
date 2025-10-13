@@ -60,6 +60,7 @@ const resources = {
         required: '필수',
         optional: '선택',
         avgCount: '평균',
+        count: '수',
 
         // 시스템 정보
         lastUpdate: '마지막 업데이트',
@@ -143,6 +144,8 @@ const resources = {
         target: '목표',
         positions: '포지션',
         lifeConsumption: '수명 소진율',
+        management: '관리',
+        changeCount: '교체 실적',
       },
 
       // 재고 관리
