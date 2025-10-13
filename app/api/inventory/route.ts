@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const lowStock = url.searchParams.get('lowStock') === 'true'
 
     // Supabase에서 재고 데이터 조회 (앤드밀 타입과 카테고리 정보 포함)
-    let inventory = await serverSupabaseService.inventory.getAll()
+    const inventory = await serverSupabaseService.inventory.getAll()
 
     // 필터 적용
     let filteredInventory = inventory

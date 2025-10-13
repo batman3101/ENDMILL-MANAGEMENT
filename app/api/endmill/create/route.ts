@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
           const camSheetId = `${camData.model}_${camData.process}_${Date.now()}`
 
           // CAM Sheet 생성 또는 기존 것 찾기
-          let { data: existingCamSheet } = await supabase
+          const { data: existingCamSheet } = await supabase
             .from('cam_sheets')
             .select('id')
             .eq('model', camData.model)

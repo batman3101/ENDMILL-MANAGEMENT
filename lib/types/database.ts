@@ -282,7 +282,7 @@ export type Database = {
         Row: {
           created_at: string | null
           current_model: string | null
-          equipment_number: string
+          equipment_number: number
           id: string
           last_maintenance: string | null
           location: Database["public"]["Enums"]["equipment_location"]
@@ -295,7 +295,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           current_model?: string | null
-          equipment_number: string
+          equipment_number: number
           id?: string
           last_maintenance?: string | null
           location: Database["public"]["Enums"]["equipment_location"]
@@ -308,7 +308,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           current_model?: string | null
-          equipment_number?: string
+          equipment_number?: number
           id?: string
           last_maintenance?: string | null
           location?: Database["public"]["Enums"]["equipment_location"]

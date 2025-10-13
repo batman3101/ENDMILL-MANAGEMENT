@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { useTranslation } from '../../lib/hooks/useTranslations'
@@ -172,9 +173,11 @@ export default function DashboardLayout({
             {/* 로고 및 제목 */}
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center p-1">
-                <img
+                <Image
                   src="/icons/endmill.png"
                   alt={t('auth.loginTitle')}
+                  width={48}
+                  height={48}
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -299,17 +302,19 @@ export default function DashboardLayout({
         {/* 브레드크럼 */}
         <Breadcrumb />
 
-        {/* 페이지 제목 */}
-        <div className="mb-6">
-          <div className="flex items-center space-x-3">
-            <h1 className="text-2xl font-bold text-gray-900">
-              {menuItems.find(item => item.active)?.label || t('navigation.dashboard')}
-            </h1>
+        {/* 페이지 제목 - 메인 페이지에서만 표시 (상세 페이지에서는 숨김) */}
+        {!pathname.match(/\/dashboard\/[^\/]+\/[^\/]+/) && (
+          <div className="mb-6">
+            <div className="flex items-center space-x-3">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {menuItems.find(item => item.active)?.label || t('navigation.dashboard')}
+              </h1>
+            </div>
+            <p className="text-gray-600 text-sm">
+              {menuItems.find(item => item.active)?.description || t('dashboard.subtitle')}
+            </p>
           </div>
-          <p className="text-gray-600 text-sm">
-            {menuItems.find(item => item.active)?.description || t('dashboard.subtitle')}
-          </p>
-        </div>
+        )}
 
         {/* 페이지 콘텐츠 */}
         <div className="bg-gray-50">

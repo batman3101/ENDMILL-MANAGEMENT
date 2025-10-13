@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { clientLogger } from '../../../lib/utils/logger'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
@@ -15,6 +16,7 @@ import EquipmentExcelUploader from '../../../components/features/EquipmentExcelU
 import { supabase } from '../../../lib/supabase/client'
 
 export default function EquipmentPage() {
+  const router = useRouter()
   const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -116,13 +118,12 @@ export default function EquipmentPage() {
 
   // 필터링 및 정렬된 설비 목록
   const filteredEquipments = useMemo(() => {
-    let filtered = equipments.filter(equipment => {
+    const filtered = equipments.filter(equipment => {
       // 포맷팅된 설비번호 생성 (C001, C002 형식)
       const formattedNumber = `C${equipment.equipment_number?.toString().padStart(3, '0')}`
 
       const matchesSearch = searchTerm === '' ||
-        equipment.equipment_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        formattedNumber.toLowerCase().includes(searchTerm.toLowerCase()) || // 포맷팅된 번호로도 검색
+        formattedNumber.toLowerCase().includes(searchTerm.toLowerCase()) || // 포맷팅된 번호로 검색
         equipment.current_model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         equipment.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         equipment.process?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -256,8 +257,11 @@ export default function EquipmentPage() {
     setIsSubmitting(true)
 
     try {
+      // C001 → 1로 변환하여 저장
+      const equipmentNumberInt = parseInt(addFormData.equipmentNumber.replace(/^C/i, '')) || 0
+
       createEquipment({
-        equipment_number: addFormData.equipmentNumber, // C001 형식 그대로 저장
+        equipment_number: equipmentNumberInt,
         model_code: addFormData.currentModel,
         location: addFormData.location,
         status: addFormData.status,
@@ -314,19 +318,75 @@ export default function EquipmentPage() {
     e.preventDefault()
     if (!editEquipment) return
 
-    try {
-      updateEquipment({
-        id: editEquipment.id,
-        location: editEquipment.location,
-        status: editEquipment.status,
-        current_model: editEquipment.current_model,
-        process: editEquipment.process
-      })
+    // 원본 설비 데이터 찾기
+    const originalEquipment = equipments.find(eq => eq.id === editEquipment.id)
+    if (!originalEquipment) return
 
-      setShowEditModal(false)
-      showSuccess('설비 수정 완료', `설비 ${editEquipment.equipment_number?.toString().startsWith('C') ? editEquipment.equipment_number : `C${editEquipment.equipment_number?.toString().padStart(3, '0')}`}이(가) 수정되었습니다.`)
+    // 모델 또는 공정이 변경되었는지 확인
+    const modelOrProcessChanged =
+      originalEquipment.current_model !== editEquipment.current_model ||
+      originalEquipment.process !== editEquipment.process
+
+    try {
+      setIsSubmitting(true)
+
+      if (modelOrProcessChanged) {
+        // 모델/공정이 변경되었으면 assign API 호출 (CAM Sheet 기준 앤드밀 자동 장착)
+        const response = await fetch(`/api/equipment/${editEquipment.id}/assign`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            currentModel: editEquipment.current_model,
+            process: editEquipment.process
+          })
+        })
+
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || '설비 배정 변경에 실패했습니다.')
+        }
+
+        // 위치/상태가 변경되었으면 추가로 업데이트
+        if (originalEquipment.location !== editEquipment.location || originalEquipment.status !== editEquipment.status) {
+          updateEquipment({
+            id: editEquipment.id,
+            location: editEquipment.location,
+            status: editEquipment.status,
+            current_model: editEquipment.current_model,
+            process: editEquipment.process
+          })
+        }
+
+        const { createdAndInstalledPositions, installedPositions } = result.data.updateResults
+        const totalInstalled = (createdAndInstalledPositions || 0) + (installedPositions || 0)
+
+        setShowEditModal(false)
+        showSuccess(
+          '설비 수정 완료',
+          `${editEquipment.equipmentNumber} 수정 완료\nCAM Sheet 기준으로 ${totalInstalled}개 앤드밀이 자동 장착되었습니다.`
+        )
+        refetch() // 데이터 새로고침
+      } else {
+        // 모델/공정이 변경되지 않았으면 기존 방식대로 업데이트
+        updateEquipment({
+          id: editEquipment.id,
+          location: editEquipment.location,
+          status: editEquipment.status,
+          current_model: editEquipment.current_model,
+          process: editEquipment.process
+        })
+
+        setShowEditModal(false)
+        showSuccess('설비 수정 완료', `설비 ${editEquipment.equipmentNumber}이(가) 수정되었습니다.`)
+      }
     } catch (error) {
+      clientLogger.error('설비 수정 에러:', error)
       showError('설비 수정 실패', error instanceof Error ? error.message : '설비 수정 중 오류가 발생했습니다.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -334,7 +394,7 @@ export default function EquipmentPage() {
   const handleOpenEditModal = (equipment: any) => {
     setEditEquipment({
       ...equipment,
-      equipmentNumber: equipment.equipment_number?.toString().startsWith('C') ? equipment.equipment_number : `C${equipment.equipment_number?.toString().padStart(3, '0')}`
+      equipmentNumber: `C${equipment.equipment_number?.toString().padStart(3, '0')}`
     })
     setShowEditModal(true)
   }
@@ -915,11 +975,12 @@ export default function EquipmentPage() {
                   <tr key={equipment.id} className="hover:bg-gray-50">
                     {/* 설비번호 */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {equipment.equipment_number?.toString().startsWith('C')
-                          ? equipment.equipment_number
-                          : `C${equipment.equipment_number?.toString().padStart(3, '0')}`}
-                      </div>
+                      <button
+                        onClick={() => router.push(`/dashboard/equipment/${equipment.equipment_number}`)}
+                        className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors"
+                      >
+                        C{equipment.equipment_number?.toString().padStart(3, '0')}
+                      </button>
                     </td>
                     
                     {/* 현장 */}
@@ -983,7 +1044,7 @@ export default function EquipmentPage() {
                         <StatusChangeDropdown
                           currentStatus={equipment.status || ''}
                           equipmentId={equipment.id}
-                          equipmentNumber={equipment.equipment_number?.toString().startsWith('C') ? equipment.equipment_number : `C${equipment.equipment_number?.toString().padStart(3, '0')}`}
+                          equipmentNumber={`C${equipment.equipment_number?.toString().padStart(3, '0')}`}
                           onStatusChange={handleStatusChange}
                         />
 
@@ -1413,15 +1474,20 @@ export default function EquipmentPage() {
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+                  disabled={isSubmitting}
                 >
                   {t('equipment.close')}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                  disabled={isSubmitting}
                 >
-                  {t('equipment.saveEdit')}
+                  {isSubmitting && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  )}
+                  {isSubmitting ? '저장 중...' : t('equipment.saveEdit')}
                 </button>
               </div>
             </form>

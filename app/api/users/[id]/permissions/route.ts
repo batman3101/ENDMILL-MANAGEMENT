@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
-import { hasPermission, isAdmin } from '@/lib/auth/permissions'
+import { createServerClient } from '@/lib/supabase/client'
+import { isAdmin } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
-import { Database } from '@/lib/types/database'
 
 // GET /api/users/[id]/permissions - 사용자의 권한 매트릭스 조회
 export async function GET(
@@ -12,24 +9,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options })
-          },
-        },
-      }
-    )
+    const supabase = createServerClient()
 
     const userId = params.id
 
@@ -80,17 +60,17 @@ export async function GET(
       )
     }
 
-    // 개인 권한 반환 (user_profiles.permissions 사용)
-    const permissions = targetProfile.permissions || {}
+    // 역할 기반 권한 반환 (user_roles.permissions 사용)
+    const permissions = targetProfile.user_roles?.permissions || {}
 
     return NextResponse.json({
       success: true,
       data: {
         userId: targetProfile.id,
         userName: targetProfile.name,
-        roleId: targetProfile.user_roles.id,
-        roleName: targetProfile.user_roles.name,
-        roleType: targetProfile.user_roles.type,
+        roleId: targetProfile.user_roles?.id || '',
+        roleName: targetProfile.user_roles?.name || '',
+        roleType: targetProfile.user_roles?.type || '',
         permissions
       }
     })
@@ -110,24 +90,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options })
-          },
-        },
-      }
-    )
+    const supabase = createServerClient()
 
     const userId = params.id
 
@@ -197,16 +160,7 @@ export async function PUT(
     }
 
     // 사용자 개인 권한 업데이트 (Service Role 사용)
-    const adminSupabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    )
+    const adminSupabase = createServerClient()
 
     const { data: updatedProfile, error: updateError } = await adminSupabase
       .from('user_profiles')
@@ -254,24 +208,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options })
-          },
-        },
-      }
-    )
+    const supabase = createServerClient()
 
     const userId = params.id
 
@@ -347,16 +284,7 @@ export async function POST(
     }
 
     // 사용자의 역할을 템플릿 역할로 변경 (Service Role 사용)
-    const adminSupabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    )
+    const adminSupabase = createServerClient()
 
     const { data: updatedProfile, error: updateError } = await adminSupabase
       .from('user_profiles')

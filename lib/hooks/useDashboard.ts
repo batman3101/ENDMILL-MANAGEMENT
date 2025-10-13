@@ -74,6 +74,27 @@ export interface DashboardData {
     color: string
     severity: string
   }>
+  endmillByEquipmentCount?: Array<{
+    endmillCode: string
+    endmillName: string
+    equipmentCount: number
+    totalPositions: number
+  }>
+  modelEndmillUsage?: Array<{
+    model: string
+    equipmentCount: number
+    endmillCount: number
+    avgEndmillPerEquipment: number
+  }>
+  equipmentLifeConsumption?: Array<{
+    equipmentNumber: number
+    model: string
+    totalLife: number
+    consumedLife: number
+    remainingLife: number
+    consumptionRate: number
+    toolCount: number
+  }>
   lastUpdated: string
   dataSource: string
 }

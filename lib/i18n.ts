@@ -141,6 +141,8 @@ const resources = {
         savings: '절감액',
         vsPreviousDay: '전일 대비',
         target: '목표',
+        positions: '포지션',
+        lifeConsumption: '수명 소진율',
       },
 
       // 재고 관리
@@ -781,6 +783,7 @@ const resources = {
         warning: '교체 권장',
         critical: '즉시 교체',
         usageStatus: '앤드밀 별 모델, 설비, 공정의 사용 현황',
+        usage: '사용 현황',
         loadingData: '앤드밀 데이터를 불러오는 중...',
         realtimeConnected: '실시간 연결됨',
         connecting: '연결 중...',
@@ -1484,6 +1487,8 @@ const resources = {
         savings: 'Tiết kiệm',
         vsPreviousDay: 'so với ngày trước',
         target: 'mục tiêu',
+        positions: 'vị trí',
+        lifeConsumption: 'tỷ lệ tiêu hao tuổi thọ',
       },
 
       // 설비 관리
@@ -1643,6 +1648,7 @@ const resources = {
         warning: 'Khuyến cáo thay thế',
         critical: 'Thay thế ngay',
         usageStatus: 'Tình trạng sử dụng theo dao phay, mẫu, thiết bị, quy trình',
+        usage: 'Tình trạng sử dụng',
         loadingData: 'Đang tải dữ liệu dao phay...',
         realtimeConnected: 'Đã kết nối thời gian thực',
         connecting: 'Đang kết nối...',

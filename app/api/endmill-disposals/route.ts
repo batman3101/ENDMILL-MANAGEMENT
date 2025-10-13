@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/services/supabaseService'
+import { createServerClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const start = searchParams.get('start')
     const end = searchParams.get('end')
 
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
 
     let query: any = (supabase as any)
       .from('endmill_disposals')
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const notes = formData.get('notes') as string
     const imageFile = formData.get('image') as File | null
 
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
 
     // 이미지 업로드 (있는 경우)
     let imageUrl = null
@@ -134,7 +134,7 @@ export async function PUT(request: NextRequest) {
     const notes = formData.get('notes') as string
     const imageFile = formData.get('image') as File | null
 
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
 
     // 이미지 업로드 (있는 경우)
     let imageUrl = undefined
@@ -209,7 +209,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
 
     // 폐기 기록 삭제
     const { error } = await (supabase as any)

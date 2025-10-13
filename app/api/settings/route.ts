@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { Database } from '../../../lib/types/database'
 import { SettingsManager } from '../../../lib/data/settingsManager'
 import { SystemSettings, SettingsCategory, SettingsValidationResult } from '../../../lib/types/settings'
 import { logger } from '@/lib/utils/logger'
 
-// Supabase 클라이언트 생성
-const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+// DB 연동 비활성화 상태 유지 (필요 시 createServerClient 사용)
 
 // GET: 설정 조회
 export async function GET(request: NextRequest) {

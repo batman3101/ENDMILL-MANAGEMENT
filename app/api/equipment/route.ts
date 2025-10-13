@@ -121,27 +121,98 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // 입력 데이터 검증
     const validatedData = createEquipmentSchema.parse(body);
 
+    const currentModel = validatedData.model_code;
+    const process = body.process || 'CNC1';
+
+    // equipment_number 변환 (string "C001" → number 1)
+    let equipmentNumber: number;
+    if (typeof validatedData.equipment_number === 'string') {
+      // "C001" → 1
+      equipmentNumber = parseInt(validatedData.equipment_number.replace(/^C/i, '')) || 0;
+    } else {
+      // 이미 number
+      equipmentNumber = validatedData.equipment_number;
+    }
+
     // 새 설비 생성
     const newEquipment = await serverSupabaseService.equipment.create({
-      equipment_number: validatedData.equipment_number.toString(),
+      equipment_number: equipmentNumber,
       model_code: validatedData.model_code,
       location: (validatedData.location || 'A동') as 'A동' | 'B동',
       status: (validatedData.status === 'active' || !validatedData.status) ? '가동중' : validatedData.status as '가동중' | '점검중' | '셋업중',
-      current_model: validatedData.model_code, // current_model 추가
-      process: body.process || 'CNC1', // process 추가
-      tool_position_count: 21 // 기본값 추가
+      current_model: currentModel,
+      process: process,
+      tool_position_count: 21
     })
-    
+
+    logger.log('✅ 설비 생성 완료:', {
+      equipmentId: newEquipment.id,
+      equipmentNumber: newEquipment.equipment_number,
+      model: currentModel,
+      process: process
+    });
+
+    // CAM Sheet 조회
+    const camSheets = await serverSupabaseService.camSheet.getByModelAndProcess(currentModel, process);
+
+    if (camSheets && camSheets.length > 0) {
+      const camSheet = camSheets[0];
+      logger.log('✅ CAM Sheet 발견:', {
+        camSheetId: camSheet.id,
+        model: camSheet.model,
+        process: camSheet.process
+      });
+
+      // CAM Sheet의 앤드밀 목록 조회
+      const camSheetEndmills = await serverSupabaseService.camSheet.getEndmills(camSheet.id);
+
+      if (camSheetEndmills && camSheetEndmills.length > 0) {
+        // Supabase 클라이언트로 tool_positions 생성
+        const { createServerClient } = await import('@/lib/supabase/client');
+        const supabase = createServerClient();
+
+        // 각 T번호에 대해 tool_positions 레코드 생성
+        const insertPromises = camSheetEndmills.map(async (camEndmill: any) => {
+          const tNumber = camEndmill.t_number;
+          const toolLife = camEndmill.tool_life || 0;
+
+          return supabase.from('tool_positions').insert({
+            equipment_id: newEquipment.id,
+            position_number: tNumber,
+            endmill_type_id: null,
+            current_life: 0,
+            total_life: toolLife,
+            status: 'empty',
+            install_date: null
+          });
+        });
+
+        await Promise.all(insertPromises);
+
+        logger.log('✅ tool_positions 생성 완료:', {
+          count: camSheetEndmills.length,
+          positions: camSheetEndmills.map((e: any) => e.t_number)
+        });
+      } else {
+        logger.warn('⚠️ CAM Sheet에 등록된 앤드밀이 없습니다');
+      }
+    } else {
+      logger.warn('⚠️ 해당 모델/공정의 CAM Sheet가 없습니다:', {
+        model: currentModel,
+        process: process
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: newEquipment,
       message: '설비가 성공적으로 생성되었습니다.',
     }, { status: 201 });
-    
+
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

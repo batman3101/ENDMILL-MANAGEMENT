@@ -489,9 +489,6 @@ export default function EndmillPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <p className="text-gray-600">{t('endmill.subtitle')}</p>
-        </div>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -507,14 +504,11 @@ export default function EndmillPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start">
-        <div>
-          <p className="text-gray-600">{t('endmill.subtitle')}</p>
-          <div className="flex items-center space-x-2 mt-1">
-            <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-            <span className={`text-xs font-medium ${isRealtimeConnected ? 'text-green-600' : 'text-red-600'}`}>
-              {isRealtimeConnected ? t('endmill.realtimeConnected') : t('endmill.connecting')}
-            </span>
-          </div>
+        <div className="flex items-center space-x-2">
+          <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+          <span className={`text-xs font-medium ${isRealtimeConnected ? 'text-green-600' : 'text-red-600'}`}>
+            {isRealtimeConnected ? t('endmill.realtimeConnected') : t('endmill.connecting')}
+          </span>
         </div>
         <div className="flex gap-3">
           <button

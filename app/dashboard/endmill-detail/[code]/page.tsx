@@ -588,7 +588,9 @@ export default function EndmillDetailPage() {
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap">
                             <span className="text-sm font-medium text-gray-900">
-                              {endmillData.averageLifespan ? `${endmillData.averageLifespan.toLocaleString()}회` : 'N/A'}
+                              {usage.averageActualLife ? `${usage.averageActualLife.toLocaleString()}회` : (
+                                <span className="text-gray-400">데이터 없음</span>
+                              )}
                             </span>
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap">

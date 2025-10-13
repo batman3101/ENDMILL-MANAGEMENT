@@ -162,7 +162,7 @@ export default function CAMSheetsPage() {
 
     // 1. Tool Life 예측 정확도 (실제 교체 실적 데이터 기반)
     let toolLifeAccuracy = 0
-    let processAccuracy: { [key: string]: number } = {
+    const processAccuracy: { [key: string]: number } = {
       'CNC1': 0,
       'CNC2': 0,
       'CNC2-1': 0
@@ -226,7 +226,7 @@ export default function CAMSheetsPage() {
 
     // 2. 교체 주기 분석 (수량 단위)
     let averageChangeInterval = 0
-    let endmillTypeIntervals: { [key: string]: number } = {}
+    const endmillTypeIntervals: { [key: string]: number } = {}
 
     logger.log('=== 교체 주기 분석 ===')
     if (toolChanges.length > 0) {
@@ -916,7 +916,9 @@ export default function CAMSheetsPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {(selectedSheet.cam_sheet_endmills || []).map((endmill: EndmillInfo) => (
+                    {(selectedSheet.cam_sheet_endmills || [])
+                      .sort((a, b) => a.t_number - b.t_number)
+                      .map((endmill: EndmillInfo) => (
                       <tr key={endmill.t_number} className="hover:bg-gray-50">
                         <td className="px-4 py-2 text-sm font-medium">T{endmill.t_number.toString().padStart(2, '0')}</td>
                         <td className="px-4 py-2 text-sm">

@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const model = searchParams.get('model')
     const process = searchParams.get('process')
 
-    let response: any = {}
+    const response: any = {}
 
     // 1. 설비번호 기반 자동입력: equipmentNumber -> current_model, process
     if (equipmentNumber) {

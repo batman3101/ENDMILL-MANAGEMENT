@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
     // 날짜 범위 계산
     const { startDate, endDate } = getDateRangeFromFilter(filter)
 
-    // 1. tool_changes 데이터 조회
+    // 1. tool_changes 데이터 조회 (t_number 추가)
     let tcQuery = supabase
       .from('tool_changes')
-      .select('id, change_date, equipment_number, production_model, tool_life, change_reason, endmill_code, process')
+      .select('id, change_date, equipment_number, production_model, tool_life, change_reason, endmill_code, process, t_number')
       .gte('change_date', startDate)
       .lte('change_date', endDate)
 
@@ -64,21 +64,46 @@ export async function POST(request: NextRequest) {
     // 3. equipment 데이터 조회
     const { data: equipments, error: eqError } = await supabase
       .from('equipment')
-      .select('equipment_number, model_code, location')
+      .select('equipment_number, model_code, location, current_model')
 
     if (eqError) {
       logger.error('equipment 조회 오류:', eqError)
     }
 
-    // 4. 데이터 병합
+    // 4. CAM Sheet 데이터 조회 (모델/공정별 표준 사양)
+    const { data: camSheetData, error: camError } = await supabase
+      .from('cam_sheet_endmills')
+      .select('model, process, tool_number, tool_life, endmill_code')
+
+    if (camError) {
+      logger.error('cam_sheet_endmills 조회 오류:', camError)
+    }
+
+    // 5. 데이터 병합
     const endmillMap = new Map(endmillTypes?.map(et => [et.code, et]) || [])
     const equipmentDataMap = new Map(equipments?.map(eq => [eq.equipment_number, eq]) || [])
 
-    const mergedData = toolChanges.map(tc => ({
-      ...tc,
-      endmill_types: endmillMap.get(tc.endmill_code ?? '') || null,
-      equipment: equipmentDataMap.get(tc.equipment_number?.toString() ?? '') || null
-    }))
+    // CAM Sheet 맵 생성 (model_process_tnumber → tool_life)
+    const camSheetMap = new Map<string, any>()
+    camSheetData?.forEach((cam: any) => {
+      const key = `${cam.model}_${cam.process}_T${String(cam.tool_number).padStart(2, '0')}`
+      camSheetMap.set(key, cam)
+    })
+
+    const mergedData = toolChanges.map(tc => {
+      const equipment = equipmentDataMap.get(tc.equipment_number ?? 0)
+      const model = equipment?.current_model || tc.production_model
+      const process = tc.process
+      const tNumber = `T${String(tc.t_number).padStart(2, '0')}`
+      const camKey = `${model}_${process}_${tNumber}`
+
+      return {
+        ...tc,
+        endmill_types: endmillMap.get(tc.endmill_code ?? '') || null,
+        equipment: equipment || null,
+        cam_sheet: camSheetMap.get(camKey) || null
+      }
+    })
 
     // 데이터 변환
     const changes = mergedData.map((change: any) => {
@@ -93,16 +118,22 @@ export async function POST(request: NextRequest) {
         ? rawEquipmentNumber
         : `C${String(rawEquipmentNumber).padStart(3, '0')}`
 
+      // 표준 수명: CAM Sheet 사양 우선, 없으면 endmill_types 사용
+      const standardLife = change.cam_sheet?.tool_life || change.endmill_types?.standard_life || 0
+
       return {
         date: change.change_date,
         equipmentNumber: formattedEquipmentNumber,
-        model: change.equipment?.model_code || change.production_model || '미지정',
+        model: change.equipment?.current_model || change.equipment?.model_code || change.production_model || '미지정',
         location: change.equipment?.location || 'A동',
         process: change.process || '미지정',
         life: change.tool_life || 0,
-        standardLife: change.endmill_types?.standard_life || 0,
+        standardLife,
+        camSheetLife: change.cam_sheet?.tool_life || 0, // CAM Sheet 사양 (비교용)
+        endmillStandardLife: change.endmill_types?.standard_life || 0, // 일반 표준 수명 (비교용)
         unitCost: isNaN(unitCost) ? 0 : unitCost,
-        reason: change.change_reason || '미지정'
+        reason: change.change_reason || '미지정',
+        tNumber: change.t_number
       }
     })
 

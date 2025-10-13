@@ -42,6 +42,8 @@ export default function ToolChangesPage() {
   const [availableModels, setAvailableModels] = useState<string[]>([])
   const [availableProcesses, setAvailableProcesses] = useState<string[]>([])
   const [availableUsers, setAvailableUsers] = useState<{id: string, name: string, employee_id: string}[]>([])
+  const [availableTNumbers, setAvailableTNumbers] = useState<number[]>([]) // CAM Sheet 기준 T번호 목록 (추가 폼용)
+  const [editAvailableTNumbers, setEditAvailableTNumbers] = useState<number[]>([]) // CAM Sheet 기준 T번호 목록 (수정 모달용)
   const [isManualEndmillInput, setIsManualEndmillInput] = useState(false)
   const [isEditManualEndmillInput, setIsEditManualEndmillInput] = useState(false)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
@@ -275,6 +277,29 @@ export default function ToolChangesPage() {
     }
   }, [formData.equipment_number, autoFillByEquipmentNumber])
 
+  // 생산모델과 공정이 선택되면 해당 CAM Sheet의 T번호 목록 가져오기
+  useEffect(() => {
+    if (formData.production_model && formData.process) {
+      const sheet = camSheets.find(s => s.model === formData.production_model && s.process === formData.process)
+      if (sheet && sheet.cam_sheet_endmills) {
+        const tNumbers = sheet.cam_sheet_endmills
+          .map((e: any) => e.t_number)
+          .filter((t: number) => t != null)
+          .sort((a: number, b: number) => a - b)
+        setAvailableTNumbers(tNumbers)
+
+        // T번호 목록이 변경되면 첫 번째 T번호로 초기화
+        if (tNumbers.length > 0 && !tNumbers.includes(formData.t_number)) {
+          setFormData(prev => ({ ...prev, t_number: tNumbers[0] }))
+        }
+      } else {
+        setAvailableTNumbers([])
+      }
+    } else {
+      setAvailableTNumbers([])
+    }
+  }, [formData.production_model, formData.process, camSheets])
+
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (추가 폼)
   useEffect(() => {
     if (formData.production_model && formData.process && formData.t_number && !isManualEndmillInput) {
@@ -341,6 +366,29 @@ export default function ToolChangesPage() {
       autoFillEditByEquipmentNumber(String(editingItem.equipment_number))
     }
   }, [editingItem?.equipment_number, autoFillEditByEquipmentNumber])
+
+  // 수정 모달: 생산모델과 공정이 선택되면 해당 CAM Sheet의 T번호 목록 가져오기
+  useEffect(() => {
+    if (editingItem && editingItem.production_model && editingItem.process) {
+      const sheet = camSheets.find(s => s.model === editingItem.production_model && s.process === editingItem.process)
+      if (sheet && sheet.cam_sheet_endmills) {
+        const tNumbers = sheet.cam_sheet_endmills
+          .map((e: any) => e.t_number)
+          .filter((t: number) => t != null)
+          .sort((a: number, b: number) => a - b)
+        setEditAvailableTNumbers(tNumbers)
+
+        // T번호 목록이 변경되면 첫 번째 T번호로 초기화
+        if (tNumbers.length > 0 && !tNumbers.includes(editingItem.t_number)) {
+          setEditingItem(prev => prev ? ({ ...prev, t_number: tNumbers[0] }) : null)
+        }
+      } else {
+        setEditAvailableTNumbers([])
+      }
+    } else {
+      setEditAvailableTNumbers([])
+    }
+  }, [editingItem?.production_model, editingItem?.process, camSheets])
 
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (수정 모달)
   useEffect(() => {
@@ -816,16 +864,30 @@ export default function ToolChangesPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.tNumber')}</label>
-                                    <select
-                      value={formData.t_number}
-                      onChange={(e) => setFormData({...formData, t_number: parseInt(e.target.value)})}
-                      className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      {Array.from({length: tNumberRange.max - tNumberRange.min + 1}, (_, i) => i + tNumberRange.min).map(num => (
-                        <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
-                      ))}
+                <select
+                  value={formData.t_number}
+                  onChange={(e) => setFormData({...formData, t_number: parseInt(e.target.value)})}
+                  className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  disabled={availableTNumbers.length === 0}
+                >
+                  {availableTNumbers.length > 0 ? (
+                    availableTNumbers.map(num => (
+                      <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
+                    ))
+                  ) : (
+                    <option value={formData.t_number}>
+                      {formData.production_model && formData.process
+                        ? 'CAM Sheet에 등록된 T번호 없음'
+                        : '모델, 공정, T번호 선택 시 자동 입력'}
+                    </option>
+                  )}
                 </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {availableTNumbers.length > 0
+                    ? `등록된 CAM SHEET의 모델들`
+                    : 'T번호 선택시 자동으로 입력됩니다'}
+                </p>
               </div>
 
               <div>
@@ -1239,7 +1301,7 @@ export default function ToolChangesPage() {
                     const maxVisiblePages = 5
 
                     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
-                    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+                    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
 
                     if (endPage - startPage < maxVisiblePages - 1) {
                       startPage = Math.max(1, endPage - maxVisiblePages + 1)
@@ -1374,11 +1436,25 @@ export default function ToolChangesPage() {
                       onChange={(e) => setEditingItem({...editingItem, t_number: parseInt(e.target.value)})}
                       className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
+                      disabled={editAvailableTNumbers.length === 0}
                     >
-                      {Array.from({length: tNumberRange.max - tNumberRange.min + 1}, (_, i) => i + tNumberRange.min).map(num => (
-                        <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
-                      ))}
+                      {editAvailableTNumbers.length > 0 ? (
+                        editAvailableTNumbers.map(num => (
+                          <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
+                        ))
+                      ) : (
+                        <option value={editingItem.t_number}>
+                          {editingItem.production_model && editingItem.process
+                            ? 'CAM Sheet에 등록된 T번호 없음'
+                            : '모델, 공정 선택 시 자동 입력'}
+                        </option>
+                      )}
                     </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {editAvailableTNumbers.length > 0
+                        ? `CAM Sheet에 등록된 T번호만 선택 가능`
+                        : 'T번호 선택시 자동으로 입력됩니다'}
+                    </p>
                   </div>
 
                   <div>

@@ -16,7 +16,7 @@ import { ReportFilter } from '../types/reports'
 export function getDateRangeFromFilter(filter: ReportFilter): { startDate: string; endDate: string } {
   const today = new Date()
   let startDate: Date
-  let endDate: Date = today
+  const endDate: Date = today
 
   switch (filter.period) {
     case 'today':

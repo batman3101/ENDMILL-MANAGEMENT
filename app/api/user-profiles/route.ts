@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '../../../lib/services/supabaseService'
+import { createServerClient } from '../../../lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
   try {
     // 활성 상태인 모든 사용자 프로필 조회
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerClient()
     const { data, error } = await supabase
       .from('user_profiles')
       .select('id, name, employee_id, department, position, shift')

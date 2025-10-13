@@ -264,7 +264,7 @@ export default function InventoryPage() {
 
   // 테이블 렌더링을 위한 플랫 데이터 생성
   const flattenedData = useMemo(() => {
-    let result = searchFilteredInventory.map(item => ({
+    const result = searchFilteredInventory.map(item => ({
       itemId: item.id,
       code: item.endmill_type?.code || '',
       name: item.endmill_type?.name || '',

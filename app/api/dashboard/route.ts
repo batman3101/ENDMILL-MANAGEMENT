@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
@@ -23,15 +23,7 @@ export async function GET(request: NextRequest) {
       serviceKeyPrefix: supabaseServiceKey.substring(0, 20) + '...'
     })
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      },
-      db: {
-        schema: 'public'
-      }
-    })
+    const supabase = createServerClient()
     logger.log('✅ Supabase 클라이언트 생성 완료 (Service Role Key 사용)')
 
     // 연결 테스트 - equipment 테이블 조회
@@ -55,7 +47,10 @@ export async function GET(request: NextRequest) {
       frequencyAnalysis,
       lifespanAnalysis,
       modelCostAnalysis,
-      recentAlerts
+      recentAlerts,
+      endmillByEquipmentCount,
+      modelEndmillUsage,
+      equipmentLifeConsumption
     ] = await Promise.all([
       getEquipmentStats(supabase),
       getEndmillUsageStats(supabase),
@@ -65,7 +60,10 @@ export async function GET(request: NextRequest) {
       getFrequencyAnalysis(supabase),
       getLifespanAnalysis(supabase),
       getModelCostAnalysis(supabase),
-      getRecentAlerts(supabase)
+      getRecentAlerts(supabase),
+      getEndmillByEquipmentCount(supabase),
+      getModelEndmillUsage(supabase),
+      getEquipmentLifeConsumption(supabase)
     ])
 
     const dashboardData = {
@@ -81,6 +79,11 @@ export async function GET(request: NextRequest) {
       lifespanAnalysis,
       modelCostAnalysis,
       recentAlerts,
+
+      // Phase 4.1 추가 인사이트
+      endmillByEquipmentCount,
+      modelEndmillUsage,
+      equipmentLifeConsumption,
 
       // 메타 정보
       lastUpdated: new Date().toISOString(),
@@ -713,4 +716,212 @@ async function getRecentAlerts(supabase: any) {
   logger.log('✅ 최근 알림 조회 완료:', { alertCount: alerts.length })
 
   return alerts
+}
+
+// Phase 4.1: 앤드밀별 사용 설비 개수
+async function getEndmillByEquipmentCount(supabase: any) {
+  logger.log('🔧 앤드밀별 사용 설비 개수 조회 시작')
+
+  // tool_positions에서 사용 중인 앤드밀 조회 (equipment 정보 포함)
+  const { data: toolPositions, error: tpError } = await supabase
+    .from('tool_positions')
+    .select('endmill_type_id, equipment_id, status')
+
+  if (tpError) {
+    console.error('tool_positions 조회 오류:', tpError)
+    throw tpError
+  }
+
+  // JavaScript로 필터링: in_use만
+  const inUsePositions = (toolPositions || []).filter((pos: any) => pos.status === 'in_use')
+
+  logger.log('📊 사용 중인 포지션 조회 완료:', {
+    totalCount: toolPositions?.length || 0,
+    inUseCount: inUsePositions.length
+  })
+
+  // endmill_type_id별로 고유한 equipment_id 개수 계산
+  const endmillEquipmentCount = inUsePositions.reduce((acc: any, pos: any) => {
+    if (!pos.endmill_type_id) return acc
+
+    if (!acc[pos.endmill_type_id]) {
+      acc[pos.endmill_type_id] = new Set()
+    }
+    acc[pos.endmill_type_id].add(pos.equipment_id)
+    return acc
+  }, {})
+
+  // endmill_types 정보 조회
+  const { data: endmillTypes, error: etError } = await supabase
+    .from('endmill_types')
+    .select('id, code, name')
+
+  if (etError) {
+    console.error('endmill_types 조회 오류:', etError)
+    throw etError
+  }
+
+  const endmillMap = new Map(endmillTypes?.map((et: any) => [et.id, et]) || [])
+
+  // 결과 변환
+  const results = Object.entries(endmillEquipmentCount)
+    .map(([endmillTypeId, equipmentSet]: [string, any]) => {
+      const endmill: any = endmillMap.get(parseInt(endmillTypeId))
+      return {
+        endmillCode: endmill?.code || 'Unknown',
+        endmillName: endmill?.name || 'Unknown',
+        equipmentCount: equipmentSet.size,
+        totalPositions: inUsePositions.filter((p: any) => p.endmill_type_id === parseInt(endmillTypeId)).length
+      }
+    })
+    .sort((a, b) => b.equipmentCount - a.equipmentCount)
+    .slice(0, 10) // 상위 10개만
+
+  logger.log('✅ 앤드밀별 사용 설비 개수 계산 완료:', { count: results.length })
+
+  return results
+}
+
+// Phase 4.1: 모델별 앤드밀 사용 현황
+async function getModelEndmillUsage(supabase: any) {
+  logger.log('📊 모델별 앤드밀 사용 현황 조회 시작')
+
+  // equipment 조회
+  const { data: equipment, error: eqError } = await supabase
+    .from('equipment')
+    .select('id, equipment_number, current_model, process')
+
+  if (eqError) {
+    console.error('equipment 조회 오류:', eqError)
+    throw eqError
+  }
+
+  // tool_positions 조회 (사용 중인 것만)
+  const { data: allPositions, error: tpError } = await supabase
+    .from('tool_positions')
+    .select('equipment_id, endmill_type_id, status')
+
+  if (tpError) {
+    console.error('tool_positions 조회 오류:', tpError)
+    throw tpError
+  }
+
+  const inUsePositions = (allPositions || []).filter((pos: any) => pos.status === 'in_use' && pos.endmill_type_id)
+
+  logger.log('📊 모델별 사용 현황 조회:', {
+    equipmentCount: equipment?.length || 0,
+    inUsePositionsCount: inUsePositions.length
+  })
+
+  // equipment_id로 매핑
+  const equipmentMap = new Map(equipment?.map((eq: any) => [eq.id, eq]) || [])
+
+  // 모델별로 그룹화 (current_model 기준)
+  const modelUsage = inUsePositions.reduce((acc: any, pos: any) => {
+    const eq: any = equipmentMap.get(pos.equipment_id)
+    if (!eq) return acc
+
+    const model = eq.current_model || 'Unknown'
+
+    if (!acc[model]) {
+      acc[model] = {
+        equipmentCount: new Set(),
+        endmillCount: 0
+      }
+    }
+
+    acc[model].equipmentCount.add(pos.equipment_id)
+    acc[model].endmillCount++
+
+    return acc
+  }, {})
+
+  // 결과 변환
+  const results = Object.entries(modelUsage).map(([model, data]: [string, any]) => ({
+    model,
+    equipmentCount: data.equipmentCount.size,
+    endmillCount: data.endmillCount,
+    avgEndmillPerEquipment: Math.round((data.endmillCount / data.equipmentCount.size) * 10) / 10
+  })).sort((a, b) => b.endmillCount - a.endmillCount)
+
+  logger.log('✅ 모델별 앤드밀 사용 현황 계산 완료:', { count: results.length })
+
+  return results
+}
+
+// Phase 4.1: 설비별 수명 소진율 통계
+async function getEquipmentLifeConsumption(supabase: any) {
+  logger.log('⚙️ 설비별 수명 소진율 통계 조회 시작')
+
+  // equipment 조회
+  const { data: equipment, error: eqError } = await supabase
+    .from('equipment')
+    .select('id, equipment_number, current_model')
+
+  if (eqError) {
+    console.error('equipment 조회 오류:', eqError)
+    throw eqError
+  }
+
+  // tool_positions 조회 (사용 중인 것만)
+  const { data: allPositions, error: tpError } = await supabase
+    .from('tool_positions')
+    .select('equipment_id, current_life, total_life, status')
+
+  if (tpError) {
+    console.error('tool_positions 조회 오류:', tpError)
+    throw tpError
+  }
+
+  const inUsePositions = (allPositions || []).filter((pos: any) => pos.status === 'in_use')
+
+  logger.log('📊 설비별 수명 소진율 조회:', {
+    equipmentCount: equipment?.length || 0,
+    inUsePositionsCount: inUsePositions.length
+  })
+
+  // equipment_id별로 그룹화하여 수명 소진율 계산
+  const equipmentConsumption = inUsePositions.reduce((acc: any, pos: any) => {
+    if (!pos.equipment_id || !pos.total_life) return acc
+
+    if (!acc[pos.equipment_id]) {
+      acc[pos.equipment_id] = {
+        totalLife: 0,
+        currentLife: 0,
+        count: 0
+      }
+    }
+
+    acc[pos.equipment_id].totalLife += pos.total_life
+    acc[pos.equipment_id].currentLife += pos.current_life || 0
+    acc[pos.equipment_id].count++
+
+    return acc
+  }, {})
+
+  // equipment 정보와 결합
+  const equipmentMap = new Map(equipment?.map((eq: any) => [eq.id, eq]) || [])
+
+  const results = Object.entries(equipmentConsumption)
+    .map(([equipmentId, data]: [string, any]) => {
+      const eq: any = equipmentMap.get(parseInt(equipmentId))
+      const consumedLife = data.totalLife - data.currentLife
+      const consumptionRate = data.totalLife > 0 ? Math.round((consumedLife / data.totalLife) * 100) : 0
+
+      return {
+        equipmentNumber: eq?.equipment_number || 0,
+        model: eq?.current_model || 'Unknown',
+        totalLife: data.totalLife,
+        consumedLife,
+        remainingLife: data.currentLife,
+        consumptionRate,
+        toolCount: data.count
+      }
+    })
+    .sort((a, b) => b.consumptionRate - a.consumptionRate)
+    .slice(0, 10) // 상위 10개 (수명 소진율 높은 순)
+
+  logger.log('✅ 설비별 수명 소진율 계산 완료:', { count: results.length })
+
+  return results
 }

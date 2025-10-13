@@ -92,6 +92,7 @@ function HomePageContent() {
               alt="ALMUS TECH"
               width={300}
               height={60}
+              priority
               className="h-12 w-auto object-contain"
             />
           </div>

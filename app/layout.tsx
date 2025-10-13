@@ -3,9 +3,9 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import QueryProvider from '../lib/providers/QueryProvider';
 import { I18nProvider } from '../lib/providers/I18nProvider';
-import { ToastProvider } from '../components/shared/Toast'
-import { AuthProvider } from '../lib/hooks/useAuth'
-import { SettingsProvider } from '../lib/providers/SettingsProvider'
+import { ToastProvider } from '../components/shared/Toast';
+import { AuthProvider } from '../lib/hooks/useAuth';
+import { SettingsProvider } from '../lib/providers/SettingsProvider';
 
 const inter = Inter({ 
   subsets: ['latin'],

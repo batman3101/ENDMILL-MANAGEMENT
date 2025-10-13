@@ -1,59 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
-import { Database } from '../types/database'
-import { logger } from '../utils/logger'
+import { supabase, createServerClient } from '../supabase/client';
+import { Database } from '../types/database';
+import { logger } from '../utils/logger';
+import type { SupabaseClient as SupabaseClientType } from '@supabase/supabase-js';
 
-// Supabase 클라이언트 타입
-type SupabaseClient = ReturnType<typeof createClient<Database>>
-
-// 클라이언트용 환경변수 검증 함수
-function validateClientEnvironmentVariables() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!supabaseUrl) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL 환경변수가 설정되지 않았습니다.')
-  }
-
-  if (!supabaseAnonKey) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY 환경변수가 설정되지 않았습니다.')
-  }
-
-  return {
-    supabaseUrl,
-    supabaseAnonKey
-  }
-}
-
-// 서버용 환경변수 검증 함수
-function validateServerEnvironmentVariables() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL 환경변수가 설정되지 않았습니다.')
-  }
-
-  if (!supabaseServiceKey) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY 환경변수가 설정되지 않았습니다.')
-  }
-
-  return {
-    supabaseUrl,
-    supabaseServiceKey
-  }
-}
-
-// 기본 Supabase 클라이언트 생성
-export const createSupabaseClient = (): SupabaseClient => {
-  const { supabaseUrl, supabaseAnonKey } = validateClientEnvironmentVariables()
-  return createClient<Database>(supabaseUrl, supabaseAnonKey)
-}
-
-// 서버용 Supabase 클라이언트 생성 (Service Role Key 사용)
-export const createServerSupabaseClient = (): SupabaseClient => {
-  const { supabaseUrl, supabaseServiceKey } = validateServerEnvironmentVariables()
-  return createClient<Database>(supabaseUrl, supabaseServiceKey)
-}
+// Supabase 클라이언트 타입 - 공식 타입 사용
+type SupabaseClient = SupabaseClientType<Database>;
 
 // Equipment 서비스
 export class EquipmentService {
@@ -69,6 +20,57 @@ export class EquipmentService {
       .from('equipment')
       .select('*')
       .order('equipment_number')
+
+    if (error) throw error
+    return data
+  }
+
+  // ID로 설비 상세 조회 (장착된 앤드밀 포함)
+  async getById(id: string) {
+    // UUID 형식인지 확인 (36자리, 하이픈 포함)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+
+    // 설비 번호 형식인지 확인 (숫자 또는 C로 시작하는 숫자)
+    const equipmentNumberStr = id.replace(/^C/i, '') // C 제거
+    const isEquipmentNumber = /^\d+$/.test(equipmentNumberStr)
+    const equipmentNumber = parseInt(equipmentNumberStr) || 0 // number로 변환
+
+    let query = this.supabase
+      .from('equipment')
+      .select(`
+        *,
+        tool_positions(
+          id,
+          position_number,
+          current_life,
+          total_life,
+          install_date,
+          status,
+          endmill_type:endmill_types(
+            id,
+            code,
+            name,
+            category_id,
+            standard_life,
+            unit_cost,
+            endmill_categories(
+              code,
+              name_ko
+            )
+          )
+        )
+      `)
+
+    // UUID면 id로 조회, 아니면 equipment_number로 조회
+    if (isUUID) {
+      query = query.eq('id', id)
+    } else if (isEquipmentNumber) {
+      query = query.eq('equipment_number', equipmentNumber)
+    } else {
+      throw new Error('Invalid equipment identifier')
+    }
+
+    const { data, error } = await query.single()
 
     if (error) throw error
     return data
@@ -755,7 +757,13 @@ export class CAMSheetService {
       .from('cam_sheet_endmills')
       .select(`
         *,
-        endmill_type:endmill_types(*)
+        endmill_type:endmill_types(
+          *,
+          endmill_categories(
+            code,
+            name_ko
+          )
+        )
       `)
       .eq('cam_sheet_id', camSheetId)
       .order('t_number', { ascending: true })
@@ -1036,34 +1044,52 @@ export class AuthService {
 
 // 통합 서비스 클래스
 export class SupabaseService {
-  public equipment: EquipmentService
-  public endmillType: EndmillTypeService
-  public inventory: InventoryService
-  public toolChange: ToolChangeService
-  public camSheet: CAMSheetService
-  public userProfile: UserProfileService
-  public userRoles: UserRolesService
-  public auth: AuthService
+  public equipment: EquipmentService;
+  public endmillType: EndmillTypeService;
+  public inventory: InventoryService;
+  public toolChange: ToolChangeService;
+  public camSheet: CAMSheetService;
+  public userProfile: UserProfileService;
+  public userRoles: UserRolesService;
+  public auth: AuthService;
 
-  constructor(isServer: boolean = false) {
-    const supabase = isServer ? createServerSupabaseClient() : createSupabaseClient()
+  constructor(client?: SupabaseClient) {
+    // client.ts의 싱글톤 인스턴스 재사용
+    const supabaseClient = client || supabase;
 
-    this.equipment = new EquipmentService(supabase)
-    this.endmillType = new EndmillTypeService(supabase)
-    this.inventory = new InventoryService(supabase)
-    this.toolChange = new ToolChangeService(supabase)
-    this.camSheet = new CAMSheetService(supabase)
-    this.userProfile = new UserProfileService(supabase)
-    this.userRoles = new UserRolesService(supabase)
-    this.auth = new AuthService(supabase)
+    this.equipment = new EquipmentService(supabaseClient);
+    this.endmillType = new EndmillTypeService(supabaseClient);
+    this.inventory = new InventoryService(supabaseClient);
+    this.toolChange = new ToolChangeService(supabaseClient);
+    this.camSheet = new CAMSheetService(supabaseClient);
+    this.userProfile = new UserProfileService(supabaseClient);
+    this.userRoles = new UserRolesService(supabaseClient);
+    this.auth = new AuthService(supabaseClient);
   }
 }
 
-// 기본 인스턴스
-export const supabaseService = new SupabaseService()
-export const clientSupabaseService = new SupabaseService(false) // 클라이언트용 명시적 export
+// 기본 인스턴스 - client.ts의 supabase 싱글톤 재사용
+export const supabaseService = new SupabaseService();
+export const clientSupabaseService = new SupabaseService(); // 클라이언트용 (동일)
 
-// 서버용 인스턴스는 서버 환경에서만 생성
-export const serverSupabaseService = typeof window === 'undefined' 
-  ? new SupabaseService(true)
-  : new SupabaseService(false) // 브라우저에서는 클라이언트 버전 사용
+// 서버용 인스턴스 팩토리 함수 - lazy initialization
+function createServerSupabaseService(): SupabaseService {
+  if (typeof window !== 'undefined') {
+    throw new Error(
+      'serverSupabaseService는 서버 환경에서만 사용할 수 있습니다. ' +
+      '브라우저에서는 supabaseService 또는 clientSupabaseService를 사용하세요.'
+    );
+  }
+  return new SupabaseService(createServerClient());
+}
+
+// 서버용 인스턴스 - lazy evaluation으로 안전하게 초기화
+let _serverSupabaseService: SupabaseService | null = null;
+export const serverSupabaseService = new Proxy({} as SupabaseService, {
+  get(target, prop) {
+    if (!_serverSupabaseService) {
+      _serverSupabaseService = createServerSupabaseService();
+    }
+    return _serverSupabaseService[prop as keyof SupabaseService];
+  }
+});

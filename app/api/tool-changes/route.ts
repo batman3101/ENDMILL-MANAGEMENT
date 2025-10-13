@@ -118,8 +118,67 @@ export async function POST(request: NextRequest) {
 
     logger.log('Creating tool change with data:', JSON.stringify(toolChangeData, null, 2))
 
-    // 새 교체 실적 생성
+    // 1. 새 교체 실적 생성
     const newToolChange = await serverSupabaseService.toolChange.create(toolChangeData)
+
+    // 2. tool_positions 업데이트 로직
+    try {
+      // 2.1 endmill_code로 endmill_type ID 조회
+      const supabase = (serverSupabaseService.endmillType as any).supabase
+      const { data: endmillType, error: endmillError } = await supabase
+        .from('endmill_types')
+        .select('id')
+        .eq('code', validatedData.endmill_code)
+        .single()
+
+      if (endmillError) {
+        logger.error('앤드밀 타입 조회 오류:', endmillError)
+        throw endmillError
+      }
+
+      // 2.2 equipment_number로 equipment ID 조회
+      const { data: equipment, error: equipmentError } = await supabase
+        .from('equipment')
+        .select('id')
+        .eq('equipment_number', equipmentNumber)
+        .single()
+
+      if (equipmentError) {
+        logger.error('설비 조회 오류:', equipmentError)
+        throw equipmentError
+      }
+
+      // 2.3 tool_positions 업데이트
+      const { data: updatedPosition, error: positionError } = await supabase
+        .from('tool_positions')
+        .update({
+          endmill_type_id: endmillType.id,
+          current_life: 0,
+          total_life: validatedData.tool_life,
+          install_date: validatedData.change_date || new Date().toISOString().split('T')[0],
+          status: 'in_use',
+          updated_at: new Date().toISOString()
+        })
+        .eq('equipment_id', equipment.id)
+        .eq('position_number', validatedData.t_number)
+        .select()
+        .single()
+
+      if (positionError) {
+        logger.error('tool_positions 업데이트 오류:', positionError)
+        // tool_positions 업데이트 실패 시에도 교체 실적은 유지 (경고만 로깅)
+        logger.warn('교체 실적은 등록되었으나 tool_positions 업데이트 실패')
+      } else {
+        logger.log('tool_positions 업데이트 성공:', updatedPosition)
+      }
+
+      // 재고 관리는 입/출고 관리에서만 처리하므로 여기서는 재고 감소하지 않음
+
+    } catch (syncError) {
+      logger.error('tool_positions 동기화 오류:', syncError)
+      // tool_positions 업데이트 실패해도 교체 실적은 등록됨
+      logger.warn('교체 실적은 등록되었으나 tool_positions 동기화 실패')
+    }
 
     return NextResponse.json({
       success: true,

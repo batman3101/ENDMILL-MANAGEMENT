@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { serverSupabaseService, createServerSupabaseClient } from '../../../lib/services/supabaseService'
+import { serverSupabaseService } from '../../../lib/services/supabaseService'
+import { createServerClient } from '../../../lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
@@ -99,7 +100,7 @@ async function createCAMSheetWithEndmills(data: any) {
         let endmillType = null
 
         if (endmillCode) {
-          const supabase = createServerSupabaseClient()
+          const supabase = createServerClient()
           const { data: foundEndmill, error: findError } = await supabase
             .from('endmill_types')
             .select('id')
@@ -134,7 +135,7 @@ async function createCAMSheetWithEndmills(data: any) {
   }
 
   // 전체 데이터 다시 조회해서 반환
-  const supabase = createServerSupabaseClient()
+  const supabase = createServerClient()
   const { data: fullData, error: fetchError } = await supabase
     .from('cam_sheets')
     .select(`
@@ -181,7 +182,7 @@ export async function PUT(request: NextRequest) {
       logger.log('엔드밀 데이터 수정 시작:', endmills)
 
       // 기존 엔드밀 데이터 삭제
-      const supabaseDelete = createServerSupabaseClient()
+      const supabaseDelete = createServerClient()
       const { error: deleteError } = await supabaseDelete
         .from('cam_sheet_endmills')
         .delete()
@@ -199,7 +200,7 @@ export async function PUT(request: NextRequest) {
           let endmillType = null
 
           if (endmillCode) {
-            const supabaseFind = createServerSupabaseClient()
+            const supabaseFind = createServerClient()
             const { data: foundEndmill, error: findError } = await supabaseFind
               .from('endmill_types')
               .select('id')
@@ -233,7 +234,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // 전체 데이터 다시 조회해서 반환
-    const supabaseFetch = createServerSupabaseClient()
+    const supabaseFetch = createServerClient()
     const { data: fullData, error: fetchError } = await supabaseFetch
       .from('cam_sheets')
       .select(`

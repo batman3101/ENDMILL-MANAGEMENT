@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { Database } from '../../../../lib/types/database'
+import { createServerClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
-// Supabase 클라이언트 생성
-const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+// Supabase 클라이언트 생성 (Service Role)
+const supabase = createServerClient()
 
 export async function GET(request: NextRequest) {
   try {

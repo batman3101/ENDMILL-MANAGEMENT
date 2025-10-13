@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
 
         // 설비 생성
         const newEquipment = await serverSupabaseService.equipment.create({
-          equipment_number: equipmentNumber.toString(),
+          equipment_number: equipmentNumber,
           model_code: equipment.current_model.split('-')[0] || equipment.current_model,
           location: equipment.location,
           status: equipment.status,
