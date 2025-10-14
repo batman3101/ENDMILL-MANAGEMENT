@@ -457,8 +457,8 @@ export default function EndmillPage() {
   }
 
   // 템플릿 다운로드 핸들러
-  const handleDownloadTemplate = () => {
-    const result = downloadEndmillTemplate()
+  const handleDownloadTemplate = async () => {
+    const result = await downloadEndmillTemplate()
     if (result.success) {
       showSuccess('템플릿 다운로드', `${result.fileName} 파일이 다운로드되었습니다.`)
     } else {

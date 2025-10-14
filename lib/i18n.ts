@@ -1015,7 +1015,7 @@ const resources = {
         // 앤드밀 상세 페이지
         detailTitle: '상세 정보',
         detailSubtitle: '앤드밀 상세 정보 및 성능 분석',
-        editButton: '수정',
+        detailEditButton: '수정',
         excelUploadButton: '엑셀 업로드',
         inventoryManageButton: '재고 관리',
         loadingInfo: '앤드밀 정보를 불러오는 중...',
@@ -2023,7 +2023,7 @@ const resources = {
         // 앤드밀 상세 페이지
         detailTitle: 'Thông tin chi tiết',
         detailSubtitle: 'Thông tin chi tiết và phân tích hiệu suất dao phay',
-        editButton: 'Chỉnh sửa',
+        detailEditButton: 'Chỉnh sửa',
         excelUploadButton: 'Tải lên Excel',
         inventoryManageButton: 'Quản lý tồn kho',
         loadingInfo: 'Đang tải thông tin dao phay...',

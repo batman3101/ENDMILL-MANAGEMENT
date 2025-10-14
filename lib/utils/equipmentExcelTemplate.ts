@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
 export interface EquipmentExcelData {
   equipment_number: string
@@ -11,77 +11,89 @@ export interface EquipmentExcelData {
 /**
  * 설비 엑셀 템플릿 생성
  */
-export const generateEquipmentTemplate = (availableModels?: string[], availableProcesses?: string[]) => {
+export const generateEquipmentTemplate = async (availableModels?: string[], availableProcesses?: string[]) => {
   // CAM Sheet에서 가져온 모델과 공정 사용, 없으면 기본값 사용
   const validModels = availableModels && availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7']
   const validProcesses = availableProcesses && availableProcesses.length > 0 ? availableProcesses : ['CNC1', 'CNC2', 'CNC2-1']
-  // 헤더 - 툴 포지션수 제거
-  const headers = [
-    '설비번호',
-    '위치',
-    '상태',
-    '생산모델',
-    '공정'
-  ]
-
-  // 예시 데이터 - 툴 포지션수 제거
-  const exampleData = [
-    ['C021', 'A동', '가동중', validModels[0] || 'PA1', validProcesses[0] || 'CNC1'],
-    ['C022', 'B동', '점검중', validModels[1] || validModels[0] || 'R13', validProcesses[1] || validProcesses[0] || 'CNC2'],
-    ['C023', 'A동', '셋업중', validModels[0] || 'PA1', validProcesses[0] || 'CNC1']
-  ]
 
   // 워크북 생성
-  const wb = XLSX.utils.book_new()
+  const wb = new ExcelJS.Workbook()
 
   // 데이터 시트
-  const wsData = [headers, ...exampleData]
-  const ws = XLSX.utils.aoa_to_sheet(wsData)
+  const ws = wb.addWorksheet('설비목록')
 
-  // 컬럼 너비 설정
-  ws['!cols'] = [
-    { wch: 12 }, // 설비번호
-    { wch: 10 }, // 위치
-    { wch: 10 }, // 상태
-    { wch: 12 }, // 생산모델
-    { wch: 10 }, // 공정
-    // { wch: 12 }  // 툴포지션수 제거됨
+  // 컬럼 정의
+  ws.columns = [
+    { header: '설비번호', key: 'equipment_number', width: 12 },
+    { header: '위치', key: 'location', width: 10 },
+    { header: '상태', key: 'status', width: 10 },
+    { header: '생산모델', key: 'current_model', width: 12 },
+    { header: '공정', key: 'process', width: 10 }
   ]
 
-  // 스타일 적용 (헤더 강조)
-  const headerRange = XLSX.utils.decode_range(ws['!ref'] || 'A1:E1')
-  for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
-    const cellRef = XLSX.utils.encode_cell({ r: 0, c: col })
-    if (ws[cellRef]) {
-      ws[cellRef].s = {
-        font: { bold: true },
-        fill: { fgColor: { rgb: 'FFCCCCCC' } },
-        alignment: { horizontal: 'center', vertical: 'center' }
-      }
-    }
-  }
+  // 예시 데이터 추가
+  ws.addRow({
+    equipment_number: 'C021',
+    location: 'A동',
+    status: '가동중',
+    current_model: validModels[0] || 'PA1',
+    process: validProcesses[0] || 'CNC1'
+  })
+  ws.addRow({
+    equipment_number: 'C022',
+    location: 'B동',
+    status: '점검중',
+    current_model: validModels[1] || validModels[0] || 'R13',
+    process: validProcesses[1] || validProcesses[0] || 'CNC2'
+  })
+  ws.addRow({
+    equipment_number: 'C023',
+    location: 'A동',
+    status: '셋업중',
+    current_model: validModels[0] || 'PA1',
+    process: validProcesses[0] || 'CNC1'
+  })
 
-  XLSX.utils.book_append_sheet(wb, ws, '설비목록')
+  // 헤더 스타일 적용
+  ws.getRow(1).font = { bold: true }
+  ws.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFCCCCCC' }
+  }
+  ws.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' }
 
   // 설명 시트
-  const instructions = [
-    ['필드명', '설명', '예시'],
-    ['설비번호', 'C로 시작하는 3자리 숫자', 'C001, C002, C100'],
-    ['위치', '설비가 위치한 동', 'A동, B동'],
-    ['상태', '현재 설비 상태', '가동중, 점검중, 셋업중'],
-    ['생산모델', 'CAM Sheet에 등록된 모델', validModels.join(', ')],
-    ['공정', 'CAM Sheet에 등록된 공정', validProcesses.join(', ')],
-    ['', '※ 툴 포지션 수는 CAM Sheet에서', '자동으로 계산됩니다']
+  const wsInstructions = wb.addWorksheet('작성방법')
+
+  wsInstructions.columns = [
+    { header: '필드명', key: 'field', width: 15 },
+    { header: '설명', key: 'description', width: 40 },
+    { header: '예시', key: 'example', width: 25 }
   ]
 
-  const wsInstructions = XLSX.utils.aoa_to_sheet(instructions)
-  wsInstructions['!cols'] = [
-    { wch: 15 },
-    { wch: 40 },
-    { wch: 25 }
-  ]
+  wsInstructions.addRows([
+    { field: '', description: '=== Equipment 테이블에 저장되는 정보 ===', example: '' },
+    { field: '설비번호', description: 'C로 시작하는 3자리 숫자 (DB에는 숫자만 저장)', example: 'C001, C002, C100' },
+    { field: '위치', description: '설비가 위치한 동 (A동 또는 B동)', example: 'A동, B동' },
+    { field: '상태', description: '현재 설비 상태', example: '가동중, 점검중, 셋업중' },
+    { field: '생산모델', description: 'CAM Sheet에 등록된 모델 (current_model)', example: validModels.join(', ') },
+    { field: '공정', description: 'CAM Sheet에 등록된 공정 (process)', example: validProcesses.join(', ') },
+    { field: '', description: '', example: '' },
+    { field: '', description: '=== 자동으로 처리되는 정보 ===', example: '' },
+    { field: 'model_code', description: '생산모델에서 자동 추출 (예: PA1-A → PA1)', example: '자동 생성' },
+    { field: 'tool_position_count', description: 'CAM Sheet의 최대 T번호로 자동 계산', example: '자동 계산 (기본값: 21)' },
+    { field: '', description: '※ 설비번호가 이미 존재하면 중복으로 처리됩니다', example: '' }
+  ])
 
-  XLSX.utils.book_append_sheet(wb, wsInstructions, '작성방법')
+  // 설명 시트 헤더 스타일
+  wsInstructions.getRow(1).font = { bold: true }
+  wsInstructions.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFCCCCCC' }
+  }
+  wsInstructions.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' }
 
   return wb
 }
@@ -89,10 +101,18 @@ export const generateEquipmentTemplate = (availableModels?: string[], availableP
 /**
  * 엑셀 파일 다운로드
  */
-export const downloadEquipmentTemplate = (availableModels?: string[], availableProcesses?: string[]) => {
-  const wb = generateEquipmentTemplate(availableModels, availableProcesses)
+export const downloadEquipmentTemplate = async (availableModels?: string[], availableProcesses?: string[]) => {
+  const wb = await generateEquipmentTemplate(availableModels, availableProcesses)
   const fileName = `설비_일괄등록_템플릿_${new Date().toISOString().split('T')[0]}.xlsx`
-  XLSX.writeFile(wb, fileName)
+
+  const buffer = await wb.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 
 /**
@@ -102,49 +122,60 @@ export const parseEquipmentExcel = (file: File): Promise<EquipmentExcelData[]> =
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
 
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const data = e.target?.result
-        const workbook = XLSX.read(data, { type: 'binary' })
+        if (!data) {
+          throw new Error('파일을 읽을 수 없습니다.')
+        }
+
+        const workbook = new ExcelJS.Workbook()
+        await workbook.xlsx.load(data as ArrayBuffer)
 
         // 첫 번째 시트 가져오기
-        const sheetName = workbook.SheetNames[0]
-        const worksheet = workbook.Sheets[sheetName]
-
-        // JSON으로 변환
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-          header: 1,
-          defval: ''
-        }) as any[][]
+        const worksheet = workbook.worksheets[0]
+        if (!worksheet) {
+          throw new Error('워크시트를 찾을 수 없습니다.')
+        }
 
         // 헤더 확인
-        const headers = jsonData[0]
+        const headerRow = worksheet.getRow(1)
+        const headers: string[] = []
+        headerRow.eachCell((cell) => {
+          headers.push(cell.value?.toString() || '')
+        })
+
         const expectedHeaders = ['설비번호', '위치', '상태', '생산모델', '공정']
 
-        if (!headers || !expectedHeaders.every(h => headers.includes(h))) {
+        if (!expectedHeaders.every(h => headers.includes(h))) {
           throw new Error('엑셀 파일 형식이 올바르지 않습니다. 템플릿을 다운로드하여 사용해주세요.')
         }
 
         // 데이터 파싱 (헤더 제외)
         const equipments: EquipmentExcelData[] = []
 
-        for (let i = 1; i < jsonData.length; i++) {
-          const row = jsonData[i]
+        worksheet.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return // 헤더 스킵
+
+          const rowData: any = {}
+          row.eachCell((cell, colNumber) => {
+            const header = headers[colNumber - 1]
+            rowData[header] = cell.value
+          })
 
           // 빈 행 스킵
-          if (!row || row.every(cell => !cell)) continue
+          if (!rowData['설비번호'] && !rowData['위치'] && !rowData['상태']) return
 
           const equipment: EquipmentExcelData = {
-            equipment_number: String(row[headers.indexOf('설비번호')] || '').trim(),
-            location: row[headers.indexOf('위치')] as any || '',
-            status: String(row[headers.indexOf('상태')] || '').trim(),
-            current_model: String(row[headers.indexOf('생산모델')] || '').trim(),
-            process: String(row[headers.indexOf('공정')] || '').trim()
-            // tool_position_count는 CAM Sheet에서 자동 계산
+            equipment_number: String(rowData['설비번호'] || '').trim(),
+            location: rowData['위치'] || '',
+            status: String(rowData['상태'] || '').trim(),
+            current_model: String(rowData['생산모델'] || '').trim(),
+            process: String(rowData['공정'] || '').trim()
           }
 
           equipments.push(equipment)
-        }
+        })
 
         resolve(equipments)
       } catch (error) {
@@ -156,7 +187,7 @@ export const parseEquipmentExcel = (file: File): Promise<EquipmentExcelData[]> =
       reject(new Error('파일을 읽을 수 없습니다.'))
     }
 
-    reader.readAsBinaryString(file)
+    reader.readAsArrayBuffer(file)
   })
 }
 

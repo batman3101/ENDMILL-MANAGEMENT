@@ -62,21 +62,16 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
       const foundEndmill = foundEndmills[0] // 첫 번째 결과 사용
       
       if (foundEndmill) {
-        // 자동으로 이름과 사양 설정, Tool Life는 기본값 유지 (수동 입력 가능)
-        const specifications = foundEndmill.endmill_type?.specifications 
-          ? JSON.stringify(foundEndmill.endmill_type.specifications) 
-          : ''
-        
+        // 자동으로 이름 설정, Tool Life와 specifications는 기본값 유지 (수동 입력 가능)
         setNewEndmill(prev => ({
           ...prev,
           endmillCode: foundEndmill.endmill_type?.code || code,
           endmillName: foundEndmill.endmill_type?.name || '',
-          specifications: specifications,
-          // toolLife는 기존 값 유지 (수동 입력)
+          // specifications와 toolLife는 기존 값 유지 (수동 입력)
         }))
         setAutoLoadedInfo({
           name: foundEndmill.endmill_type?.name || '',
-          specifications: specifications
+          specifications: ''
         })
       } else {
         // 앤드밀 코드가 없으면 기존 정보 초기화

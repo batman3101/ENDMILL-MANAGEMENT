@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { downloadEndmillMasterTemplate, validateEndmillMasterData } from '../../lib/utils/excelTemplate'
 import { useToast } from '../shared/Toast'
 import { clientLogger } from '@/lib/utils/logger'
@@ -57,9 +57,39 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
 
     try {
       const data = await file.arrayBuffer()
-      const workbook = XLSX.read(data, { type: 'buffer' })
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]]
-      const jsonData = XLSX.utils.sheet_to_json(worksheet)
+      const workbook = new ExcelJS.Workbook()
+      await workbook.xlsx.load(data)
+
+      const worksheet = workbook.worksheets[0]
+      if (!worksheet) {
+        throw new Error('워크시트를 찾을 수 없습니다.')
+      }
+
+      // JSON 데이터로 변환
+      const jsonData: any[] = []
+      const headers: string[] = []
+
+      // 헤더 읽기
+      const headerRow = worksheet.getRow(1)
+      headerRow.eachCell((cell) => {
+        headers.push(cell.value?.toString() || '')
+      })
+
+      // 데이터 읽기
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return // 헤더 스킵
+
+        const rowData: any = {}
+        row.eachCell((cell, colNumber) => {
+          const header = headers[colNumber - 1]
+          rowData[header] = cell.value
+        })
+
+        // 빈 행이 아니면 추가
+        if (Object.values(rowData).some(v => v !== null && v !== undefined && v !== '')) {
+          jsonData.push(rowData)
+        }
+      })
 
       // 데이터 검증
       const validation = await validateEndmillMasterData(jsonData)

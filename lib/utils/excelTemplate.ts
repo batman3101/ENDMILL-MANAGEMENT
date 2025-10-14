@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
 // 엑셀 템플릿 데이터
 export const EXCEL_TEMPLATE_DATA = [
@@ -35,35 +35,52 @@ export const EXCEL_TEMPLATE_DATA = [
 ]
 
 // 엑셀 템플릿 다운로드 함수
-export const downloadExcelTemplate = () => {
+export const downloadExcelTemplate = async () => {
   // 워크북 생성
-  const workbook = XLSX.utils.book_new()
-  
+  const workbook = new ExcelJS.Workbook()
+
   // 워크시트 생성
-  const worksheet = XLSX.utils.json_to_sheet(EXCEL_TEMPLATE_DATA)
-  
-  // 컬럼 너비 설정
-  const colWidths = [
-    { wch: 12 }, // Model
-    { wch: 12 }, // Process
-    { wch: 15 }, // CAM Version
-    { wch: 10 }, // T Number
-    { wch: 15 }, // Endmill Code
-    { wch: 15 }, // Endmill Name
-    { wch: 25 }, // Specifications
-    { wch: 12 }  // Tool Life
+  const worksheet = workbook.addWorksheet('CAM_Sheet_Template')
+
+  // 헤더 정의
+  const columns = [
+    { header: 'Model', key: 'Model', width: 12 },
+    { header: 'Process', key: 'Process', width: 12 },
+    { header: 'CAM Version', key: 'CAM Version', width: 15 },
+    { header: 'T Number', key: 'T Number', width: 10 },
+    { header: 'Endmill Code', key: 'Endmill Code', width: 15 },
+    { header: 'Endmill Name', key: 'Endmill Name', width: 15 },
+    { header: 'Specifications', key: 'Specifications', width: 25 },
+    { header: 'Tool Life', key: 'Tool Life', width: 12 }
   ]
-  worksheet['!cols'] = colWidths
-  
-  // 워크시트를 워크북에 추가
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'CAM_Sheet_Template')
-  
+
+  worksheet.columns = columns
+
+  // 데이터 추가
+  worksheet.addRows(EXCEL_TEMPLATE_DATA)
+
+  // 헤더 스타일 적용
+  worksheet.getRow(1).font = { bold: true }
+  worksheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFE0E0E0' }
+  }
+  worksheet.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' }
+
   // 파일명 생성 (현재 날짜 포함)
   const today = new Date().toISOString().split('T')[0]
   const filename = `CAM_Sheet_Template_${today}.xlsx`
-  
+
   // 파일 다운로드
-  XLSX.writeFile(workbook, filename)
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 
 // 엑셀 데이터 검증 함수
@@ -137,7 +154,7 @@ export const validateExcelData = async (data: any[], validationOptions?: {
 }
 
 // 앤드밀 마스터 데이터 업데이트용 엑셀 템플릿 다운로드
-export const downloadEndmillMasterTemplate = () => {
+export const downloadEndmillMasterTemplate = async () => {
   const templateData = [
     {
       '앤드밀코드': 'AT001',
@@ -189,39 +206,57 @@ export const downloadEndmillMasterTemplate = () => {
     }
   ]
 
-  const ws = XLSX.utils.json_to_sheet(templateData)
-  
-  // 컬럼 너비 설정
-  const colWidths = [
-    { wch: 12 }, // 앤드밀코드
-    { wch: 20 }, // Type
-    { wch: 10 }, // 카테고리
-    { wch: 25 }, // 앤드밀이름
-    { wch: 12 }, // 직경
-    { wch: 8 },  // 날수
-    { wch: 12 }, // 코팅
-    { wch: 10 }, // 소재
-    { wch: 8 },  // 공차
-    { wch: 10 }, // 나선각
-    { wch: 12 }, // 표준수명
-    { wch: 10 }, // 최소재고
-    { wch: 10 }, // 최대재고
-    { wch: 10 }, // 권장재고
-    { wch: 10 }, // 품질등급
-    { wch: 15 }, // 공급업체1
-    { wch: 18 }, // 공급업체1단가(VND)
-    { wch: 15 }, // 공급업체2
-    { wch: 18 }, // 공급업체2단가(VND)
-    { wch: 15 }, // 공급업체3
-    { wch: 18 }, // 공급업체3단가(VND)
-    { wch: 20 }  // 설명
-  ]
-  ws['!cols'] = colWidths
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('앤드밀마스터데이터')
 
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '앤드밀마스터데이터')
-  
-  XLSX.writeFile(wb, `앤드밀_마스터데이터_템플릿_${new Date().toISOString().split('T')[0]}.xlsx`)
+  // 컬럼 정의
+  const columns = [
+    { header: '앤드밀코드', key: '앤드밀코드', width: 12 },
+    { header: 'Type', key: 'Type', width: 20 },
+    { header: '카테고리', key: '카테고리', width: 10 },
+    { header: '앤드밀이름', key: '앤드밀이름', width: 25 },
+    { header: '직경(mm)', key: '직경(mm)', width: 12 },
+    { header: '날수', key: '날수', width: 8 },
+    { header: '코팅', key: '코팅', width: 12 },
+    { header: '소재', key: '소재', width: 10 },
+    { header: '공차', key: '공차', width: 8 },
+    { header: '나선각', key: '나선각', width: 10 },
+    { header: '표준수명', key: '표준수명', width: 12 },
+    { header: '최소재고', key: '최소재고', width: 10 },
+    { header: '최대재고', key: '최대재고', width: 10 },
+    { header: '권장재고', key: '권장재고', width: 10 },
+    { header: '품질등급', key: '품질등급', width: 10 },
+    { header: '공급업체1', key: '공급업체1', width: 15 },
+    { header: '공급업체1단가(VND)', key: '공급업체1단가(VND)', width: 18 },
+    { header: '공급업체2', key: '공급업체2', width: 15 },
+    { header: '공급업체2단가(VND)', key: '공급업체2단가(VND)', width: 18 },
+    { header: '공급업체3', key: '공급업체3', width: 15 },
+    { header: '공급업체3단가(VND)', key: '공급업체3단가(VND)', width: 18 },
+    { header: '설명', key: '설명', width: 20 }
+  ]
+
+  worksheet.columns = columns
+  worksheet.addRows(templateData)
+
+  // 헤더 스타일 적용
+  worksheet.getRow(1).font = { bold: true }
+  worksheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFE0E0E0' }
+  }
+  worksheet.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' }
+
+  const filename = `앤드밀_마스터데이터_템플릿_${new Date().toISOString().split('T')[0]}.xlsx`
+
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  window.URL.revokeObjectURL(url)
 }
 
 // 앤드밀 마스터 데이터 검증

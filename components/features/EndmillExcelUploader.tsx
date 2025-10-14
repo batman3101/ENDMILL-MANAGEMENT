@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { validateEndmillExcelData, convertToEndmillDBFormat } from '../../lib/utils/endmillExcelTemplate'
 import { useToast } from '../shared/Toast'
 import { clientLogger } from '@/lib/utils/logger'
@@ -76,13 +76,43 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
   const parseExcelFile = async (file: File): Promise<any[]> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer)
-          const workbook = XLSX.read(data, { type: 'array' })
-          const sheetName = workbook.SheetNames[0]
-          const worksheet = workbook.Sheets[sheetName]
-          const jsonData = XLSX.utils.sheet_to_json(worksheet)
+          const data = e.target?.result as ArrayBuffer
+          const workbook = new ExcelJS.Workbook()
+          await workbook.xlsx.load(data)
+
+          const worksheet = workbook.worksheets[0]
+          if (!worksheet) {
+            throw new Error('워크시트를 찾을 수 없습니다.')
+          }
+
+          // JSON 데이터로 변환
+          const jsonData: any[] = []
+          const headers: string[] = []
+
+          // 헤더 읽기
+          const headerRow = worksheet.getRow(1)
+          headerRow.eachCell((cell) => {
+            headers.push(cell.value?.toString() || '')
+          })
+
+          // 데이터 읽기
+          worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber === 1) return // 헤더 스킵
+
+            const rowData: any = {}
+            row.eachCell((cell, colNumber) => {
+              const header = headers[colNumber - 1]
+              rowData[header] = cell.value
+            })
+
+            // 빈 행이 아니면 추가
+            if (Object.values(rowData).some(v => v !== null && v !== undefined && v !== '')) {
+              jsonData.push(rowData)
+            }
+          })
+
           resolve(jsonData)
         } catch (error) {
           reject(error)

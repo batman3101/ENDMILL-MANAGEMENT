@@ -10,7 +10,7 @@ import { useSettings } from '../../../lib/hooks/useSettings'
 import SupplierPriceInfo from '../../../components/inventory/SupplierPriceInfo'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { useTranslations } from '../../../lib/hooks/useTranslations'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { clientLogger } from '../../../lib/utils/logger'
 
 export default function InventoryPage() {
@@ -450,18 +450,47 @@ export default function InventoryPage() {
   }
 
   // 엑셀 다운로드 핸들러 (새로운 API 사용)
-  const handleExcelDownload = () => {
+  const handleExcelDownload = async () => {
     try {
       const endmillData = getEndmillMasterData()
 
-      // 워크시트 생성
-      const worksheet = XLSX.utils.json_to_sheet(endmillData)
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, '앤드밀마스터')
+      // 워크북 및 워크시트 생성
+      const workbook = new ExcelJS.Workbook()
+      const worksheet = workbook.addWorksheet('앤드밀마스터')
+
+      // 헤더 설정 (endmillData의 첫 번째 객체의 키를 사용)
+      if (endmillData.length > 0) {
+        const headers = Object.keys(endmillData[0])
+        worksheet.columns = headers.map(header => ({
+          header,
+          key: header,
+          width: 15
+        }))
+
+        // 데이터 추가
+        endmillData.forEach(item => {
+          worksheet.addRow(item)
+        })
+
+        // 헤더 스타일
+        worksheet.getRow(1).font = { bold: true }
+        worksheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        }
+      }
 
       // 파일 다운로드
       const fileName = `앤드밀마스터_${new Date().toISOString().split('T')[0]}.xlsx`
-      XLSX.writeFile(workbook, fileName)
+      const buffer = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.click()
+      window.URL.revokeObjectURL(url)
 
       showSuccess(t('inventory.downloadComplete'), `${endmillData.length}${t('inventory.downloadSuccessMessage')}`)
     } catch (error) {
@@ -494,11 +523,40 @@ export default function InventoryPage() {
       const reader = new FileReader()
       reader.onload = async (e) => {
         try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer)
-          const workbook = XLSX.read(data, { type: 'array' })
-          const sheetName = workbook.SheetNames[0]
-          const worksheet = workbook.Sheets[sheetName]
-          const jsonData = XLSX.utils.sheet_to_json(worksheet)
+          const data = e.target?.result as ArrayBuffer
+          const workbook = new ExcelJS.Workbook()
+          await workbook.xlsx.load(data)
+
+          const worksheet = workbook.worksheets[0]
+          if (!worksheet) {
+            throw new Error('워크시트를 찾을 수 없습니다.')
+          }
+
+          // JSON 데이터로 변환
+          const jsonData: any[] = []
+          const headers: string[] = []
+
+          // 헤더 읽기
+          const headerRow = worksheet.getRow(1)
+          headerRow.eachCell((cell) => {
+            headers.push(cell.value?.toString() || '')
+          })
+
+          // 데이터 읽기
+          worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber === 1) return // 헤더 스킵
+
+            const rowData: any = {}
+            row.eachCell((cell, colNumber) => {
+              const header = headers[colNumber - 1]
+              rowData[header] = cell.value
+            })
+
+            // 빈 행이 아니면 추가
+            if (Object.values(rowData).some(v => v !== null && v !== undefined && v !== '')) {
+              jsonData.push(rowData)
+            }
+          })
 
           // 새로운 API를 사용해 데이터 업데이트 (실제 구현 필요)
           showSuccess(t('inventory.uploadSuccess'), `${jsonData.length}${t('inventory.uploadSuccessMessage')}`)

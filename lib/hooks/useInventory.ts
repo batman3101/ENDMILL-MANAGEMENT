@@ -326,7 +326,7 @@ export const useInventory = (filter?: InventoryFilter) => {
       code: type.code,
       name: type.name || '',
       category: type.endmill_categories?.code || '',
-      specifications: type.specifications ? JSON.stringify(type.specifications) : '',
+      specifications: '', // specifications 필드는 더 이상 database에 저장되지 않음
       unitPrice: type.unit_cost || 0
     }))
   }

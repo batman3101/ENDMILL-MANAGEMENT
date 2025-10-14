@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
 // 엔드밀 엑셀 템플릿 타입 정의
 export interface EndmillExcelRow {
@@ -15,12 +15,13 @@ export interface EndmillExcelRow {
 }
 
 // 엔드밀 템플릿 데이터 (실제 DB 값 사용)
+// 예시: 같은 엔드밀이 여러 공급업체 및 여러 모델/공정에서 사용되는 경우
 export const endmillTemplateData: EndmillExcelRow[] = [
   {
     'Endmill Code': 'EM-F-6',
     'Category': 'FLAT',
     'Name': 'FLAT 6mm 2날',
-    'Supplier': 'SUP001',
+    'Supplier': 'KORLOY',
     'Unit Cost': 25000,
     'Standard Life': 800,
     'Model': 'PA1',
@@ -29,10 +30,22 @@ export const endmillTemplateData: EndmillExcelRow[] = [
     'T Number': 1
   },
   {
+    'Endmill Code': 'EM-F-6',  // 같은 엔드밀, 다른 공급업체
+    'Category': 'FLAT',
+    'Name': 'FLAT 6mm 2날',
+    'Supplier': 'TAEGUTEC',
+    'Unit Cost': 27000,
+    'Standard Life': 800,
+    'Model': 'PA1',
+    'Process': 'CNC2',  // 다른 공정에도 사용
+    'Tool Life': 720,
+    'T Number': 5
+  },
+  {
     'Endmill Code': 'EM-B-8',
     'Category': 'BALL',
     'Name': 'BALL 8mm 2날',
-    'Supplier': 'SUP002',
+    'Supplier': 'ISCAR',
     'Unit Cost': 32000,
     'Standard Life': 600,
     'Model': 'R13',
@@ -106,59 +119,90 @@ export const validProcesses = [
 ]
 
 // 엔드밀 엑셀 템플릿 다운로드 함수
-export const downloadEndmillTemplate = () => {
+export const downloadEndmillTemplate = async () => {
   try {
     // 워크북 생성
-    const workbook = XLSX.utils.book_new()
+    const workbook = new ExcelJS.Workbook()
 
     // 템플릿 데이터 시트 생성
-    const templateSheet = XLSX.utils.json_to_sheet(endmillTemplateData)
+    const templateSheet = workbook.addWorksheet('Endmill Template')
 
-    // 컬럼 너비 설정
-    const columnWidths = [
-      { wch: 15 }, // Endmill Code
-      { wch: 10 }, // Category
-      { wch: 20 }, // Name
-      { wch: 15 }, // Supplier
-      { wch: 12 }, // Unit Cost
-      { wch: 15 }, // Standard Life
-      { wch: 10 }, // Model
-      { wch: 12 }, // Process
-      { wch: 12 }, // Tool Life
-      { wch: 10 }  // T Number
+    // 컬럼 정의
+    templateSheet.columns = [
+      { header: 'Endmill Code', key: 'Endmill Code', width: 15 },
+      { header: 'Category', key: 'Category', width: 10 },
+      { header: 'Name', key: 'Name', width: 20 },
+      { header: 'Supplier', key: 'Supplier', width: 15 },
+      { header: 'Unit Cost', key: 'Unit Cost', width: 12 },
+      { header: 'Standard Life', key: 'Standard Life', width: 15 },
+      { header: 'Model', key: 'Model', width: 10 },
+      { header: 'Process', key: 'Process', width: 12 },
+      { header: 'Tool Life', key: 'Tool Life', width: 12 },
+      { header: 'T Number', key: 'T Number', width: 10 }
     ]
-    templateSheet['!cols'] = columnWidths
 
-    // 시트를 워크북에 추가
-    XLSX.utils.book_append_sheet(workbook, templateSheet, 'Endmill Template')
+    // 템플릿 데이터 추가
+    templateSheet.addRows(endmillTemplateData)
+
+    // 헤더 스타일 적용
+    templateSheet.getRow(1).font = { bold: true }
+    templateSheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    }
+    templateSheet.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' }
 
     // 가이드 시트 생성
-    const guideData = [
-      { 'Column': 'Endmill Code', 'Description': '엔드밀 코드 (예: EM-F-12)', 'Required': 'Yes', 'Example': 'EM-F-6' },
-      { 'Column': 'Category', 'Description': '카테고리', 'Required': 'Yes', 'Example': 'FLAT, BALL, T-CUT, C-CUT, REAMER, DRILL' },
+    const guideSheet = workbook.addWorksheet('Guide')
+
+    guideSheet.columns = [
+      { header: 'Column', key: 'Column', width: 15 },
+      { header: 'Description', key: 'Description', width: 30 },
+      { header: 'Required', key: 'Required', width: 10 },
+      { header: 'Example', key: 'Example', width: 35 }
+    ]
+
+    guideSheet.addRows([
+      { 'Column': '', 'Description': '=== 엔드밀 기본 정보 (endmill_types) ===', 'Required': '', 'Example': '' },
+      { 'Column': 'Endmill Code', 'Description': '엔드밀 코드 (고유값)', 'Required': 'Yes', 'Example': 'EM-F-6' },
+      { 'Column': 'Category', 'Description': '카테고리 (자동 생성됨)', 'Required': 'Yes', 'Example': 'FLAT, BALL, T-CUT, C-CUT, REAMER, DRILL' },
       { 'Column': 'Name', 'Description': '엔드밀 이름', 'Required': 'Yes', 'Example': 'FLAT 6mm 2날' },
-      { 'Column': 'Supplier', 'Description': '공급업체 코드', 'Required': 'Yes', 'Example': 'SUP001, SUP002, KORLOY, TAEGUTEC' },
-      { 'Column': 'Unit Cost', 'Description': '단가 (원)', 'Required': 'Yes', 'Example': '25000' },
       { 'Column': 'Standard Life', 'Description': '표준 수명 (회)', 'Required': 'Yes', 'Example': '800' },
-      { 'Column': 'Model', 'Description': '장비 모델', 'Required': 'Yes', 'Example': 'PA1, R13' },
-      { 'Column': 'Process', 'Description': '가공 프로세스', 'Required': 'Yes', 'Example': 'CNC1, CNC2, CNC2-1' },
+      { 'Column': '', 'Description': '', 'Required': '', 'Example': '' },
+      { 'Column': '', 'Description': '=== 공급업체 가격 정보 (endmill_supplier_prices) ===', 'Required': '', 'Example': '' },
+      { 'Column': 'Supplier', 'Description': '공급업체 코드 (자동 생성됨)', 'Required': 'Yes', 'Example': 'SUP001, SUP002, KORLOY, TAEGUTEC' },
+      { 'Column': 'Unit Cost', 'Description': '공급업체별 단가 (원)', 'Required': 'Yes', 'Example': '25000' },
+      { 'Column': '', 'Description': '', 'Required': '', 'Example': '' },
+      { 'Column': '', 'Description': '=== CAM Sheet 매핑 정보 (cam_sheet_endmills) ===', 'Required': '', 'Example': '' },
+      { 'Column': 'Model', 'Description': '장비 모델 (CAM Sheet 자동 생성)', 'Required': 'Yes', 'Example': 'PA1, R13' },
+      { 'Column': 'Process', 'Description': '가공 프로세스 (CAM Sheet 자동 생성)', 'Required': 'Yes', 'Example': 'CNC1, CNC2, CNC2-1' },
       { 'Column': 'Tool Life', 'Description': '모델/프로세스별 수명 (회)', 'Required': 'Yes', 'Example': '750' },
-      { 'Column': 'T Number', 'Description': '툴 포지션 번호', 'Required': 'Yes', 'Example': '1' }
-    ]
+      { 'Column': 'T Number', 'Description': '툴 포지션 번호 (1-21)', 'Required': 'Yes', 'Example': '1' },
+      { 'Column': '', 'Description': '', 'Required': '', 'Example': '' },
+      { 'Column': '', 'Description': '※ 같은 엔드밀 코드를 여러 공급업체/모델에서 사용하려면 행을 추가하세요', 'Required': '', 'Example': '' },
+      { 'Column': '', 'Description': '※ 인벤토리(inventory)는 자동으로 생성됩니다', 'Required': '', 'Example': '' }
+    ])
 
-    const guideSheet = XLSX.utils.json_to_sheet(guideData)
-    guideSheet['!cols'] = [
-      { wch: 15 }, // Column
-      { wch: 30 }, // Description
-      { wch: 10 }, // Required
-      { wch: 35 }  // Example
-    ]
-
-    XLSX.utils.book_append_sheet(workbook, guideSheet, 'Guide')
+    // 가이드 시트 헤더 스타일 적용
+    guideSheet.getRow(1).font = { bold: true }
+    guideSheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    }
+    guideSheet.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' }
 
     // 파일 다운로드
     const fileName = `endmill_template_${new Date().toISOString().split('T')[0]}.xlsx`
-    XLSX.writeFile(workbook, fileName)
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName
+    link.click()
+    window.URL.revokeObjectURL(url)
 
     return { success: true, fileName }
   } catch (error) {
