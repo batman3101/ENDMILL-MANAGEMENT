@@ -50,7 +50,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// 서버사이드용 클라이언트 (서비스 역할 키 사용)
+// 서버사이드용 클라이언트 (서비스 역할 키 사용 - 관리자 작업용)
 export const createServerClient = () => {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
