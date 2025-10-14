@@ -10,8 +10,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // 사용자 인증용 클라이언트 (쿠키에서 세션 읽기)
-    const authClient = await createAuthClient()
+    // 사용자 인증용 클라이언트 (request에서 쿠키 읽기)
+    const authClient = createAuthClient(request)
 
     const userId = params.id
 
@@ -92,8 +92,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // 사용자 인증용 클라이언트 (쿠키에서 세션 읽기)
-    const authClient = await createAuthClient()
+    // 사용자 인증용 클라이언트 (request에서 쿠키 읽기)
+    const authClient = createAuthClient(request)
 
     const userId = params.id
 
@@ -211,8 +211,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    // 사용자 인증용 클라이언트 (쿠키에서 세션 읽기)
-    const authClient = await createAuthClient()
+    // 사용자 인증용 클라이언트 (request에서 쿠키 읽기)
+    const authClient = createAuthClient(request)
 
     const userId = params.id
 
