@@ -1,22 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAuthClient } from '@/lib/supabase/auth-client'
-import { createServerClient } from '@/lib/supabase/client'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { createServerClient as createAdminClient } from '@/lib/supabase/client'
 import { isAdmin } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
 
 // GET /api/users/[id]/permissions - 사용자의 권한 매트릭스 조회
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // 사용자 인증용 클라이언트 (request에서 쿠키 읽기)
-    const authClient = createAuthClient(request)
+    // Supabase 클라이언트 생성
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options })
+          },
+        },
+      }
+    )
 
     const userId = params.id
 
     // 현재 사용자 세션 확인
-    const { data: { session }, error: authError } = await authClient.auth.getSession()
+    const { data: { session }, error: authError } = await supabase.auth.getSession()
     if (authError || !session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -26,7 +44,7 @@ export async function GET(
     const user = session.user
 
     // 사용자 프로필 조회 (권한 확인용)
-    const { data: currentUserProfile } = await authClient
+    const { data: currentUserProfile } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('user_id', user.id)
@@ -49,7 +67,7 @@ export async function GET(
     }
 
     // 대상 사용자 프로필 조회
-    const { data: targetProfile, error } = await authClient
+    const { data: targetProfile, error } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('id', userId)
@@ -92,13 +110,30 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // 사용자 인증용 클라이언트 (request에서 쿠키 읽기)
-    const authClient = createAuthClient(request)
+    // Supabase 클라이언트 생성
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options })
+          },
+        },
+      }
+    )
 
     const userId = params.id
 
     // 현재 사용자 세션 확인
-    const { data: { session }, error: authError } = await authClient.auth.getSession()
+    const { data: { session }, error: authError } = await supabase.auth.getSession()
     if (authError || !session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -108,7 +143,7 @@ export async function PUT(
     const user = session.user
 
     // 사용자 프로필 조회 (권한 확인용)
-    const { data: currentUserProfile } = await authClient
+    const { data: currentUserProfile } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('user_id', user.id)
@@ -141,7 +176,7 @@ export async function PUT(
     }
 
     // 대상 사용자 프로필 조회
-    const { data: targetProfile } = await authClient
+    const { data: targetProfile } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('id', userId)
@@ -163,7 +198,7 @@ export async function PUT(
     }
 
     // 사용자 개인 권한 업데이트 (Service Role 사용)
-    const adminSupabase = createServerClient()
+    const adminSupabase = createAdminClient()
 
     const { data: updatedProfile, error: updateError } = await adminSupabase
       .from('user_profiles')
@@ -211,13 +246,30 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    // 사용자 인증용 클라이언트 (request에서 쿠키 읽기)
-    const authClient = createAuthClient(request)
+    // Supabase 클라이언트 생성
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options })
+          },
+        },
+      }
+    )
 
     const userId = params.id
 
     // 현재 사용자 세션 확인
-    const { data: { session }, error: authError } = await authClient.auth.getSession()
+    const { data: { session }, error: authError } = await supabase.auth.getSession()
     if (authError || !session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -227,7 +279,7 @@ export async function POST(
     const user = session.user
 
     // 사용자 프로필 조회 (권한 확인용)
-    const { data: currentUserProfile } = await authClient
+    const { data: currentUserProfile } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('user_id', user.id)
@@ -260,7 +312,7 @@ export async function POST(
     }
 
     // 템플릿 역할 조회
-    const { data: templateRole, error: templateError } = await authClient
+    const { data: templateRole, error: templateError } = await supabase
       .from('user_roles')
       .select('*')
       .eq('id', templateRoleId)
@@ -274,7 +326,7 @@ export async function POST(
     }
 
     // 대상 사용자 조회
-    const { data: targetProfile } = await authClient
+    const { data: targetProfile } = await supabase
       .from('user_profiles')
       .select('*')
       .eq('id', userId)
@@ -288,7 +340,7 @@ export async function POST(
     }
 
     // 사용자의 역할을 템플릿 역할로 변경 (Service Role 사용)
-    const adminSupabase = createServerClient()
+    const adminSupabase = createAdminClient()
 
     const { data: updatedProfile, error: updateError } = await adminSupabase
       .from('user_profiles')
