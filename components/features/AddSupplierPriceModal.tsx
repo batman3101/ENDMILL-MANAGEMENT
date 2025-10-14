@@ -144,7 +144,7 @@ export default function AddSupplierPriceModal({
                 <option value="">{t('endmill.selectSupplierOption')}</option>
                 {suppliers.map((supplier) => (
                   <option key={supplier.id} value={supplier.id}>
-                    {supplier.name} ({supplier.code})
+                    {supplier.code || supplier.name}
                   </option>
                 ))}
               </select>

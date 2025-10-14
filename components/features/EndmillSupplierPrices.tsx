@@ -194,14 +194,13 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
                   <td className="px-4 py-3">
                     <div>
                       <div className="font-medium text-gray-900 flex items-center">
-                        {price.supplier.name}
+                        {price.supplier.code || price.supplier.name}
                         {price.is_preferred && (
                           <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                             {t('endmill.preferredSupplier')}
                           </span>
                         )}
                       </div>
-                      <div className="text-gray-500">{price.supplier.code}</div>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -264,9 +263,9 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
               <div className="mt-2 text-sm text-blue-700">
                 <ul className="list-disc list-inside space-y-1">
                   {supplierPrices.filter(p => p.is_preferred).length > 0 && (
-                    <li>{t('endmill.preferredSuppliers')}: {supplierPrices.filter(p => p.is_preferred).map(p => p.supplier.name).join(', ')}</li>
+                    <li>{t('endmill.preferredSuppliers')}: {supplierPrices.filter(p => p.is_preferred).map(p => p.supplier.code || p.supplier.name).join(', ')}</li>
                   )}
-                  <li>{t('endmill.bestPrice')}: {supplierPrices.find(p => p.unit_price === min)?.supplier.name} ({min.toLocaleString()} VND)</li>
+                  <li>{t('endmill.bestPrice')}: {supplierPrices.find(p => p.unit_price === min)?.supplier.code || supplierPrices.find(p => p.unit_price === min)?.supplier.name} ({min.toLocaleString()} VND)</li>
                 </ul>
               </div>
             </div>

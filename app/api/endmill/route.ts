@@ -150,16 +150,40 @@ export async function GET(request: NextRequest) {
         : null
 
       // 실시간 사용 현황 (신규)
-      const currentUsage = endmill.tool_positions
-        ?.filter((tp: any) => tp.status === 'in_use') // 'in_use' 상태만 필터링
-        ?.map((tp: any) => {
+      // 단계 1: 이 앤드밀이 실제로 사용 중인 모든 위치 가져오기
+      const { data: allCurrentToolPositions } = await supabase
+        .from('tool_positions')
+        .select(`
+          position_number,
+          current_life,
+          total_life,
+          install_date,
+          status,
+          equipment:equipment_id(
+            id,
+            equipment_number,
+            current_model,
+            process
+          )
+        `)
+        .eq('endmill_type_id', endmill.id)
+        .eq('status', 'in_use')
+
+      // 단계 2: CAM Sheet에 정의된 것만 필터링하고 매칭
+      const currentUsage = (allCurrentToolPositions || [])
+        .map((tp: any) => {
           // 현재 설비의 모델/공정/T번호에 맞는 CAM Sheet 사양 찾기
           const matchingCamSheet = endmill.cam_sheet_endmills?.find(
             (cs: any) =>
               cs.cam_sheets?.model === tp.equipment?.current_model &&
               cs.cam_sheets?.process === tp.equipment?.process &&
-              cs.t_number === tp.position_number  // T번호도 정확히 매칭
+              cs.t_number === tp.position_number
           )
+
+          // CAM Sheet에 정의되지 않은 위치는 제외
+          if (!matchingCamSheet) {
+            return null
+          }
 
           // 설비 번호를 숫자로 정규화 (C002 -> 2)
           let normalizedEquipmentNumber = tp.equipment?.equipment_number
@@ -167,7 +191,7 @@ export async function GET(request: NextRequest) {
             normalizedEquipmentNumber = parseInt(normalizedEquipmentNumber.replace(/^C/i, ''))
           }
 
-          // 해당 설비의 해당 T번호에서의 교체 실적만 필터링
+          // 해당 설비의 해당 T번호에서의 교체 실적 필터링
           const equipmentToolChanges = allToolChanges?.filter(
             (tc: any) =>
               tc.equipment_number === normalizedEquipmentNumber &&
@@ -188,13 +212,14 @@ export async function GET(request: NextRequest) {
             totalLife: tp.total_life || 0,
             installDate: tp.install_date,
             status: tp.status,
-            specToolLife: matchingCamSheet?.tool_life || null,
-            averageActualLife: equipmentAverageLife,  // 설비별 T번호별 평균
-            usagePercentage: equipmentAverageLife && matchingCamSheet?.tool_life
+            specToolLife: matchingCamSheet.tool_life,
+            averageActualLife: equipmentAverageLife,
+            usagePercentage: equipmentAverageLife && matchingCamSheet.tool_life
               ? Math.round((equipmentAverageLife / matchingCamSheet.tool_life) * 100)
               : null
           }
-        }) || []
+        })
+        .filter(Boolean)  // null 제거 - CAM Sheet에 정의된 위치만 남김
 
       return {
         id: endmill.id,

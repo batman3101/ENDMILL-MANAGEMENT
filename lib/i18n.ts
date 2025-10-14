@@ -61,6 +61,7 @@ const resources = {
         optional: '선택',
         avgCount: '평균',
         count: '수',
+        high: '높은',
 
         // 시스템 정보
         lastUpdate: '마지막 업데이트',
@@ -146,6 +147,14 @@ const resources = {
         lifeConsumption: '수명 소진율',
         management: '관리',
         changeCount: '교체 실적',
+        endmill: '엔드밀',
+        equipment: '설비',
+        per: '별',
+        mounted: '장착',
+        distribution: '분포',
+        average: '평균',
+        perUnit: '/대',
+        usage: '사용',
       },
 
       // 재고 관리
@@ -767,6 +776,39 @@ const resources = {
         currentStatus: '현재',
         changeStatus: '변경',
         confirmChange: '변경',
+        // 설비 상세 페이지
+        detailView: '상세보기',
+        totalPositions: '전체 포지션',
+        withChangeRecords: '교체 실적 있음',
+        noChangeRecords: '교체 미등록',
+        dataRegistrationRate: '데이터 등록률',
+        basicInfo: '설비 기본 정보',
+        currentProductionModel: '현재 생산 모델',
+        toolPositionCountLabel: '툴 포지션 수',
+        camSheetEndmillList: 'CAM Sheet 엔드밀 목록',
+        camSheetFullList: 'CAM Sheet 기준 전체 엔드밀 목록',
+        changeRecords: '교체 실적',
+        notRegistered: '미등록',
+        endmillCode: '엔드밀 코드',
+        endmillName: '엔드밀 이름',
+        category: '카테고리',
+        installDate: '장착일',
+        lifeUsageRate: '수명 사용률',
+        state: '상태',
+        needsImprovement: '개선필요',
+        warning: '경고',
+        caution: '주의',
+        normal: '정상',
+        noCamSheetData: 'CAM Sheet 데이터가 없습니다',
+        registerCamSheet: '이 설비의 모델/공정에 해당하는 CAM Sheet를 등록해주세요',
+        loadingEquipmentInfo: '설비 정보를 불러오는 중...',
+        pleaseWaitAMoment: '잠시만 기다려 주세요',
+        cannotLoadEquipmentInfo: '설비 정보를 불러올 수 없습니다',
+        equipmentNotFound: '설비를 찾을 수 없습니다',
+        backToEquipmentList: '설비 목록으로 돌아가기',
+        position: '포지션',
+        count: '개',
+        backButton: '뒤로 가기',
       },
 
       // 앤드밀 관리
@@ -969,6 +1011,103 @@ const resources = {
         preferredSuppliers: '선호업체',
         bestPrice: '최적 가격',
         deleteConfirm: '정말로 이 가격 정보를 삭제하시겠습니까?',
+
+        // 앤드밀 상세 페이지
+        detailTitle: '상세 정보',
+        detailSubtitle: '앤드밀 상세 정보 및 성능 분석',
+        editButton: '수정',
+        excelUploadButton: '엑셀 업로드',
+        inventoryManageButton: '재고 관리',
+        loadingInfo: '앤드밀 정보를 불러오는 중...',
+        notFound: '앤드밀을 찾을 수 없습니다',
+        notFoundMessage: '에 해당하는 앤드밀이 없습니다.',
+
+        // 섹션 타이틀
+        basicInfoSection: '기본 정보',
+        performanceSection: '성능 분석',
+        supplierInfoSection: '공급업체 정보',
+        camSheetSection: '등록된 CAM Sheet 사양',
+        realtimeUsageSection: '실시간 사용 현황',
+        recentChangesSection: '최근 교체 이력',
+
+        // 기본 정보 섹션
+        identificationInfo: '식별 정보',
+        technicalSpecs: '기술 사양',
+        performanceMetrics: '성능 지표',
+        tags: '태그',
+
+        // 필드 라벨
+        qualityGrade: '품질 등급',
+        diameter: '직경',
+        flutes: '날 수',
+        coating: '코팅',
+        material: '소재',
+        tolerance: '공차',
+        helix: '나선각',
+        performanceRating: '성능 점수',
+        costEfficiency: '비용 효율성',
+        defectRate: '불량률',
+        replacementFrequency: '교체 빈도',
+        averageLifespan: '평균 수명',
+        standardLife: '표준 수명',
+
+        // 성능 분석 카드
+        currentStock: '현재 재고',
+        minStock: '최소 재고',
+        inUseCount: '사용 중',
+        totalUsageCount: '총 사용횟수',
+
+        // 공급업체 정보
+        supplierInfoTable: '공급업체별 정보',
+        supplierName: '공급업체',
+        unitPrice: '단가 (VND)',
+        priceHistory: '가격 이력',
+        addPriceInfo: '가격 정보 추가',
+        preferredSupplierLabel: '선호 공급업체',
+
+        // CAM Sheet 섹션
+        noCAMSheets: '등록된 CAM Sheet 사양이 없습니다',
+        camModel: '모델',
+        camProcess: '공정',
+        camTNumber: 'T번호',
+        camToolLife: '수명',
+
+        // 실시간 사용 현황 테이블
+        equipmentModel: '생산모델',
+        equipmentProcess: '공정',
+        camToolLifeLabel: 'CAM Tool Life',
+        actualAverageLife: '실제 평균수명',
+        usedEquipmentLabel: '사용중 설비',
+        noDataAvailable: '데이터 없음',
+        noEquipmentInUse: '현재 사용 중인 설비가 없습니다',
+
+        // 최근 교체 이력
+        changeDate: '교체일',
+        changeReason: '교체 사유',
+        changedBy: '교체자',
+        previousLifeLabel: '수명',
+        viewAllHistory: '전체 이력 보기',
+
+        // 수정 모달
+        editInfoTitle: '앤드밀 정보 수정 -',
+        basicInfoEdit: '기본 정보',
+        inventoryManagement: '재고 관리',
+        recommendedStock: '권장 재고',
+
+        // 예측 정보
+        predictionInfo: '예측 정보',
+        nextChangeDate: '다음 교체 예상일',
+        recommendedStockLabel: '권장 재고량',
+
+        // 메시지
+        dataLoadError: '데이터 오류',
+        dataLoadErrorMessage: '앤드밀 정보를 불러오는데 실패했습니다.',
+        inventoryNavigateSuccess: '재고 관리 페이지로 이동',
+        inventoryNavigateMessage: '재고 관리를 위해 재고 관리 페이지로 이동합니다.',
+        editCompleteTitle: '수정 완료',
+        editCompleteMessage: '정보가 성공적으로 수정되었습니다.',
+        masterDataUpdateComplete: '마스터 데이터 업데이트 완료',
+        masterDataUpdateMessage: '개의 데이터가 처리되었습니다. (Supabase 연동 후 실제 기능 구현)',
         deleteSuccess: '삭제 완료',
         deleteSuccessMessage: '공급업체 가격 정보가 삭제되었습니다.',
         deleteFailed: '삭제 실패',
@@ -1409,6 +1548,8 @@ const resources = {
         required: 'Bắt buộc',
         optional: 'Tùy chọn',
         avgCount: 'Trung bình',
+        count: 'số',
+        high: 'cao',
 
         // 시스템 정보
         lastUpdate: 'Cập nhật cuối',
@@ -1492,6 +1633,17 @@ const resources = {
         target: 'mục tiêu',
         positions: 'vị trí',
         lifeConsumption: 'tỷ lệ tiêu hao tuổi thọ',
+        management: 'quản lý',
+        changeCount: 'kết quả thay thế',
+        times: 'lần',
+        endmill: 'dao phay',
+        equipment: 'thiết bị',
+        per: 'theo',
+        mounted: 'lắp đặt',
+        distribution: 'phân bố',
+        average: 'trung bình',
+        perUnit: '/máy',
+        usage: 'sử dụng',
       },
 
       // 설비 관리
@@ -1632,6 +1784,39 @@ const resources = {
         currentStatus: 'Hiện tại',
         changeStatus: 'Thay đổi',
         confirmChange: 'Thay đổi',
+        // 설비 상세 페이지
+        detailView: 'Chi tiết',
+        totalPositions: 'Tổng vị trí',
+        withChangeRecords: 'Có lịch sử thay thế',
+        noChangeRecords: 'Chưa đăng ký thay thế',
+        dataRegistrationRate: 'Tỷ lệ đăng ký dữ liệu',
+        basicInfo: 'Thông tin cơ bản thiết bị',
+        currentProductionModel: 'Mẫu sản xuất hiện tại',
+        toolPositionCountLabel: 'Số vị trí dụng cụ',
+        camSheetEndmillList: 'Danh sách dao phay CAM Sheet',
+        camSheetFullList: 'Danh sách dao phay đầy đủ theo CAM Sheet',
+        changeRecords: 'Lịch sử thay thế',
+        notRegistered: 'Chưa đăng ký',
+        endmillCode: 'Mã dao phay',
+        endmillName: 'Tên dao phay',
+        category: 'Danh mục',
+        installDate: 'Ngày lắp đặt',
+        lifeUsageRate: 'Tỷ lệ sử dụng tuổi thọ',
+        state: 'Trạng thái',
+        needsImprovement: 'Cần cải thiện',
+        warning: 'Cảnh báo',
+        caution: 'Chú ý',
+        normal: 'Bình thường',
+        noCamSheetData: 'Không có dữ liệu CAM Sheet',
+        registerCamSheet: 'Vui lòng đăng ký CAM Sheet cho mẫu/quy trình của thiết bị này',
+        loadingEquipmentInfo: 'Đang tải thông tin thiết bị...',
+        pleaseWaitAMoment: 'Vui lòng chờ',
+        cannotLoadEquipmentInfo: 'Không thể tải thông tin thiết bị',
+        equipmentNotFound: 'Không tìm thấy thiết bị',
+        backToEquipmentList: 'Quay lại danh sách thiết bị',
+        position: 'Vị trí',
+        count: 'cái',
+        backButton: 'Quay lại',
       },
 
       // 앤드밀 관리
@@ -1834,6 +2019,103 @@ const resources = {
         preferredSuppliers: 'Nhà cung cấp ưu tiên',
         bestPrice: 'Giá tối ưu',
         deleteConfirm: 'Bạn có chắc chắn muốn xóa thông tin giá này không?',
+
+        // 앤드밀 상세 페이지
+        detailTitle: 'Thông tin chi tiết',
+        detailSubtitle: 'Thông tin chi tiết và phân tích hiệu suất dao phay',
+        editButton: 'Chỉnh sửa',
+        excelUploadButton: 'Tải lên Excel',
+        inventoryManageButton: 'Quản lý tồn kho',
+        loadingInfo: 'Đang tải thông tin dao phay...',
+        notFound: 'Không tìm thấy dao phay',
+        notFoundMessage: 'không có dao phay tương ứng.',
+
+        // 섹션 타이틀
+        basicInfoSection: 'Thông tin cơ bản',
+        performanceSection: 'Phân tích hiệu suất',
+        supplierInfoSection: 'Thông tin nhà cung cấp',
+        camSheetSection: 'Thông số CAM Sheet đã đăng ký',
+        realtimeUsageSection: 'Tình trạng sử dụng thời gian thực',
+        recentChangesSection: 'Lịch sử thay thế gần đây',
+
+        // 기본 정보 섹션
+        identificationInfo: 'Thông tin nhận dạng',
+        technicalSpecs: 'Thông số kỹ thuật',
+        performanceMetrics: 'Chỉ số hiệu suất',
+        tags: 'Thẻ',
+
+        // 필드 라벨
+        qualityGrade: 'Cấp chất lượng',
+        diameter: 'Đường kính',
+        flutes: 'Số lưỡi',
+        coating: 'Lớp phủ',
+        material: 'Vật liệu',
+        tolerance: 'Dung sai',
+        helix: 'Góc xoắn',
+        performanceRating: 'Điểm hiệu suất',
+        costEfficiency: 'Hiệu quả chi phí',
+        defectRate: 'Tỷ lệ lỗi',
+        replacementFrequency: 'Tần suất thay thế',
+        averageLifespan: 'Tuổi thọ trung bình',
+        standardLife: 'Tuổi thọ tiêu chuẩn',
+
+        // 성능 분석 카드
+        currentStock: 'Tồn kho hiện tại',
+        minStock: 'Tồn kho tối thiểu',
+        inUseCount: 'Đang sử dụng',
+        totalUsageCount: 'Tổng số lần sử dụng',
+
+        // 공급업체 정보
+        supplierInfoTable: 'Thông tin theo nhà cung cấp',
+        supplierName: 'Nhà cung cấp',
+        unitPrice: 'Đơn giá (VND)',
+        priceHistory: 'Lịch sử giá',
+        addPriceInfo: 'Thêm thông tin giá',
+        preferredSupplierLabel: 'Nhà cung cấp ưu tiên',
+
+        // CAM Sheet 섹션
+        noCAMSheets: 'Không có thông số CAM Sheet đã đăng ký',
+        camModel: 'Mẫu',
+        camProcess: 'Quy trình',
+        camTNumber: 'Số T',
+        camToolLife: 'Tuổi thọ',
+
+        // 실시간 사용 현황 테이블
+        equipmentModel: 'Mẫu sản xuất',
+        equipmentProcess: 'Quy trình',
+        camToolLifeLabel: 'CAM Tool Life',
+        actualAverageLife: 'Tuổi thọ trung bình thực tế',
+        usedEquipmentLabel: 'Thiết bị đang sử dụng',
+        noDataAvailable: 'Không có dữ liệu',
+        noEquipmentInUse: 'Hiện không có thiết bị đang sử dụng',
+
+        // 최근 교체 이력
+        changeDate: 'Ngày thay thế',
+        changeReason: 'Lý do thay thế',
+        changedBy: 'Người thay thế',
+        previousLifeLabel: 'Tuổi thọ',
+        viewAllHistory: 'Xem toàn bộ lịch sử',
+
+        // 수정 모달
+        editInfoTitle: 'Chỉnh sửa thông tin dao phay -',
+        basicInfoEdit: 'Thông tin cơ bản',
+        inventoryManagement: 'Quản lý tồn kho',
+        recommendedStock: 'Tồn kho khuyến nghị',
+
+        // 예측 정보
+        predictionInfo: 'Thông tin dự đoán',
+        nextChangeDate: 'Ngày thay thế dự kiến tiếp theo',
+        recommendedStockLabel: 'Số lượng tồn kho khuyến nghị',
+
+        // 메시지
+        dataLoadError: 'Lỗi dữ liệu',
+        dataLoadErrorMessage: 'Không thể tải thông tin dao phay.',
+        inventoryNavigateSuccess: 'Chuyển đến trang quản lý tồn kho',
+        inventoryNavigateMessage: 'Chuyển đến trang quản lý tồn kho để quản lý tồn kho.',
+        editCompleteTitle: 'Hoàn thành chỉnh sửa',
+        editCompleteMessage: 'Thông tin đã được chỉnh sửa thành công.',
+        masterDataUpdateComplete: 'Hoàn thành cập nhật dữ liệu chính',
+        masterDataUpdateMessage: 'mục dữ liệu đã được xử lý. (Chức năng thực tế sẽ được triển khai sau khi kết nối Supabase)',
         deleteSuccess: 'Xóa thành công',
         deleteSuccessMessage: 'Thông tin giá nhà cung cấp đã được xóa.',
         deleteFailed: 'Xóa thất bại',

@@ -109,8 +109,8 @@ export default function EquipmentDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <PageLoadingIndicator
-          message="설비 정보를 불러오는 중..."
-          subMessage="잠시만 기다려 주세요"
+          message={t('equipment.loadingEquipmentInfo')}
+          subMessage={t('equipment.pleaseWaitAMoment')}
           size="lg"
         />
       </div>
@@ -123,13 +123,13 @@ export default function EquipmentDetailPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-4xl mb-4">⚠️</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">설비 정보를 불러올 수 없습니다</h3>
-          <p className="text-gray-500 mb-4">{error || '설비를 찾을 수 없습니다.'}</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('equipment.cannotLoadEquipmentInfo')}</h3>
+          <p className="text-gray-500 mb-4">{error || t('equipment.equipmentNotFound')}</p>
           <button
             onClick={() => router.push('/dashboard/equipment')}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
-            ← 설비 목록으로 돌아가기
+            ← {t('equipment.backToEquipmentList')}
           </button>
         </div>
       </div>
@@ -163,6 +163,20 @@ export default function EquipmentDetailPage() {
     }
   }
 
+  // 상태 텍스트 번역
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case '가동중':
+        return t('equipment.operating')
+      case '점검중':
+        return t('equipment.maintenance')
+      case '셋업중':
+        return t('equipment.setup')
+      default:
+        return status
+    }
+  }
+
   // 수명 상태별 배지 색상 (낮은 수명 사용률 = 비효율)
   const getLifeBadge = (percentage: number | null) => {
     if (percentage === null) return 'bg-gray-100 text-gray-500'   // 데이터 없음
@@ -174,11 +188,11 @@ export default function EquipmentDetailPage() {
 
   // 수명 상태 텍스트
   const getLifeStatus = (percentage: number | null) => {
-    if (percentage === null) return '데이터 없음'
-    if (percentage <= 40) return '개선필요'
-    if (percentage <= 60) return '경고'
-    if (percentage <= 80) return '주의'
-    return '정상'
+    if (percentage === null) return t('common.noData')
+    if (percentage <= 40) return t('equipment.needsImprovement')
+    if (percentage <= 60) return t('equipment.warning')
+    if (percentage <= 80) return t('equipment.caution')
+    return t('equipment.normal')
   }
 
   // CAM Sheet에 정의된 모든 툴 포지션 표시 (T번호 순서대로)
@@ -201,17 +215,17 @@ export default function EquipmentDetailPage() {
           onClick={() => router.push('/dashboard')}
           className="hover:text-blue-600 transition-colors"
         >
-          🏠 대시보드
+          🏠 {t('navigation.dashboard')}
         </button>
         <span className="mx-2">›</span>
         <button
           onClick={() => router.push('/dashboard/equipment')}
           className="hover:text-blue-600 transition-colors"
         >
-          🏭 설비 관리
+          🏭 {t('navigation.equipment')}
         </button>
         <span className="mx-2">›</span>
-        <span className="text-gray-900 font-medium">{formattedEquipmentNumber} 상세보기</span>
+        <span className="text-gray-900 font-medium">{formattedEquipmentNumber} {t('equipment.detailView')}</span>
       </div>
 
       {/* 헤더 */}
@@ -219,14 +233,15 @@ export default function EquipmentDetailPage() {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => router.push('/dashboard/equipment')}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            title="뒤로 가기"
+            className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700 hover:text-gray-900 font-medium"
+            title={t('equipment.backButton')}
           >
-            ←
+            <span className="text-xl mr-2">⬅️</span>
+            {t('equipment.backButton')}
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              {formattedEquipmentNumber} 상세보기
+              {formattedEquipmentNumber} {t('equipment.detailView')}
             </h1>
             <p className="text-sm text-gray-500 mt-1">
               {equipment.currentModel} / {equipment.process} / {equipment.location}
@@ -237,7 +252,7 @@ export default function EquipmentDetailPage() {
         {/* 상태 배지 */}
         <span className={`inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full ${getStatusBadge(equipment.status)}`}>
           <span className="mr-1">{getStatusIcon(equipment.status)}</span>
-          {equipment.status}
+          {getStatusText(equipment.status)}
         </span>
       </div>
 
@@ -249,7 +264,7 @@ export default function EquipmentDetailPage() {
               🔧
             </div>
             <div>
-              <p className="text-sm text-gray-600">전체 포지션</p>
+              <p className="text-sm text-gray-600">{t('equipment.totalPositions')}</p>
               <p className="text-xl font-bold text-gray-900">{equipment.stats.totalPositions}</p>
             </div>
           </div>
@@ -261,7 +276,7 @@ export default function EquipmentDetailPage() {
               ✅
             </div>
             <div>
-              <p className="text-sm text-gray-600">교체 실적 있음</p>
+              <p className="text-sm text-gray-600">{t('equipment.withChangeRecords')}</p>
               <p className="text-xl font-bold text-green-600">{equipment.stats.usedPositions}</p>
             </div>
           </div>
@@ -273,7 +288,7 @@ export default function EquipmentDetailPage() {
               ⚠️
             </div>
             <div>
-              <p className="text-sm text-gray-600">교체 미등록</p>
+              <p className="text-sm text-gray-600">{t('equipment.noChangeRecords')}</p>
               <p className="text-xl font-bold text-orange-600">{equipment.stats.emptyPositions}</p>
             </div>
           </div>
@@ -285,7 +300,7 @@ export default function EquipmentDetailPage() {
               📊
             </div>
             <div>
-              <p className="text-sm text-gray-600">데이터 등록률</p>
+              <p className="text-sm text-gray-600">{t('equipment.dataRegistrationRate')}</p>
               <p className="text-xl font-bold text-purple-600">{equipment.stats.usagePercentage}%</p>
             </div>
           </div>
@@ -295,41 +310,41 @@ export default function EquipmentDetailPage() {
       {/* 설비 정보 */}
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">🏭 설비 기본 정보</h2>
+          <h2 className="text-lg font-semibold text-gray-900">🏭 {t('equipment.basicInfo')}</h2>
         </div>
         <div className="p-6">
           <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <div>
-              <dt className="text-sm font-medium text-gray-500">설비 번호</dt>
+              <dt className="text-sm font-medium text-gray-500">{t('equipment.equipmentNumber')}</dt>
               <dd className="mt-1 text-sm text-gray-900 font-medium">{formattedEquipmentNumber}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">현재 생산 모델</dt>
+              <dt className="text-sm font-medium text-gray-500">{t('equipment.currentProductionModel')}</dt>
               <dd className="mt-1 text-sm text-gray-900 font-medium">{equipment.currentModel}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">공정</dt>
+              <dt className="text-sm font-medium text-gray-500">{t('equipment.process')}</dt>
               <dd className="mt-1 text-sm text-gray-900">{equipment.process}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">위치</dt>
+              <dt className="text-sm font-medium text-gray-500">{t('equipment.location')}</dt>
               <dd className="mt-1 text-sm text-gray-900">{equipment.location}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">설비 상태</dt>
+              <dt className="text-sm font-medium text-gray-500">{t('equipment.status')}</dt>
               <dd className="mt-1 text-sm text-gray-900">
                 <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(equipment.status)}`}>
                   <span className="mr-1">{getStatusIcon(equipment.status)}</span>
-                  {equipment.status}
+                  {getStatusText(equipment.status)}
                 </span>
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">툴 포지션 수</dt>
+              <dt className="text-sm font-medium text-gray-500">{t('equipment.toolPositionCountLabel')}</dt>
               <dd className="mt-1 text-sm text-gray-900">{equipment.toolPositionCount}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">등록일</dt>
+              <dt className="text-sm font-medium text-gray-500">{t('common.createdAt')}</dt>
               <dd className="mt-1 text-sm text-gray-900">
                 {new Date(equipment.createdAt).toLocaleDateString('ko-KR', {
                   year: 'numeric',
@@ -339,7 +354,7 @@ export default function EquipmentDetailPage() {
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">최종 수정일</dt>
+              <dt className="text-sm font-medium text-gray-500">{t('common.updatedAt')}</dt>
               <dd className="mt-1 text-sm text-gray-900">
                 {new Date(equipment.updatedAt).toLocaleDateString('ko-KR', {
                   year: 'numeric',
@@ -356,18 +371,18 @@ export default function EquipmentDetailPage() {
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">
-            🔩 CAM Sheet 앤드밀 목록 ({allPositions.length}개)
+            🔩 {t('equipment.camSheetEndmillList')} ({allPositions.length}{t('equipment.count')})
           </h2>
           <p className="text-sm text-gray-500 mt-1">
-            CAM Sheet 기준 전체 앤드밀 목록 (교체 실적: {positionsWithData.length}개, 미등록: {positionsNoData.length}개)
+            {t('equipment.camSheetFullList')} ({t('equipment.changeRecords')}: {positionsWithData.length}{t('equipment.count')}, {t('equipment.notRegistered')}: {positionsNoData.length}{t('equipment.count')})
           </p>
         </div>
 
         {allPositions.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <div className="text-4xl mb-3">📭</div>
-            <p className="font-medium">CAM Sheet 데이터가 없습니다</p>
-            <p className="text-sm mt-1">이 설비의 모델/공정에 해당하는 CAM Sheet를 등록해주세요</p>
+            <p className="font-medium">{t('equipment.noCamSheetData')}</p>
+            <p className="text-sm mt-1">{t('equipment.registerCamSheet')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -375,25 +390,25 @@ export default function EquipmentDetailPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    포지션
+                    {t('equipment.position')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    앤드밀 코드
+                    {t('equipment.endmillCode')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    앤드밀 이름
+                    {t('equipment.endmillName')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    카테고리
+                    {t('equipment.category')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    장착일
+                    {t('equipment.installDate')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    수명 사용률
+                    {t('equipment.lifeUsageRate')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    상태
+                    {t('equipment.state')}
                   </th>
                 </tr>
               </thead>
@@ -425,7 +440,7 @@ export default function EquipmentDetailPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {position.installDate ? new Date(position.installDate).toLocaleDateString('ko-KR') : (
-                        <span className="text-gray-400">데이터 없음</span>
+                        <span className="text-gray-400">{t('common.noData')}</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -456,7 +471,7 @@ export default function EquipmentDetailPage() {
                         </>
                       ) : (
                         <div className="text-sm text-gray-400">
-                          데이터 없음
+                          {t('common.noData')}
                         </div>
                       )}
                     </td>

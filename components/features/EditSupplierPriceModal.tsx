@@ -92,7 +92,7 @@ export default function EditSupplierPriceModal({
           <h3 className="text-lg font-medium">공급업체 가격 수정</h3>
           <p className="text-sm text-gray-600 mt-1">
             엔드밀 코드: <span className="font-medium">{endmillCode}</span> |
-            공급업체: <span className="font-medium">{supplierPrice.supplier.name}</span>
+            공급업체: <span className="font-medium">{supplierPrice.supplier.code || supplierPrice.supplier.name}</span>
           </p>
         </div>
 

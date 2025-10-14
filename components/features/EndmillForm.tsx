@@ -381,7 +381,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                           <option value="">{t('endmill.selectSupplierPlaceholder')}</option>
                           {suppliers.map(supplier => (
                             <option key={supplier.id} value={supplier.id}>
-                              {supplier.name} ({supplier.code})
+                              {supplier.code || supplier.name} ({supplier.unit_price?.toLocaleString() || 0} VND)
                             </option>
                           ))}
                         </select>

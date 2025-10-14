@@ -384,7 +384,7 @@ export default function InboundPage() {
                     <option value="">{t('inventory.selectSupplier')}</option>
                     {availableSuppliers.map(supplier => (
                       <option key={supplier.id} value={supplier.name}>
-                        {supplier.name}
+                        {supplier.code || supplier.name}
                         {supplierPrices[supplier.name] ? ` (${supplierPrices[supplier.name].toLocaleString()} VND)` : ''}
                       </option>
                     ))}

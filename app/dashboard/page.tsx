@@ -327,7 +327,7 @@ export default function DashboardPage() {
             <div className="space-y-2">
               {(data?.frequencyAnalysis || []).slice(0, 4).map((item, index) => (
                 <div key={index} className="flex justify-between items-center text-sm">
-                  <span className="text-gray-700">{item.series} 시리즈:</span>
+                  <span className="text-gray-700">{item.series}:</span>
                   <div className="text-right">
                     <div className="font-semibold">{item.count}회</div>
                     <div className="text-xs text-gray-500">{item.avgInterval}일/회</div>
@@ -388,7 +388,7 @@ export default function DashboardPage() {
             <div className="space-y-2">
               {(data?.modelCostAnalysis || []).slice(0, 4).map((item, index) => (
                 <div key={index} className="flex justify-between items-center text-sm">
-                  <span className="text-gray-700">{item.series} 시리즈:</span>
+                  <span className="text-gray-700">{item.series}:</span>
                   <div className="text-right">
                     <div className="font-semibold text-blue-600">{formatVND(item.cost)}</div>
                     <div className="text-xs text-gray-500">({item.percentage}%)</div>
@@ -432,7 +432,7 @@ export default function DashboardPage() {
         {/* 코드별 장착 설비수 Top5 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('common.code')}별 장착 설비{t('common.count')} Top5</h4>
+            <h4 className="text-lg font-semibold text-gray-800">{t('common.code')}{t('dashboard.per')} {t('dashboard.mounted')} {t('dashboard.equipment')}{t('common.count')} Top5</h4>
             <span className="text-2xl">🔧</span>
           </div>
           {isLoading ? (
@@ -450,7 +450,7 @@ export default function DashboardPage() {
                     <div className="text-xs text-gray-500 truncate">{item.endmillName}</div>
                   </div>
                   <div className="text-right ml-2">
-                    <div className="font-bold text-blue-600">{item.equipmentCount}설비</div>
+                    <div className="font-bold text-blue-600">{item.equipmentCount}{t('dashboard.equipmentCount')}</div>
                     <div className="text-xs text-gray-500">{item.totalPositions}{t('dashboard.positions')}</div>
                   </div>
                 </div>
@@ -468,7 +468,7 @@ export default function DashboardPage() {
         {/* 모델별 사용 앤드밀 분포 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('equipment.model')}별 사용 엔드밀 분포</h4>
+            <h4 className="text-lg font-semibold text-gray-800">{t('equipment.model')}{t('dashboard.per')} {t('dashboard.usage')} {t('dashboard.endmill')} {t('dashboard.distribution')}</h4>
             <span className="text-2xl">📊</span>
           </div>
           {isLoading ? (
@@ -484,10 +484,10 @@ export default function DashboardPage() {
                   <span className="font-medium text-gray-900">{item.model}</span>
                   <div className="text-right">
                     <div className="font-bold text-green-600">
-                      {item.endmillCount}엔드밀
+                      {item.endmillCount}{t('dashboard.endmill')}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {item.equipmentCount}설비 (평균 {item.avgEndmillPerEquipment}/대)
+                      {item.equipmentCount}{t('dashboard.equipment')} ({t('dashboard.average')} {item.avgEndmillPerEquipment}{t('dashboard.perUnit')})
                     </div>
                   </div>
                 </div>
@@ -505,7 +505,7 @@ export default function DashboardPage() {
         {/* 앤드밀 소진율 높은 설비 Top5 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">엔드밀 {t('dashboard.lifeConsumption')} 높은 설비 Top5</h4>
+            <h4 className="text-lg font-semibold text-gray-800">{t('dashboard.endmill')} {t('dashboard.lifeConsumption')} {t('common.high')} {t('dashboard.equipment')} Top5</h4>
             <span className="text-2xl">⚙️</span>
           </div>
           {isLoading ? (
@@ -532,7 +532,7 @@ export default function DashboardPage() {
                       }`}>
                         {(item as any).changeCount}
                       </span>
-                      <div className="text-xs text-gray-500 mt-0.5">교체실적</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{t('dashboard.changeCount')}</div>
                     </div>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-1.5">
