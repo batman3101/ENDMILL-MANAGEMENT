@@ -155,6 +155,14 @@ const resources = {
         average: '평균',
         perUnit: '/대',
         usage: '사용',
+        // 교체 사유 분석 관련
+        changeReasonAnalysis: '교체 사유 분석',
+        thisMonth: '이번 달',
+        brokenRate: '파손률',
+        normalLife: '정상 수명',
+        broken: '파손',
+        premature: '조기 교체',
+        highBrokenRateWarning: '파손률이 10%를 초과했습니다. 주의가 필요합니다.',
       },
 
       // 재고 관리
@@ -946,6 +954,7 @@ const resources = {
         usageCountLabel: '사용 댓수',
         actionsLabel: '작업',
         detailViewButton: '세부보기',
+        count: '개',
         previousButton: '이전',
         nextButton: '다음',
 
@@ -1644,6 +1653,14 @@ const resources = {
         average: 'trung bình',
         perUnit: '/máy',
         usage: 'sử dụng',
+        // 교체 사유 분석 관련
+        changeReasonAnalysis: 'Phân tích lý do thay thế',
+        thisMonth: 'Tháng này',
+        brokenRate: 'Tỷ lệ hư hỏng',
+        normalLife: 'Tuổi thọ bình thường',
+        broken: 'Hư hỏng',
+        premature: 'Thay sớm',
+        highBrokenRateWarning: 'Tỷ lệ hư hỏng vượt quá 10%. Cần chú ý.',
       },
 
       // 설비 관리
@@ -1954,6 +1971,7 @@ const resources = {
         usageCountLabel: 'Số lượng sử dụng',
         actionsLabel: 'Thao tác',
         detailViewButton: 'Xem chi tiết',
+        count: 'cái',
         previousButton: 'Trước',
         nextButton: 'Sau',
 

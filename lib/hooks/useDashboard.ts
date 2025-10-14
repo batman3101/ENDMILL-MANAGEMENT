@@ -12,10 +12,10 @@ export interface DashboardData {
   }
   endmillUsage: {
     total: number
-    normal: number
-    warning: number
-    critical: number
-    usageRate: number
+    normalLife: number
+    broken: number
+    premature: number
+    brokenRate: number
   }
   inventory: {
     total: number

@@ -135,47 +135,58 @@ export default function DashboardPage() {
         {!isLoading && (
           <>
 
-        {/* 엔드밀 사용 현황 */}
+        {/* 교체 사유 분석 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">{t('dashboard.endmillUsageStatus')}</h3>
-            <span className="text-sm text-gray-500">{t('endmill.realtimeConnected')}</span>
+            <h3 className="text-lg font-semibold text-gray-800">{t('dashboard.changeReasonAnalysis')}</h3>
+            <span className="text-sm text-gray-500">{t('dashboard.thisMonth')}</span>
           </div>
           <div className="flex items-center justify-center">
             <DonutChart
-              value={data?.endmillUsage?.usageRate || 0}
+              value={data?.endmillUsage?.brokenRate || 0}
               max={100}
-              color="#10b981"
+              color={
+                (data?.endmillUsage?.brokenRate || 0) >= 15 ? "#ef4444" :
+                (data?.endmillUsage?.brokenRate || 0) >= 10 ? "#f59e0b" :
+                "#10b981"
+              }
               size={120}
             >
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-900">
-                  {data?.endmillUsage?.usageRate || 0}%
+                  {data?.endmillUsage?.brokenRate || 0}%
                 </div>
-                <div className="text-xs text-gray-500">{t('dashboard.usageRate')}</div>
+                <div className="text-xs text-gray-500">{t('dashboard.brokenRate')}</div>
               </div>
             </DonutChart>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             <div>
-              <p className="text-xs text-gray-500">{t('endmill.normal')}</p>
+              <p className="text-xs text-gray-500">{t('dashboard.normalLife')}</p>
               <p className="text-sm font-semibold text-green-600">
-                {data?.endmillUsage?.normal || 0}{t('dashboard.pieceCount')}
+                {data?.endmillUsage?.normalLife || 0}{t('dashboard.cases')}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">{t('endmill.warning')}</p>
-              <p className="text-sm font-semibold text-yellow-600">
-                {data?.endmillUsage?.warning || 0}{t('dashboard.pieceCount')}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">{t('endmill.critical')}</p>
+              <p className="text-xs text-gray-500">{t('dashboard.broken')}</p>
               <p className="text-sm font-semibold text-red-600">
-                {data?.endmillUsage?.critical || 0}{t('dashboard.pieceCount')}
+                {data?.endmillUsage?.broken || 0}{t('dashboard.cases')}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">{t('dashboard.premature')}</p>
+              <p className="text-sm font-semibold text-yellow-600">
+                {data?.endmillUsage?.premature || 0}{t('dashboard.cases')}
               </p>
             </div>
           </div>
+          {(data?.endmillUsage?.brokenRate || 0) >= 10 && (
+            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-xs text-yellow-800 text-center">
+                ⚠️ {t('dashboard.highBrokenRateWarning')}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 설비 가동률 */}

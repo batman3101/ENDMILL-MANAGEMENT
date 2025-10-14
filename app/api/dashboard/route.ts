@@ -143,57 +143,69 @@ async function getEquipmentStats(supabase: any) {
   }
 }
 
-// 엔드밀 사용 현황 통계 (수량 기반)
+// 교체 사유 분석 (교체 실적 기반)
 async function getEndmillUsageStats(supabase: any) {
-  // .neq() 메서드가 작동하지 않으므로 전체 데이터를 가져와서 JavaScript로 필터링
-  const { data: allPositions, error } = await supabase
-    .from('tool_positions')
-    .select('current_life, total_life, status')
+  // 이번 달 교체 실적 조회
+  const currentMonth = new Date().getMonth() + 1
+  const currentYear = new Date().getFullYear()
+  const startDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`
+
+  logger.log('🔧 교체 사유 분석 시작:', { currentMonth, currentYear, startDate })
+
+  const { data: allChanges, error } = await supabase
+    .from('tool_changes')
+    .select('change_reason, change_date')
 
   if (error) {
-    console.error('tool_positions 조회 오류:', error)
+    console.error('tool_changes 조회 오류:', error)
     throw error
   }
 
-  // JavaScript로 필터링: empty가 아닌 것만
-  const toolPositions = (allPositions || []).filter((pos: any) => pos.status !== 'empty')
+  // JavaScript로 필터링: 이번 달 데이터만
+  const monthlyChanges = (allChanges || []).filter((change: any) => change.change_date >= startDate)
 
-  if (!toolPositions || toolPositions.length === 0) {
+  if (!monthlyChanges || monthlyChanges.length === 0) {
     return {
       total: 0,
-      normal: 0,
-      warning: 0,
-      critical: 0,
-      usageRate: 0
+      normalLife: 0,
+      broken: 0,
+      premature: 0,
+      brokenRate: 0
     }
   }
 
-  // 잔여 수명 비율에 따라 상태 분류
-  const stats = toolPositions.reduce((acc: any, pos: any) => {
-    const remainingRatio = pos.total_life > 0 ? pos.current_life / pos.total_life : 0
+  // 교체 사유별 집계
+  const stats = monthlyChanges.reduce((acc: any, change: any) => {
+    const reason = change.change_reason || '기타'
 
-    if (remainingRatio >= 0.3) {
-      acc.normal++
-    } else if (remainingRatio >= 0.1) {
-      acc.warning++
+    if (reason === '수명완료') {
+      acc.normalLife++
+    } else if (reason === '파손') {
+      acc.broken++
     } else {
-      acc.critical++
+      // 마모, 예방교체, 모델변경, 기타 -> 조기교체로 분류
+      acc.premature++
     }
 
     return acc
-  }, { normal: 0, warning: 0, critical: 0 })
+  }, { normalLife: 0, broken: 0, premature: 0 })
 
-  const totalInUse = stats.normal + stats.warning + stats.critical
-  const usageRate = totalInUse > 0 ? Math.round((stats.normal / totalInUse) * 100) : 0
+  const total = monthlyChanges.length
+  const brokenRate = total > 0 ? Math.round((stats.broken / total) * 100) : 0
 
-  logger.log('✅ 엔드밀 통계 계산 완료:', { totalInUse, stats, usageRate })
+  logger.log('✅ 교체 사유 분석 완료:', {
+    total,
+    stats,
+    brokenRate,
+    startDate
+  })
 
   return {
-    total: totalInUse,
-    normal: stats.normal,
-    warning: stats.warning,
-    critical: stats.critical,
-    usageRate
+    total,
+    normalLife: stats.normalLife,
+    broken: stats.broken,
+    premature: stats.premature,
+    brokenRate
   }
 }
 
