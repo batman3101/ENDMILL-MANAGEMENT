@@ -95,6 +95,10 @@ export interface DashboardData {
     consumptionRate: number
     toolCount: number
   }>
+  topBrokenEndmills?: Array<{
+    code: string
+    count: number
+  }>
   lastUpdated: string
   dataSource: string
 }
