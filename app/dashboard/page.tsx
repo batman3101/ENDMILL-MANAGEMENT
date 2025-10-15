@@ -356,11 +356,11 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* 엔드밀 평균 사용 수명 */}
+        {/* 최다 파손 교체 엔드밀 Top 3 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('dashboard.avgLifespan')}</h4>
-            <span className="text-2xl">🔬</span>
+            <h4 className="text-lg font-semibold text-gray-800">최다 파손 교체 엔드밀 Top 3</h4>
+            <span className="text-2xl">🔨</span>
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
@@ -368,17 +368,21 @@ export default function DashboardPage() {
               <div className="h-4 bg-gray-200 rounded"></div>
               <div className="h-4 bg-gray-200 rounded"></div>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {(data?.lifespanAnalysis || []).slice(0, 4).map((item, index) => (
-                <div key={index} className="flex justify-between items-center text-sm">
-                  <span className="text-gray-700">{item.category} {t('common.type')}:</span>
-                  <div className="text-right">
-                    <div className="font-semibold">{t('common.avgCount')}: {item.avgLife}{t('dashboard.pieces')}</div>
-                    <div className="text-xs text-gray-500">±{item.variance}{t('dashboard.pieces')}</div>
-                  </div>
+          ) : (data?.topBrokenEndmills || []).length > 0 ? (
+            <div className="space-y-3">
+              {(data?.topBrokenEndmills || []).map((item: any, index: number) => (
+                <div key={index} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
+                  <span className="font-medium text-gray-700">{index + 1}위: {item.code}</span>
+                  <span className="font-bold text-red-600">{item.count}회</span>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-24 text-gray-400">
+              <div className="text-center">
+                <div className="text-sm">{t('common.noData')}</div>
+                <div className="text-xs mt-1">최근 30일간 파손 교체 없음</div>
+              </div>
             </div>
           )}
         </div>

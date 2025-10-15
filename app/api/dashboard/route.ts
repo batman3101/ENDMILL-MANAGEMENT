@@ -50,7 +50,8 @@ export async function GET(_request: NextRequest) {
       recentAlerts,
       endmillByEquipmentCount,
       modelEndmillUsage,
-      equipmentLifeConsumption
+      equipmentLifeConsumption,
+      topBrokenEndmills
     ] = await Promise.all([
       getEquipmentStats(supabase),
       getEndmillUsageStats(supabase),
@@ -63,7 +64,8 @@ export async function GET(_request: NextRequest) {
       getRecentAlerts(supabase),
       getEndmillByEquipmentCount(supabase),
       getModelEndmillUsage(supabase),
-      getEquipmentLifeConsumption(supabase)
+      getEquipmentLifeConsumption(supabase),
+      getTopBrokenEndmills(supabase)
     ])
 
     const dashboardData = {
@@ -84,6 +86,7 @@ export async function GET(_request: NextRequest) {
       endmillByEquipmentCount,
       modelEndmillUsage,
       equipmentLifeConsumption,
+      topBrokenEndmills,
 
       // 메타 정보
       lastUpdated: new Date().toISOString(),
@@ -985,4 +988,54 @@ async function getEquipmentLifeConsumption(supabase: any) {
   logger.log('✅ 설비별 교체 실적 통계 계산 완료:', { count: results.length })
 
   return results
+}
+
+// 최다 파손 교체 엔드밀 Top 3 (최근 30일 기준)
+async function getTopBrokenEndmills(supabase: any) {
+  logger.log('🔨 최다 파손 교체 엔드밀 Top 3 조회 시작')
+
+  // 최근 30일간의 파손 교체 실적 조회
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+  const { data: allChanges, error: tcError } = await supabase
+    .from('tool_changes')
+    .select('endmill_code, change_reason, change_date')
+
+  if (tcError) {
+    console.error('tool_changes 조회 오류:', tcError)
+    throw tcError
+  }
+
+  // JavaScript로 필터링: 최근 30일 & 파손 사유만
+  const brokenChanges = (allChanges || []).filter((change: any) =>
+    change.change_date >= thirtyDaysAgo && change.change_reason === '파손'
+  )
+
+  logger.log('📊 최근 30일 파손 교체 실적 조회:', {
+    totalCount: allChanges?.length || 0,
+    brokenCount: brokenChanges.length
+  })
+
+  // endmill_code별로 교체 횟수 집계
+  const changeCountByCode = brokenChanges.reduce((acc: any, change: any) => {
+    const code = change.endmill_code
+    if (!acc[code]) {
+      acc[code] = 0
+    }
+    acc[code]++
+    return acc
+  }, {})
+
+  // Top 3 추출
+  const topBroken = Object.entries(changeCountByCode)
+    .map(([code, count]) => ({ code, count }))
+    .sort((a: any, b: any) => b.count - a.count)
+    .slice(0, 3)
+
+  logger.log('✅ 최다 파손 교체 엔드밀 Top 3 계산 완료:', {
+    count: topBroken.length,
+    results: topBroken
+  })
+
+  return topBroken
 }
