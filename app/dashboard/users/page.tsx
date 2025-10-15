@@ -476,8 +476,8 @@ function UsersPageContent() {
     return allUsers.filter(user => user.roleId === roleId).length
   }
 
-  // 고유한 부서 목록 생성
-  const departments = Array.from(new Set(allUsers.map(user => user.department)))
+  // 부서 목록 (고정)
+  const departments = ['종합관리실', '공구관리실', 'Engineer']
   // 교대 목록 (A조, B조)
   const shifts = ['A', 'B']
   
