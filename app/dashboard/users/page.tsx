@@ -478,7 +478,8 @@ function UsersPageContent() {
 
   // 고유한 부서 목록 생성
   const departments = Array.from(new Set(allUsers.map(user => user.department)))
-  const shifts = Array.from(new Set(allUsers.map(user => user.shift)))
+  // 교대 목록 (A조, B조)
+  const shifts = ['A', 'B']
   
   // 권한 매트릭스 관련 함수들
   const getModuleDisplayName = (module: string): string => {
