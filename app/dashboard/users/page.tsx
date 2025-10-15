@@ -1043,27 +1043,33 @@ function UsersPageContent() {
                         </td>
                         
                         {/* 모듈별 권한 */}
-                        {Object.entries(user.permissions || {}).map(([module, actions]) => (
-                          <td key={module} className="px-4 py-4 text-center border-r border-gray-200">
-                            <div className="flex flex-wrap justify-center gap-1">
-                              {actions.length > 0 ? (
-                                actions.map((action: string) => (
-                                  <span
-                                    key={action}
-                                    className="inline-flex items-center justify-center w-6 h-6 text-xs bg-green-100 text-green-600 rounded-full"
-                                    title={getActionDisplayName(action)}
-                                  >
-                                    {getActionIcon(action)}
+                        {Object.keys(roles[0]?.permissions || {}).map(module => {
+                          // 시스템 관리자는 "*" 권한을 가질 수 있음
+                          const hasWildcardPermission = user.permissions?.['*']
+                          const modulePermissions = hasWildcardPermission || user.permissions?.[module] || []
+
+                          return (
+                            <td key={module} className="px-4 py-4 text-center border-r border-gray-200">
+                              <div className="flex flex-wrap justify-center gap-1">
+                                {modulePermissions.length > 0 ? (
+                                  modulePermissions.map((action: string) => (
+                                    <span
+                                      key={action}
+                                      className="inline-flex items-center justify-center w-6 h-6 text-xs bg-green-100 text-green-600 rounded-full"
+                                      title={getActionDisplayName(action)}
+                                    >
+                                      {getActionIcon(action)}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="inline-flex items-center justify-center w-6 h-6 text-xs bg-gray-100 text-gray-400 rounded-full">
+                                    ❌
                                   </span>
-                                ))
-                              ) : (
-                                <span className="inline-flex items-center justify-center w-6 h-6 text-xs bg-gray-100 text-gray-400 rounded-full">
-                                  ❌
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                        ))}
+                                )}
+                              </div>
+                            </td>
+                          )
+                        })}
                       </tr>
                     )
                   })}

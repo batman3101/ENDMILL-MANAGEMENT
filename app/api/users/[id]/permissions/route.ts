@@ -44,22 +44,42 @@ export async function GET(
     const user = session.user
 
     // 사용자 프로필 조회 (권한 확인용)
-    const { data: currentUserProfile } = await supabase
+    const { data: currentUserProfile, error: profileError } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('user_id', user.id)
       .single()
 
-    if (!currentUserProfile || !currentUserProfile.user_roles) {
+    if (profileError) {
+      logger.error('Error fetching current user profile:', profileError)
+      return NextResponse.json(
+        { error: 'Failed to fetch user profile', details: profileError.message },
+        { status: 500 }
+      )
+    }
+
+    if (!currentUserProfile) {
+      logger.error('Current user profile not found for user_id:', user.id)
       return NextResponse.json(
         { error: 'User profile not found' },
         { status: 404 }
       )
     }
 
+    if (!currentUserProfile.user_roles) {
+      logger.error('User roles not found for profile:', currentUserProfile.id)
+      return NextResponse.json(
+        { error: 'User role not found' },
+        { status: 404 }
+      )
+    }
+
     // 권한 확인 (관리자만 가능)
     const userRole = currentUserProfile.user_roles.type
+    logger.info('GET permissions - Current user role:', { userId: user.id, profileId: currentUserProfile.id, role: userRole })
+
     if (!isAdmin(userRole)) {
+      logger.warn('GET permissions - Access denied - not admin:', { userId: user.id, role: userRole })
       return NextResponse.json(
         { error: 'Forbidden: Admin access required' },
         { status: 403 }
@@ -143,22 +163,42 @@ export async function PUT(
     const user = session.user
 
     // 사용자 프로필 조회 (권한 확인용)
-    const { data: currentUserProfile } = await supabase
+    const { data: currentUserProfile, error: profileError } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('user_id', user.id)
       .single()
 
-    if (!currentUserProfile || !currentUserProfile.user_roles) {
+    if (profileError) {
+      logger.error('Error fetching current user profile:', profileError)
+      return NextResponse.json(
+        { error: 'Failed to fetch user profile', details: profileError.message },
+        { status: 500 }
+      )
+    }
+
+    if (!currentUserProfile) {
+      logger.error('Current user profile not found for user_id:', user.id)
       return NextResponse.json(
         { error: 'User profile not found' },
         { status: 404 }
       )
     }
 
+    if (!currentUserProfile.user_roles) {
+      logger.error('User roles not found for profile:', currentUserProfile.id)
+      return NextResponse.json(
+        { error: 'User role not found' },
+        { status: 404 }
+      )
+    }
+
     // 권한 확인 (관리자만 가능)
     const userRole = currentUserProfile.user_roles.type
+    logger.info('PUT permissions - Current user role:', { userId: user.id, profileId: currentUserProfile.id, role: userRole })
+
     if (!isAdmin(userRole)) {
+      logger.warn('PUT permissions - Access denied - not admin:', { userId: user.id, role: userRole })
       return NextResponse.json(
         { error: 'Forbidden: Admin access required' },
         { status: 403 }
@@ -186,14 +226,6 @@ export async function PUT(
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
-      )
-    }
-
-    // 시스템 관리자의 권한은 수정 불가
-    if (targetProfile.user_roles?.type === 'system_admin') {
-      return NextResponse.json(
-        { error: 'Cannot modify system admin permissions' },
-        { status: 403 }
       )
     }
 
@@ -279,22 +311,42 @@ export async function POST(
     const user = session.user
 
     // 사용자 프로필 조회 (권한 확인용)
-    const { data: currentUserProfile } = await supabase
+    const { data: currentUserProfile, error: profileError } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('user_id', user.id)
       .single()
 
-    if (!currentUserProfile || !currentUserProfile.user_roles) {
+    if (profileError) {
+      logger.error('Error fetching current user profile:', profileError)
+      return NextResponse.json(
+        { error: 'Failed to fetch user profile', details: profileError.message },
+        { status: 500 }
+      )
+    }
+
+    if (!currentUserProfile) {
+      logger.error('Current user profile not found for user_id:', user.id)
       return NextResponse.json(
         { error: 'User profile not found' },
         { status: 404 }
       )
     }
 
+    if (!currentUserProfile.user_roles) {
+      logger.error('User roles not found for profile:', currentUserProfile.id)
+      return NextResponse.json(
+        { error: 'User role not found' },
+        { status: 404 }
+      )
+    }
+
     // 권한 확인 (관리자만 가능)
     const userRole = currentUserProfile.user_roles.type
+    logger.info('POST permissions - Current user role:', { userId: user.id, profileId: currentUserProfile.id, role: userRole })
+
     if (!isAdmin(userRole)) {
+      logger.warn('POST permissions - Access denied - not admin:', { userId: user.id, role: userRole })
       return NextResponse.json(
         { error: 'Forbidden: Admin access required' },
         { status: 403 }
