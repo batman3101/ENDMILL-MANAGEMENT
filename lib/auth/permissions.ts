@@ -16,6 +16,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
   admin: [
     // 관리자 권한
+    { resource: 'dashboard', action: 'read' },
     { resource: 'users', action: 'manage' },
     { resource: 'equipment', action: 'manage' },
     { resource: 'endmills', action: 'manage' },
@@ -27,6 +28,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
   user: [
     // 일반 사용자 권한
+    { resource: 'dashboard', action: 'read' },
     { resource: 'equipment', action: 'read' },
     { resource: 'endmills', action: 'read' },
     { resource: 'inventory', action: 'read' },
@@ -74,7 +76,11 @@ export function hasPermission(
 }
 
 // 페이지 접근 권한 검증
-export function canAccessPage(userRole: UserRole, pagePath: string): boolean {
+export function canAccessPage(
+  userRole: UserRole,
+  pagePath: string,
+  customPermissions?: Permission[]
+): boolean {
   const pagePermissions: Record<string, { resource: string; action: Permission['action'] }> = {
     '/dashboard': { resource: 'dashboard', action: 'read' },
     '/equipment': { resource: 'equipment', action: 'read' },
@@ -86,14 +92,14 @@ export function canAccessPage(userRole: UserRole, pagePath: string): boolean {
     '/settings': { resource: 'settings', action: 'read' },
     '/users': { resource: 'users', action: 'read' },
   }
-  
+
   const pagePermission = pagePermissions[pagePath]
   if (!pagePermission) {
     // 정의되지 않은 페이지는 기본적으로 접근 허용
     return true
   }
-  
-  return hasPermission(userRole, pagePermission.resource, pagePermission.action)
+
+  return hasPermission(userRole, pagePermission.resource, pagePermission.action, customPermissions)
 }
 
 // 관리자 권한 확인

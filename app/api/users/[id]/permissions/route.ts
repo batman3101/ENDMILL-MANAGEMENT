@@ -100,8 +100,8 @@ export async function GET(
       )
     }
 
-    // 역할 기반 권한 반환 (user_roles.permissions 사용)
-    const permissions = targetProfile.user_roles?.permissions || {}
+    // 사용자 개인 권한 반환 (user_profiles.permissions 우선, 없으면 user_roles.permissions 사용)
+    const permissions = targetProfile.permissions || targetProfile.user_roles?.permissions || {}
 
     return NextResponse.json({
       success: true,

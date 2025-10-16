@@ -8,6 +8,8 @@ import { useConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
 import { AdminGuard } from '../../../components/auth/PermissionGuard'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
+import { AVAILABLE_RESOURCES } from '../../../lib/auth/permissions'
+import { useAuth } from '../../../lib/hooks/useAuth'
 
 export default function UsersPage() {
   return (
@@ -29,9 +31,10 @@ function UsersPageContent() {
     toggleUserStatus,
     loadUsers
   } = useUsers()
-  
+
   const confirmation = useConfirmation()
   const { showSuccess, showError } = useToast()
+  const { user: currentUser, refreshSession } = useAuth()
   
   // 필터 상태
   const [searchTerm, setSearchTerm] = useState('')
@@ -396,6 +399,11 @@ function UsersPageContent() {
 
         // 사용자 목록 새로고침
         await loadUsers()
+
+        // 현재 로그인한 사용자의 권한을 수정한 경우, 세션을 새로고침하여 user 객체 업데이트
+        if (currentUser && selectedUserForPermission.id === currentUser.id) {
+          await refreshSession()
+        }
       } else {
         throw new Error(result.error || '권한 업데이트에 실패했습니다.')
       }
@@ -410,7 +418,7 @@ function UsersPageContent() {
     setPermissionFormData((prev: any) => {
       const modulePermissions = prev[module] || []
       let newPermissions
-      
+
       if (checked) {
         // 권한 추가
         newPermissions = [...modulePermissions, action]
@@ -418,7 +426,7 @@ function UsersPageContent() {
         // 권한 제거
         newPermissions = modulePermissions.filter((a: string) => a !== action)
       }
-      
+
       return {
         ...prev,
         [module]: newPermissions
@@ -510,13 +518,24 @@ function UsersPageContent() {
   
   const getActionIcon = (action: string): string => {
     const actionIcons: Record<string, string> = {
-      create: '➕',
-      read: '👁️',
-      update: '✏️',
-      delete: '🗑️',
-      manage: '⚙️'
+      create: '+',
+      read: '●',
+      update: '✏',
+      delete: '🗑',
+      manage: '↻'
     }
-    return actionIcons[action] || '❓'
+    return actionIcons[action] || '?'
+  }
+
+  const getActionColor = (action: string): string => {
+    const actionColors: Record<string, string> = {
+      create: 'text-blue-600',
+      read: 'text-green-600',
+      update: 'text-orange-600',
+      delete: 'text-gray-600',
+      manage: 'text-blue-600'
+    }
+    return actionColors[action] || 'text-gray-600'
   }
   
   const getUserPermissionLevel = (user: User): string => {
@@ -618,7 +637,7 @@ function UsersPageContent() {
                 <span className="text-lg">🔐</span>
                 <span>권한 매트릭스</span>
                 <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
-                  {Object.keys(roles[0]?.permissions || {}).length}개 모듈
+                  {AVAILABLE_RESOURCES.length}개 모듈
                 </span>
               </div>
             </button>
@@ -941,7 +960,7 @@ function UsersPageContent() {
                     {filteredUsers.length}명 사용자
                   </span>
                   <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
-                    {Object.keys(roles[0]?.permissions || {}).length}개 모듈
+                    {AVAILABLE_RESOURCES.length}개 모듈
                   </span>
                 </div>
               </div>
@@ -952,24 +971,32 @@ function UsersPageContent() {
               <h3 className="text-sm font-medium text-gray-900 mb-3">권한 범례</h3>
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm">{getActionIcon('create')}</span>
+                  <span className={`text-sm font-bold ${getActionColor('create')}`}>{getActionIcon('create')}</span>
                   <span className="text-xs text-gray-600">{getActionDisplayName('create')}</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm">{getActionIcon('read')}</span>
+                  <span className={`text-sm font-bold ${getActionColor('read')}`}>{getActionIcon('read')}</span>
                   <span className="text-xs text-gray-600">{getActionDisplayName('read')}</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm">{getActionIcon('update')}</span>
+                  <span className={`text-sm font-bold ${getActionColor('update')}`}>{getActionIcon('update')}</span>
                   <span className="text-xs text-gray-600">{getActionDisplayName('update')}</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm">{getActionIcon('delete')}</span>
+                  <span className={`text-sm font-bold ${getActionColor('delete')}`}>{getActionIcon('delete')}</span>
                   <span className="text-xs text-gray-600">{getActionDisplayName('delete')}</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm">{getActionIcon('manage')}</span>
+                  <span className={`text-sm font-bold ${getActionColor('manage')}`}>{getActionIcon('manage')}</span>
                   <span className="text-xs text-gray-600">{getActionDisplayName('manage')}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xl text-green-600 font-bold">✓</span>
+                  <span className="text-xs text-gray-600">조회만</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xl text-red-500 font-bold">✕</span>
+                  <span className="text-xs text-gray-600">권한 없음</span>
                 </div>
               </div>
             </div>
@@ -987,7 +1014,7 @@ function UsersPageContent() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                       권한 레벨
                     </th>
-                    {Object.keys(roles[0]?.permissions || {}).map(module => (
+                    {AVAILABLE_RESOURCES.map(module => (
                       <th key={module} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                         <div className="flex flex-col items-center space-y-1">
                           <span className="text-sm">{getModuleDisplayName(module)}</span>
@@ -1044,7 +1071,7 @@ function UsersPageContent() {
                         </td>
                         
                         {/* 모듈별 권한 */}
-                        {Object.keys(roles[0]?.permissions || {}).map(module => {
+                        {AVAILABLE_RESOURCES.map(module => {
                           // 시스템 관리자는 "*" 권한을 가질 수 있음
                           const hasWildcardPermission = user.permissions?.['*']
                           const modulePermissions = hasWildcardPermission || user.permissions?.[module] || []
@@ -1053,18 +1080,26 @@ function UsersPageContent() {
                             <td key={module} className="px-4 py-4 text-center border-r border-gray-200">
                               <div className="flex flex-wrap justify-center gap-1">
                                 {modulePermissions.length > 0 ? (
-                                  modulePermissions.map((action: string) => (
-                                    <span
-                                      key={action}
-                                      className="inline-flex items-center justify-center w-6 h-6 text-xs bg-green-100 text-green-600 rounded-full"
-                                      title={getActionDisplayName(action)}
-                                    >
-                                      {getActionIcon(action)}
+                                  // 읽기 권한만 있는 경우
+                                  modulePermissions.length === 1 && modulePermissions[0] === 'read' ? (
+                                    <span className="inline-flex items-center justify-center w-6 h-6 text-xl text-green-600" title="조회">
+                                      ✓
                                     </span>
-                                  ))
+                                  ) : (
+                                    // 여러 권한이 있는 경우
+                                    modulePermissions.map((action: string) => (
+                                      <span
+                                        key={action}
+                                        className={`inline-flex items-center justify-center w-6 h-6 text-sm font-bold ${getActionColor(action)}`}
+                                        title={getActionDisplayName(action)}
+                                      >
+                                        {getActionIcon(action)}
+                                      </span>
+                                    ))
+                                  )
                                 ) : (
-                                  <span className="inline-flex items-center justify-center w-6 h-6 text-xs bg-gray-100 text-gray-400 rounded-full">
-                                    ❌
+                                  <span className="inline-flex items-center justify-center w-6 h-6 text-xl text-red-500" title="권한 없음">
+                                    ✕
                                   </span>
                                 )}
                               </div>
@@ -1109,10 +1144,11 @@ function UsersPageContent() {
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 모듈별 접근률</h3>
               <div className="space-y-3">
-                {Object.keys(roles[0]?.permissions || {}).slice(0, 5).map(module => {
+                {AVAILABLE_RESOURCES.slice(0, 5).map(module => {
                   const accessCount = filteredUsers.filter(user => {
-                    const role = getUserRole(user.roleId)
-                    return role && role.permissions && role.permissions[module as keyof typeof role.permissions]?.length > 0
+                    const hasWildcard = user.permissions?.['*']
+                    const modulePerms = user.permissions?.[module]
+                    return hasWildcard || (modulePerms && modulePerms.length > 0)
                   }).length
                   const percentage = Math.round((accessCount / filteredUsers.length) * 100)
                   
@@ -2130,7 +2166,7 @@ function UsersPageContent() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {Object.keys(roles[0]?.permissions || {}).map(module => (
+                      {AVAILABLE_RESOURCES.map(module => (
                         <tr key={module} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -2144,8 +2180,16 @@ function UsersPageContent() {
                               <input
                                 type="checkbox"
                                 checked={(permissionFormData[module] || []).includes(action)}
-                                onChange={(e) => handlePermissionChange(module, action, e.target.checked)}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                onChange={(e) => {
+                                  e.stopPropagation()
+                                  handlePermissionChange(module, action, e.target.checked)
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const currentlyChecked = (permissionFormData[module] || []).includes(action)
+                                  handlePermissionChange(module, action, !currentlyChecked)
+                                }}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
                                 disabled={isSubmitting}
                               />
                             </td>
@@ -2165,7 +2209,7 @@ function UsersPageContent() {
                     type="button"
                     onClick={() => {
                       const allPermissions: any = {}
-                      Object.keys(roles[0]?.permissions || {}).forEach(module => {
+                      AVAILABLE_RESOURCES.forEach(module => {
                         allPermissions[module] = ['create', 'read', 'update', 'delete', 'manage']
                       })
                       setPermissionFormData(allPermissions)
@@ -2179,7 +2223,7 @@ function UsersPageContent() {
                     type="button"
                     onClick={() => {
                       const readOnlyPermissions: any = {}
-                      Object.keys(roles[0]?.permissions || {}).forEach(module => {
+                      AVAILABLE_RESOURCES.forEach(module => {
                         readOnlyPermissions[module] = ['read']
                       })
                       setPermissionFormData(readOnlyPermissions)
@@ -2193,7 +2237,7 @@ function UsersPageContent() {
                     type="button"
                     onClick={() => {
                       const noPermissions: any = {}
-                      Object.keys(roles[0]?.permissions || {}).forEach(module => {
+                      AVAILABLE_RESOURCES.forEach(module => {
                         noPermissions[module] = []
                       })
                       setPermissionFormData(noPermissions)

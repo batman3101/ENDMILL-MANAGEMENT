@@ -821,7 +821,19 @@ export class UserProfileService {
     const { data, error } = await this.supabase
       .from('user_profiles')
       .select(`
-        *,
+        id,
+        name,
+        employee_id,
+        user_id,
+        department,
+        position,
+        shift,
+        role_id,
+        phone,
+        is_active,
+        created_at,
+        updated_at,
+        permissions,
         role:user_roles(*)
       `)
       .order('created_at', { ascending: false })

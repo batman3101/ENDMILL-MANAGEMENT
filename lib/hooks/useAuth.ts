@@ -17,6 +17,7 @@ interface User {
   shift?: string
   role?: string
   language?: string
+  permissions?: Record<string, string[]> // 사용자 개별 권한 매트릭스
 }
 
 // Auth 컨텍스트 타입 정의
@@ -191,7 +192,7 @@ export function AuthProvider(props: { children: ReactNode }) {
           // user_profiles 테이블에서 사용자 프로필 정보 조회
           const { data: userData, error: userError } = await supabase
             .from('user_profiles')
-            .select('id, name, department, position, shift, phone, user_roles(name, type)')
+            .select('id, name, department, position, shift, phone, permissions, user_roles(name, type, permissions)')
             .eq('user_id', session.user.id)
             .single()
 
@@ -207,7 +208,9 @@ export function AuthProvider(props: { children: ReactNode }) {
             position: userData?.position || session.user.user_metadata?.position || '',
             shift: userData?.shift || session.user.user_metadata?.shift || '',
             role: (userData?.user_roles as any)?.type || session.user.user_metadata?.role || 'user',
-            language: session.user.user_metadata?.language || 'ko'
+            language: session.user.user_metadata?.language || 'ko',
+            // 사용자 개별 권한 우선, 없으면 역할 기본 권한 사용
+            permissions: userData?.permissions || (userData?.user_roles as any)?.permissions || {}
           }
           setUser(userProfile)
         } else {
@@ -240,15 +243,25 @@ export function AuthProvider(props: { children: ReactNode }) {
         
         if (event === 'SIGNED_IN' && session) {
           setSession(session)
+
+          // SIGNED_IN 이벤트에서도 user_profiles에서 permissions 조회
+          const { data: userData } = await supabase
+            .from('user_profiles')
+            .select('id, name, department, position, shift, permissions, user_roles(name, type, permissions)')
+            .eq('user_id', session.user.id)
+            .single()
+
           const userProfile = {
             id: session.user.id,
             email: session.user.email || '',
-            name: session.user.user_metadata?.name || '',
-            department: session.user.user_metadata?.department || '',
-            position: session.user.user_metadata?.position || '',
-            shift: session.user.user_metadata?.shift || '',
-            role: session.user.user_metadata?.role || 'user',
-            language: session.user.user_metadata?.language || 'ko'
+            name: userData?.name || session.user.user_metadata?.name || '',
+            department: userData?.department || session.user.user_metadata?.department || '',
+            position: userData?.position || session.user.user_metadata?.position || '',
+            shift: userData?.shift || session.user.user_metadata?.shift || '',
+            role: (userData?.user_roles as any)?.type || session.user.user_metadata?.role || 'user',
+            language: session.user.user_metadata?.language || 'ko',
+            // 사용자 개별 권한 우선, 없으면 역할 기본 권한 사용
+            permissions: userData?.permissions || (userData?.user_roles as any)?.permissions || {}
           }
           setUser(userProfile)
           setLoading(false)
