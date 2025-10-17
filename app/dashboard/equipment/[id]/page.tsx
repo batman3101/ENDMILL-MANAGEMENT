@@ -91,6 +91,7 @@ export default function EquipmentDetailPage() {
     if (equipmentId) {
       fetchEquipment(true)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [equipmentId])
 
   // 실시간 업데이트 (30초마다)
@@ -102,6 +103,7 @@ export default function EquipmentDetailPage() {
     }, 30000) // 30초
 
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [equipmentId])
 
   // 로딩 상태

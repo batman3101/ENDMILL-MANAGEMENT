@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { clientLogger } from '../../../lib/utils/logger'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
-import { useConfirmation, createStatusChangeConfirmation } from '../../../lib/hooks/useConfirmation'
+import { useConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
 import StatusChangeDropdown from '../../../components/shared/StatusChangeDropdown'
 import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
@@ -30,6 +30,10 @@ export default function EquipmentPage() {
   const [editEquipment, setEditEquipment] = useState<any>(null)
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false)
   const lastRefreshTimeRef = useRef<number>(0)
+
+  // 미사용 변수 (향후 사용 예정)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _isRealtimeConnected = isRealtimeConnected
   const confirmation = useConfirmation()
   const { showSuccess, showError } = useToast()
 
@@ -50,11 +54,14 @@ export default function EquipmentPage() {
   const { changeStatus } = useEquipmentStatus()
 
   // 설정에서 값 가져오기
-  const { settings, updateCategorySettings } = useSettings()
+  const { settings } = useSettings()
   const itemsPerPage = 20 // 20대씩 고정 표시
   const equipmentLocations = getAvailableLocations()
   const equipmentStatuses = settings.equipment.statuses
-  const toolPositionCount = settings.equipment.toolPositionCount
+
+  // 미사용 변수 (향후 사용 예정)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _toolPositionCount = settings.equipment.toolPositionCount
 
   // Throttled refresh function to prevent excessive API calls
   const throttledRefresh = useCallback(() => {
@@ -108,7 +115,7 @@ export default function EquipmentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // CAM Sheet 데이터 가져오기
-  const { camSheets, getAvailableModels: getCamSheetModels, getAvailableProcesses: getCamSheetProcesses } = useCAMSheets()
+  const { getAvailableModels: getCamSheetModels, getAvailableProcesses: getCamSheetProcesses } = useCAMSheets()
   const availableModels = getCamSheetModels // CAM Sheet에서 등록된 모델 사용
   const availableProcesses = getCamSheetProcesses // CAM Sheet에서 등록된 공정 사용
   const equipmentAvailableModels = getAvailableModels() // equipment hook의 모델 (기본값용)
@@ -152,7 +159,8 @@ export default function EquipmentPage() {
     })
 
     return filtered
-  }, [equipments, searchTerm, statusFilter, modelFilter, sortField, sortOrder])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [equipments])
 
 
 
@@ -162,14 +170,9 @@ export default function EquipmentPage() {
   const endIndex = startIndex + itemsPerPage
   const currentEquipments = filteredEquipments.slice(startIndex, endIndex)
 
-  // 필터가 변경되면 첫 페이지로 이동
-  const resetToFirstPage = () => {
-    setCurrentPage(1)
-  }
-
   // 필터나 정렬 상태 변경 시 첫 페이지로 이동
-  useMemo(() => {
-    resetToFirstPage()
+  useEffect(() => {
+    setCurrentPage(1)
   }, [searchTerm, statusFilter, modelFilter, sortField, sortOrder])
 
   // 상태별 색상

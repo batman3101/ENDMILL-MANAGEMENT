@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useInventorySearch } from '../../../../lib/hooks/useInventory'
+// import { useInventorySearch } from '../../../../lib/hooks/useInventory' // 미사용
 import { useToast } from '../../../../components/shared/Toast'
 import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
 import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
@@ -40,7 +40,6 @@ export default function OutboundPage() {
   const { t } = useTranslations()
   const { showSuccess, showError, showWarning } = useToast()
   const confirmation = useConfirmation()
-  const { searchByCode } = useInventorySearch()
   const [isScanning, setIsScanning] = useState(false)
   const [scannedCode, setScannedCode] = useState('')
   const [outboundItems, setOutboundItems] = useState<OutboundItem[]>([])
@@ -145,6 +144,7 @@ export default function OutboundPage() {
     return () => {
       supabase.removeChannel(channel)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadOutboundHistory = async () => {
@@ -276,7 +276,7 @@ export default function OutboundPage() {
       return
     }
 
-    const totalValue = quantity * endmillData.unitPrice
+    const _totalValue = quantity * endmillData.unitPrice
     const confirmed = await confirmation.showConfirmation(
       createSaveConfirmation(
         `${endmillData.code} ${quantity}개 출고 (${equipmentNumber} T${tNumber.toString().padStart(2, '0')}, ${purpose})`

@@ -18,8 +18,8 @@ interface ExcelRow {
   'CAM Version'?: string
   'T Number'?: number
   'Endmill Code'?: string
+  'Category'?: string
   'Endmill Name'?: string
-  'Specifications'?: string
   'Tool Life'?: number
 }
 
@@ -166,12 +166,12 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
         })
       }
 
-      if (row['T Number'] && row['Endmill Code'] && row['Endmill Name']) {
+      if (row['T Number'] && row['Endmill Code'] && row['Category'] && row['Endmill Name']) {
         const endmill: EndmillInfo = {
           t_number: Number(row['T Number']),
           endmill_code: row['Endmill Code'],
           endmill_name: row['Endmill Name'],
-          specifications: row['Specifications'] || '',
+          specifications: row['Category'] || '',
           tool_life: Number(row['Tool Life']) || 2000
         }
 
@@ -306,8 +306,8 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
                 <div><code className="bg-blue-200 px-1 rounded">CAM Version</code> - {t('camSheets.camVersionName')}</div>
                 <div><code className="bg-blue-200 px-1 rounded">T Number</code> - {t('camSheets.tNumberName')}</div>
                 <div><code className="bg-blue-200 px-1 rounded">Endmill Code</code> - {t('camSheets.endmillCodeName')}</div>
-                <div><code className="bg-blue-200 px-1 rounded">Endmill Name</code> - {t('camSheets.endmillTypeName')}</div>
-                <div><code className="bg-blue-200 px-1 rounded">Specifications</code> - {t('camSheets.specificationsName')}</div>
+                <div><code className="bg-blue-200 px-1 rounded">Category</code> - {t('camSheets.endmillTypeName')}</div>
+                <div><code className="bg-blue-200 px-1 rounded">Endmill Name</code> - {t('camSheets.specificationsName')}</div>
                 <div><code className="bg-blue-200 px-1 rounded">Tool Life</code> - {t('camSheets.toolLifeName')}</div>
               </div>
             </div>

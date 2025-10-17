@@ -33,7 +33,7 @@ interface InboundItem {
 
 export default function InboundPage() {
   const { t } = useTranslations()
-  const { showSuccess, showError, showWarning } = useToast()
+  const { showSuccess, showError } = useToast()
   const confirmation = useConfirmation()
   const [isScanning, setIsScanning] = useState(false)
   const [scannedCode, setScannedCode] = useState('')
@@ -90,6 +90,7 @@ export default function InboundPage() {
     return () => {
       subscription.unsubscribe()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadAvailableEndmills = async () => {

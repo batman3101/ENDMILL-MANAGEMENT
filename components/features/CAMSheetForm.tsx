@@ -240,7 +240,7 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
 
             {/* 앤드밀 추가 폼 */}
             <div className="bg-gray-50 p-4 rounded-lg mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('camSheets.tNumberLabel')}</label>
                   <select
@@ -274,20 +274,6 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                  <input
-                    type="text"
-                    placeholder="FLAT 12mm 4날"
-                    value={newEndmill.endmillName}
-                    onChange={(e) => setNewEndmill({...newEndmill, endmillName: e.target.value})}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      autoLoadedInfo ? 'bg-green-50' : ''
-                    }`}
-                    readOnly={!!autoLoadedInfo}
-                  />
-                </div>
-
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('camSheets.toolLifeLabel')}</label>
                   <input
                     type="number"
@@ -297,32 +283,43 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     min="1"
                   />
-                  <p className="text-xs text-gray-500 mt-1">{t('camSheets.autoLoaded')}</p>
-                </div>
-
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    onClick={handleAddEndmill}
-                    className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                  >
-                    {t('camSheets.addButton')}
-                  </button>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('camSheets.specificationsLabel')}</label>
-                <input
-                  type="text"
-                  placeholder="직경12mm, 4날, 코팅TiN"
-                  value={newEndmill.specifications}
-                  onChange={(e) => setNewEndmill({...newEndmill, specifications: e.target.value})}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    autoLoadedInfo ? 'bg-green-50' : ''
-                  }`}
-                  readOnly={!!autoLoadedInfo}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <input
+                    type="text"
+                    placeholder="DRILL, FLAT, BALL 등"
+                    value={newEndmill.specifications}
+                    onChange={(e) => setNewEndmill({...newEndmill, specifications: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Endmill Name</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="D2 DR, D8x18FL FLAT EM 등"
+                      value={newEndmill.endmillName}
+                      onChange={(e) => setNewEndmill({...newEndmill, endmillName: e.target.value})}
+                      className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        autoLoadedInfo ? 'bg-green-50' : ''
+                      }`}
+                      readOnly={!!autoLoadedInfo}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddEndmill}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 whitespace-nowrap"
+                    >
+                      {t('camSheets.addButton')}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 

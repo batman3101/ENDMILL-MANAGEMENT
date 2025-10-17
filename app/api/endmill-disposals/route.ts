@@ -1,14 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
+import { hasPermission } from '@/lib/auth/permissions'
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createServerClient()
+
+    // 사용자 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // 사용자 정보 가져오기
+    const { data: userData, error: userError } = await (supabase as any)
+      .from('users')
+      .select('role, permissions')
+      .eq('id', user.id)
+      .single()
+
+    if (userError || !userData) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // 읽기 권한 확인
+    const canRead = hasPermission(userData.role, 'endmill_disposals', 'read', userData.permissions)
+    if (!canRead) {
+      return NextResponse.json(
+        { success: false, error: 'Permission denied' },
+        { status: 403 }
+      )
+    }
+
     const searchParams = request.nextUrl.searchParams
     const start = searchParams.get('start')
     const end = searchParams.get('end')
-
-    const supabase = createServerClient()
 
     let query: any = (supabase as any)
       .from('endmill_disposals')
@@ -45,6 +78,40 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createServerClient()
+
+    // 사용자 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // 사용자 정보 가져오기
+    const { data: userData, error: userError } = await (supabase as any)
+      .from('users')
+      .select('role, permissions')
+      .eq('id', user.id)
+      .single()
+
+    if (userError || !userData) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // 생성 권한 확인
+    const canCreate = hasPermission(userData.role, 'endmill_disposals', 'create', userData.permissions)
+    if (!canCreate) {
+      return NextResponse.json(
+        { success: false, error: 'Permission denied' },
+        { status: 403 }
+      )
+    }
+
     const formData = await request.formData()
 
     const disposal_date = formData.get('disposal_date') as string
@@ -54,8 +121,6 @@ export async function POST(request: NextRequest) {
     const reviewer = formData.get('reviewer') as string
     const notes = formData.get('notes') as string
     const imageFile = formData.get('image') as File | null
-
-    const supabase = createServerClient()
 
     // 이미지 업로드 (있는 경우)
     let imageUrl = null
@@ -114,6 +179,40 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const supabase = createServerClient()
+
+    // 사용자 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // 사용자 정보 가져오기
+    const { data: userData, error: userError } = await (supabase as any)
+      .from('users')
+      .select('role, permissions')
+      .eq('id', user.id)
+      .single()
+
+    if (userError || !userData) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // 수정 권한 확인
+    const canUpdate = hasPermission(userData.role, 'endmill_disposals', 'update', userData.permissions)
+    if (!canUpdate) {
+      return NextResponse.json(
+        { success: false, error: 'Permission denied' },
+        { status: 403 }
+      )
+    }
+
     const searchParams = request.nextUrl.searchParams
     const id = searchParams.get('id')
 
@@ -133,8 +232,6 @@ export async function PUT(request: NextRequest) {
     const reviewer = formData.get('reviewer') as string
     const notes = formData.get('notes') as string
     const imageFile = formData.get('image') as File | null
-
-    const supabase = createServerClient()
 
     // 이미지 업로드 (있는 경우)
     let imageUrl = undefined
@@ -199,6 +296,40 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const supabase = createServerClient()
+
+    // 사용자 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // 사용자 정보 가져오기
+    const { data: userData, error: userError } = await (supabase as any)
+      .from('users')
+      .select('role, permissions')
+      .eq('id', user.id)
+      .single()
+
+    if (userError || !userData) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // 삭제 권한 확인
+    const canDelete = hasPermission(userData.role, 'endmill_disposals', 'delete', userData.permissions)
+    if (!canDelete) {
+      return NextResponse.json(
+        { success: false, error: 'Permission denied' },
+        { status: 403 }
+      )
+    }
+
     const searchParams = request.nextUrl.searchParams
     const id = searchParams.get('id')
 
@@ -208,8 +339,6 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    const supabase = createServerClient()
 
     // 폐기 기록 삭제
     const { error } = await (supabase as any)

@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createCustomConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
-import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
+// import { useCAMSheets } from '../../../lib/hooks/useCAMSheets' // 미사용
 import { useSettings } from '../../../lib/hooks/useSettings'
 import EndmillExcelUploader from '../../../components/features/EndmillExcelUploader'
 import EndmillForm from '../../../components/features/EndmillForm'
@@ -286,8 +286,8 @@ export default function EndmillPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, statusFilter, typeFilter])
 
-  // 상태별 통계
-  const statusStats = useMemo(() => {
+  // 상태별 통계 (향후 사용 예정)
+  const _statusStats = useMemo(() => {
     return {
       total: endmills.length,
       active: endmills.filter(item => item.status === 'active').length,
@@ -297,8 +297,8 @@ export default function EndmillPage() {
     }
   }, [endmills])
 
-  // 상태 배지 색상
-  const getStatusBadge = (status: EndmillInstance['status']) => {
+  // 상태 배지 색상 (향후 사용 예정)
+  const _getStatusBadge = (status: EndmillInstance['status']) => {
     switch (status) {
       case 'new':
         return 'bg-blue-100 text-blue-800'
@@ -313,7 +313,7 @@ export default function EndmillPage() {
     }
   }
 
-  const getStatusText = (status: EndmillInstance['status']) => {
+  const _getStatusText = (status: EndmillInstance['status']) => {
     switch (status) {
       case 'new':
         return '신규'
@@ -328,7 +328,7 @@ export default function EndmillPage() {
     }
   }
 
-  const getStatusIcon = (status: EndmillInstance['status']) => {
+  const _getStatusIcon = (status: EndmillInstance['status']) => {
     switch (status) {
       case 'new':
         return '🆕'
@@ -397,7 +397,8 @@ export default function EndmillPage() {
     router.push(`/dashboard/endmill-detail/${item.code}`)
   }
 
-  const handleImmediateReplace = async (item: EndmillInstance) => {
+  // 향후 사용 예정 핸들러들
+  const _handleImmediateReplace = async (item: EndmillInstance) => {
     const confirmed = await confirmation.showConfirmation(
       createCustomConfirmation(
         'warning',
@@ -416,7 +417,7 @@ export default function EndmillPage() {
     }
   }
 
-  const handleScheduleReplace = async (item: EndmillInstance) => {
+  const _handleScheduleReplace = async (item: EndmillInstance) => {
     const confirmed = await confirmation.showConfirmation(
       createCustomConfirmation(
         'warning',
@@ -433,7 +434,7 @@ export default function EndmillPage() {
     }
   }
 
-  const handleMaintenance = async (item: EndmillInstance) => {
+  const _handleMaintenance = async (item: EndmillInstance) => {
     const confirmed = await confirmation.showConfirmation(
       createCustomConfirmation(
         'update',
@@ -446,8 +447,8 @@ export default function EndmillPage() {
 
     if (confirmed) {
       // 정비 기록 등록
-      const updatedEndmills = endmills.map(endmill => 
-        endmill.id === item.id 
+      const updatedEndmills = endmills.map(endmill =>
+        endmill.id === item.id
           ? { ...endmill, lastMaintenance: new Date().toISOString().split('T')[0] }
           : endmill
       )
@@ -829,7 +830,7 @@ export default function EndmillPage() {
 
               {/* 모델/공정별 사용 현황 테이블 */}
               {(() => {
-                const usage = getEndmillUsageInfo(selectedEndmill.code)
+                const _usage = getEndmillUsageInfo(selectedEndmill.code)
 
                 if (!selectedEndmill.camSheets || selectedEndmill.camSheets.length === 0) {
                   return (

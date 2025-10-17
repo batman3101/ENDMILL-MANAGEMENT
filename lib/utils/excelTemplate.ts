@@ -8,8 +8,8 @@ export const EXCEL_TEMPLATE_DATA = [
     'CAM Version': 'VE30',
     'T Number': 1,
     'Endmill Code': 'AT002',
-    'Endmill Name': 'DRILL',
-    'Specifications': 'D2 DR',
+    'Category': 'DRILL',
+    'Endmill Name': 'D2 DR',
     'Tool Life': 2000
   },
   {
@@ -18,8 +18,8 @@ export const EXCEL_TEMPLATE_DATA = [
     'CAM Version': 'VE30',
     'T Number': 2,
     'Endmill Code': 'AT003',
-    'Endmill Name': 'FLAT',
-    'Specifications': 'D8x18FL FLAT EM',
+    'Category': 'FLAT',
+    'Endmill Name': 'D8x18FL FLAT EM',
     'Tool Life': 1000
   },
   {
@@ -28,8 +28,8 @@ export const EXCEL_TEMPLATE_DATA = [
     'CAM Version': 'VE30',
     'T Number': 3,
     'Endmill Code': 'AT004',
-    'Endmill Name': 'FLAT',
-    'Specifications': 'D6x13FL FLAT EM',
+    'Category': 'FLAT',
+    'Endmill Name': 'D6x13FL FLAT EM',
     'Tool Life': 2000
   }
 ]
@@ -49,8 +49,8 @@ export const downloadExcelTemplate = async () => {
     { header: 'CAM Version', key: 'CAM Version', width: 15 },
     { header: 'T Number', key: 'T Number', width: 10 },
     { header: 'Endmill Code', key: 'Endmill Code', width: 15 },
-    { header: 'Endmill Name', key: 'Endmill Name', width: 15 },
-    { header: 'Specifications', key: 'Specifications', width: 25 },
+    { header: 'Category', key: 'Category', width: 15 },
+    { header: 'Endmill Name', key: 'Endmill Name', width: 25 },
     { header: 'Tool Life', key: 'Tool Life', width: 12 }
   ]
 
@@ -105,7 +105,7 @@ export const validateExcelData = async (data: any[], validationOptions?: {
   const validModels = validationOptions?.validModels || ['PA1', 'PA2', 'PS', 'B7', 'Q7']
 
   // 필수 컬럼 확인
-  const requiredColumns = ['Model', 'Process', 'CAM Version', 'T Number', 'Endmill Code', 'Endmill Name']
+  const requiredColumns = ['Model', 'Process', 'CAM Version', 'T Number', 'Endmill Code', 'Category', 'Endmill Name']
   const firstRow = data[0]
   const missingColumns = requiredColumns.filter(col => !(col in firstRow))
 
@@ -123,6 +123,7 @@ export const validateExcelData = async (data: any[], validationOptions?: {
     if (!row['CAM Version']) errors.push(`${rowNum}행: CAM Version이 비어있습니다.`)
     if (!row['T Number']) errors.push(`${rowNum}행: T Number가 비어있습니다.`)
     if (!row['Endmill Code']) errors.push(`${rowNum}행: Endmill Code가 비어있습니다.`)
+    if (!row['Category']) errors.push(`${rowNum}행: Category가 비어있습니다.`)
     if (!row['Endmill Name']) errors.push(`${rowNum}행: Endmill Name이 비어있습니다.`)
 
     // T Number 범위 체크

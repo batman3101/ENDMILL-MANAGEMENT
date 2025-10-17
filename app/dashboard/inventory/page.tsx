@@ -5,13 +5,14 @@ import { useState, useMemo, useEffect } from 'react'
 import { useInventory, useInventorySearch, useInventoryAlerts } from '../../../lib/hooks/useInventory'
 import { useToast } from '../../../components/shared/Toast'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
-import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createSaveConfirmation, createCreateConfirmation } from '../../../lib/hooks/useConfirmation'
+import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createCreateConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useSettings } from '../../../lib/hooks/useSettings'
 import SupplierPriceInfo from '../../../components/inventory/SupplierPriceInfo'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { useTranslations } from '../../../lib/hooks/useTranslations'
 import ExcelJS from 'exceljs'
 import { clientLogger } from '../../../lib/utils/logger'
+import { downloadInventoryTemplate, validateInventoryData, convertExcelToInventoryData } from '../../../lib/utils/inventoryExcelTemplate'
 
 export default function InventoryPage() {
   const { t } = useTranslations()
@@ -20,7 +21,8 @@ export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [supplierFilter, setSupplierFilter] = useState('')
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_supplierFilter, _setSupplierFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [sortField, setSortField] = useState<string>('code')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -35,17 +37,15 @@ export default function InventoryPage() {
     createInventory,
     updateInventory,
     deleteInventory,
-    getFilteredInventory,
     getInventoryStats,
-    getAvailableCategories,
-    getEndmillMasterData,
-    isCreating,
-    isUpdating,
-    isDeleting
+    getEndmillMasterData
   } = useInventory()
 
-  const { searchByCode, searchByName, searchByCategory } = useInventorySearch()
-  const { getCriticalItems, getLowStockItems, getAlertCount } = useInventoryAlerts()
+  // 향후 사용 예정 훅들
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _inventorySearch = useInventorySearch()
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _inventoryAlerts = useInventoryAlerts()
 
   // 설정에서 값 가져오기
   const { settings } = useSettings()
@@ -194,7 +194,7 @@ export default function InventoryPage() {
   }
 
   // 재고 상태 계산 함수 (먼저 정의)
-  const calculateStockStatus = (current: number, min: number, max: number): 'sufficient' | 'low' | 'critical' => {
+  const calculateStockStatus = (current: number, min: number, _max: number): 'sufficient' | 'low' | 'critical' => {
     if (current <= min) return 'critical'
     if (current <= min * 1.5) return 'low'
     return 'sufficient'
@@ -388,7 +388,7 @@ export default function InventoryPage() {
       setShowEditModal(false)
       setEditFormData(null)
       showSuccess(t('inventory.updateSuccess'), t('inventory.updateSuccessMessage'))
-    } catch (error) {
+    } catch (_error) {
       showError(t('inventory.updateFailed'), t('inventory.updateFailedMessage'))
     }
   }
@@ -402,7 +402,7 @@ export default function InventoryPage() {
     try {
       await deleteInventory(item.itemId)
       showSuccess(t('inventory.deleteSuccess'), t('inventory.deleteSuccessMessage'))
-    } catch (error) {
+    } catch (_error) {
       showError(t('inventory.deleteFailed'), t('inventory.deleteFailedMessage'))
     }
   }
@@ -438,7 +438,7 @@ export default function InventoryPage() {
       })
       setShowAddModal(false)
       showSuccess(t('inventory.createSuccess'), t('inventory.createSuccessMessage'))
-    } catch (error) {
+    } catch (_error) {
       showError(t('inventory.createFailed'), t('inventory.createFailedMessage'))
     }
   }
@@ -496,6 +496,16 @@ export default function InventoryPage() {
     } catch (error) {
       showError(t('inventory.downloadFailed'), t('inventory.downloadFailedMessage'))
       clientLogger.error('Excel download error:', error)
+    }
+  }
+
+  const handleDownloadInventoryTemplate = async () => {
+    try {
+      await downloadInventoryTemplate()
+      showSuccess('템플릿 다운로드 완료', '기초 재고 등록 템플릿이 다운로드되었습니다.')
+    } catch (error) {
+      showError('템플릿 다운로드 실패', '템플릿 다운로드 중 오류가 발생했습니다.')
+      clientLogger.error('Template download error:', error)
     }
   }
 
@@ -558,15 +568,66 @@ export default function InventoryPage() {
             }
           })
 
-          // 새로운 API를 사용해 데이터 업데이트 (실제 구현 필요)
-          showSuccess(t('inventory.uploadSuccess'), `${jsonData.length}${t('inventory.uploadSuccessMessage')}`)
+          // 데이터 검증
+          const validationOptions = {
+            validCategories: availableCategories,
+            validSuppliers: availableSuppliers
+          }
 
-          setUploadProgress({
-            processing: false,
-            success: jsonData.length,
-            updated: 0,
-            errors: []
+          const validation = await validateInventoryData(jsonData, validationOptions)
+
+          if (!validation.isValid) {
+            setUploadProgress({
+              processing: false,
+              success: 0,
+              updated: 0,
+              errors: validation.errors
+            })
+            showError('데이터 검증 실패', `${validation.errors.length}개의 오류가 발견되었습니다.`)
+            return
+          }
+
+          // 경고가 있으면 표시
+          if (validation.warnings.length > 0) {
+            validation.warnings.forEach(warning => {
+              clientLogger.log('Excel validation warning:', warning)
+            })
+          }
+
+          // 데이터 변환
+          const inventoryData = convertExcelToInventoryData(validation.validData)
+
+          // API로 데이터 전송
+          const response = await fetch('/api/inventory/bulk-upload', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ items: inventoryData })
           })
+
+          const result = await response.json()
+
+          if (result.success) {
+            setUploadProgress({
+              processing: false,
+              success: result.created || 0,
+              updated: result.updated || 0,
+              errors: result.errors || []
+            })
+            showSuccess(
+              '업로드 완료',
+              `신규 등록: ${result.created || 0}개, 업데이트: ${result.updated || 0}개`
+            )
+          } else {
+            setUploadProgress({
+              processing: false,
+              success: 0,
+              updated: 0,
+              errors: [result.error || '업로드 실패']
+            })
+            showError('업로드 실패', result.error || '서버 오류가 발생했습니다.')
+          }
         } catch (error) {
           setUploadProgress({ processing: false, success: 0, updated: 0, errors: [t('inventory.processingFileError')] })
           showError(t('inventory.fileProcessingError'), t('inventory.fileProcessingErrorMessage'))
@@ -759,6 +820,12 @@ export default function InventoryPage() {
             >
               {t('inventory.excelDownload')}
             </button>
+            <button
+              onClick={handleDownloadInventoryTemplate}
+              className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 whitespace-nowrap"
+            >
+              📥 기초 재고 템플릿
+            </button>
           </div>
         </div>
       </div>
@@ -825,7 +892,7 @@ export default function InventoryPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {currentData.map((row, index) => {
+              {currentData.map((row) => {
                 const stockPercentage = Math.min((row.totalCurrentStock / row.minStock) * 100, 100)
                 const progressColor = row.overallStatus === 'critical' ? 'bg-red-600' :
                                     row.overallStatus === 'low' ? 'bg-yellow-600' : 'bg-green-600'
@@ -995,7 +1062,6 @@ export default function InventoryPage() {
                 setSearchTerm('')
                 setCategoryFilter('')
                 setStatusFilter('')
-                setSupplierFilter('')
                 setCurrentPage(1)
               }}
               className="mt-2 text-blue-600 hover:text-blue-800"
@@ -1046,7 +1112,7 @@ export default function InventoryPage() {
                   {/* 자동완성 드롭다운 */}
                   {searchSuggestions.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                      {searchSuggestions.map((suggestion, index) => (
+                      {searchSuggestions.map((suggestion) => (
                         <div
                           key={suggestion.id}
                           onClick={() => handleSelectSuggestion(suggestion)}

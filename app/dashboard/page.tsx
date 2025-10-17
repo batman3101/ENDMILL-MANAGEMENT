@@ -1,18 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { clientLogger } from '../../lib/utils/logger'
-import LandingStatusCard from '../../components/features/LandingStatusCard'
 import DonutChart from '../../components/features/DonutChart'
 import { useSettings } from '../../lib/hooks/useSettings'
 import { usePermissions } from '../../lib/hooks/usePermissions'
-import { PermissionGuard } from '../../components/auth/PermissionGuard'
-import { useRealtime, useMultiTableRealtime } from '../../lib/hooks/useRealtime'
+import { useMultiTableRealtime } from '../../lib/hooks/useRealtime'
 import {
   useDashboard,
   formatVND,
-  formatNumber,
   getTrendIcon,
   getTrendColor
 } from '../../lib/hooks/useDashboard'
@@ -25,7 +22,7 @@ export default function DashboardPage() {
   const { data, isLoading, error, refreshData, lastRefresh } = useDashboard(60000) // 60초마다 업데이트
 
   // 실시간 연동 설정 (throttled refresh)
-  const [realtimeData, setRealtimeData] = useState<any>(null)
+  // const [realtimeData, setRealtimeData] = useState<any>(null) // 미사용 (향후 사용 예정)
   const lastRefreshTimeRef = useRef<number>(0)
 
   // Throttled refresh function to prevent excessive API calls
@@ -68,7 +65,7 @@ export default function DashboardPage() {
     }
   }), [throttledRefresh])
 
-  const { connections, errors, isAllConnected } = useMultiTableRealtime(
+  const { isAllConnected } = useMultiTableRealtime(
     ['tool_changes', 'inventory_transactions', 'notifications', 'activity_logs'],
     realtimeCallbacks
   )
@@ -85,9 +82,11 @@ export default function DashboardPage() {
     )
   }
 
-  // 설정에서 값 가져오기
-  const totalEquipments = getSetting('equipment', 'totalCount')
-  const toolPositions = getSetting('equipment', 'toolPositionCount')
+  // 설정에서 값 가져오기 (향후 사용 예정)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _totalEquipments = getSetting('equipment', 'totalCount')
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _toolPositions = getSetting('equipment', 'toolPositionCount')
 
   if (error) {
     return (

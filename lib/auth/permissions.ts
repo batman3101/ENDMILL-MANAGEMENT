@@ -23,6 +23,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'inventory', action: 'manage' },
     { resource: 'cam_sheets', action: 'manage' },
     { resource: 'tool_changes', action: 'manage' },
+    { resource: 'endmill_disposals', action: 'manage' },
     { resource: 'reports', action: 'read' },
     { resource: 'settings', action: 'manage' },
   ],
@@ -35,6 +36,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'cam_sheets', action: 'read' },
     { resource: 'tool_changes', action: 'create' },
     { resource: 'tool_changes', action: 'read' },
+    { resource: 'endmill_disposals', action: 'read' },
     { resource: 'reports', action: 'read' },
   ],
 }
@@ -88,6 +90,7 @@ export function canAccessPage(
     '/inventory': { resource: 'inventory', action: 'read' },
     '/cam-sheets': { resource: 'cam_sheets', action: 'read' },
     '/tool-changes': { resource: 'tool_changes', action: 'read' },
+    '/endmill-disposal': { resource: 'endmill_disposals', action: 'read' },
     '/reports': { resource: 'reports', action: 'read' },
     '/settings': { resource: 'settings', action: 'read' },
     '/users': { resource: 'users', action: 'read' },
@@ -216,6 +219,7 @@ export const AVAILABLE_RESOURCES = [
   'inventory',
   'cam_sheets',
   'tool_changes',
+  'endmill_disposals',
   'reports',
   'settings',
   'users'
@@ -238,6 +242,7 @@ export const RESOURCE_AVAILABLE_ACTIONS: Record<string, Permission['action'][]> 
   inventory: ['create', 'read', 'update', 'delete', 'manage'],
   cam_sheets: ['create', 'read', 'update', 'delete', 'manage'],
   tool_changes: ['create', 'read', 'update', 'delete', 'manage'],
+  endmill_disposals: ['create', 'read', 'update', 'delete', 'manage'],
   reports: ['read', 'manage'],
   settings: ['read', 'update', 'manage'],
   users: ['create', 'read', 'update', 'delete', 'manage']

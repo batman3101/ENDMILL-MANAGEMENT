@@ -494,10 +494,11 @@ function UsersPageContent() {
     const moduleNames: Record<string, string> = {
       dashboard: '대시보드',
       equipment: '설비관리',
-      endmill: '엔드밀관리',
+      endmills: '엔드밀관리',
       inventory: '재고관리',
-      camSheets: 'CAM시트',
-      toolChanges: '교체이력',
+      cam_sheets: 'CAM시트',
+      tool_changes: '교체이력',
+      endmill_disposals: '폐기관리',
       reports: '보고서',
       settings: '설정',
       users: '사용자관리'

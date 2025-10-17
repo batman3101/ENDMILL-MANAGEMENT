@@ -7,6 +7,8 @@ import { useTranslations } from '@/lib/hooks/useTranslations'
 import ConfirmationModal from '@/components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation } from '@/lib/hooks/useConfirmation'
 import { clientLogger } from '@/lib/utils/logger'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { hasPermission } from '@/lib/auth/permissions'
 
 interface EndmillDisposal {
   id: string
@@ -22,6 +24,7 @@ interface EndmillDisposal {
 
 export default function EndmillDisposalPage() {
   const { t } = useTranslations()
+  const { user } = useAuth()
   const [disposals, setDisposals] = useState<EndmillDisposal[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -31,6 +34,11 @@ export default function EndmillDisposalPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const { showSuccess, showError } = useToast()
   const confirmation = useConfirmation()
+
+  // 권한 체크
+  const canCreate = user ? hasPermission(user.role as 'system_admin' | 'admin' | 'user', 'endmill_disposals', 'create') : false
+  const canUpdate = user ? hasPermission(user.role as 'system_admin' | 'admin' | 'user', 'endmill_disposals', 'update') : false
+  const canDelete = user ? hasPermission(user.role as 'system_admin' | 'admin' | 'user', 'endmill_disposals', 'delete') : false
 
   // 필터 상태
   const [dateRange, setDateRange] = useState({
@@ -229,12 +237,14 @@ export default function EndmillDisposalPage() {
     <div className="space-y-6">
       {/* 헤더 */}
       <div className="flex items-center justify-end">
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          {showAddForm ? t('endmillDisposal.cancel') : `+ ${t('endmillDisposal.addRecord')}`}
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            {showAddForm ? t('endmillDisposal.cancel') : `+ ${t('endmillDisposal.addRecord')}`}
+          </button>
+        )}
       </div>
 
       {/* 인사이트 카드 */}
@@ -724,18 +734,25 @@ export default function EndmillDisposalPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(disposal)}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          {t('endmillDisposal.edit')}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(disposal)}
-                          className="text-red-600 hover:text-red-800 font-medium"
-                        >
-                          {t('endmillDisposal.delete')}
-                        </button>
+                        {canUpdate && (
+                          <button
+                            onClick={() => handleEdit(disposal)}
+                            className="text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            {t('endmillDisposal.edit')}
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDelete(disposal)}
+                            className="text-red-600 hover:text-red-800 font-medium"
+                          >
+                            {t('endmillDisposal.delete')}
+                          </button>
+                        )}
+                        {!canUpdate && !canDelete && (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </div>
                     </td>
                   </tr>
