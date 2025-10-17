@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
+export const dynamic = 'force-dynamic'
+
 // Supabase 클라이언트 생성 (Service Role)
 const supabase = createServerClient()
 
@@ -42,14 +44,14 @@ async function getCategoriesFromSettings() {
     .from('app_settings' as any)
     .select('value')
     .eq('key', 'inventory.categories')
-    .single()
+    .maybeSingle()
 
-  if (error || !data) {
+  if (error) {
     logger.error('Error fetching categories from settings:', error)
     return []
   }
 
-  return (data as any).value || []
+  return (data as any)?.value || []
 }
 
 // 공급업체 조회 (app_settings에서)
@@ -58,14 +60,14 @@ async function getSuppliersFromSettings() {
     .from('app_settings' as any)
     .select('value')
     .eq('key', 'inventory.suppliers')
-    .single()
+    .maybeSingle()
 
-  if (error || !data) {
+  if (error) {
     logger.error('Error fetching suppliers from settings:', error)
     return []
   }
 
-  return (data as any).value || []
+  return (data as any)?.value || []
 }
 
 // 프로세스 목록 조회 (app_settings에서)
@@ -74,14 +76,14 @@ async function getProcessesFromSettings() {
     .from('app_settings' as any)
     .select('value')
     .eq('key', 'equipment.processes')
-    .single()
+    .maybeSingle()
 
-  if (error || !data) {
+  if (error) {
     // 기본값 반환
     return ['CNC1', 'CNC2', 'CNC2-1']
   }
 
-  return (data as any).value || ['CNC1', 'CNC2', 'CNC2-1']
+  return (data as any)?.value || ['CNC1', 'CNC2', 'CNC2-1']
 }
 
 // 모델 목록 조회 (app_settings에서)
@@ -90,12 +92,12 @@ async function getModelsFromSettings() {
     .from('app_settings' as any)
     .select('value')
     .eq('key', 'equipment.models')
-    .single()
+    .maybeSingle()
 
-  if (error || !data) {
+  if (error) {
     // 기본값 반환
     return ['PA1', 'R13']
   }
 
-  return (data as any).value || ['PA1', 'R13']
+  return (data as any)?.value || ['PA1', 'R13']
 }
