@@ -43,7 +43,8 @@ async function getCategoriesFromSettings() {
   const { data, error } = await supabase
     .from('app_settings' as any)
     .select('value')
-    .eq('key', 'inventory.categories')
+    .eq('category', 'inventory')
+    .eq('key', 'categories')
     .maybeSingle()
 
   if (error) {
@@ -59,7 +60,8 @@ async function getSuppliersFromSettings() {
   const { data, error } = await supabase
     .from('app_settings' as any)
     .select('value')
-    .eq('key', 'inventory.suppliers')
+    .eq('category', 'inventory')
+    .eq('key', 'suppliers')
     .maybeSingle()
 
   if (error) {
@@ -75,10 +77,12 @@ async function getProcessesFromSettings() {
   const { data, error } = await supabase
     .from('app_settings' as any)
     .select('value')
-    .eq('key', 'equipment.processes')
+    .eq('category', 'equipment')
+    .eq('key', 'processes')
     .maybeSingle()
 
   if (error) {
+    logger.error('Error fetching processes from settings:', error)
     // 기본값 반환
     return ['CNC1', 'CNC2', 'CNC2-1']
   }
@@ -91,10 +95,12 @@ async function getModelsFromSettings() {
   const { data, error } = await supabase
     .from('app_settings' as any)
     .select('value')
-    .eq('key', 'equipment.models')
+    .eq('category', 'equipment')
+    .eq('key', 'models')
     .maybeSingle()
 
   if (error) {
+    logger.error('Error fetching models from settings:', error)
     // 기본값 반환
     return ['PA1', 'R13']
   }
