@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { useCAMSheets, type CAMSheet, type EndmillInfo } from '../../../lib/hooks/useCAMSheets'
 import CAMSheetForm from '../../../components/features/CAMSheetForm'
@@ -13,6 +14,7 @@ import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { logger, clientLogger } from '@/lib/utils/logger'
 
 export default function CAMSheetsPage() {
+  const router = useRouter()
   const { t } = useTranslation()
   const {
     camSheets,
@@ -926,7 +928,7 @@ export default function CAMSheetsPage() {
                             onClick={() => {
                               // 엔드밀 관리 페이지로 이동하면서 해당 엔드밀 검색
                               const url = `/dashboard/endmill?search=${encodeURIComponent(endmill.endmill_code || '')}`
-                              window.location.href = url
+                              router.push(url)
                             }}
                             className="text-blue-600 hover:text-blue-800 hover:underline"
                           >
