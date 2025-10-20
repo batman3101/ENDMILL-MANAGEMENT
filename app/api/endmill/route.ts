@@ -151,6 +151,9 @@ export async function GET(request: NextRequest) {
         ? Math.round(allToolChanges.reduce((sum, tc) => sum + (tc.tool_life || 0), 0) / allToolChanges.length)
         : null
 
+      // 총 사용횟수 (교체 실적 총 횟수)
+      const totalUsageCount = allToolChanges?.length || 0
+
       // 실시간 사용 현황 (신규)
       // 단계 1: 이 앤드밀이 실제로 사용 중인 모든 위치 가져오기
       const { data: allCurrentToolPositions } = await supabase
@@ -232,6 +235,7 @@ export async function GET(request: NextRequest) {
         unitCost: endmill.unit_cost,
         standardLife: endmill.standard_life,
         averageLifespan: overallAverageLife,  // 전체 평균 수명 (기본 정보용)
+        totalUsageCount,     // 총 사용횟수 (교체 실적 총 횟수)
         suppliers: endmill.endmill_supplier_prices?.map((sp: any) => ({
           code: sp.suppliers?.code || '',
           name: sp.suppliers?.name || '',

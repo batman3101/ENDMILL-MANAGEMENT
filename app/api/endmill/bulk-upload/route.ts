@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../../lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
+// 엔드밀 타입 마스터 데이터만 처리 (MODEL, PROCESS, TOOL LIFE, T NUMBER는 CAM Sheet에서 관리)
 interface ExcelRowData {
   code: string
   category: string
@@ -9,10 +10,6 @@ interface ExcelRowData {
   supplier: string
   unit_cost: number
   standard_life: number
-  model: string
-  process: string
-  tool_life: number
-  t_number: number
 }
 
 export async function POST(request: NextRequest) {
@@ -28,19 +25,16 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerClient()
 
-    // 1. 데이터 정규화 및 그룹핑
+    // 1. 데이터 정규화 및 그룹핑 - 엔드밀 타입 마스터 데이터만
     const {
       endmillTypesMap,
       supplierPrices,
-      camSheetEndmills,
-      suppliersMap,
-      camSheetsMap
+      suppliersMap
     } = normalizeExcelData(endmills)
 
     logger.log('정규화된 데이터:', {
       endmillTypes: endmillTypesMap.size,
-      supplierPrices: supplierPrices.length,
-      camSheetEndmills: camSheetEndmills.length
+      supplierPrices: supplierPrices.length
     })
 
     // 2. 필요한 카테고리와 공급업체 수집
@@ -59,22 +53,14 @@ export async function POST(request: NextRequest) {
     const categoryMap = await getCategoryMapping(supabase, requiredCategories)
     const supplierMap = await getSupplierMapping(supabase, requiredSuppliers)
 
-    // 4. 순차 처리
+    // 4. 순차 처리 - 엔드밀 타입 마스터 데이터만
     logger.log('엔드밀 타입 UPSERT 시작...')
     const processedEndmills = await upsertEndmillTypes(supabase, endmillTypesMap, categoryMap)
     logger.log('처리된 엔드밀 타입:', processedEndmills.length)
 
-    logger.log('CAM Sheet 확인/생성 시작...')
-    const processedCamSheets = await ensureCamSheets(supabase, camSheetsMap)
-    logger.log('처리된 CAM Sheet:', processedCamSheets.length)
-
     logger.log('공급업체별 가격 정보 처리 시작...')
     const processedSupplierPrices = await upsertSupplierPrices(supabase, supplierPrices, processedEndmills, supplierMap)
     logger.log('처리된 공급업체 가격:', processedSupplierPrices.length)
-
-    logger.log('CAM Sheet 엔드밀 매핑 처리 시작...')
-    const processedCamSheetEndmills = await upsertCamSheetEndmills(supabase, camSheetEndmills, processedEndmills, processedCamSheets)
-    logger.log('처리된 CAM Sheet 매핑:', processedCamSheetEndmills.length)
 
     // 5. 인벤토리 생성 (새로운 엔드밀 타입에 대해서만)
     logger.log('인벤토리 생성 시작...')
@@ -83,12 +69,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       count: endmills.length,
-      message: `${endmills.length}개 행이 성공적으로 처리되었습니다.`,
+      message: `${endmills.length}개의 엔드밀 타입이 성공적으로 처리되었습니다. (MODEL, PROCESS, TOOL LIFE는 CAM Sheet에서 관리하세요)`,
       summary: {
         endmillTypes: processedEndmills.length,
-        supplierPrices: processedSupplierPrices.length,
-        camSheetMappings: processedCamSheetEndmills.length,
-        camSheets: processedCamSheets.length
+        supplierPrices: processedSupplierPrices.length
       }
     })
 
@@ -101,22 +85,20 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 헬퍼 함수들
+// 헬퍼 함수들 - 엔드밀 타입 마스터 데이터만 처리
 function normalizeExcelData(excelRows: ExcelRowData[]) {
   const endmillTypesMap = new Map()
   const supplierPrices = []
-  const camSheetEndmills = []
   const suppliersMap = new Map()
-  const camSheetsMap = new Map()
 
   for (const row of excelRows) {
-    // 엔드밀 타입 기본 정보 (중복 코드는 첫 번째 값 또는 평균값 사용)
+    // 엔드밀 타입 기본 정보 (중복 코드는 첫 번째 값 사용)
     if (!endmillTypesMap.has(row.code)) {
       endmillTypesMap.set(row.code, {
         code: row.code,
         category: row.category,
         name: row.name || row.code,
-        unit_cost: row.unit_cost, // 기본 단가 (첫 번째 값)
+        unit_cost: row.unit_cost, // 기본 단가 (첫 번째 공급업체 값)
         standard_life: row.standard_life || 1000
       })
     }
@@ -126,16 +108,7 @@ function normalizeExcelData(excelRows: ExcelRowData[]) {
       suppliersMap.set(row.supplier, { code: row.supplier })
     }
 
-    // CAM Sheet 정보 수집
-    if (row.model && row.process) {
-      const key = `${row.model}_${row.process}`
-      camSheetsMap.set(key, {
-        model: row.model,
-        process: row.process
-      })
-    }
-
-    // 공급업체별 가격 정보
+    // 공급업체별 가격 정보 (같은 엔드밀 코드에 여러 공급업체 가능)
     if (row.supplier && row.unit_cost) {
       supplierPrices.push({
         endmill_code: row.code,
@@ -146,26 +119,12 @@ function normalizeExcelData(excelRows: ExcelRowData[]) {
         is_preferred: false
       })
     }
-
-    // CAM Sheet 엔드밀 매핑 정보
-    if (row.model && row.process && row.tool_life && row.t_number) {
-      camSheetEndmills.push({
-        endmill_code: row.code,
-        model: row.model,
-        process: row.process,
-        tool_life: row.tool_life,
-        t_number: row.t_number,
-        endmill_name: row.name || row.code
-      })
-    }
   }
 
   return {
     endmillTypesMap,
     supplierPrices,
-    camSheetEndmills,
-    suppliersMap,
-    camSheetsMap
+    suppliersMap
   }
 }
 
@@ -289,45 +248,6 @@ async function upsertEndmillTypes(supabase: any, endmillTypesMap: Map<string, an
   return data || []
 }
 
-async function ensureCamSheets(supabase: any, camSheetsMap: Map<string, any>) {
-  const camSheets = Array.from(camSheetsMap.values())
-  const results = []
-
-  for (const camSheet of camSheets) {
-    // 기존 CAM Sheet 확인
-    const { data: existing } = await supabase
-      .from('cam_sheets')
-      .select('id, model, process')
-      .eq('model', camSheet.model)
-      .eq('process', camSheet.process)
-      .single()
-
-    if (existing) {
-      results.push(existing)
-    } else {
-      // 새 CAM Sheet 생성
-      const { data: newCamSheet, error } = await supabase
-        .from('cam_sheets')
-        .insert({
-          model: camSheet.model,
-          process: camSheet.process,
-          cam_version: 'v1.0',
-          version_date: new Date().toISOString().split('T')[0]
-        })
-        .select()
-        .single()
-
-      if (error) {
-        logger.warn('CAM Sheet 생성 오류:', error)
-      } else {
-        results.push(newCamSheet)
-      }
-    }
-  }
-
-  return results
-}
-
 async function upsertSupplierPrices(
   supabase: any,
   supplierPrices: any[],
@@ -367,46 +287,6 @@ async function upsertSupplierPrices(
 
   if (error) {
     logger.warn('공급업체 가격 UPSERT 오류:', error)
-    return []
-  }
-
-  return data || []
-}
-
-async function upsertCamSheetEndmills(
-  supabase: any,
-  camSheetEndmills: any[],
-  endmills: any[],
-  camSheets: any[]
-) {
-  const endmillMap = new Map(endmills.map(e => [e.code, e.id]))
-  const camSheetMap = new Map(camSheets.map(cs => [`${cs.model}_${cs.process}`, cs.id]))
-
-  const mappingData = camSheetEndmills
-    .map(cse => ({
-      cam_sheet_id: camSheetMap.get(`${cse.model}_${cse.process}`),
-      endmill_type_id: endmillMap.get(cse.endmill_code),
-      t_number: cse.t_number,
-      tool_life: cse.tool_life,
-      endmill_code: cse.endmill_code,
-      endmill_name: cse.endmill_name
-    }))
-    .filter(item => item.cam_sheet_id && item.endmill_type_id)
-
-  if (mappingData.length === 0) {
-    return []
-  }
-
-  const { data, error } = await supabase
-    .from('cam_sheet_endmills')
-    .upsert(mappingData, {
-      onConflict: 'cam_sheet_id,t_number',
-      ignoreDuplicates: false
-    })
-    .select()
-
-  if (error) {
-    logger.warn('CAM Sheet 엔드밀 매핑 UPSERT 오류:', error)
     return []
   }
 

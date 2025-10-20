@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs'
 
-// 엔드밀 엑셀 템플릿 타입 정의
+// 엔드밀 엑셀 템플릿 타입 정의 (엔드밀 타입 마스터 데이터)
+// MODEL, PROCESS, TOOL LIFE, T NUMBER는 CAM Sheet에서 관리
 export interface EndmillExcelRow {
   'Endmill Code': string
   'Category': string
@@ -8,77 +9,53 @@ export interface EndmillExcelRow {
   'Supplier': string
   'Unit Cost': number
   'Standard Life': number
-  'Model': string
-  'Process': string
-  'Tool Life': number
-  'T Number': number
 }
 
-// 엔드밀 템플릿 데이터 (실제 DB 값 사용)
-// 예시: 같은 엔드밀이 여러 공급업체 및 여러 모델/공정에서 사용되는 경우
+// 엔드밀 템플릿 데이터 - 엔드밀 타입 마스터 데이터만 포함
+// 같은 엔드밀 코드에 여러 공급업체 가격이 있을 수 있음
 export const endmillTemplateData: EndmillExcelRow[] = [
   {
-    'Endmill Code': 'EM-F-6',
-    'Category': 'FLAT',
-    'Name': 'FLAT 6mm 2날',
-    'Supplier': 'KORLOY',
-    'Unit Cost': 25000,
-    'Standard Life': 800,
-    'Model': 'PA1',
-    'Process': 'CNC1',
-    'Tool Life': 750,
-    'T Number': 1
+    'Endmill Code': 'AL002',
+    'Category': 'BULL_NOSE',
+    'Name': 'D0.8xR0.2x1FLxD0.75x4.5x30xD6 BULL NOSE EM',
+    'Supplier': 'TOOLEX',
+    'Unit Cost': 28000,
+    'Standard Life': 800
   },
   {
-    'Endmill Code': 'EM-F-6',  // 같은 엔드밀, 다른 공급업체
-    'Category': 'FLAT',
-    'Name': 'FLAT 6mm 2날',
-    'Supplier': 'TAEGUTEC',
+    'Endmill Code': 'AL003',
+    'Category': 'FORM',
+    'Name': 'D1.5xA135xR0.3xR0.3xA31xD0.8x2xD6 FORM',
+    'Supplier': 'ATH',
     'Unit Cost': 27000,
-    'Standard Life': 800,
-    'Model': 'PA1',
-    'Process': 'CNC2',  // 다른 공정에도 사용
-    'Tool Life': 720,
-    'T Number': 5
+    'Standard Life': 800
   },
   {
-    'Endmill Code': 'EM-B-8',
-    'Category': 'BALL',
-    'Name': 'BALL 8mm 2날',
-    'Supplier': 'ISCAR',
+    'Endmill Code': 'AL004',
+    'Category': 'C-CUT',
+    'Name': 'D0.4xA45xD1.2x8xD6 C CUT',
+    'Supplier': 'FULLANDI',
     'Unit Cost': 32000,
-    'Standard Life': 600,
-    'Model': 'R13',
-    'Process': 'CNC2',
-    'Tool Life': 580,
-    'T Number': 2
+    'Standard Life': 600
   },
   {
-    'Endmill Code': 'EM-T-10',
-    'Category': 'T-CUT',
-    'Name': 'T-CUT 10mm',
-    'Supplier': 'KORLOY',
+    'Endmill Code': 'AL005',
+    'Category': 'DRILL',
+    'Name': 'D0.8x8FLx9xD3 DR',
+    'Supplier': 'KEOSANG',
     'Unit Cost': 45000,
-    'Standard Life': 400,
-    'Model': 'PA1',
-    'Process': 'CNC2-1',
-    'Tool Life': 420,
-    'T Number': 3
+    'Standard Life': 400
   }
 ]
 
-// 필수 컬럼 정의
+// 필수 컬럼 정의 - 엔드밀 타입 마스터 데이터만
 export const endmillRequiredColumns = [
   'Endmill Code',
   'Category',
   'Name',
   'Supplier',
   'Unit Cost',
-  'Standard Life',
-  'Model',
-  'Process',
-  'Tool Life',
-  'T Number'
+  'Standard Life'
 ]
 
 // 기본값 (validation API 실패 시 폴백용) - 실제 DB에서 가져온 값들
@@ -95,7 +72,10 @@ export const validCategories = [
 ]
 
 export const validSuppliers = [
+  'ATH',
+  'FULLANDI',
   'ISCAR',
+  'KEOSANG',
   'KORLOY',
   'SUP001',
   'SUP002',
@@ -103,19 +83,9 @@ export const validSuppliers = [
   'SUP004',
   'SUP005',
   'TAEGUTEC',
+  'TOOLEX',
   'YAMAWA',
   'YGT'
-]
-
-export const validModels = [
-  'PA1',
-  'R13'
-]
-
-export const validProcesses = [
-  'CNC1',
-  'CNC2',
-  'CNC2-1'
 ]
 
 // 엔드밀 엑셀 템플릿 다운로드 함수
@@ -127,18 +97,14 @@ export const downloadEndmillTemplate = async () => {
     // 템플릿 데이터 시트 생성
     const templateSheet = workbook.addWorksheet('Endmill Template')
 
-    // 컬럼 정의
+    // 컬럼 정의 - 엔드밀 타입 마스터 데이터만
     templateSheet.columns = [
       { header: 'Endmill Code', key: 'Endmill Code', width: 15 },
-      { header: 'Category', key: 'Category', width: 10 },
-      { header: 'Name', key: 'Name', width: 20 },
+      { header: 'Category', key: 'Category', width: 12 },
+      { header: 'Name', key: 'Name', width: 40 },
       { header: 'Supplier', key: 'Supplier', width: 15 },
       { header: 'Unit Cost', key: 'Unit Cost', width: 12 },
-      { header: 'Standard Life', key: 'Standard Life', width: 15 },
-      { header: 'Model', key: 'Model', width: 10 },
-      { header: 'Process', key: 'Process', width: 12 },
-      { header: 'Tool Life', key: 'Tool Life', width: 12 },
-      { header: 'T Number', key: 'T Number', width: 10 }
+      { header: 'Standard Life', key: 'Standard Life', width: 15 }
     ]
 
     // 템플릿 데이터 추가
@@ -164,24 +130,20 @@ export const downloadEndmillTemplate = async () => {
     ]
 
     guideSheet.addRows([
-      { 'Column': '', 'Description': '=== 엔드밀 기본 정보 (endmill_types) ===', 'Required': '', 'Example': '' },
-      { 'Column': 'Endmill Code', 'Description': '엔드밀 코드 (고유값)', 'Required': 'Yes', 'Example': 'EM-F-6' },
-      { 'Column': 'Category', 'Description': '카테고리 (자동 생성됨)', 'Required': 'Yes', 'Example': 'FLAT, BALL, T-CUT, C-CUT, REAMER, DRILL' },
-      { 'Column': 'Name', 'Description': '엔드밀 이름', 'Required': 'Yes', 'Example': 'FLAT 6mm 2날' },
+      { 'Column': '', 'Description': '=== 엔드밀 타입 마스터 데이터 등록 ===', 'Required': '', 'Example': '' },
+      { 'Column': '', 'Description': '', 'Required': '', 'Example': '' },
+      { 'Column': 'Endmill Code', 'Description': '엔드밀 코드 (고유값)', 'Required': 'Yes', 'Example': 'AL002, AL003, AL004' },
+      { 'Column': 'Category', 'Description': '카테고리', 'Required': 'Yes', 'Example': 'FLAT, BALL, T-CUT, C-CUT, REAMER, DRILL, BULL_NOSE, FORM, SPECIAL' },
+      { 'Column': 'Name', 'Description': '엔드밀 이름 (사양)', 'Required': 'Yes', 'Example': 'D0.8xR0.2x1FLxD0.75x4.5x30xD6 BULL NOSE EM' },
+      { 'Column': 'Supplier', 'Description': '공급업체', 'Required': 'Yes', 'Example': 'TOOLEX, ATH, FULLANDI, KEOSANG 등' },
+      { 'Column': 'Unit Cost', 'Description': '공급업체별 단가 (VND)', 'Required': 'Yes', 'Example': '28000' },
       { 'Column': 'Standard Life', 'Description': '표준 수명 (회)', 'Required': 'Yes', 'Example': '800' },
       { 'Column': '', 'Description': '', 'Required': '', 'Example': '' },
-      { 'Column': '', 'Description': '=== 공급업체 가격 정보 (endmill_supplier_prices) ===', 'Required': '', 'Example': '' },
-      { 'Column': 'Supplier', 'Description': '공급업체 코드 (자동 생성됨)', 'Required': 'Yes', 'Example': 'SUP001, SUP002, KORLOY, TAEGUTEC' },
-      { 'Column': 'Unit Cost', 'Description': '공급업체별 단가 (원)', 'Required': 'Yes', 'Example': '25000' },
-      { 'Column': '', 'Description': '', 'Required': '', 'Example': '' },
-      { 'Column': '', 'Description': '=== CAM Sheet 매핑 정보 (cam_sheet_endmills) ===', 'Required': '', 'Example': '' },
-      { 'Column': 'Model', 'Description': '장비 모델 (CAM Sheet 자동 생성)', 'Required': 'Yes', 'Example': 'PA1, R13' },
-      { 'Column': 'Process', 'Description': '가공 프로세스 (CAM Sheet 자동 생성)', 'Required': 'Yes', 'Example': 'CNC1, CNC2, CNC2-1' },
-      { 'Column': 'Tool Life', 'Description': '모델/프로세스별 수명 (회)', 'Required': 'Yes', 'Example': '750' },
-      { 'Column': 'T Number', 'Description': '툴 포지션 번호 (1-21)', 'Required': 'Yes', 'Example': '1' },
-      { 'Column': '', 'Description': '', 'Required': '', 'Example': '' },
-      { 'Column': '', 'Description': '※ 같은 엔드밀 코드를 여러 공급업체/모델에서 사용하려면 행을 추가하세요', 'Required': '', 'Example': '' },
-      { 'Column': '', 'Description': '※ 인벤토리(inventory)는 자동으로 생성됩니다', 'Required': '', 'Example': '' }
+      { 'Column': '', 'Description': '=== 중요 안내 ===', 'Required': '', 'Example': '' },
+      { 'Column': '', 'Description': '1. 같은 엔드밀 코드에 여러 공급업체가 있으면 행을 추가하세요', 'Required': '', 'Example': '' },
+      { 'Column': '', 'Description': '2. Model, Process, Tool Life, T Number는 CAM Sheet에서 관리합니다', 'Required': '', 'Example': '' },
+      { 'Column': '', 'Description': '3. 인벤토리(inventory)는 자동으로 생성됩니다', 'Required': '', 'Example': '' },
+      { 'Column': '', 'Description': '4. 엔드밀 코드는 여러 모델/공정에서 재사용될 수 있습니다', 'Required': '', 'Example': '' }
     ])
 
     // 가이드 시트 헤더 스타일 적용
@@ -229,9 +191,7 @@ export const validateEndmillExcelData = async (data: any[]) => {
   // validation API에서 유효한 값들 가져오기
   let validationOptions = {
     categories: validCategories,
-    suppliers: validSuppliers,
-    models: validModels,
-    processes: validProcesses
+    suppliers: validSuppliers
   }
 
   try {
@@ -241,9 +201,7 @@ export const validateEndmillExcelData = async (data: any[]) => {
       if (result.success) {
         validationOptions = {
           categories: result.data.categories || validCategories,
-          suppliers: result.data.suppliers || validSuppliers,
-          models: result.data.models || validModels,
-          processes: result.data.processes || validProcesses
+          suppliers: result.data.suppliers || validSuppliers
         }
       }
     }
@@ -266,7 +224,7 @@ export const validateEndmillExcelData = async (data: any[]) => {
     const rowNumber = index + 2 // 엑셀에서 헤더는 1행, 데이터는 2행부터
     const rowErrors: string[] = []
 
-    // 필수 필드 확인
+    // 필수 필드 확인 - 엔드밀 타입 마스터 데이터만
     if (!row['Endmill Code'] || typeof row['Endmill Code'] !== 'string') {
       rowErrors.push(`${rowNumber}행: Endmill Code가 누락되었거나 잘못되었습니다.`)
     }
@@ -275,28 +233,16 @@ export const validateEndmillExcelData = async (data: any[]) => {
       rowErrors.push(`${rowNumber}행: Category는 다음 중 하나여야 합니다: ${validationOptions.categories.join(', ')}`)
     }
 
-    if (!row['Supplier'] || !validationOptions.suppliers.includes(row['Supplier'])) {
-      rowErrors.push(`${rowNumber}행: Supplier는 다음 중 하나여야 합니다: ${validationOptions.suppliers.join(', ')}`)
-    }
-
-    if (!row['Model'] || !validationOptions.models.includes(row['Model'])) {
-      rowErrors.push(`${rowNumber}행: Model은 다음 중 하나여야 합니다: ${validationOptions.models.join(', ')}`)
-    }
-
-    if (!row['Process'] || !validationOptions.processes.includes(row['Process'])) {
-      rowErrors.push(`${rowNumber}행: Process는 다음 중 하나여야 합니다: ${validationOptions.processes.join(', ')}`)
-    }
-
     if (!row['Name'] || typeof row['Name'] !== 'string') {
       rowErrors.push(`${rowNumber}행: Name이 누락되었거나 잘못되었습니다.`)
     }
 
-    if (!row['Supplier'] || typeof row['Supplier'] !== 'string') {
-      rowErrors.push(`${rowNumber}행: Supplier가 누락되었거나 잘못되었습니다.`)
+    if (!row['Supplier'] || !validationOptions.suppliers.includes(row['Supplier'])) {
+      rowErrors.push(`${rowNumber}행: Supplier는 다음 중 하나여야 합니다: ${validationOptions.suppliers.join(', ')}`)
     }
 
     // 숫자 필드 확인
-    const numberFields = ['Unit Cost', 'Standard Life', 'Tool Life', 'T Number']
+    const numberFields = ['Unit Cost', 'Standard Life']
     numberFields.forEach(field => {
       const value = row[field]
       if (value === undefined || value === null || isNaN(Number(value)) || Number(value) <= 0) {
@@ -304,23 +250,19 @@ export const validateEndmillExcelData = async (data: any[]) => {
       }
     })
 
-    // 코드 중복 허용 (모델별, 공정별로 다른 Tool Life 및 공급업체별 다른 단가 지원)
+    // 같은 엔드밀 코드에 여러 공급업체가 있을 수 있음 (중복 허용)
 
     if (rowErrors.length > 0) {
       errors.push(...rowErrors)
     } else {
-      // 유효한 데이터 변환
+      // 유효한 데이터 변환 - 엔드밀 타입 마스터 데이터만
       const validRow = {
         code: row['Endmill Code'].trim(),
         category: row['Category'].trim(),
         name: row['Name'].trim(),
         supplier: row['Supplier'].trim(),
         unit_cost: Number(row['Unit Cost']),
-        standard_life: Number(row['Standard Life']),
-        model: row['Model'].trim(),
-        process: row['Process'].trim(),
-        tool_life: Number(row['Tool Life']),
-        t_number: Number(row['T Number'])
+        standard_life: Number(row['Standard Life'])
       }
       validData.push(validRow)
     }
@@ -334,7 +276,7 @@ export const validateEndmillExcelData = async (data: any[]) => {
   }
 }
 
-// 엔드밀 DB 형태로 변환 함수 (새로운 API 형식에 맞게)
+// 엔드밀 DB 형태로 변환 함수 - 엔드밀 타입 마스터 데이터만
 export const convertToEndmillDBFormat = (validData: any[]) => {
   return validData.map(item => ({
     code: item.code,
@@ -342,10 +284,6 @@ export const convertToEndmillDBFormat = (validData: any[]) => {
     name: item.name,
     supplier: item.supplier,
     unit_cost: item.unit_cost,
-    standard_life: item.standard_life,
-    model: item.model,
-    process: item.process,
-    tool_life: item.tool_life,
-    t_number: item.t_number
+    standard_life: item.standard_life
   }))
 }
