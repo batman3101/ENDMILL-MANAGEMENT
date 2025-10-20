@@ -79,8 +79,8 @@ export default function EquipmentExcelUploader({
         return
       }
 
-      if (data.length > 100) {
-        showError(t('equipment.dataExceed'), t('equipment.maxHundred'))
+      if (data.length > 1000) {
+        showError(t('equipment.dataExceed'), '최대 1000개까지 등록할 수 있습니다.')
         return
       }
 

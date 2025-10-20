@@ -3,6 +3,10 @@ import { serverSupabaseService } from '../../../../lib/services/supabaseService'
 import { z } from 'zod'
 import { logger } from '@/lib/utils/logger'
 
+// API 라우트 설정 - 대용량 데이터 처리를 위한 설정
+export const maxDuration = 300 // 최대 5분 (300초)
+export const dynamic = 'force-dynamic'
+
 // 동적 스키마 생성 함수 및 CAM Sheet 데이터 가져오기
 const createEquipmentSchema = async () => {
   // CAM Sheet에서 사용 가능한 모델과 공정 가져오기
@@ -55,7 +59,7 @@ const getToolPositionCount = async (model: string, process: string) => {
 }
 
 const createBulkUploadSchema = (equipmentSchema: any) => z.object({
-  equipments: z.array(equipmentSchema).min(1).max(100)
+  equipments: z.array(equipmentSchema).min(1).max(1000) // 최대 1000개까지 지원 (800대 설비 대응)
 })
 
 export async function POST(request: NextRequest) {
@@ -85,57 +89,72 @@ export async function POST(request: NextRequest) {
       existingEquipments.map(eq => eq.equipment_number)
     )
 
-    // 각 설비 처리
-    for (const equipment of validatedData.equipments) {
-      try {
-        // 중복 체크
-        if (existingNumbers.has(equipment.equipment_number)) {
-          results.duplicates.push({
-            equipment_number: equipment.equipment_number,
-            reason: '이미 존재하는 설비번호입니다.'
-          })
-          continue
-        }
+    // 대용량 데이터 처리를 위한 batch 처리 (50개씩 묶어서 병렬 처리)
+    const BATCH_SIZE = 50
+    const totalEquipments = validatedData.equipments.length
 
-        // 설비번호에서 숫자 추출 (C001 -> 1)
-        const numberMatch = equipment.equipment_number.match(/\d+/)
-        if (!numberMatch) {
-          results.failed.push({
-            equipment_number: equipment.equipment_number,
-            reason: '설비번호 형식이 올바르지 않습니다.'
-          })
-          continue
-        }
+    logger.log(`총 ${totalEquipments}개 설비 일괄 등록 시작`)
 
-        const equipmentNumber = parseInt(numberMatch[0])
+    for (let i = 0; i < totalEquipments; i += BATCH_SIZE) {
+      const batch = validatedData.equipments.slice(i, i + BATCH_SIZE)
+      logger.log(`Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(totalEquipments / BATCH_SIZE)} 처리 중 (${i + 1}-${Math.min(i + BATCH_SIZE, totalEquipments)}/${totalEquipments})`)
 
-        // CAM Sheet에서 툴 포지션 수 자동 계산
-        const toolPositionCount = await getToolPositionCount(equipment.current_model, equipment.process)
+      // batch 내에서는 병렬 처리
+      await Promise.all(
+        batch.map(async (equipment) => {
+          try {
+            // 중복 체크
+            if (existingNumbers.has(equipment.equipment_number)) {
+              results.duplicates.push({
+                equipment_number: equipment.equipment_number,
+                reason: '이미 존재하는 설비번호입니다.'
+              })
+              return
+            }
 
-        // 설비 생성
-        const newEquipment = await serverSupabaseService.equipment.create({
-          equipment_number: equipmentNumber,
-          model_code: equipment.current_model.split('-')[0] || equipment.current_model,
-          location: equipment.location,
-          status: equipment.status,
-          current_model: equipment.current_model,
-          process: equipment.process,
-          tool_position_count: toolPositionCount
+            // 설비번호에서 숫자 추출 (C001 -> 1)
+            const numberMatch = equipment.equipment_number.match(/\d+/)
+            if (!numberMatch) {
+              results.failed.push({
+                equipment_number: equipment.equipment_number,
+                reason: '설비번호 형식이 올바르지 않습니다.'
+              })
+              return
+            }
+
+            const equipmentNumber = parseInt(numberMatch[0])
+
+            // CAM Sheet에서 툴 포지션 수 자동 계산
+            const toolPositionCount = await getToolPositionCount(equipment.current_model, equipment.process)
+
+            // 설비 생성
+            const newEquipment = await serverSupabaseService.equipment.create({
+              equipment_number: equipmentNumber,
+              model_code: equipment.current_model.split('-')[0] || equipment.current_model,
+              location: equipment.location,
+              status: equipment.status,
+              current_model: equipment.current_model,
+              process: equipment.process,
+              tool_position_count: toolPositionCount
+            })
+
+            results.success.push({
+              equipment_number: equipment.equipment_number,
+              id: newEquipment.id,
+              tool_position_count: toolPositionCount
+            })
+
+          } catch (error) {
+            results.failed.push({
+              equipment_number: equipment.equipment_number,
+              reason: error instanceof Error ? error.message : '설비 생성 실패'
+            })
+          }
         })
-
-        results.success.push({
-          equipment_number: equipment.equipment_number,
-          id: newEquipment.id,
-          tool_position_count: toolPositionCount
-        })
-
-      } catch (error) {
-        results.failed.push({
-          equipment_number: equipment.equipment_number,
-          reason: error instanceof Error ? error.message : '설비 생성 실패'
-        })
-      }
+      )
     }
+
+    logger.log(`일괄 등록 완료: 성공 ${results.success.length}, 중복 ${results.duplicates.length}, 실패 ${results.failed.length}`)
 
     return NextResponse.json({
       success: true,
