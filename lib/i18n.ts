@@ -817,6 +817,7 @@ const resources = {
         position: '포지션',
         count: '개',
         backButton: '뒤로 가기',
+        noDeployedEquipment: '배치된 설비가 없습니다',
       },
 
       // 앤드밀 관리
@@ -1834,6 +1835,7 @@ const resources = {
         position: 'Vị trí',
         count: 'cái',
         backButton: 'Quay lại',
+        noDeployedEquipment: 'Không có thiết bị được triển khai',
       },
 
       // 앤드밀 관리
