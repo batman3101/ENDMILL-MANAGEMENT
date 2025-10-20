@@ -39,6 +39,10 @@ export default function CAMSheetsPage() {
   const [toolChanges, setToolChanges] = useState<any[]>([])
   const [inventoryData, setInventoryData] = useState<any[]>([])
 
+  // 페이지네이션 state
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
   // 설정에서 값 가져오기
   const { settings } = useSettings()
   const availableProcesses = settings.equipment.processes
@@ -124,6 +128,17 @@ export default function CAMSheetsPage() {
         return aVal < bVal ? 1 : -1
       }
     })
+
+  // 페이지네이션 계산
+  const totalPages = Math.ceil(filteredSheets.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedSheets = filteredSheets.slice(startIndex, endIndex)
+
+  // 페이지 변경 시 첫 페이지로 리셋 (필터나 검색어 변경 시)
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, modelFilter, processFilter])
 
   // 인사이트 데이터 계산
   const calculateInsights = () => {
@@ -817,7 +832,7 @@ export default function CAMSheetsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredSheets.map((sheet) => (
+              {paginatedSheets.map((sheet) => (
                 <tr key={sheet.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{sheet.model}</div>
@@ -868,6 +883,72 @@ export default function CAMSheetsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* 페이지네이션 */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              전체 {filteredSheets.length}개 중 {startIndex + 1}-{Math.min(endIndex, filteredSheets.length)}개 표시
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                이전
+              </button>
+
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                  // 현재 페이지 주변만 표시 (첫 페이지, 마지막 페이지, 현재 페이지 ±2)
+                  const showPage =
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 2 && page <= currentPage + 2)
+
+                  if (!showPage) {
+                    // "..." 표시
+                    if (page === currentPage - 3 || page === currentPage + 3) {
+                      return <span key={page} className="px-2 text-gray-500">...</span>
+                    }
+                    return null
+                  }
+
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-1 rounded-md ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                다음
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* CAM Sheet 상세 모달 */}
