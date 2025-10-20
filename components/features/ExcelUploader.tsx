@@ -82,7 +82,8 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
 
       // 검증 옵션 가져오기
       const validationOptionsResponse = await fetch('/api/settings/validation')
-      let validationOptions = {}
+      let validationOptions: { validProcesses?: string[], validModels?: string[] } = {}
+      let currentModels: string[] = []
 
       if (validationOptionsResponse.ok) {
         const validationData = await validationOptionsResponse.json()
@@ -91,6 +92,54 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
             validProcesses: validationData.data.processes,
             validModels: validationData.data.models
           }
+          currentModels = validationData.data.models || []
+        }
+      }
+
+      // 엑셀 파일에서 모든 모델 추출
+      const excelModels = new Set<string>()
+      jsonData.forEach(row => {
+        if (row.Model && typeof row.Model === 'string' && row.Model.trim()) {
+          excelModels.add(row.Model.trim())
+        }
+      })
+
+      // 새로운 모델 찾기
+      const newModels = Array.from(excelModels).filter(model => !currentModels.includes(model))
+
+      // 새로운 모델이 있으면 자동으로 설정에 추가
+      if (newModels.length > 0) {
+        clientLogger.log('신규 모델 발견:', newModels)
+
+        try {
+          const updatedModels = [...currentModels, ...newModels]
+          const updateResponse = await fetch('/api/settings', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              category: 'equipment',
+              updates: {
+                models: updatedModels
+              },
+              reason: `CAM Sheet 일괄 등록 시 신규 모델 자동 추가: ${newModels.join(', ')}`
+            })
+          })
+
+          if (updateResponse.ok) {
+            clientLogger.log('신규 모델이 설정에 추가되었습니다:', newModels)
+
+            // 업데이트된 모델 목록으로 검증 옵션 갱신
+            validationOptions.validModels = updatedModels
+
+            // 사용자에게 알림
+            alert(`✨ 신규 모델이 자동으로 등록되었습니다:\n${newModels.join(', ')}\n\n이제 이 모델들을 사용할 수 있습니다.`)
+          } else {
+            clientLogger.error('신규 모델 추가 실패:', await updateResponse.text())
+          }
+        } catch (error) {
+          clientLogger.error('신규 모델 추가 중 오류:', error)
         }
       }
 
@@ -112,12 +161,12 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
         setParsedCAMSheets([])
         setDuplicateInfo(null)
       }
-      
+
     } catch (error) {
       clientLogger.error('파일 처리 중 오류:', error)
       alert(t('camSheets.fileProcessError'))
     }
-    
+
     setIsProcessing(false)
   }
 
