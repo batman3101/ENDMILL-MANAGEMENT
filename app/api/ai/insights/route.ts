@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getGeminiService } from '@/lib/services/geminiService'
 import { createClient } from '@/lib/supabase/server'
-import { hasPermission } from '@/lib/auth/permissions'
+import { hasPermission, type Permission } from '@/lib/auth/permissions'
 
 /**
  * GET /api/ai/insights
@@ -44,7 +44,12 @@ export async function GET(_request: NextRequest) {
 
     // 3. 권한 확인
     const userRole = currentUserProfile.user_roles.type
-    const canUse = hasPermission(userRole, 'ai_insights', 'use', currentUserProfile.permissions)
+    const canUse = hasPermission(
+      userRole,
+      'ai_insights',
+      'use',
+      currentUserProfile.permissions as Permission[] | undefined
+    )
     if (!canUse) {
       return NextResponse.json(
         { error: 'AI 인사이트 기능을 사용할 권한이 없습니다.' },
@@ -169,7 +174,12 @@ export async function POST(request: NextRequest) {
 
     // 3. 권한 확인
     const userRole = currentUserProfile.user_roles.type
-    const canUse = hasPermission(userRole, 'ai_insights', 'use', currentUserProfile.permissions)
+    const canUse = hasPermission(
+      userRole,
+      'ai_insights',
+      'use',
+      currentUserProfile.permissions as Permission[] | undefined
+    )
     if (!canUse) {
       return NextResponse.json(
         { error: 'AI 인사이트 기능을 사용할 권한이 없습니다.' },
