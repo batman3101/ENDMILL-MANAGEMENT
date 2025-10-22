@@ -56,6 +56,45 @@ export type Database = {
           },
         ]
       }
+      ai_chat_history: {
+        Row: {
+          content: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          message_type: string
+          query_result: Json | null
+          response_time_ms: number | null
+          session_id: string
+          tokens_used: number | null
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_type: string
+          query_result?: Json | null
+          response_time_ms?: number | null
+          session_id: string
+          tokens_used?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_type?: string
+          query_result?: Json | null
+          response_time_ms?: number | null
+          session_id?: string
+          tokens_used?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           category: string | null
@@ -864,6 +903,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_insights: {
+        Row: {
+          chart_config: Json | null
+          chart_data: Json | null
+          content: string
+          content_type: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_public: boolean | null
+          like_count: number | null
+          metadata: Json | null
+          shared_with: string[] | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          chart_config?: Json | null
+          chart_data?: Json | null
+          content: string
+          content_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_public?: boolean | null
+          like_count?: number | null
+          metadata?: Json | null
+          shared_with?: string[] | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          chart_config?: Json | null
+          chart_data?: Json | null
+          content?: string
+          content_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_public?: boolean | null
+          like_count?: number | null
+          metadata?: Json | null
+          shared_with?: string[] | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

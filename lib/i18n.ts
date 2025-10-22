@@ -62,6 +62,7 @@ const resources = {
         avgCount: '평균',
         count: '수',
         high: '높은',
+        totalChanges: '총 교체 횟수',
 
         // 시스템 정보
         lastUpdate: '마지막 업데이트',
@@ -90,6 +91,7 @@ const resources = {
         camSheets: 'CAM SHEET 관리',
         toolChanges: '교체 실적',
         reports: '분석 & 리포트',
+        aiInsights: 'AI 인사이트',
         settings: '설정',
         users: '사용자 관리',
         translations: '번역 관리',
@@ -1499,6 +1501,136 @@ const resources = {
         resetComplete: '초기화 완료',
         resetSuccess: '설정이 기본값으로 초기화되었습니다.',
       },
+
+      // AI 인사이트
+      aiInsights: {
+        title: 'AI 인사이트',
+        subtitle: '자연어로 데이터를 질문하고 AI 기반 인사이트를 받아보세요',
+
+        // 메인 기능
+        askQuestion: '질문하기',
+        quickQuery: '빠른 질문',
+        chat: '대화하기',
+        autoInsights: '자동 인사이트',
+        savedInsights: '저장된 인사이트',
+
+        // 질문 입력
+        questionPlaceholder: '예: 최근 한달간 파손이 많았던 모델은?',
+        askAI: 'AI에게 질문',
+        asking: '질문 중...',
+        exampleQuestions: '예시 질문',
+
+        // 예시 질문들
+        exampleQ1: '최근 한달간 파손이 많았던 모델은?',
+        exampleQ2: '재고 부족 엔드밀 목록 보여줘',
+        exampleQ3: 'A조의 공구 교체 현황은?',
+        exampleQ4: 'PA2 모델의 T3 위치 파손 현황',
+        exampleQ5: '지난 3개월간 월별 교체 비용',
+
+        // 응답
+        answer: '답변',
+        queryResult: '쿼리 결과',
+        sqlQuery: 'SQL 쿼리',
+        showSQL: 'SQL 보기',
+        hideSQL: 'SQL 숨기기',
+        cached: '캐시됨',
+        responseTime: '응답 시간',
+        safetyScore: '안전성 점수',
+
+        // 채팅
+        chatHistory: '대화 기록',
+        newChat: '새 대화',
+        sendMessage: '메시지 전송',
+        messagePlaceholder: '메시지를 입력하세요...',
+        sending: '전송 중...',
+
+        // 인사이트
+        insights: '인사이트',
+        priority: '우선순위',
+        high: '높음',
+        medium: '중간',
+        low: '낮음',
+        category: '카테고리',
+        damage: '파손',
+        inventory: '재고',
+        cost: '비용',
+        efficiency: '효율성',
+        maintenance: '유지보수',
+        // 한국어 카테고리 키 (Gemini가 한국어로 반환하는 경우)
+        '파손': '파손',
+        '재고': '재고',
+        '비용': '비용',
+        '효율성': '효율성',
+        '유지보수': '유지보수',
+
+        // 인사이트 액션
+        viewDetails: '상세보기',
+        saveInsight: '인사이트 저장',
+        shareInsight: '공유',
+        exportPDF: 'PDF 내보내기',
+        exportExcel: '엑셀 내보내기',
+
+        // 저장된 인사이트
+        myInsights: '내 인사이트',
+        sharedWithMe: '공유받은 인사이트',
+        publicInsights: '공개 인사이트',
+        editInsight: '인사이트 편집',
+        deleteInsight: '인사이트 삭제',
+
+        // 필터 및 정렬
+        filterBy: '필터',
+        sortBy: '정렬',
+        newest: '최신순',
+        oldest: '오래된순',
+        mostViewed: '조회순',
+
+        // 통계
+        totalQueries: '전체 질문',
+        todayQueries: '오늘 질문',
+        cacheHitRate: '캐시 적중률',
+        avgResponseTime: '평균 응답시간',
+
+        // 오류 메시지
+        queryError: '질문 처리 중 오류가 발생했습니다.',
+        chatError: '메시지 전송 중 오류가 발생했습니다.',
+        insightError: '인사이트 생성 중 오류가 발생했습니다.',
+        saveError: '저장 중 오류가 발생했습니다.',
+        deleteError: '삭제 중 오류가 발생했습니다.',
+        loadError: '데이터 로딩 중 오류가 발생했습니다.',
+
+        // 성공 메시지
+        saveSuccess: '인사이트가 성공적으로 저장되었습니다.',
+        deleteSuccess: '인사이트가 성공적으로 삭제되었습니다.',
+        shareSuccess: '인사이트가 성공적으로 공유되었습니다.',
+
+        // Rate Limit
+        rateLimitExceeded: '요청 한도를 초과했습니다.',
+        rateLimitReset: '잠시 후 다시 시도해주세요.',
+
+        // 권한
+        noPermission: 'AI 인사이트 기능을 사용할 권한이 없습니다.',
+
+        // 빈 상태
+        noQueries: '아직 질문이 없습니다. 위에서 질문해보세요!',
+        noInsights: '자동 생성된 인사이트가 없습니다.',
+        noSavedInsights: '저장된 인사이트가 없습니다.',
+        noChatHistory: '대화 기록이 없습니다.',
+
+        // 데이터 범위
+        dataRange: '데이터 범위',
+        last7Days: '최근 7일',
+        last30Days: '최근 30일',
+        last3Months: '최근 3개월',
+
+        // 차트
+        showChart: '차트 보기',
+        hideChart: '차트 숨기기',
+        chartType: '차트 종류',
+        barChart: '막대 차트',
+        lineChart: '선 그래프',
+        pieChart: '파이 차트',
+        areaChart: '영역 차트',
+      },
     }
   },
   vi: {
@@ -1560,6 +1692,7 @@ const resources = {
         avgCount: 'Trung bình',
         count: 'số',
         high: 'cao',
+        totalChanges: 'Tổng số lần thay thế',
 
         // 시스템 정보
         lastUpdate: 'Cập nhật cuối',
@@ -1588,6 +1721,7 @@ const resources = {
         camSheets: 'Quản lý CAM SHEET',
         toolChanges: 'Kết quả thay thế',
         reports: 'Phân tích & Báo cáo',
+        aiInsights: 'AI Insights',
         settings: 'Cài đặt',
         users: 'Quản lý người dùng',
         translations: 'Quản lý dịch thuật',
@@ -2951,6 +3085,136 @@ const resources = {
         saveSuccess: 'Đã lưu cài đặt thành công.',
         resetComplete: 'Đặt lại hoàn tất',
         resetSuccess: 'Đã đặt lại cài đặt về mặc định.',
+      },
+
+      // AI Insights
+      aiInsights: {
+        title: 'AI Insights',
+        subtitle: 'Hỏi dữ liệu bằng ngôn ngữ tự nhiên và nhận insights dựa trên AI',
+
+        // Chức năng chính
+        askQuestion: 'Đặt câu hỏi',
+        quickQuery: 'Truy vấn nhanh',
+        chat: 'Trò chuyện',
+        autoInsights: 'Insights tự động',
+        savedInsights: 'Insights đã lưu',
+
+        // Nhập câu hỏi
+        questionPlaceholder: 'Ví dụ: Mô hình nào có nhiều hỏng hóc nhất trong tháng qua?',
+        askAI: 'Hỏi AI',
+        asking: 'Đang hỏi...',
+        exampleQuestions: 'Câu hỏi mẫu',
+
+        // Câu hỏi mẫu
+        exampleQ1: 'Mô hình nào có nhiều hỏng hóc nhất trong tháng qua?',
+        exampleQ2: 'Hiển thị danh sách dao phay thiếu tồn kho',
+        exampleQ3: 'Tình hình thay thế dụng cụ của ca A?',
+        exampleQ4: 'Tình trạng hỏng hóc vị trí T3 của mô hình PA2',
+        exampleQ5: 'Chi phí thay thế hàng tháng trong 3 tháng qua',
+
+        // Phản hồi
+        answer: 'Trả lời',
+        queryResult: 'Kết quả truy vấn',
+        sqlQuery: 'Truy vấn SQL',
+        showSQL: 'Hiện SQL',
+        hideSQL: 'Ẩn SQL',
+        cached: 'Đã cache',
+        responseTime: 'Thời gian phản hồi',
+        safetyScore: 'Điểm an toàn',
+
+        // Chat
+        chatHistory: 'Lịch sử trò chuyện',
+        newChat: 'Trò chuyện mới',
+        sendMessage: 'Gửi tin nhắn',
+        messagePlaceholder: 'Nhập tin nhắn...',
+        sending: 'Đang gửi...',
+
+        // Insights
+        insights: 'Insights',
+        priority: 'Ưu tiên',
+        high: 'Cao',
+        medium: 'Trung bình',
+        low: 'Thấp',
+        category: 'Danh mục',
+        damage: 'Hỏng hóc',
+        inventory: 'Tồn kho',
+        cost: 'Chi phí',
+        efficiency: 'Hiệu suất',
+        maintenance: 'Bảo trì',
+        // 한국어 카테고리 키 (Gemini가 한국어로 반환하는 경우)
+        '파손': 'Hỏng hóc',
+        '재고': 'Tồn kho',
+        '비용': 'Chi phí',
+        '효율성': 'Hiệu suất',
+        '유지보수': 'Bảo trì',
+
+        // Hành động Insights
+        viewDetails: 'Xem chi tiết',
+        saveInsight: 'Lưu insight',
+        shareInsight: 'Chia sẻ',
+        exportPDF: 'Xuất PDF',
+        exportExcel: 'Xuất Excel',
+
+        // Insights đã lưu
+        myInsights: 'Insights của tôi',
+        sharedWithMe: 'Được chia sẻ với tôi',
+        publicInsights: 'Insights công khai',
+        editInsight: 'Chỉnh sửa insight',
+        deleteInsight: 'Xóa insight',
+
+        // Lọc và sắp xếp
+        filterBy: 'Lọc',
+        sortBy: 'Sắp xếp',
+        newest: 'Mới nhất',
+        oldest: 'Cũ nhất',
+        mostViewed: 'Xem nhiều nhất',
+
+        // Thống kê
+        totalQueries: 'Tổng câu hỏi',
+        todayQueries: 'Câu hỏi hôm nay',
+        cacheHitRate: 'Tỷ lệ trúng cache',
+        avgResponseTime: 'Thời gian phản hồi TB',
+
+        // Thông báo lỗi
+        queryError: 'Lỗi khi xử lý câu hỏi.',
+        chatError: 'Lỗi khi gửi tin nhắn.',
+        insightError: 'Lỗi khi tạo insight.',
+        saveError: 'Lỗi khi lưu.',
+        deleteError: 'Lỗi khi xóa.',
+        loadError: 'Lỗi khi tải dữ liệu.',
+
+        // Thông báo thành công
+        saveSuccess: 'Đã lưu insight thành công.',
+        deleteSuccess: 'Đã xóa insight thành công.',
+        shareSuccess: 'Đã chia sẻ insight thành công.',
+
+        // Rate Limit
+        rateLimitExceeded: 'Đã vượt quá giới hạn yêu cầu.',
+        rateLimitReset: 'Vui lòng thử lại sau.',
+
+        // Quyền
+        noPermission: 'Bạn không có quyền sử dụng tính năng AI Insights.',
+
+        // Trạng thái trống
+        noQueries: 'Chưa có câu hỏi nào. Hãy đặt câu hỏi ở trên!',
+        noInsights: 'Không có insights tự động.',
+        noSavedInsights: 'Không có insights đã lưu.',
+        noChatHistory: 'Không có lịch sử trò chuyện.',
+
+        // Phạm vi dữ liệu
+        dataRange: 'Phạm vi dữ liệu',
+        last7Days: '7 ngày qua',
+        last30Days: '30 ngày qua',
+        last3Months: '3 tháng qua',
+
+        // Biểu đồ
+        showChart: 'Hiện biểu đồ',
+        hideChart: 'Ẩn biểu đồ',
+        chartType: 'Loại biểu đồ',
+        barChart: 'Biểu đồ cột',
+        lineChart: 'Biểu đồ đường',
+        pieChart: 'Biểu đồ tròn',
+        areaChart: 'Biểu đồ vùng',
       },
     }
   }

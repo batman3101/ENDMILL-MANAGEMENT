@@ -138,6 +138,14 @@ export default function DashboardLayout({
       requiresPermission: false
     },
     {
+      href: '/dashboard/ai-insights',
+      icon: '🤖',
+      label: t('navigation.aiInsights'),
+      description: t('aiInsights.subtitle'),
+      active: pathname === '/dashboard/ai-insights' || pathname.startsWith('/dashboard/ai-insights/'),
+      requiresPermission: false
+    },
+    {
       href: '/dashboard/users',
       icon: '👥',
       label: t('navigation.users'),
@@ -302,8 +310,9 @@ export default function DashboardLayout({
         {/* 브레드크럼 */}
         <Breadcrumb />
 
-        {/* 페이지 제목 - 메인 페이지에서만 표시 (상세 페이지에서는 숨김) */}
-        {!pathname.match(/\/dashboard\/[^\/]+\/[^\/]+/) && (
+        {/* 페이지 제목 - 메인 페이지에서만 표시 (상세 페이지 및 AI Insights에서는 숨김) */}
+        {!pathname.match(/\/dashboard\/[^\/]+\/[^\/]+/) &&
+         !pathname.startsWith('/dashboard/ai-insights') && (
           <div className="mb-6">
             <div className="flex items-center space-x-3">
               <h1 className="text-2xl font-bold text-gray-900">

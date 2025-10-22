@@ -5,7 +5,7 @@ type UserRole = Database['public']['Enums']['user_role_type']
 // 권한 타입 정의
 export interface Permission {
   resource: string
-  action: 'create' | 'read' | 'update' | 'delete' | 'manage'
+  action: 'create' | 'read' | 'update' | 'delete' | 'manage' | 'use'
 }
 
 // 기본 권한 설정
@@ -26,6 +26,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'endmill_disposals', action: 'manage' },
     { resource: 'reports', action: 'read' },
     { resource: 'settings', action: 'manage' },
+    { resource: 'ai_insights', action: 'manage' },
   ],
   user: [
     // 일반 사용자 권한
@@ -38,6 +39,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'tool_changes', action: 'read' },
     { resource: 'endmill_disposals', action: 'read' },
     { resource: 'reports', action: 'read' },
+    { resource: 'ai_insights', action: 'use' },
   ],
 }
 
@@ -94,6 +96,7 @@ export function canAccessPage(
     '/reports': { resource: 'reports', action: 'read' },
     '/settings': { resource: 'settings', action: 'read' },
     '/users': { resource: 'users', action: 'read' },
+    '/ai-insights': { resource: 'ai_insights', action: 'use' },
   }
 
   const pagePermission = pagePermissions[pagePath]
@@ -142,7 +145,7 @@ export function parsePermissionsFromDB(dbPermissions: any): Permission[] {
   for (const [resource, actions] of Object.entries(dbPermissions)) {
     if (Array.isArray(actions)) {
       for (const action of actions) {
-        if (['create', 'read', 'update', 'delete', 'manage'].includes(action)) {
+        if (['create', 'read', 'update', 'delete', 'manage', 'use'].includes(action)) {
           permissions.push({
             resource,
             action: action as Permission['action']
@@ -222,7 +225,8 @@ export const AVAILABLE_RESOURCES = [
   'endmill_disposals',
   'reports',
   'settings',
-  'users'
+  'users',
+  'ai_insights'
 ] as const
 
 // 모든 가능한 액션 목록
@@ -231,7 +235,8 @@ export const AVAILABLE_ACTIONS = [
   'read',
   'update',
   'delete',
-  'manage'
+  'manage',
+  'use'
 ] as const
 
 // 리소스별 사용 가능한 액션 정의
@@ -245,5 +250,6 @@ export const RESOURCE_AVAILABLE_ACTIONS: Record<string, Permission['action'][]> 
   endmill_disposals: ['create', 'read', 'update', 'delete', 'manage'],
   reports: ['read', 'manage'],
   settings: ['read', 'update', 'manage'],
-  users: ['create', 'read', 'update', 'delete', 'manage']
+  users: ['create', 'read', 'update', 'delete', 'manage'],
+  ai_insights: ['use', 'manage']
 }

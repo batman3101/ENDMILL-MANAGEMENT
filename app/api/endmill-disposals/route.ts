@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/utils/logger'
 import { hasPermission } from '@/lib/auth/permissions'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    const supabase = createClient()
 
     // 사용자 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -16,22 +16,23 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 사용자 정보 가져오기
-    const { data: userData, error: userError } = await (supabase as any)
-      .from('users')
-      .select('role, permissions')
-      .eq('id', user.id)
+    // 사용자 프로필 조회 (권한 확인용)
+    const { data: currentUserProfile } = await supabase
+      .from('user_profiles')
+      .select('*, user_roles(*)')
+      .eq('user_id', user.id)
       .single()
 
-    if (userError || !userData) {
+    if (!currentUserProfile || !currentUserProfile.user_roles) {
       return NextResponse.json(
-        { success: false, error: 'User not found' },
+        { success: false, error: 'User profile not found' },
         { status: 404 }
       )
     }
 
     // 읽기 권한 확인
-    const canRead = hasPermission(userData.role, 'endmill_disposals', 'read', userData.permissions)
+    const userRole = currentUserProfile.user_roles.type
+    const canRead = hasPermission(userRole, 'endmill_disposals', 'read', currentUserProfile.permissions)
     if (!canRead) {
       return NextResponse.json(
         { success: false, error: 'Permission denied' },
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    const supabase = createClient()
 
     // 사용자 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -89,22 +90,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 사용자 정보 가져오기
-    const { data: userData, error: userError } = await (supabase as any)
-      .from('users')
-      .select('role, permissions')
-      .eq('id', user.id)
+    // 사용자 프로필 조회 (권한 확인용)
+    const { data: currentUserProfile } = await supabase
+      .from('user_profiles')
+      .select('*, user_roles(*)')
+      .eq('user_id', user.id)
       .single()
 
-    if (userError || !userData) {
+    if (!currentUserProfile || !currentUserProfile.user_roles) {
       return NextResponse.json(
-        { success: false, error: 'User not found' },
+        { success: false, error: 'User profile not found' },
         { status: 404 }
       )
     }
 
     // 생성 권한 확인
-    const canCreate = hasPermission(userData.role, 'endmill_disposals', 'create', userData.permissions)
+    const userRole = currentUserProfile.user_roles.type
+    const canCreate = hasPermission(userRole, 'endmill_disposals', 'create', currentUserProfile.permissions)
     if (!canCreate) {
       return NextResponse.json(
         { success: false, error: 'Permission denied' },
@@ -179,7 +181,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    const supabase = createClient()
 
     // 사용자 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -190,22 +192,23 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // 사용자 정보 가져오기
-    const { data: userData, error: userError } = await (supabase as any)
-      .from('users')
-      .select('role, permissions')
-      .eq('id', user.id)
+    // 사용자 프로필 조회 (권한 확인용)
+    const { data: currentUserProfile } = await supabase
+      .from('user_profiles')
+      .select('*, user_roles(*)')
+      .eq('user_id', user.id)
       .single()
 
-    if (userError || !userData) {
+    if (!currentUserProfile || !currentUserProfile.user_roles) {
       return NextResponse.json(
-        { success: false, error: 'User not found' },
+        { success: false, error: 'User profile not found' },
         { status: 404 }
       )
     }
 
     // 수정 권한 확인
-    const canUpdate = hasPermission(userData.role, 'endmill_disposals', 'update', userData.permissions)
+    const userRole = currentUserProfile.user_roles.type
+    const canUpdate = hasPermission(userRole, 'endmill_disposals', 'update', currentUserProfile.permissions)
     if (!canUpdate) {
       return NextResponse.json(
         { success: false, error: 'Permission denied' },
@@ -296,7 +299,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    const supabase = createClient()
 
     // 사용자 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -307,22 +310,23 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // 사용자 정보 가져오기
-    const { data: userData, error: userError } = await (supabase as any)
-      .from('users')
-      .select('role, permissions')
-      .eq('id', user.id)
+    // 사용자 프로필 조회 (권한 확인용)
+    const { data: currentUserProfile } = await supabase
+      .from('user_profiles')
+      .select('*, user_roles(*)')
+      .eq('user_id', user.id)
       .single()
 
-    if (userError || !userData) {
+    if (!currentUserProfile || !currentUserProfile.user_roles) {
       return NextResponse.json(
-        { success: false, error: 'User not found' },
+        { success: false, error: 'User profile not found' },
         { status: 404 }
       )
     }
 
     // 삭제 권한 확인
-    const canDelete = hasPermission(userData.role, 'endmill_disposals', 'delete', userData.permissions)
+    const userRole = currentUserProfile.user_roles.type
+    const canDelete = hasPermission(userRole, 'endmill_disposals', 'delete', currentUserProfile.permissions)
     if (!canDelete) {
       return NextResponse.json(
         { success: false, error: 'Permission denied' },
