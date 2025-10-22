@@ -10,7 +10,7 @@ import {
   NaturalLanguageQueryError,
 } from '@/lib/services/naturalLanguageQuery'
 import { createClient } from '@/lib/supabase/server'
-import { hasPermission, type Permission } from '@/lib/auth/permissions'
+import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 
 // 대화 히스토리 아이템 스키마
 const chatHistoryItemSchema = z.object({
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     // 2. 사용자 프로필 조회 (권한 확인용)
     const { data: currentUserProfile } = await supabase
       .from('user_profiles')
-      .select('*, user_roles(*)')
+      .select('*, user_roles(type, permissions)')
       .eq('user_id', user.id)
       .single()
 
@@ -109,14 +109,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 3. 권한 확인
+    // 3. 권한 확인 (역할 권한 + 개인 권한 병합)
     const userRole = currentUserProfile.user_roles.type
-    const canUse = hasPermission(
-      userRole,
-      'ai_insights',
-      'use',
-      currentUserProfile.permissions as unknown as Permission[] | undefined
-    )
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    const canUse = hasPermission(userRole, 'ai_insights', 'use', customPermissions)
     if (!canUse) {
       return NextResponse.json(
         { error: 'AI 인사이트 기능을 사용할 권한이 없습니다.' },

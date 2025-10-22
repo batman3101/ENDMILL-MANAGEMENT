@@ -8,7 +8,6 @@ import ConfirmationModal from '@/components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation } from '@/lib/hooks/useConfirmation'
 import { clientLogger } from '@/lib/utils/logger'
 import { useAuth } from '@/lib/hooks/useAuth'
-import { hasPermission } from '@/lib/auth/permissions'
 
 interface EndmillDisposal {
   id: string
@@ -24,7 +23,7 @@ interface EndmillDisposal {
 
 export default function EndmillDisposalPage() {
   const { t } = useTranslations()
-  const { user } = useAuth()
+  const { hasPermission } = useAuth()
   const [disposals, setDisposals] = useState<EndmillDisposal[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -35,10 +34,10 @@ export default function EndmillDisposalPage() {
   const { showSuccess, showError } = useToast()
   const confirmation = useConfirmation()
 
-  // 권한 체크
-  const canCreate = user ? hasPermission(user.role as 'system_admin' | 'admin' | 'user', 'endmill_disposals', 'create') : false
-  const canUpdate = user ? hasPermission(user.role as 'system_admin' | 'admin' | 'user', 'endmill_disposals', 'update') : false
-  const canDelete = user ? hasPermission(user.role as 'system_admin' | 'admin' | 'user', 'endmill_disposals', 'delete') : false
+  // 권한 체크 (DB 권한 자동 적용)
+  const canCreate = hasPermission('endmill_disposals', 'create')
+  const canUpdate = hasPermission('endmill_disposals', 'update')
+  const canDelete = hasPermission('endmill_disposals', 'delete')
 
   // 필터 상태
   const [dateRange, setDateRange] = useState({

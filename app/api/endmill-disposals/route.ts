@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 
@@ -141,14 +142,16 @@ export async function POST(request: NextRequest) {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       const filePath = `disposal-images/${fileName}`
 
-      const { error: uploadError } = await supabase.storage
+      // Service Role 클라이언트를 사용하여 Storage 업로드 (RLS 우회)
+      const supabaseAdmin = createServerClient()
+      const { error: uploadError } = await supabaseAdmin.storage
         .from('endmill-images')
         .upload(filePath, imageFile)
 
       if (uploadError) {
         logger.error('Error uploading image:', uploadError)
       } else {
-        const { data: { publicUrl } } = supabase.storage
+        const { data: { publicUrl } } = supabaseAdmin.storage
           .from('endmill-images')
           .getPublicUrl(filePath)
 
@@ -258,14 +261,16 @@ export async function PUT(request: NextRequest) {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       const filePath = `disposal-images/${fileName}`
 
-      const { error: uploadError } = await supabase.storage
+      // Service Role 클라이언트를 사용하여 Storage 업로드 (RLS 우회)
+      const supabaseAdmin = createServerClient()
+      const { error: uploadError } = await supabaseAdmin.storage
         .from('endmill-images')
         .upload(filePath, imageFile)
 
       if (uploadError) {
         logger.error('Error uploading image:', uploadError)
       } else {
-        const { data: { publicUrl } } = supabase.storage
+        const { data: { publicUrl } } = supabaseAdmin.storage
           .from('endmill-images')
           .getPublicUrl(filePath)
 

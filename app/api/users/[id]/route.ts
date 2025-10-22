@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
-import { hasPermission } from '@/lib/auth/permissions'
+import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
 
 // GET /api/users/[id] - 특정 사용자 조회
@@ -24,7 +24,7 @@ export async function GET(
     // 사용자 프로필 조회 (권한 확인용)
     const { data: currentUserProfile } = await supabase
       .from('user_profiles')
-      .select('*, user_roles(*)')
+      .select('*, user_roles(type, permissions)')
       .eq('user_id', user.id)
       .single()
 
@@ -35,9 +35,15 @@ export async function GET(
       )
     }
 
-    // 권한 확인
+    // 권한 확인 (역할 권한 + 개인 권한 병합)
     const userRole = currentUserProfile.user_roles.type
-    if (!hasPermission(userRole, 'users', 'read')) {
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    const canRead = hasPermission(userRole, 'users', 'read', customPermissions)
+    if (!canRead) {
       return NextResponse.json(
         { error: 'Forbidden: Insufficient permissions' },
         { status: 403 }
@@ -104,7 +110,7 @@ export async function PUT(
     // 사용자 프로필 조회 (권한 확인용)
     const { data: currentUserProfile } = await supabase
       .from('user_profiles')
-      .select('*, user_roles(*)')
+      .select('*, user_roles(type, permissions)')
       .eq('user_id', user.id)
       .single()
 
@@ -115,9 +121,15 @@ export async function PUT(
       )
     }
 
-    // 권한 확인
+    // 권한 확인 (역할 권한 + 개인 권한 병합)
     const userRole = currentUserProfile.user_roles.type
-    if (!hasPermission(userRole, 'users', 'update')) {
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    const canUpdate = hasPermission(userRole, 'users', 'update', customPermissions)
+    if (!canUpdate) {
       return NextResponse.json(
         { error: 'Forbidden: Insufficient permissions' },
         { status: 403 }
@@ -255,7 +267,7 @@ export async function DELETE(
     // 사용자 프로필 조회 (권한 확인용)
     const { data: currentUserProfile } = await supabase
       .from('user_profiles')
-      .select('*, user_roles(*)')
+      .select('*, user_roles(type, permissions)')
       .eq('user_id', user.id)
       .single()
 
@@ -266,9 +278,15 @@ export async function DELETE(
       )
     }
 
-    // 권한 확인
+    // 권한 확인 (역할 권한 + 개인 권한 병합)
     const userRole = currentUserProfile.user_roles.type
-    if (!hasPermission(userRole, 'users', 'delete')) {
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    const canDelete = hasPermission(userRole, 'users', 'delete', customPermissions)
+    if (!canDelete) {
       return NextResponse.json(
         { error: 'Forbidden: Insufficient permissions' },
         { status: 403 }

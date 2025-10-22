@@ -7,10 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getGeminiService } from '@/lib/services/geminiService'
 import { createClient } from '@/lib/supabase/server'
-import { hasPermission } from '@/lib/auth/permissions'
-import { Database } from '@/lib/types/database'
-
-type UserRole = Database['public']['Enums']['user_role_type']
+import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 
 // 요청 바디 스키마
 const requestSchema = z.object({
@@ -83,34 +80,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 2. 권한 확인
-    const { data: profile } = await supabase
+    // 2. 사용자 프로필 조회 (권한 확인용)
+    const { data: currentUserProfile } = await supabase
       .from('user_profiles')
-      .select('role_id')
+      .select('*, user_roles(type, permissions)')
       .eq('user_id', user.id)
       .single()
 
-    if (!profile || !profile.role_id) {
+    if (!currentUserProfile || !currentUserProfile.user_roles) {
       return NextResponse.json(
         { error: '사용자 프로필을 찾을 수 없습니다.' },
         { status: 404 }
       )
     }
 
-    const { data: role } = await supabase
-      .from('user_roles')
-      .select('name')
-      .eq('id', profile.role_id)
-      .single()
+    // 3. 권한 확인 (역할 권한 + 개인 권한 병합)
+    const userRole = currentUserProfile.user_roles.type
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
 
-    if (!role || !hasPermission(role.name as UserRole, 'ai_insights', 'use')) {
+    const canUse = hasPermission(userRole, 'ai_insights', 'use', customPermissions)
+    if (!canUse) {
       return NextResponse.json(
         { error: 'AI 채팅 기능을 사용할 권한이 없습니다.' },
         { status: 403 }
       )
     }
 
-    // 3. Rate limiting
+    // 4. Rate limiting
     const rateLimit = checkRateLimit(user.id)
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -119,7 +118,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 4. 요청 검증
+    // 5. 요청 검증
     const body = await request.json()
     const validation = requestSchema.safeParse(body)
 
@@ -135,7 +134,7 @@ export async function POST(request: NextRequest) {
 
     const { sessionId, message } = validation.data
 
-    // 5. 대화 히스토리 로드 (최근 5개)
+    // 6. 대화 히스토리 로드 (최근 5개)
     const { data: historyData } = await supabase
       .from('ai_chat_history' as any)
       .select('message_type, content')
@@ -151,13 +150,13 @@ export async function POST(request: NextRequest) {
         parts: h.content,
       }))
 
-    // 6. Gemini 채팅
+    // 7. Gemini 채팅
     const geminiService = getGeminiService()
     const aiResponse = await geminiService.chat(message, history)
 
     const responseTimeMs = Date.now() - startTime
 
-    // 7. 사용자 메시지 저장
+    // 8. 사용자 메시지 저장
     await supabase.from('ai_chat_history' as any).insert({
       user_id: user.id,
       session_id: sessionId,
@@ -166,7 +165,7 @@ export async function POST(request: NextRequest) {
       response_time_ms: 0,
     })
 
-    // 8. AI 응답 저장
+    // 9. AI 응답 저장
     await supabase.from('ai_chat_history' as any).insert({
       user_id: user.id,
       session_id: sessionId,
@@ -175,7 +174,7 @@ export async function POST(request: NextRequest) {
       response_time_ms: responseTimeMs,
     })
 
-    // 9. 응답
+    // 10. 응답
     return NextResponse.json({
       message: aiResponse,
       sessionId,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../../lib/supabase/client'
 import { z } from 'zod'
 import { logger } from '@/lib/utils/logger'
+import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 
 // 사용자 생성 스키마
 const createUserSchema = z.object({
@@ -26,26 +27,59 @@ const updateUserSchema = z.object({
   isActive: z.boolean().optional(),
 })
 
-// 권한 체크 함수 (간단한 구현)
-async function checkAdminPermission(_request: NextRequest): Promise<boolean> {
-  // TODO: 실제 권한 체크 로직 구현
-  // 현재는 임시로 true 반환
-  return true
+// 권한 체크 함수
+async function checkPermission(
+  supabase: ReturnType<typeof createServerClient>,
+  resource: string,
+  action: 'create' | 'read' | 'update' | 'delete' | 'manage' | 'use'
+): Promise<{ allowed: boolean; userRole?: string; error?: string }> {
+  try {
+    // 사용자 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return { allowed: false, error: 'Unauthorized' }
+    }
+
+    // 사용자 프로필 조회 (권한 확인용)
+    const { data: currentUserProfile } = await supabase
+      .from('user_profiles')
+      .select('*, user_roles(type, permissions)')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!currentUserProfile || !currentUserProfile.user_roles) {
+      return { allowed: false, error: 'User profile not found' }
+    }
+
+    // 권한 확인 (역할 권한 + 개인 권한 병합)
+    const userRole = currentUserProfile.user_roles.type
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    const canAccess = hasPermission(userRole, resource, action, customPermissions)
+
+    return { allowed: canAccess, userRole }
+  } catch (error) {
+    logger.error('권한 체크 오류:', error)
+    return { allowed: false, error: 'Permission check failed' }
+  }
 }
 
 // GET: 사용자 목록 조회
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
+    const supabase = createServerClient()
+
     // 권한 체크
-    const hasPermission = await checkAdminPermission(request)
-    if (!hasPermission) {
+    const permissionCheck = await checkPermission(supabase, 'users', 'read')
+    if (!permissionCheck.allowed) {
       return NextResponse.json(
-        { success: false, error: '권한이 없습니다.' },
-        { status: 403 }
+        { success: false, error: permissionCheck.error || '권한이 없습니다.' },
+        { status: permissionCheck.error === 'Unauthorized' ? 401 : 403 }
       )
     }
-
-    const supabase = createServerClient()
     
     // auth.users 테이블에서 사용자 목록 조회
     const { data, error } = await supabase.auth.admin.listUsers()
@@ -83,12 +117,14 @@ export async function GET(request: NextRequest) {
 // POST: 새 사용자 생성
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createServerClient()
+
     // 권한 체크
-    const hasPermission = await checkAdminPermission(request)
-    if (!hasPermission) {
+    const permissionCheck = await checkPermission(supabase, 'users', 'create')
+    if (!permissionCheck.allowed) {
       return NextResponse.json(
-        { success: false, error: '권한이 없습니다.' },
-        { status: 403 }
+        { success: false, error: permissionCheck.error || '권한이 없습니다.' },
+        { status: permissionCheck.error === 'Unauthorized' ? 401 : 403 }
       )
     }
 
@@ -108,8 +144,6 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password, name, employeeId, department, position, shift, phone } = validationResult.data
-
-    const supabase = createServerClient()
 
     // 사용자 생성
     const { data, error } = await supabase.auth.admin.createUser({
@@ -164,12 +198,14 @@ export async function POST(request: NextRequest) {
 // PUT: 사용자 정보 업데이트
 export async function PUT(request: NextRequest) {
   try {
+    const supabase = createServerClient()
+
     // 권한 체크
-    const hasPermission = await checkAdminPermission(request)
-    if (!hasPermission) {
+    const permissionCheck = await checkPermission(supabase, 'users', 'update')
+    if (!permissionCheck.allowed) {
       return NextResponse.json(
-        { success: false, error: '권한이 없습니다.' },
-        { status: 403 }
+        { success: false, error: permissionCheck.error || '권한이 없습니다.' },
+        { status: permissionCheck.error === 'Unauthorized' ? 401 : 403 }
       )
     }
 
@@ -195,8 +231,6 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    const supabase = createServerClient()
 
     // 현재 사용자 정보 조회
     const { data: currentUser, error: fetchError } = await supabase.auth.admin.getUserById(userId)
@@ -249,12 +283,14 @@ export async function PUT(request: NextRequest) {
 // DELETE: 사용자 삭제
 export async function DELETE(request: NextRequest) {
   try {
+    const supabase = createServerClient()
+
     // 권한 체크
-    const hasPermission = await checkAdminPermission(request)
-    if (!hasPermission) {
+    const permissionCheck = await checkPermission(supabase, 'users', 'delete')
+    if (!permissionCheck.allowed) {
       return NextResponse.json(
-        { success: false, error: '권한이 없습니다.' },
-        { status: 403 }
+        { success: false, error: permissionCheck.error || '권한이 없습니다.' },
+        { status: permissionCheck.error === 'Unauthorized' ? 401 : 403 }
       )
     }
 
@@ -267,8 +303,6 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    const supabase = createServerClient()
 
     // 사용자 삭제
     const { error } = await supabase.auth.admin.deleteUser(userId)

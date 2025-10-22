@@ -6,7 +6,7 @@ import { supabase } from '../supabase/client'
 import { useToast } from '../../components/shared/Toast'
 import type { Session } from '@supabase/supabase-js'
 import { clientLogger } from '../utils/logger'
-import { mergePermissionMatrices } from '../auth/permissions'
+import { mergePermissionMatrices, hasPermission as checkPermission, parsePermissionsFromDB, type Permission } from '../auth/permissions'
 
 // 사용자 타입 정의
 interface User {
@@ -32,6 +32,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   sessionExpiresAt: Date | null
   isSessionExpiring: boolean
+  hasPermission: (resource: string, action: Permission['action']) => boolean
 }
 
 // Auth 컨텍스트 생성
@@ -324,6 +325,23 @@ export function AuthProvider(props: { children: ReactNode }) {
 
   // 중복 함수 제거 (이미 위에서 useCallback으로 정의됨)
 
+  // 권한 체크 함수 (DB 권한 우선 사용)
+  const hasPermission = React.useCallback((resource: string, action: Permission['action']): boolean => {
+    if (!user) return false
+
+    // user.permissions를 Permission[] 배열로 변환
+    const customPermissions = user.permissions
+      ? parsePermissionsFromDB(user.permissions as Record<string, string[]>)
+      : undefined
+
+    return checkPermission(
+      user.role as 'system_admin' | 'admin' | 'user',
+      resource,
+      action,
+      customPermissions
+    )
+  }, [user])
+
   const contextValue: AuthContextType = {
     user,
     session,
@@ -334,6 +352,7 @@ export function AuthProvider(props: { children: ReactNode }) {
     isAuthenticated: !!user,
     sessionExpiresAt,
     isSessionExpiring,
+    hasPermission,
   }
 
   return React.createElement(AuthContext.Provider, { value: contextValue }, children)
