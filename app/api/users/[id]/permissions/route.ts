@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createServerClient as createAdminClient } from '@/lib/supabase/client'
-import { isAdmin } from '@/lib/auth/permissions'
+import { isSystemAdmin } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
 
 // GET /api/users/[id]/permissions - 사용자의 권한 매트릭스 조회
@@ -74,14 +74,14 @@ export async function GET(
       )
     }
 
-    // 권한 확인 (관리자만 가능)
+    // 권한 확인 (시스템 관리자만 가능)
     const userRole = currentUserProfile.user_roles.type
     logger.info('GET permissions - Current user role:', { userId: user.id, profileId: currentUserProfile.id, role: userRole })
 
-    if (!isAdmin(userRole)) {
-      logger.warn('GET permissions - Access denied - not admin:', { userId: user.id, role: userRole })
+    if (!isSystemAdmin(userRole)) {
+      logger.warn('GET permissions - Access denied - not system admin:', { userId: user.id, role: userRole })
       return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
+        { error: 'Forbidden: System admin access required' },
         { status: 403 }
       )
     }
@@ -193,14 +193,14 @@ export async function PUT(
       )
     }
 
-    // 권한 확인 (관리자만 가능)
+    // 권한 확인 (시스템 관리자만 가능)
     const userRole = currentUserProfile.user_roles.type
     logger.info('PUT permissions - Current user role:', { userId: user.id, profileId: currentUserProfile.id, role: userRole })
 
-    if (!isAdmin(userRole)) {
-      logger.warn('PUT permissions - Access denied - not admin:', { userId: user.id, role: userRole })
+    if (!isSystemAdmin(userRole)) {
+      logger.warn('PUT permissions - Access denied - not system admin:', { userId: user.id, role: userRole })
       return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
+        { error: 'Forbidden: System admin access required' },
         { status: 403 }
       )
     }
@@ -341,14 +341,14 @@ export async function POST(
       )
     }
 
-    // 권한 확인 (관리자만 가능)
+    // 권한 확인 (시스템 관리자만 가능)
     const userRole = currentUserProfile.user_roles.type
     logger.info('POST permissions - Current user role:', { userId: user.id, profileId: currentUserProfile.id, role: userRole })
 
-    if (!isAdmin(userRole)) {
-      logger.warn('POST permissions - Access denied - not admin:', { userId: user.id, role: userRole })
+    if (!isSystemAdmin(userRole)) {
+      logger.warn('POST permissions - Access denied - not system admin:', { userId: user.id, role: userRole })
       return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
+        { error: 'Forbidden: System admin access required' },
         { status: 403 }
       )
     }

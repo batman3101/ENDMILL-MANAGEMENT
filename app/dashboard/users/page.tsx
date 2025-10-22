@@ -359,8 +359,14 @@ function UsersPageContent() {
     }
   }
 
-  // 권한 편집 관련 핸들러
+  // 권한 편집 관련 핸들러 (시스템 관리자만 가능)
   const handleEditPermissions = (user: User) => {
+    // 시스템 관리자만 권한 편집 가능
+    if (currentUser?.role !== 'system_admin') {
+      showError('권한 없음', '권한 편집은 시스템 관리자만 가능합니다.')
+      return
+    }
+
     setSelectedUserForPermission(user)
     // 사용자 개인 권한 사용 (user.permissions)
     setPermissionFormData(user.permissions || {})
@@ -1031,10 +1037,14 @@ function UsersPageContent() {
                       <tr key={user.id} className="hover:bg-gray-50">
                         {/* 사용자 정보 (고정 컬럼) */}
                         <td className="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                          <div 
-                            className="flex items-center space-x-3 cursor-pointer hover:bg-blue-50 rounded-lg p-2 -m-2 transition-colors"
-                            onClick={() => handleEditPermissions(user)}
-                            title="클릭하여 권한 편집"
+                          <div
+                            className={`flex items-center space-x-3 rounded-lg p-2 -m-2 transition-colors ${
+                              currentUser?.role === 'system_admin'
+                                ? 'cursor-pointer hover:bg-blue-50'
+                                : 'cursor-not-allowed opacity-60'
+                            }`}
+                            onClick={() => currentUser?.role === 'system_admin' && handleEditPermissions(user)}
+                            title={currentUser?.role === 'system_admin' ? '클릭하여 권한 편집' : '시스템 관리자만 권한 편집 가능'}
                           >
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                               user.isActive ? 'bg-blue-100' : 'bg-gray-100'
