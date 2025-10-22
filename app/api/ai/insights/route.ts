@@ -48,7 +48,7 @@ export async function GET(_request: NextRequest) {
       userRole,
       'ai_insights',
       'use',
-      currentUserProfile.permissions as Permission[] | undefined
+      currentUserProfile.permissions as unknown as Permission[] | undefined
     )
     if (!canUse) {
       return NextResponse.json(
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
       userRole,
       'ai_insights',
       'use',
-      currentUserProfile.permissions as Permission[] | undefined
+      currentUserProfile.permissions as unknown as Permission[] | undefined
     )
     if (!canUse) {
       return NextResponse.json(
