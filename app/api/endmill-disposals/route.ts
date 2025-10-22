@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/utils/logger'
-import { hasPermission, type Permission } from '@/lib/auth/permissions'
+import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,9 +30,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 읽기 권한 확인
+    // 읽기 권한 확인 (역할 권한 + 개인 권한 병합)
     const userRole = currentUserProfile.user_roles.type
-    const canRead = hasPermission(userRole, 'endmill_disposals', 'read', currentUserProfile.permissions as unknown as Permission[] | undefined)
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    const canRead = hasPermission(userRole, 'endmill_disposals', 'read', customPermissions)
     if (!canRead) {
       return NextResponse.json(
         { success: false, error: 'Permission denied' },
@@ -104,9 +109,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 생성 권한 확인
+    // 생성 권한 확인 (역할 권한 + 개인 권한 병합)
     const userRole = currentUserProfile.user_roles.type
-    const canCreate = hasPermission(userRole, 'endmill_disposals', 'create', currentUserProfile.permissions as unknown as Permission[] | undefined)
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    const canCreate = hasPermission(userRole, 'endmill_disposals', 'create', customPermissions)
     if (!canCreate) {
       return NextResponse.json(
         { success: false, error: 'Permission denied' },
@@ -206,9 +216,14 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // 수정 권한 확인
+    // 수정 권한 확인 (역할 권한 + 개인 권한 병합)
     const userRole = currentUserProfile.user_roles.type
-    const canUpdate = hasPermission(userRole, 'endmill_disposals', 'update', currentUserProfile.permissions as unknown as Permission[] | undefined)
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    const canUpdate = hasPermission(userRole, 'endmill_disposals', 'update', customPermissions)
     if (!canUpdate) {
       return NextResponse.json(
         { success: false, error: 'Permission denied' },
@@ -324,9 +339,14 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // 삭제 권한 확인
+    // 삭제 권한 확인 (역할 권한 + 개인 권한 병합)
     const userRole = currentUserProfile.user_roles.type
-    const canDelete = hasPermission(userRole, 'endmill_disposals', 'delete', currentUserProfile.permissions as unknown as Permission[] | undefined)
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    const canDelete = hasPermission(userRole, 'endmill_disposals', 'delete', customPermissions)
     if (!canDelete) {
       return NextResponse.json(
         { success: false, error: 'Permission denied' },

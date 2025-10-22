@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
-import { hasPermission } from '@/lib/auth/permissions'
+import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
 
 // GET /api/users - 모든 사용자 조회
@@ -31,9 +31,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 권한 확인
+    // 권한 확인 (역할 권한 + 개인 권한 병합)
     const userRole = currentUserProfile.user_roles.type
-    if (!hasPermission(userRole, 'users', 'read')) {
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    if (!hasPermission(userRole, 'users', 'read', customPermissions)) {
       return NextResponse.json(
         { error: 'Forbidden: Insufficient permissions' },
         { status: 403 }
@@ -147,9 +152,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 권한 확인
+    // 권한 확인 (역할 권한 + 개인 권한 병합)
     const userRole = currentUserProfile.user_roles.type
-    if (!hasPermission(userRole, 'users', 'create')) {
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    if (!hasPermission(userRole, 'users', 'create', customPermissions)) {
       return NextResponse.json(
         { error: 'Forbidden: Insufficient permissions' },
         { status: 403 }

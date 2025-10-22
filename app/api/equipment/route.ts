@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { serverSupabaseService } from '../../../lib/services/supabaseService';
 import { z } from 'zod';
 import { logger } from '@/lib/utils/logger';
+import { createClient } from '@/lib/supabase/server';
+import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions';
 
 // 설비 생성 스키마
 const createEquipmentSchema = z.object({
@@ -20,6 +22,46 @@ const createEquipmentSchema = z.object({
 // GET: 설비 목록 조회
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createClient()
+
+    // 사용자 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // 사용자 프로필 조회 (권한 확인용)
+    const { data: currentUserProfile } = await supabase
+      .from('user_profiles')
+      .select('*, user_roles(*)')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!currentUserProfile || !currentUserProfile.user_roles) {
+      return NextResponse.json(
+        { success: false, error: 'User profile not found' },
+        { status: 404 }
+      )
+    }
+
+    // 읽기 권한 확인 (역할 권한 + 개인 권한 병합)
+    const userRole = currentUserProfile.user_roles.type
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    const canRead = hasPermission(userRole, 'equipment', 'read', customPermissions)
+    if (!canRead) {
+      return NextResponse.json(
+        { success: false, error: 'Permission denied' },
+        { status: 403 }
+      )
+    }
+
     const url = new URL(request.url)
     const statusFilter = url.searchParams.get('status')
     const modelFilter = url.searchParams.get('model')
@@ -120,6 +162,46 @@ export async function GET(request: NextRequest) {
 // POST: 새 설비 생성
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createClient()
+
+    // 사용자 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // 사용자 프로필 조회 (권한 확인용)
+    const { data: currentUserProfile } = await supabase
+      .from('user_profiles')
+      .select('*, user_roles(*)')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!currentUserProfile || !currentUserProfile.user_roles) {
+      return NextResponse.json(
+        { success: false, error: 'User profile not found' },
+        { status: 404 }
+      )
+    }
+
+    // 생성 권한 확인 (역할 권한 + 개인 권한 병합)
+    const userRole = currentUserProfile.user_roles.type
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    const canCreate = hasPermission(userRole, 'equipment', 'create', customPermissions)
+    if (!canCreate) {
+      return NextResponse.json(
+        { success: false, error: 'Permission denied' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json();
 
     // 입력 데이터 검증
@@ -235,9 +317,49 @@ export async function POST(request: NextRequest) {
 // PUT: 설비 상태 업데이트
 export async function PUT(request: NextRequest) {
   try {
+    const supabase = createClient()
+
+    // 사용자 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // 사용자 프로필 조회 (권한 확인용)
+    const { data: currentUserProfile } = await supabase
+      .from('user_profiles')
+      .select('*, user_roles(*)')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!currentUserProfile || !currentUserProfile.user_roles) {
+      return NextResponse.json(
+        { success: false, error: 'User profile not found' },
+        { status: 404 }
+      )
+    }
+
+    // 수정 권한 확인 (역할 권한 + 개인 권한 병합)
+    const userRole = currentUserProfile.user_roles.type
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    const canUpdate = hasPermission(userRole, 'equipment', 'update', customPermissions)
+    if (!canUpdate) {
+      return NextResponse.json(
+        { success: false, error: 'Permission denied' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json();
     const { id, status, model_code } = body;
-    
+
     if (!id) {
       return NextResponse.json(
         { error: '설비 ID가 필요합니다.' },

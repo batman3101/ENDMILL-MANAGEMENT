@@ -6,6 +6,7 @@ import { supabase } from '../supabase/client'
 import { useToast } from '../../components/shared/Toast'
 import type { Session } from '@supabase/supabase-js'
 import { clientLogger } from '../utils/logger'
+import { mergePermissionMatrices } from '../auth/permissions'
 
 // 사용자 타입 정의
 interface User {
@@ -209,8 +210,8 @@ export function AuthProvider(props: { children: ReactNode }) {
             shift: userData?.shift || session.user.user_metadata?.shift || '',
             role: (userData?.user_roles as any)?.type || session.user.user_metadata?.role || 'user',
             language: session.user.user_metadata?.language || 'ko',
-            // 사용자 개별 권한 우선, 없으면 역할 기본 권한 사용
-            permissions: userData?.permissions || (userData?.user_roles as any)?.permissions || {}
+            // 역할 권한 + 사용자 개별 권한 병합 (사용자 권한이 역할 권한보다 우선)
+            permissions: mergePermissionMatrices((userData?.permissions || {}) as Record<string, string[]>, ((userData?.user_roles as any)?.permissions || {}) as Record<string, string[]>)
           }
           setUser(userProfile)
         } else {
@@ -260,8 +261,8 @@ export function AuthProvider(props: { children: ReactNode }) {
             shift: userData?.shift || session.user.user_metadata?.shift || '',
             role: (userData?.user_roles as any)?.type || session.user.user_metadata?.role || 'user',
             language: session.user.user_metadata?.language || 'ko',
-            // 사용자 개별 권한 우선, 없으면 역할 기본 권한 사용
-            permissions: userData?.permissions || (userData?.user_roles as any)?.permissions || {}
+            // 역할 권한 + 사용자 개별 권한 병합 (사용자 권한이 역할 권한보다 우선)
+            permissions: mergePermissionMatrices((userData?.permissions || {}) as Record<string, string[]>, ((userData?.user_roles as any)?.permissions || {}) as Record<string, string[]>)
           }
           setUser(userProfile)
           setLoading(false)

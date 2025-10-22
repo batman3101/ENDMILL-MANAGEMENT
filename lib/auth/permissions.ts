@@ -43,38 +43,41 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
 }
 
-// 권한 검증 함수
+// 권한 검증 함수 (DB 권한 우선 사용)
 export function hasPermission(
   userRole: UserRole,
   resource: string,
   action: Permission['action'],
   customPermissions?: Permission[]
 ): boolean {
-  // 커스텀 권한이 있으면 우선 사용
-  const permissions = customPermissions || DEFAULT_PERMISSIONS[userRole] || []
-  
   // 시스템 관리자는 모든 권한
   if (userRole === 'system_admin') {
     return true
   }
-  
+
+  // customPermissions가 배열이고 비어있지 않으면 우선 사용
+  // 그렇지 않으면 DEFAULT_PERMISSIONS 사용 (폴백)
+  const permissions = (customPermissions && Array.isArray(customPermissions) && customPermissions.length > 0)
+    ? customPermissions
+    : (DEFAULT_PERMISSIONS[userRole] || [])
+
   // 권한 확인
   return permissions.some(permission => {
     // 전체 리소스 관리 권한
     if (permission.resource === '*' && permission.action === 'manage') {
       return true
     }
-    
+
     // 특정 리소스 관리 권한
     if (permission.resource === resource && permission.action === 'manage') {
       return true
     }
-    
+
     // 특정 리소스의 특정 액션 권한
     if (permission.resource === resource && permission.action === action) {
       return true
     }
-    
+
     return false
   })
 }
