@@ -36,9 +36,9 @@ export function QuickQueryInput({ onResult, onReset, className, chatHistory = []
   ]
 
   const handleSubmit = async () => {
-    console.log('[QuickQueryInput] handleSubmit 호출됨')
-    console.log('[QuickQueryInput] question:', question)
-    console.log('[QuickQueryInput] chatHistory length:', chatHistory.length)
+    // console.log('[QuickQueryInput] handleSubmit 호출됨')
+    // console.log('[QuickQueryInput] question:', question)
+    // console.log('[QuickQueryInput] chatHistory length:', chatHistory.length)
 
     if (!question.trim()) {
       toast.error('질문을 입력하세요.')
@@ -46,14 +46,14 @@ export function QuickQueryInput({ onResult, onReset, className, chatHistory = []
     }
 
     try {
-      console.log('[QuickQueryInput] API 호출 시작:', { question, chatHistoryLength: chatHistory.length })
+      // console.log('[QuickQueryInput] API 호출 시작:', { question, chatHistoryLength: chatHistory.length })
 
       const result = await queryMutation.mutateAsync({
         question,
         chatHistory
       })
 
-      console.log('[QuickQueryInput] API 응답 받음:', result)
+      // console.log('[QuickQueryInput] API 응답 받음:', result)
 
       // 성공 시 콜백 호출
       if (onResult) {
@@ -103,7 +103,7 @@ export function QuickQueryInput({ onResult, onReset, className, chatHistory = []
               <div className="absolute bottom-4 right-4">
                 <Button
                   onClick={() => {
-                    console.log('[QuickQueryInput] 전송 버튼 클릭됨')
+                    // console.log('[QuickQueryInput] 전송 버튼 클릭됨')
                     handleSubmit()
                   }}
                   disabled={!question.trim() || queryMutation.isPending}

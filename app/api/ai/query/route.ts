@@ -146,12 +146,12 @@ export async function POST(request: NextRequest) {
     // 5. 요청 바디 검증
     const body = await request.json()
 
-    console.log('[AI Query API] 받은 요청 바디:', JSON.stringify(body, null, 2))
+    // console.log('[AI Query API] 받은 요청 바디:', JSON.stringify(body, null, 2))
 
     const validation = requestSchema.safeParse(body)
 
     if (!validation.success) {
-      console.error('[AI Query API] 검증 실패:', validation.error.errors)
+      // console.error('[AI Query API] 검증 실패:', validation.error.errors)
       return NextResponse.json(
         {
           error: '잘못된 요청입니다.',
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[AI Query API] 검증 성공:', validation.data)
+    // console.log('[AI Query API] 검증 성공:', validation.data)
 
     const { question, chatHistory } = validation.data
 

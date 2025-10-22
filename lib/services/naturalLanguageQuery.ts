@@ -110,13 +110,13 @@ export async function executeNaturalLanguageQuery(
     const rawSQL = sqlGeneration.sql
 
     // 디버깅: 생성된 SQL 로그
-    console.log('[AI Query] Generated SQL:', rawSQL)
-    console.log('[AI Query] SQL length:', rawSQL.length)
-    console.log('[AI Query] First 100 chars:', rawSQL.substring(0, 100))
+    // console.log('[AI Query] Generated SQL:', rawSQL)
+    // console.log('[AI Query] SQL length:', rawSQL.length)
+    // console.log('[AI Query] First 100 chars:', rawSQL.substring(0, 100))
 
     // 3단계: SQL 정리 및 검증
     const sql = sanitizeSQL(rawSQL) // 세미콜론 제거, 공백 정리 등
-    console.log('[AI Query] Sanitized SQL:', sql)
+    // console.log('[AI Query] Sanitized SQL:', sql)
 
     try {
       validateSQL(sql)
