@@ -238,10 +238,15 @@ export default function AIInsightsPage() {
       {/* 자동 인사이트 섹션 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-primary" />
-            {t('aiInsights.autoInsights')}
-          </h2>
+          <div>
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <TrendingUp className="h-6 w-6 text-primary" />
+              {t('aiInsights.autoInsights')}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              자동 인사이트의 갱신은 2시간 마다 이루어집니다
+            </p>
+          </div>
 
           {insightsData && (
             <Badge variant="outline" className="gap-2">

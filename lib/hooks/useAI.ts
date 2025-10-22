@@ -152,8 +152,8 @@ export function useInsights() {
 
       return response.json()
     },
-    // 5분마다 자동 갱신
-    refetchInterval: 5 * 60 * 1000,
+    // 2시간마다 자동 갱신
+    refetchInterval: 2 * 60 * 60 * 1000,
   })
 }
 
