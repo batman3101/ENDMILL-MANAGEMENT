@@ -125,39 +125,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const formData = await request.formData()
+    const body = await request.json()
 
-    const disposal_date = formData.get('disposal_date') as string
-    const quantity = parseInt(formData.get('quantity') as string)
-    const weight_kg = parseFloat(formData.get('weight_kg') as string)
-    const inspector = formData.get('inspector') as string
-    const reviewer = formData.get('reviewer') as string
-    const notes = formData.get('notes') as string
-    const imageFile = formData.get('image') as File | null
-
-    // 이미지 업로드 (있는 경우)
-    let imageUrl = null
-    if (imageFile && imageFile.size > 0) {
-      const fileExt = imageFile.name.split('.').pop()
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-      const filePath = `disposal-images/${fileName}`
-
-      // Service Role 클라이언트를 사용하여 Storage 업로드 (RLS 우회)
-      const supabaseAdmin = createServerClient()
-      const { error: uploadError } = await supabaseAdmin.storage
-        .from('endmill-images')
-        .upload(filePath, imageFile)
-
-      if (uploadError) {
-        logger.error('Error uploading image:', uploadError)
-      } else {
-        const { data: { publicUrl } } = supabaseAdmin.storage
-          .from('endmill-images')
-          .getPublicUrl(filePath)
-
-        imageUrl = publicUrl
-      }
-    }
+    const disposal_date = body.disposal_date as string
+    const quantity = parseInt(body.quantity as string)
+    const weight_kg = parseFloat(body.weight_kg as string)
+    const inspector = body.inspector as string
+    const reviewer = body.reviewer as string
+    const notes = (body.notes as string) || null
+    const image_url = (body.image_url as string) || null
 
     // 폐기 기록 저장
     const { data, error } = await (supabase as any)
@@ -168,8 +144,8 @@ export async function POST(request: NextRequest) {
         weight_kg,
         inspector,
         reviewer,
-        image_url: imageUrl,
-        notes: notes || null
+        image_url,
+        notes
       })
       .select()
       .single()
@@ -244,39 +220,15 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const formData = await request.formData()
+    const body = await request.json()
 
-    const disposal_date = formData.get('disposal_date') as string
-    const quantity = parseInt(formData.get('quantity') as string)
-    const weight_kg = parseFloat(formData.get('weight_kg') as string)
-    const inspector = formData.get('inspector') as string
-    const reviewer = formData.get('reviewer') as string
-    const notes = formData.get('notes') as string
-    const imageFile = formData.get('image') as File | null
-
-    // 이미지 업로드 (있는 경우)
-    let imageUrl = undefined
-    if (imageFile && imageFile.size > 0) {
-      const fileExt = imageFile.name.split('.').pop()
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-      const filePath = `disposal-images/${fileName}`
-
-      // Service Role 클라이언트를 사용하여 Storage 업로드 (RLS 우회)
-      const supabaseAdmin = createServerClient()
-      const { error: uploadError } = await supabaseAdmin.storage
-        .from('endmill-images')
-        .upload(filePath, imageFile)
-
-      if (uploadError) {
-        logger.error('Error uploading image:', uploadError)
-      } else {
-        const { data: { publicUrl } } = supabaseAdmin.storage
-          .from('endmill-images')
-          .getPublicUrl(filePath)
-
-        imageUrl = publicUrl
-      }
-    }
+    const disposal_date = body.disposal_date as string
+    const quantity = parseInt(body.quantity as string)
+    const weight_kg = parseFloat(body.weight_kg as string)
+    const inspector = body.inspector as string
+    const reviewer = body.reviewer as string
+    const notes = (body.notes as string) || null
+    const image_url = body.image_url as string | undefined
 
     // 폐기 기록 업데이트
     const updateData: any = {
@@ -285,11 +237,11 @@ export async function PUT(request: NextRequest) {
       weight_kg,
       inspector,
       reviewer,
-      notes: notes || null
+      notes
     }
 
-    if (imageUrl !== undefined) {
-      updateData.image_url = imageUrl
+    if (image_url !== undefined) {
+      updateData.image_url = image_url
     }
 
     const { data, error } = await (supabase as any)

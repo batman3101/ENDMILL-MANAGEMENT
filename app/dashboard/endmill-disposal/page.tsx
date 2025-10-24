@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
 import { useToast } from '@/components/shared/Toast'
 import { useTranslations } from '@/lib/hooks/useTranslations'
@@ -8,6 +8,7 @@ import ConfirmationModal from '@/components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation } from '@/lib/hooks/useConfirmation'
 import { clientLogger } from '@/lib/utils/logger'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { supabase } from '@/lib/supabase/client'
 
 interface EndmillDisposal {
   id: string
@@ -20,6 +21,8 @@ interface EndmillDisposal {
   notes: string | null
   created_at: string
 }
+
+type SortField = 'disposal_date' | 'quantity' | 'weight_kg' | 'inspector' | 'reviewer'
 
 export default function EndmillDisposalPage() {
   const { t } = useTranslations()
@@ -44,6 +47,12 @@ export default function EndmillDisposalPage() {
     start: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
   })
+
+  // 페이지네이션 및 정렬 상태
+  const [currentPage, setCurrentPage] = useState(1)
+  const [sortField, setSortField] = useState<SortField>('disposal_date')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const itemsPerPage = 20
 
   // 폼 데이터
   const [formData, setFormData] = useState({
@@ -77,6 +86,47 @@ export default function EndmillDisposalPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange])
 
+  // dateRange 변경 시 첫 페이지로 이동
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [dateRange, sortField, sortOrder])
+
+  // 정렬 토글 함수
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+  }
+
+  // 정렬된 폐기 기록 목록
+  const sortedDisposals = useMemo(() => {
+    const sorted = [...disposals].sort((a, b) => {
+      let aValue: any = a[sortField]
+      let bValue: any = b[sortField]
+
+      // 날짜 정렬
+      if (sortField === 'disposal_date') {
+        aValue = new Date(a.disposal_date).getTime()
+        bValue = new Date(b.disposal_date).getTime()
+      }
+
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+
+    return sorted
+  }, [disposals, sortField, sortOrder])
+
+  // 페이지네이션 계산
+  const totalPages = Math.ceil(sortedDisposals.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentDisposals = sortedDisposals.slice(startIndex, endIndex)
+
   // 이미지 선택 핸들러
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -90,26 +140,51 @@ export default function EndmillDisposalPage() {
     }
   }
 
+  // Supabase Storage 직접 업로드
+  const uploadImageToStorage = async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+    const filePath = `disposal-images/${fileName}`
+
+    const { error } = await supabase.storage
+      .from('endmill-images')
+      .upload(filePath, file)
+
+    if (error) {
+      throw error
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('endmill-images')
+      .getPublicUrl(filePath)
+
+    return publicUrl
+  }
+
   // 폼 제출
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     try {
-      const formDataToSend = new FormData()
-      formDataToSend.append('disposal_date', formData.disposal_date)
-      formDataToSend.append('quantity', formData.quantity)
-      formDataToSend.append('weight_kg', formData.weight_kg)
-      formDataToSend.append('inspector', formData.inspector)
-      formDataToSend.append('reviewer', formData.reviewer)
-      formDataToSend.append('notes', formData.notes)
-
+      let imageUrl: string | null = null
       if (selectedImage) {
-        formDataToSend.append('image', selectedImage)
+        imageUrl = await uploadImageToStorage(selectedImage)
+      }
+
+      const payload = {
+        disposal_date: formData.disposal_date,
+        quantity: formData.quantity,
+        weight_kg: formData.weight_kg,
+        inspector: formData.inspector,
+        reviewer: formData.reviewer,
+        notes: formData.notes,
+        image_url: imageUrl
       }
 
       const response = await fetch('/api/endmill-disposals', {
         method: 'POST',
-        body: formDataToSend
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       })
 
       const result = await response.json()
@@ -156,21 +231,28 @@ export default function EndmillDisposalPage() {
     if (!editingDisposal) return
 
     try {
-      const formDataToSend = new FormData()
-      formDataToSend.append('disposal_date', formData.disposal_date)
-      formDataToSend.append('quantity', formData.quantity)
-      formDataToSend.append('weight_kg', formData.weight_kg)
-      formDataToSend.append('inspector', formData.inspector)
-      formDataToSend.append('reviewer', formData.reviewer)
-      formDataToSend.append('notes', formData.notes)
-
+      let imageUrl: string | undefined = undefined
       if (selectedImage) {
-        formDataToSend.append('image', selectedImage)
+        imageUrl = await uploadImageToStorage(selectedImage)
+      }
+
+      const updatePayload: any = {
+        disposal_date: formData.disposal_date,
+        quantity: formData.quantity,
+        weight_kg: formData.weight_kg,
+        inspector: formData.inspector,
+        reviewer: formData.reviewer,
+        notes: formData.notes
+      }
+
+      if (imageUrl !== undefined) {
+        updatePayload.image_url = imageUrl
       }
 
       const response = await fetch(`/api/endmill-disposals?id=${editingDisposal.id}`, {
         method: 'PUT',
-        body: formDataToSend
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatePayload)
       })
 
       const result = await response.json()
@@ -304,11 +386,12 @@ export default function EndmillDisposalPage() {
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="disposal_date" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.disposalDate')} <span className="text-red-500">{t('endmillDisposal.required')}</span>
                 </label>
                 <input
                   type="date"
+                  id="disposal_date"
                   value={formData.disposal_date}
                   onChange={(e) => setFormData({ ...formData, disposal_date: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -317,12 +400,13 @@ export default function EndmillDisposalPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.quantityPcs')} <span className="text-red-500">{t('endmillDisposal.required')}</span>
                 </label>
                 <input
                   type="number"
                   min="1"
+                  id="quantity"
                   value={formData.quantity}
                   onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -332,13 +416,14 @@ export default function EndmillDisposalPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="weight_kg" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.weightKg')} <span className="text-red-500">{t('endmillDisposal.required')}</span>
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   min="0.01"
+                  id="weight_kg"
                   value={formData.weight_kg}
                   onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -348,11 +433,12 @@ export default function EndmillDisposalPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="inspector" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.inspector')} <span className="text-red-500">{t('endmillDisposal.required')}</span>
                 </label>
                 <input
                   type="text"
+                  id="inspector"
                   value={formData.inspector}
                   onChange={(e) => setFormData({ ...formData, inspector: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -362,11 +448,12 @@ export default function EndmillDisposalPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="reviewer" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.reviewer')} <span className="text-red-500">{t('endmillDisposal.required')}</span>
                 </label>
                 <input
                   type="text"
+                  id="reviewer"
                   value={formData.reviewer}
                   onChange={(e) => setFormData({ ...formData, reviewer: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -376,22 +463,24 @@ export default function EndmillDisposalPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.imageAttachment')}
                 </label>
                 <input
                   type="file"
                   accept="image/*"
+                  id="image"
                   onChange={handleImageSelect}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div className="md:col-span-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.notes')}
                 </label>
                 <textarea
+                  id="notes"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -453,11 +542,12 @@ export default function EndmillDisposalPage() {
           <form onSubmit={handleUpdate}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="edit_disposal_date" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.disposalDate')} <span className="text-red-500">{t('endmillDisposal.required')}</span>
                 </label>
                 <input
                   type="date"
+                  id="edit_disposal_date"
                   value={formData.disposal_date}
                   onChange={(e) => setFormData({ ...formData, disposal_date: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -466,12 +556,13 @@ export default function EndmillDisposalPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="edit_quantity" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.quantityPcs')} <span className="text-red-500">{t('endmillDisposal.required')}</span>
                 </label>
                 <input
                   type="number"
                   min="1"
+                  id="edit_quantity"
                   value={formData.quantity}
                   onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -481,13 +572,14 @@ export default function EndmillDisposalPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="edit_weight_kg" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.weightKg')} <span className="text-red-500">{t('endmillDisposal.required')}</span>
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   min="0.01"
+                  id="edit_weight_kg"
                   value={formData.weight_kg}
                   onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -497,11 +589,12 @@ export default function EndmillDisposalPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="edit_inspector" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.inspector')} <span className="text-red-500">{t('endmillDisposal.required')}</span>
                 </label>
                 <input
                   type="text"
+                  id="edit_inspector"
                   value={formData.inspector}
                   onChange={(e) => setFormData({ ...formData, inspector: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -511,11 +604,12 @@ export default function EndmillDisposalPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="edit_reviewer" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.reviewer')} <span className="text-red-500">{t('endmillDisposal.required')}</span>
                 </label>
                 <input
                   type="text"
+                  id="edit_reviewer"
                   value={formData.reviewer}
                   onChange={(e) => setFormData({ ...formData, reviewer: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -525,22 +619,24 @@ export default function EndmillDisposalPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="edit_image" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.imageAttachment')}
                 </label>
                 <input
                   type="file"
                   accept="image/*"
+                  id="edit_image"
                   onChange={handleImageSelect}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div className="md:col-span-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="edit_notes" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('endmillDisposal.notes')}
                 </label>
                 <textarea
+                  id="edit_notes"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -600,18 +696,20 @@ export default function EndmillDisposalPage() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
         <div className="flex flex-col md:flex-row gap-4 items-center">
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">{t('endmillDisposal.startDate')}:</label>
+            <label htmlFor="filter_start" className="text-sm font-medium text-gray-700">{t('endmillDisposal.startDate')}:</label>
             <input
               type="date"
+              id="filter_start"
               value={dateRange.start}
               onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">{t('endmillDisposal.endDate')}:</label>
+            <label htmlFor="filter_end" className="text-sm font-medium text-gray-700">{t('endmillDisposal.endDate')}:</label>
             <input
               type="date"
+              id="filter_end"
               value={dateRange.end}
               onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -653,7 +751,12 @@ export default function EndmillDisposalPage() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">{t('endmillDisposal.recordList')}</h2>
-          <p className="text-sm text-gray-500">{t('endmillDisposal.totalRecords')} {disposals.length}{t('endmillDisposal.recordsCount')}</p>
+          <p className="text-sm text-gray-500">
+            {t('endmillDisposal.totalRecords')} {sortedDisposals.length}{t('endmillDisposal.recordsCount')}
+            {totalPages > 1 && (
+              <> • {t('equipment.page')} {currentPage} {t('equipment.ofTotal')} {totalPages}</>
+            )}
+          </p>
         </div>
 
         {isLoading ? (
@@ -661,7 +764,7 @@ export default function EndmillDisposalPage() {
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <p className="text-gray-600 mt-2">{t('endmillDisposal.loading')}</p>
           </div>
-        ) : disposals.length === 0 ? (
+        ) : sortedDisposals.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             {t('endmillDisposal.noRecords')}
           </div>
@@ -670,20 +773,60 @@ export default function EndmillDisposalPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('endmillDisposal.disposalDate')}
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('disposal_date')}
+                  >
+                    <div className="flex items-center">
+                      {t('endmillDisposal.disposalDate')}
+                      <span className="ml-1">
+                        {sortField === 'disposal_date' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('endmillDisposal.quantityPcs').replace(' (개)', '')}
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('quantity')}
+                  >
+                    <div className="flex items-center">
+                      {t('endmillDisposal.quantityPcs').replace(' (개)', '')}
+                      <span className="ml-1">
+                        {sortField === 'quantity' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('endmillDisposal.weightKg')}
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('weight_kg')}
+                  >
+                    <div className="flex items-center">
+                      {t('endmillDisposal.weightKg')}
+                      <span className="ml-1">
+                        {sortField === 'weight_kg' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('endmillDisposal.inspector')}
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('inspector')}
+                  >
+                    <div className="flex items-center">
+                      {t('endmillDisposal.inspector')}
+                      <span className="ml-1">
+                        {sortField === 'inspector' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </span>
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('endmillDisposal.reviewer')}
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('reviewer')}
+                  >
+                    <div className="flex items-center">
+                      {t('endmillDisposal.reviewer')}
+                      <span className="ml-1">
+                        {sortField === 'reviewer' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </span>
+                    </div>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t('endmillDisposal.imageAttachment').replace(' 첨부', '').replace(' Đính kèm', '')}
@@ -697,7 +840,7 @@ export default function EndmillDisposalPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {disposals.map((disposal) => (
+                {currentDisposals.map((disposal) => (
                   <tr key={disposal.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {new Date(disposal.disposal_date).toLocaleDateString('ko-KR')}
@@ -758,6 +901,85 @@ export default function EndmillDisposalPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* 페이지네이션 */}
+        {totalPages > 1 && (
+          <div className="bg-white px-6 py-3 flex items-center justify-between border-t">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {t('equipment.previous')}
+              </button>
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {t('equipment.next')}
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  {t('equipment.showing')} <span className="font-medium">{sortedDisposals.length}</span>{t('equipment.ofItems')}{' '}
+                  <span className="font-medium">{startIndex + 1}</span>
+                  {t('equipment.to')}
+                  <span className="font-medium">{Math.min(endIndex, sortedDisposals.length)}</span>{t('equipment.itemsDisplay')}
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ‹
+                  </button>
+
+                  {/* 페이지 번호들 */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          currentPage === pageNum
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ›
+                  </button>
+                </nav>
+              </div>
+            </div>
           </div>
         )}
       </div>
