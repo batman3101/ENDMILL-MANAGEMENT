@@ -63,19 +63,30 @@ export default function SettingsPage() {
 
 function SettingsPageContent() {
   const [activeTab, setActiveTab] = useState<SettingsCategory>('system')
-  const { 
-    settings, 
-    updateCategorySettings, 
-    resetSettings, 
-    isLoading, 
-    error, 
-    hasUnsavedChanges 
+  const {
+    settings,
+    updateCategorySettings,
+    resetSettings,
+    isLoading,
+    error,
+    hasUnsavedChanges
   } = useSettings()
   const { showSuccess, showError, showInfo } = useToast()
-  
+
   // 임시 폼 상태 (각 탭별로)
   const [formData, setFormData] = useState(settings || null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // 엔드밀 카테고리 관리 state (endmill_categories 테이블에서 직접 관리)
+  const [endmillCategories, setEndmillCategories] = useState<any[]>([])
+  const [isCategoryLoading, setIsCategoryLoading] = useState(false)
+
+  // 카테고리 모달 state
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add')
+  const [modalCategoryData, setModalCategoryData] = useState<any>(null)
+  const [categoryCode, setCategoryCode] = useState('')
+  const [categoryName, setCategoryName] = useState('')
 
   const activeTabInfo = SETTINGS_TABS.find(tab => tab.id === activeTab)
 
@@ -85,6 +96,150 @@ function SettingsPageContent() {
       setFormData(settings)
     }
   }, [settings])
+
+  // 엔드밀 카테고리 불러오기
+  useEffect(() => {
+    if (activeTab === 'inventory') {
+      fetchEndmillCategories()
+    }
+  }, [activeTab])
+
+  const fetchEndmillCategories = async () => {
+    try {
+      setIsCategoryLoading(true)
+      const response = await fetch('/api/endmill-categories')
+      const result = await response.json()
+
+      if (result.success) {
+        setEndmillCategories(result.data || [])
+      }
+    } catch (error) {
+      clientLogger.error('카테고리 조회 오류:', error)
+    } finally {
+      setIsCategoryLoading(false)
+    }
+  }
+
+  // 카테고리 추가 모달 열기
+  const handleAddCategory = () => {
+    setModalMode('add')
+    setCategoryCode('')
+    setCategoryName('')
+    setModalCategoryData(null)
+    setShowCategoryModal(true)
+  }
+
+  // 카테고리 추가 실행
+  const handleSubmitAddCategory = async () => {
+    if (!categoryCode.trim() || !categoryName.trim()) {
+      showError('입력 오류', '카테고리 코드와 이름을 모두 입력하세요.')
+      return
+    }
+
+    try {
+      setIsCategoryLoading(true)
+      const response = await fetch('/api/endmill-categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: categoryCode.trim().toUpperCase(),
+          name_ko: categoryName.trim(),
+          name_vi: categoryName.trim(),
+          description: `${categoryName.trim()} 엔드밀`
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        showSuccess('카테고리 추가', '카테고리가 성공적으로 추가되었습니다.')
+        await fetchEndmillCategories()
+        setShowCategoryModal(false)
+      } else {
+        showError('추가 실패', result.error || '카테고리 추가에 실패했습니다.')
+      }
+    } catch (error) {
+      clientLogger.error('카테고리 추가 오류:', error)
+      showError('추가 실패', '카테고리 추가 중 오류가 발생했습니다.')
+    } finally {
+      setIsCategoryLoading(false)
+    }
+  }
+
+  // 카테고리 수정 모달 열기
+  const handleUpdateCategory = (category: any) => {
+    setModalMode('edit')
+    setCategoryCode(category.code)
+    setCategoryName(category.name_ko)
+    setModalCategoryData(category)
+    setShowCategoryModal(true)
+  }
+
+  // 카테고리 수정 실행
+  const handleSubmitUpdateCategory = async () => {
+    if (!categoryName.trim()) {
+      showError('입력 오류', '카테고리 이름을 입력하세요.')
+      return
+    }
+
+    if (!modalCategoryData) return
+
+    try {
+      setIsCategoryLoading(true)
+      const response = await fetch('/api/endmill-categories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: modalCategoryData.id,
+          name_ko: categoryName.trim(),
+          name_vi: categoryName.trim()
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        showSuccess('카테고리 수정', '카테고리가 성공적으로 수정되었습니다.')
+        await fetchEndmillCategories()
+        setShowCategoryModal(false)
+      } else {
+        showError('수정 실패', result.error || '카테고리 수정에 실패했습니다.')
+      }
+    } catch (error) {
+      clientLogger.error('카테고리 수정 오류:', error)
+      showError('수정 실패', '카테고리 수정 중 오류가 발생했습니다.')
+    } finally {
+      setIsCategoryLoading(false)
+    }
+  }
+
+  // 카테고리 삭제
+  const handleDeleteCategory = async (category: any) => {
+    if (!confirm(`정말로 "${category.name_ko}" 카테고리를 삭제하시겠습니까?\n\n이 카테고리를 사용하는 엔드밀이 있으면 삭제할 수 없습니다.`)) {
+      return
+    }
+
+    try {
+      setIsCategoryLoading(true)
+      const response = await fetch(`/api/endmill-categories?id=${category.id}`, {
+        method: 'DELETE'
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        showSuccess('카테고리 삭제', '카테고리가 성공적으로 삭제되었습니다.')
+        await fetchEndmillCategories()
+      } else {
+        showError('삭제 실패', result.error || '카테고리 삭제에 실패했습니다.')
+      }
+    } catch (error) {
+      clientLogger.error('카테고리 삭제 오류:', error)
+      showError('삭제 실패', '카테고리 삭제 중 오류가 발생했습니다.')
+    } finally {
+      setIsCategoryLoading(false)
+    }
+  }
 
   // 저장 핸들러
   const handleSave = async (category: SettingsCategory) => {
@@ -772,51 +927,60 @@ function SettingsPageContent() {
                   <div className="bg-white border border-gray-200 rounded-lg">
                     <div className="px-6 py-4 border-b border-gray-200">
                       <h3 className="text-lg font-medium text-gray-900">🔧 앤드밀 카테고리 관리</h3>
-                      <p className="text-sm text-gray-600">앤드밀 유형별 카테고리 목록 관리</p>
+                      <p className="text-sm text-gray-600">앤드밀 유형별 카테고리 목록 관리 (endmill_categories 테이블 직접 연동)</p>
                     </div>
                     <div className="p-6">
-                      <div className="space-y-4">
-                        {(Array.isArray(formData.inventory?.categories) ? formData.inventory.categories : ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL']).map((category, index) => (
-                          <div key={index} className="flex items-center space-x-3">
-                            <div className="flex-1">
-                              <input
-                                type="text"
-                                value={category}
-                                onChange={(e) => {
-                                  const newCategories = [...(formData.inventory?.categories || [])]
-                                  newCategories[index] = e.target.value
-                                  updateFormData('inventory', 'categories', newCategories)
-                                }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="카테고리명 입력"
-                              />
+                      {isCategoryLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                          <span className="ml-3 text-gray-600">카테고리 불러오는 중...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {endmillCategories.map((category) => (
+                            <div key={category.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-3">
+                                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-md font-mono font-semibold text-sm">
+                                    {category.code}
+                                  </span>
+                                  <span className="text-gray-900 font-medium">{category.name_ko}</span>
+                                  {category.description && (
+                                    <span className="text-gray-500 text-sm">- {category.description}</span>
+                                  )}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleUpdateCategory(category)}
+                                className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                                disabled={isCategoryLoading}
+                              >
+                                수정
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCategory(category)}
+                                className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                                disabled={isCategoryLoading}
+                              >
+                                삭제
+                              </button>
                             </div>
-                            <button
-                              onClick={() => {
-                                const newCategories = [...(formData.inventory?.categories || [])]
-                                newCategories.splice(index, 1)
-                                updateFormData('inventory', 'categories', newCategories)
-                              }}
-                              className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                              disabled={(formData.inventory?.categories || []).length <= 1}
-                            >
-                              삭제
-                            </button>
+                          ))}
+                          <button
+                            onClick={handleAddCategory}
+                            className="w-full px-4 py-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 font-medium disabled:opacity-50"
+                            disabled={isCategoryLoading}
+                          >
+                            + 카테고리 추가
+                          </button>
+                          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p className="text-sm text-blue-800">
+                              <strong>ℹ️ 알림:</strong> 카테고리는 즉시 endmill_categories 테이블에 저장됩니다.
+                              별도의 &ldquo;설정 저장&rdquo; 버튼을 누를 필요가 없습니다.
+                            </p>
                           </div>
-                        ))}
-                        <button
-                          onClick={() => {
-                            const currentCategories = Array.isArray(formData.inventory?.categories)
-                              ? formData.inventory.categories
-                              : ['FLAT', 'BALL', 'T-CUT', 'C-CUT', 'REAMER', 'DRILL']
-                            const newCategories = [...currentCategories, '새 카테고리']
-                            updateFormData('inventory', 'categories', newCategories)
-                          }}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          + 카테고리 추가
-                        </button>
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -2412,6 +2576,91 @@ function SettingsPageContent() {
               </div>
             </details>
           </div>
+
+          {/* 카테고리 추가/수정 모달 */}
+          {showCategoryModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {modalMode === 'add' ? '새 카테고리 추가' : '카테고리 수정'}
+                  </h3>
+                </div>
+
+                <div className="px-6 py-4 space-y-4">
+                  {modalMode === 'add' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        카테고리 코드 <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={categoryCode}
+                        onChange={(e) => setCategoryCode(e.target.value.toUpperCase())}
+                        placeholder="예: FORM, TAP"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={isCategoryLoading}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        영문 대문자로 입력하세요
+                      </p>
+                    </div>
+                  )}
+
+                  {modalMode === 'edit' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        카테고리 코드
+                      </label>
+                      <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 font-mono">
+                        {categoryCode}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        코드는 수정할 수 없습니다
+                      </p>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      카테고리 이름 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={categoryName}
+                      onChange={(e) => setCategoryName(e.target.value)}
+                      placeholder="예: FORM, TAP"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={isCategoryLoading}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      한글 또는 영문으로 입력하세요
+                    </p>
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                  <button
+                    onClick={() => setShowCategoryModal(false)}
+                    disabled={isCategoryLoading}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={modalMode === 'add' ? handleSubmitAddCategory : handleSubmitUpdateCategory}
+                    disabled={isCategoryLoading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                  >
+                    {isCategoryLoading && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    )}
+                    {isCategoryLoading ? '처리 중...' : (modalMode === 'add' ? '추가' : '수정')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

@@ -5,12 +5,11 @@ import { logger } from '@/lib/utils/logger';
 import { createClient } from '@/lib/supabase/server';
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions';
 
-// 재고 업데이트 스키마
+// 재고 업데이트 스키마 (프론트엔드 snake_case 형식에 맞춤)
 const updateInventorySchema = z.object({
-  endmillCode: z.string().min(1),
-  currentStock: z.number().int().min(0),
-  minStock: z.number().int().min(0).optional(),
-  maxStock: z.number().int().min(0).optional(),
+  current_stock: z.number().int().min(0).optional(),
+  min_stock: z.number().int().min(0).optional(),
+  max_stock: z.number().int().min(0).optional(),
   location: z.string().optional(),
 });
 
@@ -171,8 +170,9 @@ export async function POST(request: NextRequest) {
       max_stock: validatedData.maxStock,
       location: validatedData.location || 'A-001',
     })
-    
+
     return NextResponse.json({
+      success: true,
       data: newInventory,
       message: '재고 항목이 성공적으로 생성되었습니다.',
     }, { status: 201 });
@@ -250,14 +250,18 @@ export async function PUT(request: NextRequest) {
     // 입력 데이터 검증
     const validatedData = updateInventorySchema.parse(updateData);
 
+    // 업데이트할 필드만 포함 (undefined 필드 제외)
+    const updateFields: any = {}
+    if (validatedData.current_stock !== undefined) updateFields.current_stock = validatedData.current_stock
+    if (validatedData.min_stock !== undefined) updateFields.min_stock = validatedData.min_stock
+    if (validatedData.max_stock !== undefined) updateFields.max_stock = validatedData.max_stock
+    if (validatedData.location !== undefined) updateFields.location = validatedData.location
+
     // 재고 업데이트 (Supabase 트리거가 자동으로 status 계산)
-    const updatedItem = await serverSupabaseService.inventory.updateStock(id, {
-      current_stock: validatedData.currentStock,
-      min_stock: validatedData.minStock,
-      max_stock: validatedData.maxStock,
-    })
-    
+    const updatedItem = await serverSupabaseService.inventory.updateStock(id, updateFields)
+
     return NextResponse.json({
+      success: true,
       data: updatedItem,
       message: '재고가 성공적으로 업데이트되었습니다.',
     });
@@ -282,6 +286,86 @@ export async function PUT(request: NextRequest) {
       },
       { status: 500 }
     );
+  }
+}
+
+// DELETE: 재고 삭제
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = createClient()
+
+    // 사용자 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // 사용자 프로필 조회 (권한 확인용)
+    const { data: currentUserProfile } = await supabase
+      .from('user_profiles')
+      .select('*, user_roles(*)')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!currentUserProfile || !currentUserProfile.user_roles) {
+      return NextResponse.json({ success: false, error: 'User profile not found' }, { status: 404 })
+    }
+
+    // 권한 확인
+    const userRole = currentUserProfile.user_roles.type
+    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+
+    const canDelete = hasPermission(userRole, 'inventory', 'delete', customPermissions)
+    if (!canDelete) {
+      return NextResponse.json({ success: false, error: 'Permission denied' }, { status: 403 })
+    }
+
+    const url = new URL(request.url)
+    const id = url.searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: '재고 ID가 필요합니다.' },
+        { status: 400 }
+      )
+    }
+
+    // 재고 항목 존재 여부 확인
+    const { data: existingItem, error: fetchError } = await supabase
+      .from('inventory')
+      .select('id')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !existingItem) {
+      return NextResponse.json(
+        { success: false, error: '존재하지 않는 재고 항목입니다.' },
+        { status: 404 }
+      )
+    }
+
+    // 재고 삭제
+    const { error: deleteError } = await supabase
+      .from('inventory')
+      .delete()
+      .eq('id', id)
+
+    if (deleteError) throw deleteError
+
+    return NextResponse.json({
+      success: true,
+      message: '재고 항목이 성공적으로 삭제되었습니다.',
+    })
+
+  } catch (error) {
+    logger.error('재고 삭제 API 에러:', error)
+    return NextResponse.json(
+      { success: false, error: '서버 에러가 발생했습니다.' },
+      { status: 500 }
+    )
   }
 }
 

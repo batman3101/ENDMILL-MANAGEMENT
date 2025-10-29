@@ -128,20 +128,21 @@ export const useInventory = (filter?: InventoryFilter) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
-      
+
       if (!response.ok) {
         throw new Error('재고 생성에 실패했습니다.')
       }
-      
+
       const result = await response.json()
       if (!result.success) {
         throw new Error(result.error || '재고 생성에 실패했습니다.')
       }
-      
+
       return result.data
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    onSuccess: async () => {
+      // 생성 성공 시 즉시 캐시 무효화 및 refetch
+      await queryClient.invalidateQueries({ queryKey: ['inventory'] })
     }
   })
 
@@ -165,20 +166,21 @@ export const useInventory = (filter?: InventoryFilter) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...data })
       })
-      
+
       if (!response.ok) {
         throw new Error('재고 업데이트에 실패했습니다.')
       }
-      
+
       const result = await response.json()
       if (!result.success) {
         throw new Error(result.error || '재고 업데이트에 실패했습니다.')
       }
-      
+
       return result.data
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    onSuccess: async () => {
+      // 업데이트 성공 시 즉시 캐시 무효화 및 refetch
+      await queryClient.invalidateQueries({ queryKey: ['inventory'] })
     }
   })
 
@@ -188,20 +190,21 @@ export const useInventory = (filter?: InventoryFilter) => {
       const response = await fetch(`/api/inventory?id=${id}`, {
         method: 'DELETE'
       })
-      
+
       if (!response.ok) {
         throw new Error('재고 삭제에 실패했습니다.')
       }
-      
+
       const result = await response.json()
       if (!result.success) {
         throw new Error(result.error || '재고 삭제에 실패했습니다.')
       }
-      
+
       return result
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+    onSuccess: async () => {
+      // 삭제 성공 시 즉시 캐시 무효화 및 refetch
+      await queryClient.invalidateQueries({ queryKey: ['inventory'] })
     }
   })
 
@@ -337,9 +340,9 @@ export const useInventory = (filter?: InventoryFilter) => {
     loading: loading || endmillTypesLoading,
     error: error?.message || null,
     refetch,
-    createInventory: createMutation.mutate,
-    updateInventory: updateMutation.mutate,
-    deleteInventory: deleteMutation.mutate,
+    createInventory: createMutation.mutateAsync,
+    updateInventory: updateMutation.mutateAsync,
+    deleteInventory: deleteMutation.mutateAsync,
     getFilteredInventory,
     getInventoryStats,
     getAvailableCategories,

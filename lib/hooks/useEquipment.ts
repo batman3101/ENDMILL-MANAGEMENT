@@ -75,6 +75,7 @@ export const useEquipment = (filter?: EquipmentFilter) => {
   }, [queryClient])
 
   // 설비 생성 Mutation
+  // Realtime 구독이 자동으로 캐시를 무효화하므로 onSuccess는 불필요
   const createMutation = useMutation({
     mutationFn: async (data: {
       equipment_number: string | number  // C001 형식 지원
@@ -90,24 +91,22 @@ export const useEquipment = (filter?: EquipmentFilter) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
-      
+
       if (!response.ok) {
         throw new Error('설비 생성에 실패했습니다.')
       }
-      
+
       const result = await response.json()
       if (!result.success) {
         throw new Error(result.error || '설비 생성에 실패했습니다.')
       }
-      
+
       return result.data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipment'] })
     }
   })
 
   // 설비 업데이트 Mutation
+  // Realtime 구독이 자동으로 캐시를 무효화하므로 onSuccess는 불필요
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & Partial<{
       equipment_number: number
@@ -123,43 +122,38 @@ export const useEquipment = (filter?: EquipmentFilter) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...data })
       })
-      
+
       if (!response.ok) {
         throw new Error('설비 업데이트에 실패했습니다.')
       }
-      
+
       const result = await response.json()
       if (!result.success) {
         throw new Error(result.error || '설비 업데이트에 실패했습니다.')
       }
-      
+
       return result.data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipment'] })
     }
   })
 
   // 설비 삭제 Mutation
+  // Realtime 구독이 자동으로 캐시를 무효화하므로 onSuccess는 불필요
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const response = await fetch(`/api/equipment?id=${id}`, {
         method: 'DELETE'
       })
-      
+
       if (!response.ok) {
         throw new Error('설비 삭제에 실패했습니다.')
       }
-      
+
       const result = await response.json()
       if (!result.success) {
         throw new Error(result.error || '설비 삭제에 실패했습니다.')
       }
-      
+
       return result
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipment'] })
     }
   })
 

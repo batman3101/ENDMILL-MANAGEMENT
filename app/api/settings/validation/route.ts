@@ -38,21 +38,20 @@ export async function GET(_request: NextRequest) {
   }
 }
 
-// 엔드밀 카테고리 조회 (app_settings에서)
+// 엔드밀 카테고리 조회 (endmill_categories 테이블에서 직접 조회)
 async function getCategoriesFromSettings() {
   const { data, error } = await supabase
-    .from('app_settings' as any)
-    .select('value')
-    .eq('category', 'inventory')
-    .eq('key', 'categories')
-    .maybeSingle()
+    .from('endmill_categories')
+    .select('code')
+    .order('name_ko', { ascending: true })
 
   if (error) {
-    logger.error('Error fetching categories from settings:', error)
+    logger.error('Error fetching categories from endmill_categories:', error)
     return []
   }
 
-  return (data as any)?.value || []
+  // code 값만 배열로 반환
+  return data?.map((cat: any) => cat.code) || []
 }
 
 // 공급업체 조회 (app_settings에서)

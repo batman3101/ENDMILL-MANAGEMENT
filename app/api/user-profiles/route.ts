@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '../../../lib/supabase/client'
+import { createClient } from '../../../lib/supabase/server'
 import { logger } from '@/lib/utils/logger'
 
 export async function GET(_request: NextRequest) {
   try {
-    // 활성 상태인 모든 사용자 프로필 조회
-    const supabase = createServerClient()
+    const supabase = createClient()
+
+    // 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // 활성 상태인 모든 사용자 프로필 조회 (RLS 적용됨)
     const { data, error } = await supabase
       .from('user_profiles')
       .select('id, name, employee_id, department, position, shift')

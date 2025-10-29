@@ -131,18 +131,16 @@ export default function ToolChangesPage() {
     setFilters({ limit: itemsPerPage })
   }, [])
 
-  // 필터 변경시 페이지 리셋과 필터 업데이트를 하나의 useEffect로 통합
+  // 필터 변경시 페이지 리셋 (currentPage 제외)
   useEffect(() => {
-    // 필터 변경시 첫 페이지로 리셋
-    if (currentPage !== 1) {
-      setCurrentPage(1)
-      return // 페이지가 변경되면 다음 렌더링에서 필터 업데이트
-    }
-
-    // 페이지가 1이거나 currentPage 상태가 업데이트된 후 필터 업데이트
-    updateFilters()
+    setCurrentPage(1)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, selectedEquipment, selectedEndmillType, dateRange.start, dateRange.end, currentPage, sortField, sortDirection])
+  }, [searchTerm, selectedEquipment, selectedEndmillType, dateRange.start, dateRange.end, sortField, sortDirection])
+
+  // 필터 업데이트 (currentPage 포함)
+  useEffect(() => {
+    updateFilters()
+  }, [updateFilters])
 
   // 설비번호 기반 자동입력 함수
   const autoFillByEquipmentNumber = useCallback(async (equipmentNumber: string) => {
@@ -251,7 +249,8 @@ export default function ToolChangesPage() {
   useEffect(() => {
     setAvailableModels(getAvailableModels)
     setAvailableProcesses(getAvailableProcesses)
-  }, [getAvailableModels, getAvailableProcesses])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [camSheets])
 
   // 사용자 목록 로드
   useEffect(() => {
