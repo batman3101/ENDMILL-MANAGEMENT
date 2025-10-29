@@ -5,6 +5,9 @@ import { logger } from '@/lib/utils/logger';
 import { createClient } from '@/lib/supabase/server';
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions';
 
+// 동적 라우트로 명시적 설정 (cookies 사용으로 인해 필요)
+export const dynamic = 'force-dynamic'
+
 // 설비 생성 스키마
 const createEquipmentSchema = z.object({
   equipment_number: z.union([

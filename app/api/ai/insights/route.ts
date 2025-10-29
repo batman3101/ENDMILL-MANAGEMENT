@@ -8,6 +8,9 @@ import { getGeminiService } from '@/lib/services/geminiService'
 import { createClient } from '@/lib/supabase/server'
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 
+// 동적 라우트로 명시적 설정 (cookies 사용으로 인해 필요)
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/ai/insights
  * 자동 인사이트 생성 (최근 7일 데이터 기반)

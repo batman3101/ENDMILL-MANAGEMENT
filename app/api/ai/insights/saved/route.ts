@@ -8,6 +8,9 @@ import { createClient } from '@/lib/supabase/server'
 import { hasPermission } from '@/lib/auth/permissions'
 import { z } from 'zod'
 
+// 동적 라우트로 명시적 설정 (cookies 사용으로 인해 필요)
+export const dynamic = 'force-dynamic'
+
 // 인사이트 저장 요청 스키마
 const saveInsightSchema = z.object({
   title: z.string().min(1).max(200),

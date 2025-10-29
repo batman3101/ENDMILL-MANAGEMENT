@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '../../../lib/supabase/server'
 import { logger } from '@/lib/utils/logger'
 
+// 동적 라우트로 명시적 설정 (cookies 사용으로 인해 필요)
+export const dynamic = 'force-dynamic'
+
 export async function GET(_request: NextRequest) {
   try {
     const supabase = createClient()

@@ -9,6 +9,9 @@ import { getGeminiService } from '@/lib/services/geminiService'
 import { createClient } from '@/lib/supabase/server'
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 
+// 동적 라우트로 명시적 설정 (cookies 사용으로 인해 필요)
+export const dynamic = 'force-dynamic'
+
 // 요청 바디 스키마
 const requestSchema = z.object({
   sessionId: z.string().uuid('올바른 세션 ID가 아닙니다.'),

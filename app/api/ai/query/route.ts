@@ -12,6 +12,9 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 
+// 동적 라우트로 명시적 설정 (cookies 사용으로 인해 필요)
+export const dynamic = 'force-dynamic'
+
 // 대화 히스토리 아이템 스키마
 const chatHistoryItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
