@@ -140,25 +140,52 @@ export default function EndmillDisposalPage() {
     }
   }
 
-  // Supabase Storage 직접 업로드
+  // 이미지를 서버를 통해 업로드 (RLS 문제 해결)
   const uploadImageToStorage = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-    const filePath = `disposal-images/${fileName}`
+    try {
+      // File을 Base64로 변환
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          const result = reader.result as string
+          // data:image/jpeg;base64, 부분 제거
+          const base64Data = result.split(',')[1]
+          resolve(base64Data)
+        }
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
 
-    const { error } = await supabase.storage
-      .from('endmill-images')
-      .upload(filePath, file)
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
 
-    if (error) {
+      // 서버 API를 통해 업로드 (서버에서 인증 체크 수행)
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file: base64,
+          fileName,
+          fileExt,
+          bucket: 'endmill-images',
+          folder: 'disposal-images'
+        })
+      })
+
+      const result = await response.json()
+      if (!response.ok) {
+        // 401 에러면 세션 만료
+        if (response.status === 401) {
+          throw new Error('로그인 세션이 만료되었습니다. 다시 로그인해주세요.')
+        }
+        throw new Error(result.error || '이미지 업로드에 실패했습니다.')
+      }
+
+      return result.publicUrl
+    } catch (error) {
+      clientLogger.error('Image upload failed:', error)
       throw error
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('endmill-images')
-      .getPublicUrl(filePath)
-
-    return publicUrl
   }
 
   // 폼 제출
@@ -168,7 +195,16 @@ export default function EndmillDisposalPage() {
     try {
       let imageUrl: string | null = null
       if (selectedImage) {
-        imageUrl = await uploadImageToStorage(selectedImage)
+        try {
+          imageUrl = await uploadImageToStorage(selectedImage)
+        } catch (uploadError) {
+          clientLogger.error('Image upload error:', uploadError)
+          const errorMessage = uploadError instanceof Error
+            ? uploadError.message
+            : '이미지 업로드 중 오류가 발생했습니다.'
+          showError(t('common.error'), errorMessage)
+          return // 이미지 업로드 실패 시 폼 제출 중단
+        }
       }
 
       const payload = {
@@ -188,7 +224,9 @@ export default function EndmillDisposalPage() {
       })
 
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error)
+      if (!response.ok) {
+        throw new Error(result.error || '폐기 기록 등록에 실패했습니다.')
+      }
 
       showSuccess(t('common.success'), t('endmillDisposal.registerSuccess'))
       setShowAddForm(false)
@@ -205,7 +243,10 @@ export default function EndmillDisposalPage() {
       loadDisposals()
     } catch (error) {
       clientLogger.error('Error adding disposal:', error)
-      showError(t('common.error'), t('endmillDisposal.registerError'))
+      const errorMessage = error instanceof Error
+        ? error.message
+        : t('endmillDisposal.registerError')
+      showError(t('common.error'), errorMessage)
     }
   }
 
@@ -233,7 +274,16 @@ export default function EndmillDisposalPage() {
     try {
       let imageUrl: string | undefined = undefined
       if (selectedImage) {
-        imageUrl = await uploadImageToStorage(selectedImage)
+        try {
+          imageUrl = await uploadImageToStorage(selectedImage)
+        } catch (uploadError) {
+          clientLogger.error('Image upload error:', uploadError)
+          const errorMessage = uploadError instanceof Error
+            ? uploadError.message
+            : '이미지 업로드 중 오류가 발생했습니다.'
+          showError(t('common.error'), errorMessage)
+          return // 이미지 업로드 실패 시 폼 제출 중단
+        }
       }
 
       const updatePayload: any = {
@@ -256,7 +306,9 @@ export default function EndmillDisposalPage() {
       })
 
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error)
+      if (!response.ok) {
+        throw new Error(result.error || '폐기 기록 수정에 실패했습니다.')
+      }
 
       showSuccess(t('common.success'), t('endmillDisposal.updateSuccess'))
       setShowEditForm(false)
@@ -274,7 +326,10 @@ export default function EndmillDisposalPage() {
       loadDisposals()
     } catch (error) {
       clientLogger.error('Error updating disposal:', error)
-      showError(t('common.error'), t('endmillDisposal.updateError'))
+      const errorMessage = error instanceof Error
+        ? error.message
+        : t('endmillDisposal.updateError')
+      showError(t('common.error'), errorMessage)
     }
   }
 
