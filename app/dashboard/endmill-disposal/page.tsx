@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import Image from 'next/image'
+import NextImage from 'next/image'
 import { useToast } from '@/components/shared/Toast'
 import { useTranslations } from '@/lib/hooks/useTranslations'
 import ConfirmationModal from '@/components/shared/ConfirmationModal'
@@ -650,7 +650,7 @@ export default function EndmillDisposalPage() {
                 <div className="md:col-span-3">
                   <p className="text-sm font-medium text-gray-700 mb-2">{t('endmillDisposal.preview')}</p>
                   <div className="relative w-48 h-48">
-                    <Image
+                    <NextImage
                       src={imagePreview}
                       alt="Preview"
                       fill
@@ -806,7 +806,7 @@ export default function EndmillDisposalPage() {
                 <div className="md:col-span-3">
                   <p className="text-sm font-medium text-gray-700 mb-2">{t('endmillDisposal.preview')}</p>
                   <div className="relative w-48 h-48">
-                    <Image
+                    <NextImage
                       src={imagePreview}
                       alt="Preview"
                       fill
