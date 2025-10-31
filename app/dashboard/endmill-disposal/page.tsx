@@ -127,22 +127,108 @@ export default function EndmillDisposalPage() {
   const endIndex = startIndex + itemsPerPage
   const currentDisposals = sortedDisposals.slice(startIndex, endIndex)
 
+  // 이미지 압축 함수
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+
+          // 최대 크기 제한 (2000px)
+          const MAX_SIZE = 2000
+          if (width > height && width > MAX_SIZE) {
+            height = (height * MAX_SIZE) / width
+            width = MAX_SIZE
+          } else if (height > MAX_SIZE) {
+            width = (width * MAX_SIZE) / height
+            height = MAX_SIZE
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+
+          // 품질 조정하여 압축 (0.8 = 80% 품질)
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                })
+                resolve(compressedFile)
+              } else {
+                reject(new Error('이미지 압축 실패'))
+              }
+            },
+            'image/jpeg',
+            0.8
+          )
+        }
+        img.onerror = () => reject(new Error('이미지 로드 실패'))
+        img.src = e.target?.result as string
+      }
+      reader.onerror = () => reject(new Error('파일 읽기 실패'))
+      reader.readAsDataURL(file)
+    })
+  }
+
   // 이미지 선택 핸들러
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      setSelectedImage(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
+      // 파일 크기 체크 (20MB)
+      const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
+      if (file.size > MAX_FILE_SIZE) {
+        showError(t('common.error'), '이미지 크기가 20MB를 초과합니다. 더 작은 이미지를 선택해주세요.')
+        e.target.value = '' // 입력 초기화
+        return
       }
-      reader.readAsDataURL(file)
+
+      try {
+        // 이미지 타입 체크
+        if (!file.type.startsWith('image/')) {
+          showError(t('common.error'), '이미지 파일만 업로드 가능합니다.')
+          e.target.value = ''
+          return
+        }
+
+        // 5MB 이상이면 자동 압축
+        let processedFile = file
+        if (file.size > 5 * 1024 * 1024) {
+          clientLogger.log('이미지가 5MB 이상입니다. 압축을 시작합니다...')
+          processedFile = await compressImage(file)
+          clientLogger.log(`압축 완료: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`)
+        }
+
+        setSelectedImage(processedFile)
+
+        // 미리보기 생성
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setImagePreview(reader.result as string)
+        }
+        reader.readAsDataURL(processedFile)
+      } catch (error) {
+        clientLogger.error('이미지 처리 오류:', error)
+        showError(t('common.error'), '이미지 처리 중 오류가 발생했습니다.')
+        e.target.value = ''
+      }
     }
   }
 
   // 이미지를 서버를 통해 업로드 (RLS 문제 해결)
   const uploadImageToStorage = async (file: File): Promise<string> => {
     try {
+      // 파일 크기 로깅
+      clientLogger.log(`업로드 시작: ${file.name}, 크기: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
+
       // File을 Base64로 변환
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
@@ -172,15 +258,31 @@ export default function EndmillDisposalPage() {
         })
       })
 
-      const result = await response.json()
+      // 응답이 JSON이 아닐 수 있으므로 확인
+      const contentType = response.headers.get('content-type')
+      let result
+
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json()
+      } else {
+        const text = await response.text()
+        clientLogger.error('Non-JSON response:', text)
+        result = { error: text }
+      }
+
       if (!response.ok) {
         // 401 에러면 세션 만료
         if (response.status === 401) {
           throw new Error('로그인 세션이 만료되었습니다. 다시 로그인해주세요.')
         }
+        // 413 에러면 파일 크기 초과
+        if (response.status === 413) {
+          throw new Error('이미지 파일이 너무 큽니다. 더 작은 이미지를 선택해주세요.')
+        }
         throw new Error(result.error || '이미지 업로드에 실패했습니다.')
       }
 
+      clientLogger.log('업로드 완료:', result.publicUrl)
       return result.publicUrl
     } catch (error) {
       clientLogger.error('Image upload failed:', error)

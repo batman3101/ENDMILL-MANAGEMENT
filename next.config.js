@@ -11,6 +11,13 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@supabase/supabase-js']
   },
+  // API 라우트 body size 제한 증가 (이미지 업로드용 - 20MB)
+  api: {
+    bodyParser: {
+      sizeLimit: '20mb',
+    },
+    responseLimit: '20mb',
+  },
   images: {
     remotePatterns: [
       {

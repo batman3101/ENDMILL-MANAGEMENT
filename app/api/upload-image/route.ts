@@ -4,6 +4,9 @@ import { logger } from '@/lib/utils/logger'
 
 export const dynamic = 'force-dynamic'
 
+// Body size 제한 증가 (20MB)
+export const maxDuration = 60 // 최대 60초
+
 // MIME 타입 매핑
 const getMimeType = (fileExt: string): string => {
   const ext = fileExt?.toLowerCase() || 'jpg'
