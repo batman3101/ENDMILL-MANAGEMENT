@@ -52,13 +52,14 @@ export async function GET(
           code: item.suppliers.code,
           name: item.suppliers.name,
           contact_info: item.suppliers.contact_info,
-          quality_rating: item.suppliers.quality_rating || 8
+          quality_rating: item.quality_rating || 8  // endmill_supplier_prices의 quality_rating 사용
         },
         unit_price: item.unit_price,
         min_order_quantity: item.min_order_quantity,
         lead_time_days: item.lead_time_days,
         is_preferred: item.is_preferred,
         current_stock: item.current_stock,
+        quality_rating: item.quality_rating || 8,  // API 응답에 price의 quality_rating도 포함
         updated_at: item.updated_at
       }))
 

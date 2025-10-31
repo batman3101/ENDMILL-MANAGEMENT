@@ -18,6 +18,7 @@ interface SupplierPrice {
   lead_time_days: number
   is_preferred: boolean
   current_stock: number
+  quality_rating: number  // price별 품질등급
   updated_at: string
 }
 
@@ -41,7 +42,7 @@ export default function EditSupplierPriceModal({
   const [leadTimeDays, setLeadTimeDays] = useState(supplierPrice.lead_time_days.toString())
   const [isPreferred, setIsPreferred] = useState(supplierPrice.is_preferred)
   const [currentStock, setCurrentStock] = useState(supplierPrice.current_stock.toString())
-  const [qualityRating, setQualityRating] = useState(supplierPrice.supplier.quality_rating.toString())
+  const [qualityRating, setQualityRating] = useState((supplierPrice.quality_rating || supplierPrice.supplier.quality_rating).toString())
   const [loading, setLoading] = useState(false)
   const { showError } = useToast()
 

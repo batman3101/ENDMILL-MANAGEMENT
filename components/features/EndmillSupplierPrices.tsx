@@ -22,6 +22,7 @@ interface SupplierPrice {
   lead_time_days: number
   is_preferred: boolean
   current_stock: number
+  quality_rating: number  // price별 품질등급
   updated_at: string
 }
 
@@ -212,8 +213,8 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getQualityColor(price.supplier.quality_rating)}`}>
-                      {price.supplier.quality_rating}/10
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getQualityColor(price.quality_rating || price.supplier.quality_rating)}`}>
+                      {price.quality_rating || price.supplier.quality_rating}/10
                     </span>
                   </td>
                   <td className="px-4 py-3">

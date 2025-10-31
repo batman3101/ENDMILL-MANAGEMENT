@@ -88,6 +88,18 @@ function SettingsPageContent() {
   const [categoryCode, setCategoryCode] = useState('')
   const [categoryName, setCategoryName] = useState('')
 
+  // 공급업체 관리 state (suppliers 테이블에서 직접 관리)
+  const [suppliers, setSuppliers] = useState<any[]>([])
+  const [isSupplierLoading, setIsSupplierLoading] = useState(false)
+
+  // 공급업체 모달 state
+  const [showSupplierModal, setShowSupplierModal] = useState(false)
+  const [modalSupplierMode, setModalSupplierMode] = useState<'add' | 'edit'>('add')
+  const [modalSupplierData, setModalSupplierData] = useState<any>(null)
+  const [supplierCode, setSupplierCode] = useState('')
+  const [supplierName, setSupplierName] = useState('')
+  const [supplierQualityRating, setSupplierQualityRating] = useState('8')
+
   const activeTabInfo = SETTINGS_TABS.find(tab => tab.id === activeTab)
 
   // 폼 데이터 업데이트 시 settings가 변경되면 동기화
@@ -101,6 +113,7 @@ function SettingsPageContent() {
   useEffect(() => {
     if (activeTab === 'inventory') {
       fetchEndmillCategories()
+      fetchSuppliers()
     }
   }, [activeTab])
 
@@ -117,6 +130,23 @@ function SettingsPageContent() {
       clientLogger.error('카테고리 조회 오류:', error)
     } finally {
       setIsCategoryLoading(false)
+    }
+  }
+
+  // 공급업체 불러오기
+  const fetchSuppliers = async () => {
+    try {
+      setIsSupplierLoading(true)
+      const response = await fetch('/api/suppliers?includeInactive=true')
+      const result = await response.json()
+
+      if (result.success) {
+        setSuppliers(result.data || [])
+      }
+    } catch (error) {
+      clientLogger.error('공급업체 조회 오류:', error)
+    } finally {
+      setIsSupplierLoading(false)
     }
   }
 
@@ -238,6 +268,128 @@ function SettingsPageContent() {
       showError('삭제 실패', '카테고리 삭제 중 오류가 발생했습니다.')
     } finally {
       setIsCategoryLoading(false)
+    }
+  }
+
+  // 공급업체 추가 모달 열기
+  const handleAddSupplier = () => {
+    setModalSupplierMode('add')
+    setSupplierCode('')
+    setSupplierName('')
+    setSupplierQualityRating('8')
+    setModalSupplierData(null)
+    setShowSupplierModal(true)
+  }
+
+  // 공급업체 추가 실행
+  const handleSubmitAddSupplier = async () => {
+    if (!supplierCode.trim() || !supplierName.trim()) {
+      showError('입력 오류', '공급업체 코드와 이름을 모두 입력하세요.')
+      return
+    }
+
+    try {
+      setIsSupplierLoading(true)
+      const response = await fetch('/api/suppliers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: supplierCode.trim().toUpperCase(),
+          name: supplierName.trim(),
+          quality_rating: parseInt(supplierQualityRating) || 8,
+          is_active: true
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        showSuccess('공급업체 추가', '공급업체가 성공적으로 추가되었습니다.')
+        await fetchSuppliers()
+        setShowSupplierModal(false)
+      } else {
+        showError('추가 실패', result.error || '공급업체 추가에 실패했습니다.')
+      }
+    } catch (error) {
+      clientLogger.error('공급업체 추가 오류:', error)
+      showError('추가 실패', '공급업체 추가 중 오류가 발생했습니다.')
+    } finally {
+      setIsSupplierLoading(false)
+    }
+  }
+
+  // 공급업체 수정 모달 열기
+  const handleUpdateSupplier = (supplier: any) => {
+    setModalSupplierMode('edit')
+    setSupplierCode(supplier.code)
+    setSupplierName(supplier.name)
+    setSupplierQualityRating(supplier.quality_rating?.toString() || '8')
+    setModalSupplierData(supplier)
+    setShowSupplierModal(true)
+  }
+
+  // 공급업체 수정 실행
+  const handleSubmitUpdateSupplier = async () => {
+    if (!supplierName.trim()) {
+      showError('입력 오류', '공급업체 이름을 입력하세요.')
+      return
+    }
+
+    if (!modalSupplierData) return
+
+    try {
+      setIsSupplierLoading(true)
+      const response = await fetch(`/api/suppliers?id=${modalSupplierData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: supplierName.trim(),
+          quality_rating: parseInt(supplierQualityRating) || 8
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        showSuccess('공급업체 수정', '공급업체가 성공적으로 수정되었습니다.')
+        await fetchSuppliers()
+        setShowSupplierModal(false)
+      } else {
+        showError('수정 실패', result.error || '공급업체 수정에 실패했습니다.')
+      }
+    } catch (error) {
+      clientLogger.error('공급업체 수정 오류:', error)
+      showError('수정 실패', '공급업체 수정 중 오류가 발생했습니다.')
+    } finally {
+      setIsSupplierLoading(false)
+    }
+  }
+
+  // 공급업체 삭제 (소프트 삭제)
+  const handleDeleteSupplier = async (supplier: any) => {
+    if (!confirm(`정말로 "${supplier.name}" 공급업체를 삭제하시겠습니까?\n\n이 공급업체의 가격 정보가 있으면 삭제할 수 없습니다.`)) {
+      return
+    }
+
+    try {
+      setIsSupplierLoading(true)
+      const response = await fetch(`/api/suppliers?id=${supplier.id}`, {
+        method: 'DELETE'
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        showSuccess('공급업체 삭제', '공급업체가 성공적으로 삭제되었습니다.')
+        await fetchSuppliers()
+      } else {
+        showError('삭제 실패', result.error || '공급업체 삭제에 실패했습니다.')
+      }
+    } catch (error) {
+      clientLogger.error('공급업체 삭제 오류:', error)
+      showError('삭제 실패', '공급업체 삭제 중 오류가 발생했습니다.')
+    } finally {
+      setIsSupplierLoading(false)
     }
   }
 
@@ -988,51 +1140,65 @@ function SettingsPageContent() {
                   <div className="bg-white border border-gray-200 rounded-lg">
                     <div className="px-6 py-4 border-b border-gray-200">
                       <h3 className="text-lg font-medium text-gray-900">🏢 공급업체 관리</h3>
-                      <p className="text-sm text-gray-600">앤드밀 공급업체 목록 관리</p>
+                      <p className="text-sm text-gray-600">앤드밀 공급업체 목록 관리 (suppliers 테이블 연동)</p>
                     </div>
                     <div className="p-6">
-                      <div className="space-y-4">
-                        {(Array.isArray(formData.inventory?.suppliers) ? formData.inventory.suppliers : ['Kyocera', 'Mitsubishi', 'Sandvik', 'OSG', 'YG-1', 'Guhring']).map((supplier, index) => (
-                          <div key={index} className="flex items-center space-x-3">
-                            <div className="flex-1">
-                              <input
-                                type="text"
-                                value={supplier}
-                                onChange={(e) => {
-                                  const newSuppliers = [...(formData.inventory?.suppliers || [])]
-                                  newSuppliers[index] = e.target.value
-                                  updateFormData('inventory', 'suppliers', newSuppliers)
-                                }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="공급업체명 입력"
-                              />
+                      {isSupplierLoading ? (
+                        <div className="flex justify-center items-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                          <span className="ml-3 text-gray-600">로딩 중...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {suppliers.map((supplier) => (
+                            <div key={supplier.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-3">
+                                  <span className="px-3 py-1 bg-cyan-100 text-cyan-800 rounded-md font-mono font-semibold text-sm">
+                                    {supplier.code}
+                                  </span>
+                                  <span className="text-gray-900 font-medium">{supplier.name}</span>
+                                  <span className="text-xs text-gray-500">
+                                    품질등급: {supplier.quality_rating || 8}/10
+                                  </span>
+                                  {!supplier.is_active && (
+                                    <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-md">
+                                      비활성
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleUpdateSupplier(supplier)}
+                                className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                                disabled={isSupplierLoading}
+                              >
+                                수정
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSupplier(supplier)}
+                                className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                                disabled={isSupplierLoading}
+                              >
+                                삭제
+                              </button>
                             </div>
-                            <button
-                              onClick={() => {
-                                const newSuppliers = [...(formData.inventory?.suppliers || [])]
-                                newSuppliers.splice(index, 1)
-                                updateFormData('inventory', 'suppliers', newSuppliers)
-                              }}
-                              className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                              disabled={(formData.inventory?.suppliers || []).length <= 1}
-                            >
-                              삭제
-                            </button>
+                          ))}
+                          <button
+                            onClick={handleAddSupplier}
+                            className="w-full px-4 py-3 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 font-medium disabled:opacity-50"
+                            disabled={isSupplierLoading}
+                          >
+                            + 공급업체 추가
+                          </button>
+                          <div className="mt-4 p-4 bg-cyan-50 border border-cyan-200 rounded-lg">
+                            <p className="text-sm text-cyan-800">
+                              <strong>ℹ️ 알림:</strong> 공급업체는 즉시 suppliers 테이블에 저장됩니다.
+                              별도의 &ldquo;설정 저장&rdquo; 버튼을 누를 필요가 없습니다.
+                            </p>
                           </div>
-                        ))}
-                        <button
-                          onClick={() => {
-                            const currentSuppliers = Array.isArray(formData.inventory?.suppliers)
-                              ? formData.inventory.suppliers
-                              : ['Kyocera', 'Mitsubishi', 'Sandvik', 'OSG', 'YG-1', 'Guhring']
-                            const newSuppliers = [...currentSuppliers, '새 공급업체']
-                            updateFormData('inventory', 'suppliers', newSuppliers)
-                          }}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          + 공급업체 추가
-                        </button>
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -2656,6 +2822,110 @@ function SettingsPageContent() {
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     )}
                     {isCategoryLoading ? '처리 중...' : (modalMode === 'add' ? '추가' : '수정')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 공급업체 추가/수정 모달 */}
+          {showSupplierModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {modalSupplierMode === 'add' ? '새 공급업체 추가' : '공급업체 수정'}
+                  </h3>
+                </div>
+
+                <div className="px-6 py-4 space-y-4">
+                  {modalSupplierMode === 'add' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        공급업체 코드 <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={supplierCode}
+                        onChange={(e) => setSupplierCode(e.target.value.toUpperCase())}
+                        placeholder="예: TOOLEX, ATH"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        disabled={isSupplierLoading}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        영문 대문자로 입력하세요
+                      </p>
+                    </div>
+                  )}
+
+                  {modalSupplierMode === 'edit' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        공급업체 코드
+                      </label>
+                      <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 font-mono">
+                        {supplierCode}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        코드는 수정할 수 없습니다
+                      </p>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      공급업체 이름 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={supplierName}
+                      onChange={(e) => setSupplierName(e.target.value)}
+                      placeholder="예: TOOLEX 공구, ATH 공구"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      disabled={isSupplierLoading}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      한글 또는 영문으로 입력하세요
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      품질등급 (1-10) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={supplierQualityRating}
+                      onChange={(e) => setSupplierQualityRating(e.target.value)}
+                      placeholder="8"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      disabled={isSupplierLoading}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      10점이 최고 품질입니다 (기본값: 8)
+                    </p>
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                  <button
+                    onClick={() => setShowSupplierModal(false)}
+                    disabled={isSupplierLoading}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={modalSupplierMode === 'add' ? handleSubmitAddSupplier : handleSubmitUpdateSupplier}
+                    disabled={isSupplierLoading}
+                    className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:opacity-50 flex items-center"
+                  >
+                    {isSupplierLoading && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    )}
+                    {isSupplierLoading ? '처리 중...' : (modalSupplierMode === 'add' ? '추가' : '수정')}
                   </button>
                 </div>
               </div>

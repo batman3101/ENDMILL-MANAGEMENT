@@ -9,7 +9,6 @@ interface EndmillFormData {
   code: string
   category: string
   name: string
-  unitCost: number
   standardLife: number
 }
 
@@ -18,6 +17,11 @@ interface SupplierPrice {
   supplier_id: string
   supplier_name: string
   unit_price: number
+  min_order_quantity?: number
+  lead_time_days?: number
+  quality_rating?: number
+  current_stock?: number
+  is_preferred?: boolean
 }
 
 interface EndmillFormProps {
@@ -34,7 +38,6 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
     code: '',
     category: '',
     name: '',
-    unitCost: 0,
     standardLife: 0
   })
 
@@ -43,7 +46,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [supplierPrices, setSupplierPrices] = useState<SupplierPrice[]>([])
-  const [showSupplierSection, setShowSupplierSection] = useState(false)
+  const [showSupplierSection, setShowSupplierSection] = useState(!editData) // 신규 등록 시 기본 표시
   const [categories, setCategories] = useState<any[]>([])
   const { showSuccess, showError } = useToast()
 
@@ -54,9 +57,21 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
         code: editData.code || '',
         category: editData.category || '',
         name: editData.name || '',
-        unitCost: editData.unit_cost || 0,
         standardLife: editData.standard_life || 0
       })
+      setShowSupplierSection(false)
+    } else {
+      // 신규 등록 시 기본적으로 1개의 공급업체 가격 입력 폼 추가
+      setSupplierPrices([{
+        supplier_id: '',
+        supplier_name: '',
+        unit_price: 0,
+        min_order_quantity: 1,
+        lead_time_days: 7,
+        quality_rating: 8,
+        current_stock: 0,
+        is_preferred: false
+      }])
     }
   }, [editData])
 
@@ -104,7 +119,12 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
     const newPrice: SupplierPrice = {
       supplier_id: '',
       supplier_name: '',
-      unit_price: 0
+      unit_price: 0,
+      min_order_quantity: 1,
+      lead_time_days: 7,
+      quality_rating: 8,
+      current_stock: 0,
+      is_preferred: false
     }
     setSupplierPrices(prev => [...prev, newPrice])
   }
@@ -150,12 +170,6 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
       newErrors.name = t('endmill.endmillNameError')
     }
 
-
-
-    if (formData.unitCost <= 0) {
-      newErrors.unitCost = t('endmill.unitCostError')
-    }
-
     if (formData.standardLife <= 0) {
       newErrors.standardLife = t('endmill.standardLifeError')
     }
@@ -176,16 +190,21 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
     setLoading(true)
 
     try {
+      // 공급업체별 가격 정보 (선택사항)
+      const allSupplierPrices = supplierPrices.filter(sp => sp.supplier_id && sp.unit_price > 0)
+
+      // 공급업체 가격 중 최소값을 기준 단가로 사용 (없으면 0)
+      const unitCost = allSupplierPrices.length > 0
+        ? Math.min(...allSupplierPrices.map(sp => sp.unit_price))
+        : 0
+
       const submitData = {
         code: formData.code.trim().toUpperCase(),
         category: formData.category,
         name: formData.name.trim(),
-        unit_cost: formData.unitCost,
+        unit_cost: unitCost,
         standard_life: formData.standardLife
       }
-
-      // 공급업체별 가격 정보 (선택사항)
-      const allSupplierPrices = supplierPrices.filter(sp => sp.supplier_id && sp.unit_price > 0)
 
       const response = await fetch('/api/endmill/create', {
         method: 'POST',
@@ -292,104 +311,78 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
           </div>
 
 
-          {/* 공급업체 및 단가 */}
-          <div className="space-y-4">
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('endmill.unitCostRequired')} <span className="text-red-500">{t('endmill.required')}</span>
-                </label>
-                <input
-                  type="number"
-                  value={formData.unitCost || ''}
-                  onChange={(e) => handleInputChange('unitCost', Number(e.target.value))}
-                  min="0"
-                  step="1000"
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.unitCost ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  disabled={loading}
-                />
-                {errors.unitCost && <p className="mt-1 text-sm text-red-600">{errors.unitCost}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('endmill.standardLifeRequired')} <span className="text-red-500">{t('endmill.required')}</span>
-                </label>
-                <input
-                  type="number"
-                  value={formData.standardLife || ''}
-                  onChange={(e) => handleInputChange('standardLife', Number(e.target.value))}
-                  min="0"
-                  step="100"
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.standardLife ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  disabled={loading}
-                />
-                {errors.standardLife && <p className="mt-1 text-sm text-red-600">{errors.standardLife}</p>}
-              </div>
-            </div>
+          {/* 표준 수명 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('endmill.standardLifeRequired')} <span className="text-red-500">{t('endmill.required')}</span>
+            </label>
+            <input
+              type="number"
+              value={formData.standardLife || ''}
+              onChange={(e) => handleInputChange('standardLife', Number(e.target.value))}
+              min="0"
+              step="100"
+              placeholder="예: 3000"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.standardLife ? 'border-red-500' : 'border-gray-300'
+              }`}
+              disabled={loading}
+            />
+            {errors.standardLife && <p className="mt-1 text-sm text-red-600">{errors.standardLife}</p>}
+            <p className="text-xs text-gray-500 mt-1">
+              표준 사용 수명 (회). 기준 단가는 공급업체 가격 중 최소값으로 자동 설정됩니다.
+            </p>
           </div>
 
 
           {/* 공급업체별 가격 정보 섹션 */}
           <div className="border-t pt-6">
-            <div className="flex justify-between items-center mb-4">
-              <h4 className="text-md font-medium text-gray-900">{t('endmill.supplierPriceInfo')}</h4>
-              <button
-                type="button"
-                onClick={() => setShowSupplierSection(!showSupplierSection)}
-                className="text-sm text-blue-600 hover:text-blue-800"
-              >
-                {showSupplierSection ? t('endmill.hideButton') : t('endmill.addButton')}
-              </button>
+            <div className="mb-4">
+              <h4 className="text-md font-medium text-gray-900 mb-2">💰 공급업체별 가격 정보</h4>
+              <p className="text-sm text-gray-600">
+                최소 1개 이상의 공급업체를 등록하는 것을 권장합니다. 나중에 추가할 수도 있습니다.
+              </p>
             </div>
 
-            {showSupplierSection && (
-              <div className="space-y-4">
-                <div className="text-sm text-gray-600 mb-4">
-                  {t('endmill.supplierPriceDescription')}
-                </div>
+            <div className="space-y-4">
+              {supplierPrices.map((price, index) => (
+                <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-300">
+                  <div className="flex justify-between items-start mb-3">
+                    <h5 className="text-sm font-medium text-gray-700">공급업체 {index + 1}</h5>
+                    <button
+                      type="button"
+                      onClick={() => removeSupplierPrice(index)}
+                      className="text-red-600 hover:text-red-800 text-sm font-medium"
+                      disabled={supplierPrices.length === 1}
+                    >
+                      삭제
+                    </button>
+                  </div>
 
-                {supplierPrices.map((price, index) => (
-                  <div key={index} className="bg-gray-50 p-4 rounded-lg border">
-                    <div className="flex justify-between items-start mb-3">
-                      <h5 className="text-sm font-medium text-gray-700">{t('endmill.supplierNumber')} {index + 1}</h5>
-                      <button
-                        type="button"
-                        onClick={() => removeSupplierPrice(index)}
-                        className="text-red-600 hover:text-red-800 text-sm"
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        공급업체 선택 <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={price.supplier_id}
+                        onChange={(e) => updateSupplierPrice(index, 'supplier_id', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={loading}
                       >
-                        {t('endmill.deleteButton')}
-                      </button>
+                        <option value="">공급업체를 선택하세요</option>
+                        {suppliers.map(supplier => (
+                          <option key={supplier.id} value={supplier.id}>
+                            {supplier.code || supplier.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="col-span-2">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          {t('endmill.selectSupplier')}
-                        </label>
-                        <select
-                          value={price.supplier_id}
-                          onChange={(e) => updateSupplierPrice(index, 'supplier_id', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          disabled={loading}
-                        >
-                          <option value="">{t('endmill.selectSupplierPlaceholder')}</option>
-                          {suppliers.map(supplier => (
-                            <option key={supplier.id} value={supplier.id}>
-                              {supplier.code || supplier.name} ({supplier.unit_price?.toLocaleString() || 0} VND)
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="col-span-2">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          {t('endmill.supplierUnitPrice')}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          단가 (VND) <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="number"
@@ -397,25 +390,110 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                           onChange={(e) => updateSupplierPrice(index, 'unit_price', Number(e.target.value))}
                           min="0"
                           step="1000"
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="예: 145000"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                           disabled={loading || !price.supplier_id}
-                          placeholder={!price.supplier_id ? t('endmill.selectSupplierFirst') : ''}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          품질등급 (1-10)
+                        </label>
+                        <input
+                          type="number"
+                          value={price.quality_rating || 8}
+                          onChange={(e) => updateSupplierPrice(index, 'quality_rating', Number(e.target.value))}
+                          min="1"
+                          max="10"
+                          placeholder="8"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={loading}
                         />
                       </div>
                     </div>
-                  </div>
-                ))}
 
-                <button
-                  type="button"
-                  onClick={addSupplierPrice}
-                  className="w-full px-4 py-2 text-sm text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 disabled:opacity-50"
-                  disabled={loading}
-                >
-                  {t('endmill.addSupplierButton')}
-                </button>
-              </div>
-            )}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          최소 주문
+                        </label>
+                        <input
+                          type="number"
+                          value={price.min_order_quantity || 1}
+                          onChange={(e) => updateSupplierPrice(index, 'min_order_quantity', Number(e.target.value))}
+                          min="1"
+                          placeholder="1"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={loading}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          납기일 (일)
+                        </label>
+                        <input
+                          type="number"
+                          value={price.lead_time_days || 7}
+                          onChange={(e) => updateSupplierPrice(index, 'lead_time_days', Number(e.target.value))}
+                          min="1"
+                          placeholder="7"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={loading}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          현재 재고
+                        </label>
+                        <input
+                          type="number"
+                          value={price.current_stock || 0}
+                          onChange={(e) => updateSupplierPrice(index, 'current_stock', Number(e.target.value))}
+                          min="0"
+                          placeholder="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`is_preferred_${index}`}
+                        checked={price.is_preferred || false}
+                        onChange={(e) => updateSupplierPrice(index, 'is_preferred', e.target.checked)}
+                        className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        disabled={loading}
+                      />
+                      <label htmlFor={`is_preferred_${index}`} className="text-sm text-gray-700">
+                        선호 공급업체로 설정
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={addSupplierPrice}
+                className="w-full px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-lg hover:bg-blue-100 disabled:opacity-50"
+                disabled={loading}
+              >
+                + 공급업체 추가
+              </button>
+
+              {supplierPrices.length === 0 && (
+                <div className="text-center py-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ 공급업체 정보가 없습니다. 최소 1개 이상 추가하는 것을 권장합니다.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 버튼 */}

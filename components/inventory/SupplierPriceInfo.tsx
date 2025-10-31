@@ -19,6 +19,7 @@ interface SupplierPrice {
   lead_time_days: number
   is_preferred: boolean
   current_stock: number
+  quality_rating: number  // price별 품질등급
 }
 
 export default function SupplierPriceInfo({ endmillTypeId }: SupplierPriceInfoProps) {
@@ -86,7 +87,7 @@ export default function SupplierPriceInfo({ endmillTypeId }: SupplierPriceInfoPr
                 </span>
               )}
               <span className="ml-2 text-xs text-gray-500">
-                ⭐ {item.supplier.quality_rating}/10
+                ⭐ {item.quality_rating || item.supplier.quality_rating}/10
               </span>
             </div>
             <div className="text-sm text-gray-500 mt-1">

@@ -467,6 +467,32 @@ export default function EndmillPage() {
     }
   }
 
+  // 공급업체별 단가표 다운로드 핸들러
+  const handleDownloadSupplierPriceList = async () => {
+    try {
+      const response = await fetch('/api/endmill/supplier-price-list')
+
+      if (!response.ok) {
+        throw new Error('단가표 다운로드 실패')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `공급업체별_단가표_${new Date().toISOString().split('T')[0]}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      showSuccess('단가표 다운로드', '공급업체별 단가표가 다운로드되었습니다.')
+    } catch (error) {
+      clientLogger.error('단가표 다운로드 오류:', error)
+      showError('다운로드 실패', '단가표 다운로드 중 오류가 발생했습니다.')
+    }
+  }
+
   // 엑셀 업로드 성공 핸들러
   const handleUploadSuccess = (_data: any[]) => {
     showSuccess('업로드 완료', '엔드밀 데이터가 성공적으로 등록되었습니다.')
@@ -522,6 +548,13 @@ export default function EndmillPage() {
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
           >
             📥 {t('endmill.excelTemplateDownload')}
+          </button>
+          <button
+            onClick={handleDownloadSupplierPriceList}
+            className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 flex items-center gap-2"
+            title="보유 중인 모든 앤드밀의 공급업체별 단가표를 엑셀로 다운로드합니다"
+          >
+            💰 공급업체별 단가표
           </button>
           <button
             onClick={() => setShowExcelUploader(true)}

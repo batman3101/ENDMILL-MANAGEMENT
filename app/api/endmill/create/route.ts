@@ -106,10 +106,11 @@ export async function POST(request: NextRequest) {
         endmill_type_id: newEndmill.id,
         supplier_id: sp.supplier_id,
         unit_price: sp.unit_price,
-        min_order_quantity: 1,
-        lead_time_days: 5,
-        is_preferred: false,
-        current_stock: 0
+        min_order_quantity: sp.min_order_quantity || 1,
+        lead_time_days: sp.lead_time_days || 7,
+        is_preferred: sp.is_preferred || false,
+        current_stock: sp.current_stock || 0,
+        quality_rating: sp.quality_rating || 8
       }))
 
       const { error: priceError } = await supabase
