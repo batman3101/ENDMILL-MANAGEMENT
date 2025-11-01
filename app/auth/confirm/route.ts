@@ -1,6 +1,7 @@
-import { createServerClient } from '@/lib/supabase/client';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { Database } from '@/lib/types/database';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -16,8 +17,26 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(cookieStore);
+    const cookieStore = cookies();
+
+    // Supabase 클라이언트 생성 (SSR 지원)
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options) {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove(name: string, options) {
+            cookieStore.set({ name, value: '', ...options });
+          },
+        },
+      }
+    );
 
     // Verify email using the token hash
     const { error } = await supabase.auth.verifyOtp({
