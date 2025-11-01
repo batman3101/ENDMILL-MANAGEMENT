@@ -352,17 +352,28 @@ const resources = {
         required: '*',
         pieces: '개',
 
-        // 입고 페이지
+        // 입고 페이지 - USB QR 스캐너
         qrScanner: 'QR 스캐너',
         scanDescription: 'QR 스캔을 통한 앤드밀 입고 처리',
         backToInventory: '재고현황으로',
-        cameraActivated: '카메라가 활성화되었습니다',
-        showQRToCamera: 'QR 코드를 카메라에 비춰주세요',
-        stopScanning: '스캔 중지',
-        scanToLoadInfo: 'QR 코드를 스캔하여 앤드밀 정보를 불러오세요',
-        startCamera: '카메라 시작',
-        or: '또는',
         enterCodePlaceholder: '앤드밀 코드 입력 (예: AT001)',
+        scanError: '스캔 오류',
+        usbScannerReady: 'USB QR 스캐너 준비됨',
+        usbScannerGuide: 'QR 코드를 스캔하거나 직접 입력하세요',
+        scannerUsageGuide: '사용 방법',
+        scannerStep1: '입력 필드에 포커스가 자동으로 맞춰집니다',
+        scannerStep2: 'USB QR 스캐너로 QR 코드를 스캔하세요',
+        scannerStep3: '스캔이 끝나면 0.2초 후 자동으로 검색됩니다 (Enter 불필요)',
+
+        // 출고 페이지
+        equipmentNumber: '설비번호',
+        tNumber: 'T번호',
+        purpose: '교체 사유',
+        equipmentNumberOptionalHint: '미리 출고 시 생략 가능 (교체 실적에서 입력)',
+        tNumberOptionalHint: '설비번호 입력 시 선택 가능',
+        purposeOptionalHint: '생략 시 "미리 준비"로 저장됩니다',
+        outboundOptionalNote: '설비번호와 T번호는 나중에 교체 실적 페이지에서 입력할 수 있습니다',
+        checkOutboundFieldsBasic: '앤드밀 코드와 수량을 확인해주세요',
 
         inboundInfo: '입고 정보',
         autoFilledInfo: '자동 입력된 앤드밀 정보',
@@ -397,19 +408,14 @@ const resources = {
         inboundProcessError: '입고 처리 중 오류가 발생했습니다.',
         totalPrice: '총액',
 
-        // 출고 페이지
+        // 출고 페이지 (기존 키 제거됨 - 상단에서 통합됨)
         outboundScanDescription: 'QR 스캔을 통한 앤드밀 출고 처리',
         outboundInfo: '출고 정보',
-        equipmentNumber: '설비번호',
         equipmentNumberPlaceholder: '설비번호 입력 (예: C001)',
-        equipmentNumberRequired: '설비번호 *',
-        tNumberRequired: 'T번호 *',
         tNumberAutoInput: 'T번호 자동 입력',
         tNumberAutoInputSuccess: '이 자동으로 입력되었습니다.',
         tNumberAutoInputFailed: 'T번호 자동 입력 실패',
         tNumberNotFound: '해당 설비에서 이 앤드밀이 사용되는 T번호를 찾을 수 없습니다.',
-        purpose: '교체 사유',
-        purposeRequired: '교체 사유 *',
         outboundQuantity: '출고 수량',
         processOutbound: '출고 처리',
         totalOutboundAmount: '총 출고 금액',
@@ -2533,17 +2539,28 @@ const resources = {
         required: '*',
         pieces: 'cái',
 
-        // 입고 페이지
+        // 입고 페이지 - USB QR 스캐너
         qrScanner: 'Máy quét QR',
         scanDescription: 'Xử lý nhập kho dao phay bằng quét mã QR',
         backToInventory: 'Về tồn kho',
-        cameraActivated: 'Camera đã được kích hoạt',
-        showQRToCamera: 'Vui lòng hiển thị mã QR trước camera',
-        stopScanning: 'Dừng quét',
-        scanToLoadInfo: 'Quét mã QR để tải thông tin dao phay',
-        startCamera: 'Khởi động camera',
-        or: 'Hoặc',
         enterCodePlaceholder: 'Nhập mã dao phay (Ví dụ: AT001)',
+        scanError: 'Lỗi quét',
+        usbScannerReady: 'Máy quét QR USB đã sẵn sàng',
+        usbScannerGuide: 'Quét mã QR hoặc nhập thủ công',
+        scannerUsageGuide: 'Cách sử dụng',
+        scannerStep1: 'Trường nhập liệu tự động được tập trung',
+        scannerStep2: 'Quét mã QR bằng máy quét QR USB',
+        scannerStep3: 'Sau khi quét xong, tìm kiếm tự động sau 0.2 giây (không cần Enter)',
+
+        // 출고 페이지
+        equipmentNumber: 'Số thiết bị',
+        tNumber: 'Số T',
+        purpose: 'Lý do thay thế',
+        equipmentNumberOptionalHint: 'Có thể bỏ qua khi xuất kho trước (nhập trong lịch sử thay thế)',
+        tNumberOptionalHint: 'Có thể chọn khi nhập số thiết bị',
+        purposeOptionalHint: 'Nếu bỏ qua, sẽ lưu là "Chuẩn bị trước"',
+        outboundOptionalNote: 'Số thiết bị và số T có thể nhập sau trong trang lịch sử thay thế',
+        checkOutboundFieldsBasic: 'Vui lòng kiểm tra mã dao phay và số lượng',
 
         inboundInfo: 'Thông tin nhập kho',
         autoFilledInfo: 'Thông tin dao phay tự động nhập',
@@ -2578,19 +2595,14 @@ const resources = {
         inboundProcessError: 'Đã xảy ra lỗi trong quá trình nhập kho.',
         totalPrice: 'Tổng tiền',
 
-        // 출고 페이지
+        // 출고 페이지 (기존 키 제거됨 - 상단에서 통합됨)
         outboundScanDescription: 'Xử lý xuất kho dao phay bằng quét mã QR',
         outboundInfo: 'Thông tin xuất kho',
-        equipmentNumber: 'Số thiết bị',
         equipmentNumberPlaceholder: 'Nhập số thiết bị (Ví dụ: C001)',
-        equipmentNumberRequired: 'Số thiết bị *',
-        tNumberRequired: 'Số T *',
         tNumberAutoInput: 'Tự động nhập số T',
         tNumberAutoInputSuccess: 'đã được tự động nhập.',
         tNumberAutoInputFailed: 'Tự động nhập số T thất bại',
         tNumberNotFound: 'Không tìm thấy số T mà dao phay này được sử dụng trong thiết bị này.',
-        purpose: 'Lý do thay thế',
-        purposeRequired: 'Lý do thay thế *',
         outboundQuantity: 'Số lượng xuất kho',
         processOutbound: 'Xử lý xuất kho',
         totalOutboundAmount: 'Tổng tiền xuất kho',

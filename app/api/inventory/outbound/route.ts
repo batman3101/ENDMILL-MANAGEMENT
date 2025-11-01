@@ -136,6 +136,14 @@ export async function POST(request: NextRequest) {
       equipmentId = equipment?.id
     }
 
+    // notes 생성 - 설비번호가 있는 경우와 없는 경우 구분
+    let transactionNotes = notes || ''
+    if (equipment_number && t_number) {
+      transactionNotes = `${equipment_number} T${t_number.toString().padStart(2, '0')} ${notes || ''}`.trim()
+    } else if (!equipment_number && !t_number) {
+      transactionNotes = '미리 출고 (설비 미지정)'
+    }
+
     // 트랜잭션 시작 - inventory_id 사용
     const { data: transaction, error: transactionError } = await supabase
       .from('inventory_transactions')
@@ -144,9 +152,9 @@ export async function POST(request: NextRequest) {
         transaction_type: 'outbound', // 소문자로 변경
         quantity: quantity,
         equipment_id: equipmentId,
-        t_number: t_number,
-        purpose: purpose || '교체',
-        notes: `${equipment_number} T${t_number?.toString().padStart(2, '0')} ${notes || ''}`.trim(),
+        t_number: t_number || null,
+        purpose: purpose || '미리 준비',
+        notes: transactionNotes,
         processed_by: body.user_id || null,
         unit_price: endmillType.unit_cost || 0,
         total_amount: quantity * (endmillType.unit_cost || 0),

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useToast } from '../../../../components/shared/Toast'
 import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
@@ -35,7 +35,6 @@ export default function InboundPage() {
   const { t } = useTranslations()
   const { showSuccess, showError } = useToast()
   const confirmation = useConfirmation()
-  const [isScanning, setIsScanning] = useState(false)
   const [scannedCode, setScannedCode] = useState('')
   const [inboundItems, setInboundItems] = useState<InboundItem[]>([])
   const [endmillData, setEndmillData] = useState<EndmillData | null>(null)
@@ -46,6 +45,10 @@ export default function InboundPage() {
   const [availableEndmills, setAvailableEndmills] = useState<any[]>([])
   const [availableSuppliers, setAvailableSuppliers] = useState<any[]>([])
   const [supplierPrices, setSupplierPrices] = useState<Record<string, number>>({})
+
+  // USB QR 스캐너를 위한 input ref 및 타이머
+  const codeInputRef = useRef<HTMLInputElement>(null)
+  const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // 입고 내역 로드 함수
   const loadInboundItems = async () => {
@@ -146,9 +149,26 @@ export default function InboundPage() {
     return {}
   }
 
+  // 페이지 로드 시 input에 자동 포커스
+  useEffect(() => {
+    if (codeInputRef.current && !endmillData) {
+      codeInputRef.current.focus()
+    }
+  }, [endmillData])
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const handleQRScan = async (code: string) => {
-    setScannedCode(code)
-    setIsScanning(false)
+    if (!code.trim()) return
+
+    clientLogger.log('QR 코드 검색 시작:', code)
     setErrorMessage('')
 
     // 앤드밀 마스터 데이터에서 검색
@@ -274,64 +294,84 @@ export default function InboundPage() {
       {/* QR 스캔 섹션 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">📱 {t('inventory.qrScanner')}</h2>
-          
-          {isScanning ? (
-            <div className="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center bg-blue-50">
-              <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-lg flex items-center justify-center">
-                📷
-              </div>
-              <p className="text-blue-600 mb-4">{t('inventory.cameraActivated')}</p>
-              <p className="text-sm text-gray-600 mb-4">{t('inventory.showQRToCamera')}</p>
-              <button
-                onClick={() => setIsScanning(false)}
-                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-              >
-                {t('inventory.stopScanning')}
-              </button>
-            </div>
-          ) : (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
-                📷
-              </div>
-              <p className="text-gray-500 mb-4">{t('inventory.scanToLoadInfo')}</p>
-              <button
-                onClick={() => setIsScanning(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 mb-2"
-              >
-                {t('inventory.startCamera')}
-              </button>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">🔍 {t('inventory.qrScanner')}</h2>
 
-              <div className="mt-4 text-center">
-                <p className="text-sm text-gray-600 mb-2">{t('inventory.or')}</p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder={t('inventory.enterCodePlaceholder')}
-                    value={scannedCode}
-                    onChange={(e) => setScannedCode(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    onKeyPress={async (e) => {
-                      if (e.key === 'Enter' && scannedCode.trim()) {
-                        await handleQRScan(scannedCode)
+          <div className="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center bg-blue-50">
+            <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-lg flex items-center justify-center text-3xl">
+              📦
+            </div>
+            <p className="text-blue-800 font-medium mb-2">{t('inventory.usbScannerReady')}</p>
+            <p className="text-sm text-blue-600 mb-6">{t('inventory.usbScannerGuide')}</p>
+
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input
+                  ref={codeInputRef}
+                  type="text"
+                  placeholder={t('inventory.enterCodePlaceholder')}
+                  value={scannedCode}
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase()
+                    setScannedCode(value)
+
+                    // 기존 타이머 취소
+                    if (scanTimeoutRef.current) {
+                      clearTimeout(scanTimeoutRef.current)
+                    }
+
+                    // 입력이 있고 3자 이상이면 200ms 후 자동 검색
+                    if (value.trim().length >= 3) {
+                      scanTimeoutRef.current = setTimeout(async () => {
+                        clientLogger.log('자동 검색 실행:', value)
+                        await handleQRScan(value)
+                        setScannedCode('') // 검색 후 input 초기화
+                      }, 200)
+                    }
+                  }}
+                  onKeyDown={async (e) => {
+                    // Enter 키로도 즉시 검색 가능
+                    if (e.key === 'Enter' && scannedCode.trim()) {
+                      // 타이머가 있으면 취소
+                      if (scanTimeoutRef.current) {
+                        clearTimeout(scanTimeoutRef.current)
                       }
-                    }}
-                  />
-                  <button
-                    onClick={async () => scannedCode.trim() && await handleQRScan(scannedCode)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    disabled={!scannedCode.trim()}
-                  >
-                    {t('common.search')}
-                  </button>
+                      await handleQRScan(scannedCode)
+                      setScannedCode('') // 검색 후 input 초기화
+                    }
+                  }}
+                  className="flex-1 px-4 py-3 border-2 border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-mono"
+                  autoFocus
+                />
+                <button
+                  onClick={async () => {
+                    if (scannedCode.trim()) {
+                      await handleQRScan(scannedCode)
+                      setScannedCode('')
+                    }
+                  }}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+                  disabled={!scannedCode.trim()}
+                >
+                  {t('common.search')}
+                </button>
+              </div>
+
+              {errorMessage && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                  <p className="text-red-600 text-sm">{errorMessage}</p>
                 </div>
-                {errorMessage && (
-                  <p className="text-red-600 text-sm mt-2">{errorMessage}</p>
-                )}
+              )}
+
+              <div className="bg-white border border-blue-200 rounded-md p-4 text-left">
+                <p className="text-xs font-medium text-blue-800 mb-2">💡 {t('inventory.scannerUsageGuide')}</p>
+                <ul className="text-xs text-blue-700 space-y-1 ml-4 list-disc">
+                  <li>{t('inventory.scannerStep1')}</li>
+                  <li>{t('inventory.scannerStep2')}</li>
+                  <li>{t('inventory.scannerStep3')}</li>
+                </ul>
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* 입고 정보 입력 */}

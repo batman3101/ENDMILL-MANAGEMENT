@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 // import { useInventorySearch } from '../../../../lib/hooks/useInventory' // 미사용
 import { useToast } from '../../../../components/shared/Toast'
@@ -40,7 +40,6 @@ export default function OutboundPage() {
   const { t } = useTranslations()
   const { showSuccess, showError, showWarning } = useToast()
   const confirmation = useConfirmation()
-  const [isScanning, setIsScanning] = useState(false)
   const [scannedCode, setScannedCode] = useState('')
   const [outboundItems, setOutboundItems] = useState<OutboundItem[]>([])
   const [endmillData, setEndmillData] = useState<EndmillData | null>(null)
@@ -51,6 +50,10 @@ export default function OutboundPage() {
   const [errorMessage, setErrorMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [availableEndmills, setAvailableEndmills] = useState<any[]>([])
+
+  // USB QR 스캐너를 위한 input ref 및 타이머
+  const codeInputRef = useRef<HTMLInputElement>(null)
+  const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // 설정에서 값 가져오기
   const { settings } = useSettings()
@@ -174,9 +177,26 @@ export default function OutboundPage() {
     }
   }
 
+  // 페이지 로드 시 input에 자동 포커스
+  useEffect(() => {
+    if (codeInputRef.current && !endmillData) {
+      codeInputRef.current.focus()
+    }
+  }, [endmillData])
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const handleQRScan = async (code: string) => {
-    setScannedCode(code)
-    setIsScanning(false)
+    if (!code.trim()) return
+
+    clientLogger.log('QR 코드 검색 시작:', code)
     setErrorMessage('')
 
     // 앤드밀 마스터 데이터에서 검색
@@ -258,16 +278,18 @@ export default function OutboundPage() {
   }
 
   const handleProcessOutbound = async () => {
-    if (!endmillData || quantity <= 0 || !equipmentNumber.trim()) {
-      showError(t('inventory.checkInput'), t('inventory.checkOutboundFields'))
+    if (!endmillData || quantity <= 0) {
+      showError(t('inventory.checkInput'), t('inventory.checkOutboundFieldsBasic'))
       return
     }
 
-    // 설비번호 패턴 검증
-    const equipmentPattern = /^C[0-9]{3}$/
-    if (!equipmentPattern.test(equipmentNumber)) {
-      showWarning(t('inventory.equipmentNumberFormat'), t('inventory.equipmentNumberFormatError'))
-      return
+    // 설비번호가 입력된 경우에만 패턴 검증
+    if (equipmentNumber.trim()) {
+      const equipmentPattern = /^C[0-9]{3}$/
+      if (!equipmentPattern.test(equipmentNumber)) {
+        showWarning(t('inventory.equipmentNumberFormat'), t('inventory.equipmentNumberFormatError'))
+        return
+      }
     }
 
     // 재고 확인
@@ -277,10 +299,18 @@ export default function OutboundPage() {
     }
 
     const _totalValue = quantity * endmillData.unitPrice
+
+    // 확인 메시지 생성
+    let confirmMessage = `${endmillData.code} ${quantity}개 출고`
+    if (equipmentNumber.trim()) {
+      confirmMessage += ` (${equipmentNumber} T${tNumber.toString().padStart(2, '0')})`
+    }
+    if (purpose.trim()) {
+      confirmMessage += ` - ${purpose}`
+    }
+
     const confirmed = await confirmation.showConfirmation(
-      createSaveConfirmation(
-        `${endmillData.code} ${quantity}개 출고 (${equipmentNumber} T${tNumber.toString().padStart(2, '0')}, ${purpose})`
-      )
+      createSaveConfirmation(confirmMessage)
     )
 
     if (confirmed) {
@@ -295,11 +325,13 @@ export default function OutboundPage() {
           },
           body: JSON.stringify({
             endmill_code: endmillData.code,
-            equipment_number: equipmentNumber,
-            t_number: tNumber,
+            equipment_number: equipmentNumber.trim() || null,
+            t_number: equipmentNumber.trim() ? tNumber : null,
             quantity: quantity,
-            purpose: purpose,
-            notes: `${t('inventory.outboundNotePrefix')} ${equipmentNumber} T${tNumber.toString().padStart(2, '0')}`
+            purpose: purpose.trim() || '미리 준비',
+            notes: equipmentNumber.trim()
+              ? `${t('inventory.outboundNotePrefix')} ${equipmentNumber} T${tNumber.toString().padStart(2, '0')}`
+              : '미리 출고 (설비 미지정)'
           })
         })
 
@@ -393,64 +425,84 @@ export default function OutboundPage() {
       {/* QR 스캔 섹션 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">📱 {t('inventory.qrScanner')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">🔍 {t('inventory.qrScanner')}</h2>
 
-          {isScanning ? (
-            <div className="border-2 border-dashed border-green-300 rounded-lg p-8 text-center bg-green-50">
-              <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-lg flex items-center justify-center">
-                📷
-              </div>
-              <p className="text-green-600 mb-4">{t('inventory.cameraActivated')}</p>
-              <p className="text-sm text-gray-600 mb-4">{t('inventory.showQRToCamera')}</p>
-              <button
-                onClick={() => setIsScanning(false)}
-                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-              >
-                {t('inventory.stopScanning')}
-              </button>
+          <div className="border-2 border-dashed border-green-300 rounded-lg p-8 text-center bg-green-50">
+            <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-lg flex items-center justify-center text-3xl">
+              📦
             </div>
-          ) : (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
-                📷
-              </div>
-              <p className="text-gray-500 mb-4">{t('inventory.scanToLoadInfo')}</p>
-              <button
-                onClick={() => setIsScanning(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 mb-2"
-              >
-                {t('inventory.startCamera')}
-              </button>
+            <p className="text-green-800 font-medium mb-2">{t('inventory.usbScannerReady')}</p>
+            <p className="text-sm text-green-600 mb-6">{t('inventory.usbScannerGuide')}</p>
 
-              <div className="mt-4 text-center">
-                <p className="text-sm text-gray-600 mb-2">{t('inventory.or')}</p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder={t('inventory.enterCodePlaceholder')}
-                    value={scannedCode}
-                    onChange={(e) => setScannedCode(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && scannedCode.trim()) {
-                        handleQRScan(scannedCode)
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input
+                  ref={codeInputRef}
+                  type="text"
+                  placeholder={t('inventory.enterCodePlaceholder')}
+                  value={scannedCode}
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase()
+                    setScannedCode(value)
+
+                    // 기존 타이머 취소
+                    if (scanTimeoutRef.current) {
+                      clearTimeout(scanTimeoutRef.current)
+                    }
+
+                    // 입력이 있고 3자 이상이면 200ms 후 자동 검색
+                    if (value.trim().length >= 3) {
+                      scanTimeoutRef.current = setTimeout(async () => {
+                        clientLogger.log('자동 검색 실행:', value)
+                        await handleQRScan(value)
+                        setScannedCode('') // 검색 후 input 초기화
+                      }, 200)
+                    }
+                  }}
+                  onKeyDown={async (e) => {
+                    // Enter 키로도 즉시 검색 가능
+                    if (e.key === 'Enter' && scannedCode.trim()) {
+                      // 타이머가 있으면 취소
+                      if (scanTimeoutRef.current) {
+                        clearTimeout(scanTimeoutRef.current)
                       }
-                    }}
-                  />
-                  <button
-                    onClick={() => scannedCode.trim() && handleQRScan(scannedCode)}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                    disabled={!scannedCode.trim()}
-                  >
-                    {t('common.search')}
-                  </button>
+                      await handleQRScan(scannedCode)
+                      setScannedCode('') // 검색 후 input 초기화
+                    }
+                  }}
+                  className="flex-1 px-4 py-3 border-2 border-green-400 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-lg font-mono"
+                  autoFocus
+                />
+                <button
+                  onClick={async () => {
+                    if (scannedCode.trim()) {
+                      await handleQRScan(scannedCode)
+                      setScannedCode('')
+                    }
+                  }}
+                  className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium"
+                  disabled={!scannedCode.trim()}
+                >
+                  {t('common.search')}
+                </button>
+              </div>
+
+              {errorMessage && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                  <p className="text-red-600 text-sm">{errorMessage}</p>
                 </div>
-                {errorMessage && (
-                  <p className="text-red-600 text-sm mt-2">{errorMessage}</p>
-                )}
+              )}
+
+              <div className="bg-white border border-green-200 rounded-md p-4 text-left">
+                <p className="text-xs font-medium text-green-800 mb-2">💡 {t('inventory.scannerUsageGuide')}</p>
+                <ul className="text-xs text-green-700 space-y-1 ml-4 list-disc">
+                  <li>{t('inventory.scannerStep1')}</li>
+                  <li>{t('inventory.scannerStep2')}</li>
+                  <li>{t('inventory.scannerStep3')}</li>
+                </ul>
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* 출고 정보 입력 */}
@@ -492,7 +544,9 @@ export default function OutboundPage() {
               {/* 출고 관련 입력 필드들 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.equipmentNumberRequired')}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('inventory.equipmentNumber')} <span className="text-xs text-gray-500">({t('common.optional')})</span>
+                  </label>
                   <input
                     type="text"
                     value={equipmentNumber}
@@ -501,22 +555,25 @@ export default function OutboundPage() {
                     placeholder={t('inventory.equipmentNumberPlaceholder')}
                     pattern="C[0-9]{3}"
                     title={t('inventory.equipmentNumberFormatError')}
-                    required
                   />
+                  <p className="text-xs text-gray-500 mt-1">{t('inventory.equipmentNumberOptionalHint')}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.tNumberRequired')}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('inventory.tNumber')} <span className="text-xs text-gray-500">({t('common.optional')})</span>
+                  </label>
                   <select
                     value={tNumber}
                     onChange={(e) => setTNumber(parseInt(e.target.value) || 1)}
                     className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    required
+                    disabled={!equipmentNumber.trim()}
                   >
                     {Array.from({length: tNumberRange.max - tNumberRange.min + 1}, (_, i) => i + tNumberRange.min).map(num => (
                       <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
                     ))}
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">{t('inventory.tNumberOptionalHint')}</p>
                 </div>
 
                 <div>
@@ -541,19 +598,21 @@ export default function OutboundPage() {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.purposeRequired')}</label>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('inventory.purpose')} <span className="text-xs text-gray-500">({t('common.optional')})</span>
+                  </label>
                   <select
                     value={purpose}
                     onChange={(e) => setPurpose(e.target.value)}
                     className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    required
                   >
                     <option value="">{t('inventory.selectPurpose')}</option>
                     {toolChangesReasons.map(reason => (
                       <option key={reason} value={reason}>{reason}</option>
                     ))}
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">{t('inventory.purposeOptionalHint')}</p>
                 </div>
               </div>
 
@@ -575,7 +634,7 @@ export default function OutboundPage() {
                 <button
                   onClick={handleProcessOutbound}
                   className="flex-1 px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium disabled:bg-gray-400"
-                  disabled={quantity <= 0 || !equipmentNumber.trim() || quantity > endmillData.currentStock || loading}
+                  disabled={quantity <= 0 || quantity > endmillData.currentStock || loading}
                 >
                   {loading ? t('common.loading') : `📤 ${t('inventory.processOutbound')}`}
                 </button>
@@ -603,7 +662,7 @@ export default function OutboundPage() {
               <p className="text-lg font-medium mb-2">{t('inventory.scanEndmillOutbound')}</p>
               <p className="text-sm">{t('inventory.scanOrEnterOutbound')}</p>
               <p className="text-sm">{t('inventory.autoLoadOutbound')}</p>
-              <p className="text-xs text-gray-400 mt-2">{t('inventory.enterEquipmentAndPurpose')}</p>
+              <p className="text-xs text-blue-600 mt-3 font-medium">💡 {t('inventory.outboundOptionalNote')}</p>
             </div>
           )}
         </div>
