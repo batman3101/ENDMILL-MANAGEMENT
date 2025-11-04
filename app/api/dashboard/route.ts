@@ -930,6 +930,12 @@ async function getEquipmentLifeConsumption(supabase: any) {
     recentCount: recentChanges.length
   })
 
+  // 데이터가 없으면 빈 배열 반환
+  if (recentChanges.length === 0) {
+    logger.log('⚠️ 최근 30일 교체 이력 없음 - 빈 배열 반환')
+    return []
+  }
+
   // equipment 조회 (tool_position_count 포함)
   const { data: equipment, error: eqError } = await supabase
     .from('equipment')
@@ -1015,6 +1021,12 @@ async function getTopBrokenEndmills(supabase: any) {
     totalCount: allChanges?.length || 0,
     brokenCount: brokenChanges.length
   })
+
+  // 데이터가 없으면 빈 배열 반환
+  if (brokenChanges.length === 0) {
+    logger.log('⚠️ 파손 교체 이력 없음 - 빈 배열 반환')
+    return []
+  }
 
   // endmill_code별로 교체 횟수 집계
   const changeCountByCode = brokenChanges.reduce((acc: any, change: any) => {

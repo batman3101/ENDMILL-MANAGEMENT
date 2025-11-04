@@ -60,6 +60,19 @@ export default function OutboundPage() {
   const tNumberRange = settings.toolChanges.tNumberRange
   const toolChangesReasons = settings.toolChanges.reasons
 
+  // 교체 사유 번역 맵핑
+  const reasonTranslations: Record<string, string> = {
+    '수명완료': t('toolChanges.lifeCompleted'),
+    '파손': t('toolChanges.broken'),
+    '마모': t('toolChanges.wear'),
+    '예방교체': t('toolChanges.preventive'),
+    '예발교체': t('toolChanges.preventive'), // 오타 케이스 대응
+    '모델교체': t('toolChanges.modelChange'),
+    '모델변경': t('toolChanges.modelChange'),
+    '공구테스트': t('toolChanges.toolTest'),
+    '기타': t('toolChanges.other'),
+  }
+
   // 앤드밀 마스터 데이터 로드
   const loadAvailableEndmills = async () => {
     try {
@@ -609,7 +622,7 @@ export default function OutboundPage() {
                   >
                     <option value="">{t('inventory.selectPurpose')}</option>
                     {toolChangesReasons.map(reason => (
-                      <option key={reason} value={reason}>{reason}</option>
+                      <option key={reason} value={reason}>{reasonTranslations[reason] || reason}</option>
                     ))}
                   </select>
                   <p className="text-xs text-gray-500 mt-1">{t('inventory.purposeOptionalHint')}</p>
@@ -704,7 +717,7 @@ export default function OutboundPage() {
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.equipmentNumber}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">T{item.tNumber.toString().padStart(2, '0')}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.purpose}</td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{reasonTranslations[item.purpose] || item.purpose}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-green-600">{item.totalValue.toLocaleString()}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.processedBy}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
