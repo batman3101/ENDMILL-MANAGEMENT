@@ -470,9 +470,9 @@ const resources = {
         sortByQuantity: '수량순',
         sortAscending: '오름차순',
         sortDescending: '내림차순',
-        searchPlaceholder: '코드, 이름, 공급업체 검색...',
+        searchPlaceholderInbound: '코드, 이름, 공급업체 검색...',
+        searchPlaceholderOutbound: '코드, 이름, 설비번호, 사유 검색...',
         showingEntries: '전체 {{total}}개 중 {{from}}-{{to}}개 표시',
-        actions: '작업',
 
         // 공통
         uncategorized: '미분류',
@@ -2660,6 +2660,31 @@ const resources = {
         cancelOutboundError: 'Đã xảy ra lỗi trong quá trình hủy xuất kho.',
         keep: 'Giữ',
         stock: 'Tồn kho',
+
+        // 기간 필터 및 내역 조회
+        periodFilter: 'Bộ lọc thời gian',
+        lastWeek: 'Tuần trước',
+        thisWeek: 'Tuần này',
+        thisMonth: 'Tháng này',
+        customPeriod: 'Chọn khoảng thời gian',
+        startDate: 'Ngày bắt đầu',
+        endDate: 'Ngày kết thúc',
+        apply: 'Áp dụng',
+        inboundHistory: 'Lịch sử nhập kho',
+        outboundHistory: 'Lịch sử xuất kho',
+        downloadExcel: 'Tải xuống Excel',
+        excelDownloadSuccess: 'Tải xuống Excel hoàn tất',
+        excelDownloadFailed: 'Tải xuống Excel thất bại',
+        noDataToDownload: 'Không có dữ liệu để tải xuống',
+        sortBy: 'Sắp xếp theo',
+        sortByDate: 'Theo ngày',
+        sortByCode: 'Theo mã',
+        sortByQuantity: 'Theo số lượng',
+        sortAscending: 'Tăng dần',
+        sortDescending: 'Giảm dần',
+        searchPlaceholderInbound: 'Tìm mã, tên, nhà cung cấp...',
+        searchPlaceholderOutbound: 'Tìm mã, tên, số thiết bị, lý do...',
+        showingEntries: 'Hiển thị {{from}}-{{to}} trong tổng số {{total}}',
 
         // 공통
         uncategorized: 'Không phân loại',
