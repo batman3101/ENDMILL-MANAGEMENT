@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient as createSSRBrowserClient } from '@supabase/ssr';
 import { Database } from '../types/database';
 import { logger } from '../utils/logger';
 
@@ -38,6 +39,7 @@ logger.log('🔍 Supabase 연결 확인:', {
   key: supabaseAnonKey ? '✅ 설정됨' : '❌ 없음',
 });
 
+// 레거시 클라이언트 (기존 코드와의 호환성 유지)
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
@@ -49,6 +51,12 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     },
   },
 });
+
+// @supabase/ssr을 사용한 브라우저 클라이언트 (권장)
+// Client Component에서 사용
+export const createBrowserClient = () => {
+  return createSSRBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+};
 
 // 서버사이드용 클라이언트 (서비스 역할 키 사용 - 관리자 작업용)
 export const createServerClient = () => {

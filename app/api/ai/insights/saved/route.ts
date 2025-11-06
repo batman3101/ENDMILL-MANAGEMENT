@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
-    if (!profile || !profile.role_id) {
+    if (!profile || !(profile as any).role_id) {
       return NextResponse.json(
         { error: '사용자 프로필을 찾을 수 없습니다.' },
         { status: 404 }
@@ -141,10 +141,10 @@ export async function POST(request: NextRequest) {
     const { data: role } = await supabase
       .from('user_roles')
       .select('name')
-      .eq('id', profile.role_id)
+      .eq('id', (profile as any).role_id)
       .single()
 
-    if (!role || !hasPermission(role.name as any, 'ai_insights', 'use')) {
+    if (!role || !hasPermission((role as any).name as any, 'ai_insights', 'use')) {
       return NextResponse.json(
         { error: 'AI 인사이트 저장 권한이 없습니다.' },
         { status: 403 }
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
     const validatedData = saveInsightSchema.parse(body)
 
     // 4. 인사이트 저장
-    const { data: newInsight, error: insertError } = await supabase
+    const { data: newInsight, error: insertError } = await (supabase as any)
       .from('saved_insights')
       .insert({
         title: validatedData.title,

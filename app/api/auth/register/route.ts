@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     // user_profiles 테이블에 프로필 정보 저장
     const validShift = (shift === 'A' || shift === 'B' || shift === 'C') ? shift : 'A'
 
-    const { error: profileError } = await supabase
+    const { error: profileError } = await (supabase as any)
       .from('user_profiles')
       .insert({
         user_id: authData.user.id,
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
         department: department || '',
         position: position || '',
         shift: validShift,
-        role_id: defaultRole.id,
+        role_id: (defaultRole as any).id,
         is_active: true,
       })
 

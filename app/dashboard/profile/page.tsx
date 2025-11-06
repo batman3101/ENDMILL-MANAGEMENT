@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../lib/hooks/useAuth'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@/lib/supabase/client'
 import { useToast } from '../../../components/shared/Toast'
 import { PermissionGuard } from '../../../components/auth/PermissionGuard'
 import { useTranslation } from 'react-i18next'
@@ -26,7 +26,7 @@ interface PasswordFormData {
 export default function ProfilePage() {
   const { user, refreshSession } = useAuth()
   const { showSuccess, showError } = useToast()
-  const supabase = createClientComponentClient()
+  const supabase = createBrowserClient()
   const { t } = useTranslation()
   
   const [profileData, setProfileData] = useState<ProfileFormData>({

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@/lib/supabase/client'
 import { clientLogger } from '@/lib/utils/logger'
 
 export default function ForgotPasswordPage() {
@@ -12,8 +12,8 @@ export default function ForgotPasswordPage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
-  
-  const supabase = createClientComponentClient()
+
+  const supabase = createBrowserClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

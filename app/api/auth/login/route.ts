@@ -108,11 +108,11 @@ export async function POST(request: NextRequest) {
     const userInfo = {
       id: data.user.id,
       email: data.user.email,
-      name: profile?.name || data.user.user_metadata?.name || '',
-      department: profile?.department || data.user.user_metadata?.department || '',
-      position: profile?.position || data.user.user_metadata?.position || '',
-      shift: profile?.shift || data.user.user_metadata?.shift || '',
-      role: profile?.user_roles?.type || data.user.user_metadata?.role || 'user',
+      name: (profile as any)?.name || data.user.user_metadata?.name || '',
+      department: (profile as any)?.department || data.user.user_metadata?.department || '',
+      position: (profile as any)?.position || data.user.user_metadata?.position || '',
+      shift: (profile as any)?.shift || data.user.user_metadata?.shift || '',
+      role: (profile as any)?.user_roles?.type || data.user.user_metadata?.role || 'user',
       language: 'ko',
     }
 

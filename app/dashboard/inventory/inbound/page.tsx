@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import { useToast } from '../../../../components/shared/Toast'
 import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
@@ -8,6 +8,7 @@ import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/u
 import { useTranslations } from '../../../../lib/hooks/useTranslations'
 import { supabase } from '../../../../lib/supabase/client'
 import { clientLogger } from '../../../../lib/utils/logger'
+import { downloadInboundHistoryExcel } from '../../../../lib/utils/inboundExcelExport'
 
 // 앤드밀 데이터 타입 정의
 interface EndmillData {
@@ -46,6 +47,20 @@ export default function InboundPage() {
   const [availableSuppliers, setAvailableSuppliers] = useState<any[]>([])
   const [supplierPrices, setSupplierPrices] = useState<Record<string, number>>({})
 
+  // 기간 필터 상태
+  const [period, setPeriod] = useState<'today' | 'lastWeek' | 'thisWeek' | 'thisMonth' | 'custom'>('today')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+
+  // 검색 및 정렬 상태
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState<'date' | 'code' | 'quantity'>('date')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(20)
+
   // USB QR 스캐너를 위한 input ref 및 타이머
   const codeInputRef = useRef<HTMLInputElement>(null)
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -53,7 +68,13 @@ export default function InboundPage() {
   // 입고 내역 로드 함수
   const loadInboundItems = async () => {
     try {
-      const response = await fetch('/api/inventory/inbound')
+      let url = `/api/inventory/inbound?period=${period}`
+
+      if (period === 'custom' && startDate && endDate) {
+        url += `&startDate=${startDate}&endDate=${endDate}`
+      }
+
+      const response = await fetch(url)
       if (response.ok) {
         const result = await response.json()
         if (result.success) {
@@ -276,6 +297,86 @@ export default function InboundPage() {
   const getTotalPrice = () => {
     if (!endmillData || unitPrice <= 0) return 0
     return quantity * unitPrice
+  }
+
+  // 기간 필터 변경 시 데이터 다시 불러오기
+  useEffect(() => {
+    loadInboundItems()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period, startDate, endDate])
+
+  // 검색 및 정렬이 적용된 데이터
+  const filteredAndSortedItems = useMemo(() => {
+    let filtered = [...inboundItems]
+
+    // 검색 필터 적용
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase()
+      filtered = filtered.filter(
+        (item) =>
+          item.endmillCode.toLowerCase().includes(term) ||
+          item.endmillName.toLowerCase().includes(term) ||
+          item.supplier.toLowerCase().includes(term)
+      )
+    }
+
+    // 정렬 적용
+    filtered.sort((a, b) => {
+      let comparison = 0
+
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.processedAt).getTime() - new Date(b.processedAt).getTime()
+          break
+        case 'code':
+          comparison = a.endmillCode.localeCompare(b.endmillCode)
+          break
+        case 'quantity':
+          comparison = a.quantity - b.quantity
+          break
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+
+    return filtered
+  }, [inboundItems, searchTerm, sortBy, sortOrder])
+
+  // 페이지네이션 적용
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return filteredAndSortedItems.slice(startIndex, endIndex)
+  }, [filteredAndSortedItems, currentPage, itemsPerPage])
+
+  const totalPages = Math.ceil(filteredAndSortedItems.length / itemsPerPage)
+
+  // Excel 다운로드 핸들러
+  const handleExcelDownload = async () => {
+    try {
+      if (filteredAndSortedItems.length === 0) {
+        showError(t('inventory.excelDownloadFailed'), t('inventory.noDataToDownload'))
+        return
+      }
+
+      const periodLabels = {
+        today: '오늘',
+        lastWeek: '최근일주일',
+        thisWeek: '이번주',
+        thisMonth: '이번달',
+        custom: `${startDate}_${endDate}`
+      }
+
+      const filename = await downloadInboundHistoryExcel(
+        filteredAndSortedItems,
+        periodLabels[period]
+      )
+
+      showSuccess(t('inventory.excelDownloadSuccess'), `${filename}`)
+    } catch (error) {
+      clientLogger.error('Excel 다운로드 오류:', error)
+      showError(t('inventory.excelDownloadFailed'), String(error))
+    }
   }
 
   return (
@@ -513,45 +614,187 @@ export default function InboundPage() {
 
       {/* 입고 처리 내역 */}
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-200">
-        <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">{t('inventory.todayInboundHistory')}</h2>
+        {/* 헤더와 필터 */}
+        <div className="px-6 py-4 border-b space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">{t('inventory.inboundHistory')}</h2>
+            <button
+              onClick={handleExcelDownload}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
+              disabled={filteredAndSortedItems.length === 0}
+            >
+              📥 {t('inventory.downloadExcel')}
+            </button>
+          </div>
+
+          {/* 기간 필터 */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('inventory.periodFilter')}
+              </label>
+              <select
+                value={period}
+                onChange={(e) => {
+                  setPeriod(e.target.value as any)
+                  setCurrentPage(1)
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="today">{t('inventory.periodFilter')} - {t('common.date')}</option>
+                <option value="lastWeek">{t('inventory.lastWeek')}</option>
+                <option value="thisWeek">{t('inventory.thisWeek')}</option>
+                <option value="thisMonth">{t('inventory.thisMonth')}</option>
+                <option value="custom">{t('inventory.customPeriod')}</option>
+              </select>
+            </div>
+
+            {period === 'custom' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('inventory.startDate')}
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('inventory.endDate')}
+                  </label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={() => {
+                      loadInboundItems()
+                      setCurrentPage(1)
+                    }}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    {t('inventory.apply')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* 검색 및 정렬 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value)
+                  setCurrentPage(1)
+                }}
+                placeholder={t('inventory.searchPlaceholder')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="date">{t('inventory.sortByDate')}</option>
+                <option value="code">{t('inventory.sortByCode')}</option>
+                <option value="quantity">{t('inventory.sortByQuantity')}</option>
+              </select>
+            </div>
+            <div>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="desc">{t('inventory.sortDescending')}</option>
+                <option value="asc">{t('inventory.sortAscending')}</option>
+              </select>
+            </div>
+          </div>
         </div>
 
-        {inboundItems.length === 0 ? (
+        {filteredAndSortedItems.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            {t('inventory.noInboundHistory')}
+            {searchTerm ? t('common.noResults') : t('inventory.noInboundHistory')}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.processedTime')}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.endmillCode')}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.endmillName')}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.supplier')}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('common.quantity')}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.unitPriceVND')}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.totalAmount')} (VND)</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.processor')}</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {inboundItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.processedAt}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.endmillCode}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.endmillName}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.supplier}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.unitPrice.toLocaleString()}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-600">{item.totalPrice.toLocaleString()}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.processedBy}</td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.processedTime')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.endmillCode')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.endmillName')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.supplier')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('common.quantity')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.unitPriceVND')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.totalAmount')} (VND)</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.processor')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {paginatedItems.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.processedAt}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.endmillCode}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.endmillName}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.supplier}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.unitPrice.toLocaleString()}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-600">{item.totalPrice.toLocaleString()}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.processedBy}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 페이지네이션 */}
+            {totalPages > 1 && (
+              <div className="px-6 py-4 border-t flex items-center justify-between">
+                <div className="text-sm text-gray-700">
+                  {t('inventory.showingEntries', {
+                    from: (currentPage - 1) * itemsPerPage + 1,
+                    to: Math.min(currentPage * itemsPerPage, filteredAndSortedItems.length),
+                    total: filteredAndSortedItems.length
+                  })}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {t('toolChanges.previous')}
+                  </button>
+                  <span className="px-4 py-2 text-sm text-gray-700">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {t('toolChanges.next')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@/lib/supabase/client'
 import { clientLogger } from '@/lib/utils/logger'
 
 function ResetPasswordForm() {
@@ -15,10 +15,10 @@ function ResetPasswordForm() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [isValidSession, setIsValidSession] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
-  
+
   const router = useRouter()
   const _searchParams = useSearchParams()
-  const supabase = createClientComponentClient()
+  const supabase = createBrowserClient()
 
   // 세션 확인
   useEffect(() => {

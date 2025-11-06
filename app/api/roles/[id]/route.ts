@@ -28,7 +28,7 @@ export async function GET(
       .eq('user_id', user.id)
       .single()
 
-    if (!currentUserProfile || !currentUserProfile.user_roles) {
+    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
       return NextResponse.json(
         { error: 'User profile not found' },
         { status: 404 }
@@ -36,7 +36,7 @@ export async function GET(
     }
 
     // 권한 확인 (관리자만 가능)
-    const userRole = currentUserProfile.user_roles.type
+    const userRole = (currentUserProfile as any).user_roles.type
     if (!isAdmin(userRole)) {
       return NextResponse.json(
         { error: 'Forbidden: Admin access required' },
@@ -107,7 +107,7 @@ export async function PUT(
       .eq('user_id', user.id)
       .single()
 
-    if (!currentUserProfile || !currentUserProfile.user_roles) {
+    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
       return NextResponse.json(
         { error: 'User profile not found' },
         { status: 404 }
@@ -115,7 +115,7 @@ export async function PUT(
     }
 
     // 권한 확인 (시스템 관리자만 가능)
-    const userRole = currentUserProfile.user_roles.type
+    const userRole = (currentUserProfile as any).user_roles.type
     if (!isSystemAdmin(userRole)) {
       return NextResponse.json(
         { error: 'Forbidden: System admin access required' },
@@ -217,7 +217,7 @@ export async function DELETE(
       .eq('user_id', user.id)
       .single()
 
-    if (!currentUserProfile || !currentUserProfile.user_roles) {
+    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
       return NextResponse.json(
         { error: 'User profile not found' },
         { status: 404 }
@@ -225,7 +225,7 @@ export async function DELETE(
     }
 
     // 권한 확인 (시스템 관리자만 가능)
-    const userRole = currentUserProfile.user_roles.type
+    const userRole = (currentUserProfile as any).user_roles.type
     if (!isSystemAdmin(userRole)) {
       return NextResponse.json(
         { error: 'Forbidden: System admin access required' },

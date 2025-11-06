@@ -66,7 +66,7 @@ export async function GET(
       )
     }
 
-    if (!currentUserProfile.user_roles) {
+    if (!(currentUserProfile as any).user_roles) {
       logger.error('User roles not found for profile:', currentUserProfile.id)
       return NextResponse.json(
         { error: 'User role not found' },
@@ -75,7 +75,7 @@ export async function GET(
     }
 
     // 권한 확인 (시스템 관리자만 가능)
-    const userRole = currentUserProfile.user_roles.type
+    const userRole = (currentUserProfile as any).user_roles.type
     logger.info('GET permissions - Current user role:', { userId: user.id, profileId: currentUserProfile.id, role: userRole })
 
     if (!isSystemAdmin(userRole)) {
@@ -185,7 +185,7 @@ export async function PUT(
       )
     }
 
-    if (!currentUserProfile.user_roles) {
+    if (!(currentUserProfile as any).user_roles) {
       logger.error('User roles not found for profile:', currentUserProfile.id)
       return NextResponse.json(
         { error: 'User role not found' },
@@ -194,7 +194,7 @@ export async function PUT(
     }
 
     // 권한 확인 (시스템 관리자만 가능)
-    const userRole = currentUserProfile.user_roles.type
+    const userRole = (currentUserProfile as any).user_roles.type
     logger.info('PUT permissions - Current user role:', { userId: user.id, profileId: currentUserProfile.id, role: userRole })
 
     if (!isSystemAdmin(userRole)) {
@@ -333,7 +333,7 @@ export async function POST(
       )
     }
 
-    if (!currentUserProfile.user_roles) {
+    if (!(currentUserProfile as any).user_roles) {
       logger.error('User roles not found for profile:', currentUserProfile.id)
       return NextResponse.json(
         { error: 'User role not found' },
@@ -342,7 +342,7 @@ export async function POST(
     }
 
     // 권한 확인 (시스템 관리자만 가능)
-    const userRole = currentUserProfile.user_roles.type
+    const userRole = (currentUserProfile as any).user_roles.type
     logger.info('POST permissions - Current user role:', { userId: user.id, profileId: currentUserProfile.id, role: userRole })
 
     if (!isSystemAdmin(userRole)) {

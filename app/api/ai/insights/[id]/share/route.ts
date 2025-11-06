@@ -77,8 +77,8 @@ export async function POST(
       updateData.shared_with = validatedData.shareWith
     }
 
-    const { data: updatedInsight, error: updateError } = await supabase
-      .from('saved_insights' as any)
+    const { data: updatedInsight, error: updateError } = await (supabase as any)
+      .from('saved_insights')
       .update(updateData)
       .eq('id', id)
       .select()

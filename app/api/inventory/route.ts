@@ -43,14 +43,14 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
-    if (!currentUserProfile || !currentUserProfile.user_roles) {
+    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
       return NextResponse.json({ success: false, error: 'User profile not found' }, { status: 404 })
     }
 
     // 권한 확인 (역할 권한 + 개인 권한 병합)
-    const userRole = currentUserProfile.user_roles.type
-    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
-    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const userRole = (currentUserProfile as any).user_roles.type
+    const rolePermissions = ((currentUserProfile as any).user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = ((currentUserProfile as any).permissions || {}) as Record<string, string[]>
     const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
     const customPermissions = parsePermissionsFromDB(mergedPermissions)
 
@@ -132,14 +132,14 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
-    if (!currentUserProfile || !currentUserProfile.user_roles) {
+    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
       return NextResponse.json({ success: false, error: 'User profile not found' }, { status: 404 })
     }
 
     // 권한 확인 (역할 권한 + 개인 권한 병합)
-    const userRole = currentUserProfile.user_roles.type
-    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
-    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const userRole = (currentUserProfile as any).user_roles.type
+    const rolePermissions = ((currentUserProfile as any).user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = ((currentUserProfile as any).permissions || {}) as Record<string, string[]>
     const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
     const customPermissions = parsePermissionsFromDB(mergedPermissions)
 
@@ -221,14 +221,14 @@ export async function PUT(request: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
-    if (!currentUserProfile || !currentUserProfile.user_roles) {
+    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
       return NextResponse.json({ success: false, error: 'User profile not found' }, { status: 404 })
     }
 
     // 권한 확인 (역할 권한 + 개인 권한 병합)
-    const userRole = currentUserProfile.user_roles.type
-    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
-    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const userRole = (currentUserProfile as any).user_roles.type
+    const rolePermissions = ((currentUserProfile as any).user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = ((currentUserProfile as any).permissions || {}) as Record<string, string[]>
     const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
     const customPermissions = parsePermissionsFromDB(mergedPermissions)
 
@@ -310,14 +310,14 @@ export async function DELETE(request: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
-    if (!currentUserProfile || !currentUserProfile.user_roles) {
+    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
       return NextResponse.json({ success: false, error: 'User profile not found' }, { status: 404 })
     }
 
     // 권한 확인
-    const userRole = currentUserProfile.user_roles.type
-    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
-    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const userRole = (currentUserProfile as any).user_roles.type
+    const rolePermissions = ((currentUserProfile as any).user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = ((currentUserProfile as any).permissions || {}) as Record<string, string[]>
     const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
     const customPermissions = parsePermissionsFromDB(mergedPermissions)
 

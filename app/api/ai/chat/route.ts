@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
-    if (!currentUserProfile || !currentUserProfile.user_roles) {
+    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
       return NextResponse.json(
         { error: '사용자 프로필을 찾을 수 없습니다.' },
         { status: 404 }
@@ -98,9 +98,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. 권한 확인 (역할 권한 + 개인 권한 병합)
-    const userRole = currentUserProfile.user_roles.type
-    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
-    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const userRoleData = (currentUserProfile as any).user_roles
+    const userRole = userRoleData.type
+    const rolePermissions = (userRoleData?.permissions || {}) as Record<string, string[]>
+    const userPermissions = ((currentUserProfile as any).permissions || {}) as Record<string, string[]>
     const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
     const customPermissions = parsePermissionsFromDB(mergedPermissions)
 
@@ -166,7 +167,7 @@ export async function POST(request: NextRequest) {
       message_type: 'user',
       content: message,
       response_time_ms: 0,
-    })
+    } as any)
 
     // 9. AI 응답 저장
     await supabase.from('ai_chat_history' as any).insert({
@@ -175,7 +176,7 @@ export async function POST(request: NextRequest) {
       message_type: 'ai',
       content: aiResponse,
       response_time_ms: responseTimeMs,
-    })
+    } as any)
 
     // 10. 응답
     return NextResponse.json({

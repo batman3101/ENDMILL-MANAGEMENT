@@ -5,10 +5,64 @@ import { logger } from '@/lib/utils/logger'
 export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url)
-    const date = url.searchParams.get('date')
+    const period = url.searchParams.get('period') // 'today', 'lastWeek', 'thisWeek', 'thisMonth', 'custom'
+    const startDate = url.searchParams.get('startDate')
+    const endDate = url.searchParams.get('endDate')
+    const date = url.searchParams.get('date') // 기존 호환성 유지
 
-    // 출고 트랜잭션 조회 (오늘 또는 특정 날짜)
-    let query = supabase
+    // 기간 계산
+    let dateFrom: string
+    let dateTo: string
+
+    if (period === 'custom' && startDate && endDate) {
+      dateFrom = `${startDate}T00:00:00.000Z`
+      dateTo = `${endDate}T23:59:59.999Z`
+    } else if (date) {
+      // 기존 date 파라미터 호환성 유지
+      const start = new Date(date)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(date)
+      end.setHours(23, 59, 59, 999)
+      dateFrom = start.toISOString()
+      dateTo = end.toISOString()
+    } else {
+      const now = new Date()
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+      switch (period) {
+        case 'lastWeek': {
+          const weekAgo = new Date(today)
+          weekAgo.setDate(today.getDate() - 7)
+          dateFrom = weekAgo.toISOString()
+          dateTo = now.toISOString()
+          break
+        }
+        case 'thisWeek': {
+          const firstDayOfWeek = new Date(today)
+          const dayOfWeek = today.getDay()
+          const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+          firstDayOfWeek.setDate(today.getDate() + diff)
+          dateFrom = firstDayOfWeek.toISOString()
+          dateTo = now.toISOString()
+          break
+        }
+        case 'thisMonth': {
+          const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+          dateFrom = firstDayOfMonth.toISOString()
+          dateTo = now.toISOString()
+          break
+        }
+        default: {
+          // 'today' 또는 파라미터 없음
+          today.setHours(0, 0, 0, 0)
+          dateFrom = today.toISOString()
+          dateTo = now.toISOString()
+        }
+      }
+    }
+
+    // 출고 트랜잭션 조회
+    const { data: transactions, error } = await supabase
       .from('inventory_transactions')
       .select(`
         *,
@@ -22,26 +76,9 @@ export async function GET(request: NextRequest) {
         processed_by:user_profiles(name, employee_id)
       `)
       .eq('transaction_type', 'outbound')
+      .gte('created_at', dateFrom)
+      .lte('created_at', dateTo)
       .order('created_at', { ascending: false })
-
-    if (date) {
-      // 특정 날짜의 트랜잭션만 조회
-      const startDate = new Date(date)
-      startDate.setHours(0, 0, 0, 0)
-      const endDate = new Date(date)
-      endDate.setHours(23, 59, 59, 999)
-
-      query = query
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-    } else {
-      // 오늘 날짜의 트랜잭션만 조회
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      query = query.gte('created_at', today.toISOString())
-    }
-
-    const { data: transactions, error } = await query
 
     if (error) {
       logger.error('출고 내역 조회 오류:', error)

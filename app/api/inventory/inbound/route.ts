@@ -2,12 +2,57 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../../lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient()
+    const { searchParams } = new URL(request.url)
 
-    // 오늘 입고 내역 조회
-    const today = new Date().toISOString().split('T')[0]
+    // 기간 필터 파라미터 가져오기
+    const period = searchParams.get('period') // 'today', 'lastWeek', 'thisWeek', 'thisMonth', 'custom'
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
+
+    // 기간 계산
+    let dateFrom: string
+    let dateTo: string
+
+    if (period === 'custom' && startDate && endDate) {
+      dateFrom = `${startDate}T00:00:00.000Z`
+      dateTo = `${endDate}T23:59:59.999Z`
+    } else {
+      const now = new Date()
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+      switch (period) {
+        case 'lastWeek': {
+          const weekAgo = new Date(today)
+          weekAgo.setDate(today.getDate() - 7)
+          dateFrom = weekAgo.toISOString()
+          dateTo = today.toISOString()
+          break
+        }
+        case 'thisWeek': {
+          const firstDayOfWeek = new Date(today)
+          const dayOfWeek = today.getDay()
+          const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+          firstDayOfWeek.setDate(today.getDate() + diff)
+          dateFrom = firstDayOfWeek.toISOString()
+          dateTo = now.toISOString()
+          break
+        }
+        case 'thisMonth': {
+          const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+          dateFrom = firstDayOfMonth.toISOString()
+          dateTo = now.toISOString()
+          break
+        }
+        default: {
+          // 'today' 또는 파라미터 없음
+          dateFrom = `${today.toISOString().split('T')[0]}T00:00:00.000Z`
+          dateTo = `${today.toISOString().split('T')[0]}T23:59:59.999Z`
+        }
+      }
+    }
 
     const { data: transactions, error } = await supabase
       .from('inventory_transactions')
@@ -22,8 +67,8 @@ export async function GET(_request: NextRequest) {
         )
       `)
       .eq('transaction_type', 'inbound')
-      .gte('processed_at', `${today}T00:00:00.000Z`)
-      .lte('processed_at', `${today}T23:59:59.999Z`)
+      .gte('processed_at', dateFrom)
+      .lte('processed_at', dateTo)
       .order('processed_at', { ascending: false })
 
     if (error) {

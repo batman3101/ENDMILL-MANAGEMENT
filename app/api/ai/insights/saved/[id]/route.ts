@@ -72,8 +72,8 @@ export async function GET(
     }
 
     // 4. 조회수 증가
-    await supabase
-      .from('saved_insights' as any)
+    await (supabase as any)
+      .from('saved_insights')
       .update({ view_count: ((insight as any).view_count || 0) + 1 })
       .eq('id', id)
 
@@ -154,8 +154,8 @@ export async function PUT(
       updates.is_public = validatedData.isPublic
 
     // 6. 인사이트 업데이트
-    const { data: updatedInsight, error: updateError } = await supabase
-      .from('saved_insights' as any)
+    const { data: updatedInsight, error: updateError } = await (supabase as any)
+      .from('saved_insights')
       .update(updates)
       .eq('id', id)
       .select()

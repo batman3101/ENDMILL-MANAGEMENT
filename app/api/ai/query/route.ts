@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
-    if (!currentUserProfile || !currentUserProfile.user_roles) {
+    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
       return NextResponse.json(
         { error: '사용자 프로필을 찾을 수 없습니다.' },
         { status: 404 }
@@ -113,9 +113,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. 권한 확인 (역할 권한 + 개인 권한 병합)
-    const userRole = currentUserProfile.user_roles.type
-    const rolePermissions = (currentUserProfile.user_roles?.permissions || {}) as Record<string, string[]>
-    const userPermissions = (currentUserProfile.permissions || {}) as Record<string, string[]>
+    const userRoleData = (currentUserProfile as any).user_roles
+    const userRole = userRoleData.type
+    const rolePermissions = (userRoleData?.permissions || {}) as Record<string, string[]>
+    const userPermissions = ((currentUserProfile as any).permissions || {}) as Record<string, string[]>
     const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
     const customPermissions = parsePermissionsFromDB(mergedPermissions)
 
