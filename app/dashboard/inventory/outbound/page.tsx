@@ -83,6 +83,7 @@ export default function OutboundPage() {
     '예발교체': t('toolChanges.preventive'), // 오타 케이스 대응
     '모델교체': t('toolChanges.modelChange'),
     '모델변경': t('toolChanges.modelChange'),
+    '추가SETUP': t('toolChanges.additionalSetup'),
     '공구테스트': t('toolChanges.toolTest'),
     '기타': t('toolChanges.other'),
   }

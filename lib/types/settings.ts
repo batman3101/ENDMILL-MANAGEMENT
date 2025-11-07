@@ -256,7 +256,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   },
 
   toolChanges: {
-    reasons: ['수명완료', '파손', '마모', '예방교체', '모델변경', '기타'],
+    reasons: ['수명완료', '파손', '마모', '예방교체', '모델변경', '추가SETUP', '기타'],
     defaultReason: '수명완료',
     tNumberRange: { min: 1, max: 21 },
     lifeThresholds: {
