@@ -188,42 +188,34 @@ export const useUsers = () => {
     mutationFn: async (userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'> & { password?: string }) => {
       logger.log('🔄 Creating new user with auth:', userData)
 
-      // 비밀번호가 있으면 Auth 회원가입, 없으면 프로필만 생성
-      if (userData.password && userData.email) {
-        // Auth 서비스를 통한 회원가입 (auth.users + user_profiles 동시 생성)
-        const result = await clientSupabaseService.auth.signUp(
-          userData.email,
-          userData.password,
-          {
-            name: userData.name,
-            employee_id: userData.employeeId,
-            department: userData.department,
-            position: userData.position,
-            shift: userData.shift,
-            role_id: userData.roleId,
-            phone: userData.phone
-          }
-        )
-
-        logger.log('✅ User created with auth:', result)
-        return result.profile
-      } else {
-        // 프로필만 생성 (기존 로직)
-        const insertData = {
+      // API를 통해 서버 측에서 Admin API로 사용자 생성
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           name: userData.name,
-          employee_id: userData.employeeId,
+          email: userData.email,
+          password: userData.password,
+          employeeId: userData.employeeId,
           department: userData.department,
           position: userData.position,
-          shift: userData.shift as "A" | "B" | "C",
-          role_id: userData.roleId,
+          shift: userData.shift,
+          roleId: userData.roleId,
           phone: userData.phone,
-          is_active: userData.isActive ?? true
-        }
+          isActive: userData.isActive ?? true
+        })
+      })
 
-        const result = await clientSupabaseService.userProfile.create(insertData)
-        logger.log('✅ User profile created:', result)
-        return result
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create user')
       }
+
+      const result = await response.json()
+      logger.log('✅ User created via API:', result)
+      return result.data
     },
     onSuccess: () => {
       logger.log('✅ User creation successful, invalidating cache')
