@@ -393,38 +393,41 @@ export default function InboundPage() {
   const handleSaveEdit = async () => {
     if (!editingItem) return
 
-    const confirmationConfig = createSaveConfirmation(
-      t,
-      async () => {
-        try {
-          const response = await fetch(`/api/inventory/inbound/${editingItem.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              quantity: editingItem.quantity,
-              unitPrice: editingItem.unitPrice,
-              supplier: editingItem.supplier
-            })
+    const confirmed = await confirmation.showConfirmation({
+      type: 'save',
+      title: t('inventory.updateInbound'),
+      message: t('inventory.updateInboundConfirm'),
+      confirmText: t('common.save'),
+      cancelText: t('common.cancel')
+    })
+
+    if (confirmed) {
+      try {
+        const response = await fetch(`/api/inventory/inbound/${editingItem.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            quantity: editingItem.quantity,
+            unitPrice: editingItem.unitPrice,
+            supplier: editingItem.supplier
           })
+        })
 
-          const result = await response.json()
+        const result = await response.json()
 
-          if (result.success) {
-            showSuccess(t('inventory.updateInboundSuccess'))
-            setIsEditModalOpen(false)
-            setEditingItem(null)
-            await loadInboundItems()
-          } else {
-            showError(t('inventory.updateInboundFailed'), result.error)
-          }
-        } catch (error) {
-          clientLogger.error('입고 내역 수정 오류:', error)
-          showError(t('inventory.updateInboundFailed'), String(error))
+        if (result.success) {
+          showSuccess(t('inventory.updateInboundSuccess'))
+          setIsEditModalOpen(false)
+          setEditingItem(null)
+          await loadInboundItems()
+        } else {
+          showError(t('inventory.updateInboundFailed'), result.error)
         }
+      } catch (error) {
+        clientLogger.error('입고 내역 수정 오류:', error)
+        showError(t('inventory.updateInboundFailed'), String(error))
       }
-    )
-
-    confirmation.showConfirmation(confirmationConfig)
+    }
   }
 
   // 입고 내역 삭제 핸들러

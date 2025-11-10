@@ -445,39 +445,42 @@ export default function OutboundPage() {
   const handleSaveEditOutbound = async () => {
     if (!editingItem) return
 
-    const confirmationConfig = createSaveConfirmation(
-      t,
-      async () => {
-        try {
-          const response = await fetch(`/api/inventory/outbound/${editingItem.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              quantity: editingItem.quantity,
-              equipmentNumber: editingItem.equipmentNumber,
-              tNumber: editingItem.tNumber,
-              purpose: editingItem.purpose
-            })
+    const confirmed = await confirmation.showConfirmation({
+      type: 'save',
+      title: t('inventory.updateOutbound'),
+      message: t('inventory.updateOutboundConfirm'),
+      confirmText: t('common.save'),
+      cancelText: t('common.cancel')
+    })
+
+    if (confirmed) {
+      try {
+        const response = await fetch(`/api/inventory/outbound/${editingItem.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            quantity: editingItem.quantity,
+            equipmentNumber: editingItem.equipmentNumber,
+            tNumber: editingItem.tNumber,
+            purpose: editingItem.purpose
           })
+        })
 
-          const result = await response.json()
+        const result = await response.json()
 
-          if (result.success) {
-            showSuccess(t('inventory.updateOutboundSuccess'))
-            setIsEditModalOpen(false)
-            setEditingItem(null)
-            await loadOutboundHistory()
-          } else {
-            showError(t('inventory.updateOutboundFailed'), result.error)
-          }
-        } catch (error) {
-          clientLogger.error('출고 내역 수정 오류:', error)
-          showError(t('inventory.updateOutboundFailed'), String(error))
+        if (result.success) {
+          showSuccess(t('inventory.updateOutboundSuccess'))
+          setIsEditModalOpen(false)
+          setEditingItem(null)
+          await loadOutboundHistory()
+        } else {
+          showError(t('inventory.updateOutboundFailed'), result.error)
         }
+      } catch (error) {
+        clientLogger.error('출고 내역 수정 오류:', error)
+        showError(t('inventory.updateOutboundFailed'), String(error))
       }
-    )
-
-    confirmation.showConfirmation(confirmationConfig)
+    }
   }
 
   // 출고 내역 삭제 핸들러
