@@ -315,6 +315,23 @@ export async function DELETE(
       )
     }
 
+    // Auth 사용자 먼저 삭제 (있는 경우)
+    // 이 순서가 중요: Auth를 먼저 삭제해야 나중에 같은 이메일로 재가입 가능
+    if (targetProfile.user_id) {
+      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(
+        targetProfile.user_id
+      )
+
+      if (authDeleteError) {
+        logger.error('Failed to delete auth user:', authDeleteError)
+        return NextResponse.json(
+          { error: 'Failed to delete auth user', details: authDeleteError.message },
+          { status: 500 }
+        )
+      }
+      logger.log('Auth user deleted successfully:', targetProfile.user_id)
+    }
+
     // 프로필 삭제
     const { error: deleteError } = await supabase
       .from('user_profiles')
@@ -324,20 +341,9 @@ export async function DELETE(
     if (deleteError) {
       logger.error('Error deleting user profile:', deleteError)
       return NextResponse.json(
-        { error: 'Failed to delete user', details: deleteError.message },
+        { error: 'Failed to delete user profile', details: deleteError.message },
         { status: 500 }
       )
-    }
-
-    // Auth 사용자도 삭제 (있는 경우)
-    if (targetProfile.user_id) {
-      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(
-        targetProfile.user_id
-      )
-
-      if (authDeleteError) {
-        logger.warn('Failed to delete auth user:', authDeleteError)
-      }
     }
 
     return NextResponse.json({

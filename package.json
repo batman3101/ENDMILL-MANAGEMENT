@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "create-admin": "node scripts/create-admin.js",
-    "create-default-admin": "node scripts/create-admin.js --default"
+    "create-default-admin": "node scripts/create-admin.js --default",
+    "cleanup-users": "tsx scripts/cleanup-orphaned-users.ts"
   },
   "dependencies": {
     "@google-cloud/translate": "^9.1.0",
