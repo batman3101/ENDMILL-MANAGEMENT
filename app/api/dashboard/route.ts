@@ -277,9 +277,17 @@ async function getToolChangeStats(supabase: any) {
   logger.log('📅 교체 실적 조회:', { today, yesterday })
 
   // .gte()가 작동하지 않을 수 있으므로 전체 데이터를 가져와서 JavaScript로 필터링
-  const { data: allChanges, error } = await supabase
+  const { data: allChanges, error, count } = await supabase
     .from('tool_changes')
-    .select('id, change_date, equipment_number, t_number')
+    .select('id, change_date, equipment_number, t_number', { count: 'exact' })
+
+  logger.warn('🔍 tool_changes 쿼리 결과:', {
+    error: error ? JSON.stringify(error) : null,
+    dataLength: allChanges?.length || 0,
+    count: count,
+    firstRecord: allChanges?.[0],
+    lastRecord: allChanges?.[allChanges.length - 1]
+  })
 
   if (error) {
     console.error('tool_changes 조회 오류:', error)
@@ -290,12 +298,19 @@ async function getToolChangeStats(supabase: any) {
   const todayChanges = (allChanges || []).filter((change: any) => change.change_date === today)
   const yesterdayChanges = (allChanges || []).filter((change: any) => change.change_date === yesterday)
 
+  // 날짜별 분포 계산
+  const dateDistribution = (allChanges || []).reduce((acc: any, change: any) => {
+    acc[change.change_date] = (acc[change.change_date] || 0) + 1
+    return acc
+  }, {})
+
   logger.warn('📊 교체 실적 집계:', {
     totalCount: allChanges?.length || 0,
     today,
     yesterday,
     todayCount: todayChanges.length,
     yesterdayCount: yesterdayChanges.length,
+    dateDistribution: Object.entries(dateDistribution).sort((a: any, b: any) => b[0].localeCompare(a[0])).slice(0, 5),
     todaySample: todayChanges.slice(0, 3),
     allDatesSample: (allChanges || []).slice(0, 5).map((c: any) => ({ date: c.change_date, equipment: c.equipment_number }))
   })
