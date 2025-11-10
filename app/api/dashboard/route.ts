@@ -286,11 +286,9 @@ async function getToolChangeStats(supabase: any) {
     throw error
   }
 
-  // JavaScript로 필터링
-  const todayChanges = (allChanges || []).filter((change: any) => change.change_date >= today)
-  const yesterdayChanges = (allChanges || []).filter((change: any) =>
-    change.change_date >= yesterday && change.change_date < today
-  )
+  // JavaScript로 필터링 - 정확한 날짜 매칭
+  const todayChanges = (allChanges || []).filter((change: any) => change.change_date === today)
+  const yesterdayChanges = (allChanges || []).filter((change: any) => change.change_date === yesterday)
 
   logger.log('📊 교체 실적 집계:', {
     totalCount: allChanges?.length || 0,
