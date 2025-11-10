@@ -290,7 +290,7 @@ async function getToolChangeStats(supabase: any) {
   const todayChanges = (allChanges || []).filter((change: any) => change.change_date === today)
   const yesterdayChanges = (allChanges || []).filter((change: any) => change.change_date === yesterday)
 
-  logger.log('📊 교체 실적 집계:', {
+  logger.warn('📊 교체 실적 집계:', {
     totalCount: allChanges?.length || 0,
     today,
     yesterday,
