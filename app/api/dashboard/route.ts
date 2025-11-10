@@ -292,9 +292,12 @@ async function getToolChangeStats(supabase: any) {
 
   logger.log('📊 교체 실적 집계:', {
     totalCount: allChanges?.length || 0,
+    today,
+    yesterday,
     todayCount: todayChanges.length,
     yesterdayCount: yesterdayChanges.length,
-    todaySample: todayChanges.slice(0, 3)
+    todaySample: todayChanges.slice(0, 3),
+    allDatesSample: (allChanges || []).slice(0, 5).map((c: any) => ({ date: c.change_date, equipment: c.equipment_number }))
   })
 
   const todayCount = todayChanges.length
