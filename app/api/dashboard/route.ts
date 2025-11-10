@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
+// 동적 라우트로 명시적 설정 (캐싱 방지)
+export const dynamic = 'force-dynamic'
+
 export async function GET(_request: NextRequest) {
   logger.log('🚀 대시보드 API 호출됨:', new Date().toISOString())
   try {
