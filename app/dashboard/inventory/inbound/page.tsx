@@ -61,6 +61,10 @@ export default function InboundPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(20)
 
+  // 수정 모달 상태
+  const [editingItem, setEditingItem] = useState<InboundItem | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+
   // USB QR 스캐너를 위한 input ref 및 타이머
   const codeInputRef = useRef<HTMLInputElement>(null)
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -377,6 +381,84 @@ export default function InboundPage() {
       clientLogger.error('Excel 다운로드 오류:', error)
       showError(t('inventory.excelDownloadFailed'), String(error))
     }
+  }
+
+  // 입고 내역 수정 핸들러
+  const handleEditInbound = (item: InboundItem) => {
+    setEditingItem(item)
+    setIsEditModalOpen(true)
+  }
+
+  // 입고 내역 수정 저장
+  const handleSaveEdit = async () => {
+    if (!editingItem) return
+
+    const confirmationConfig = createSaveConfirmation(
+      t,
+      async () => {
+        try {
+          const response = await fetch(`/api/inventory/inbound/${editingItem.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              quantity: editingItem.quantity,
+              unitPrice: editingItem.unitPrice,
+              supplier: editingItem.supplier
+            })
+          })
+
+          const result = await response.json()
+
+          if (result.success) {
+            showSuccess(t('inventory.updateInboundSuccess'))
+            setIsEditModalOpen(false)
+            setEditingItem(null)
+            await loadInboundItems()
+          } else {
+            showError(t('inventory.updateInboundFailed'), result.error)
+          }
+        } catch (error) {
+          clientLogger.error('입고 내역 수정 오류:', error)
+          showError(t('inventory.updateInboundFailed'), String(error))
+        }
+      }
+    )
+
+    confirmation.showConfirmation(confirmationConfig)
+  }
+
+  // 입고 내역 삭제 핸들러
+  const handleDeleteInbound = async (id: string) => {
+    const confirmationConfig = {
+      title: t('inventory.deleteInbound'),
+      message: t('inventory.deleteInboundConfirm'),
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      confirmButtonStyle: 'bg-red-600 hover:bg-red-700' as const
+    }
+
+    confirmation.showConfirmation({
+      ...confirmationConfig,
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/inventory/inbound/${id}`, {
+            method: 'DELETE'
+          })
+
+          const result = await response.json()
+
+          if (result.success) {
+            showSuccess(t('inventory.deleteInboundSuccess'))
+            await loadInboundItems()
+          } else {
+            showError(t('inventory.deleteInboundFailed'), result.error)
+          }
+        } catch (error) {
+          clientLogger.error('입고 내역 삭제 오류:', error)
+          showError(t('inventory.deleteInboundFailed'), String(error))
+        }
+      }
+    })
   }
 
   return (
@@ -744,6 +826,7 @@ export default function InboundPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.unitPriceVND')}</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.totalAmount')} (VND)</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.processor')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -757,6 +840,22 @@ export default function InboundPage() {
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.unitPrice.toLocaleString()}</td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-600">{item.totalPrice.toLocaleString()}</td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.processedBy}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditInbound(item)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            {t('common.edit')}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteInbound(item.id)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            {t('common.delete')}
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -807,6 +906,85 @@ export default function InboundPage() {
           onCancel={confirmation.handleCancel}
           loading={confirmation.loading}
         />
+      )}
+
+      {/* 수정 모달 */}
+      {isEditModalOpen && editingItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium mb-4">{t('inventory.editInbound')}</h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('inventory.endmillCode')}
+                </label>
+                <input
+                  type="text"
+                  value={editingItem.endmillCode}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('inventory.supplier')}
+                </label>
+                <input
+                  type="text"
+                  value={editingItem.supplier}
+                  onChange={(e) => setEditingItem({ ...editingItem, supplier: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('common.quantity')}
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={editingItem.quantity}
+                  onChange={(e) => setEditingItem({ ...editingItem, quantity: parseInt(e.target.value) || 1 })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('inventory.unitPriceVND')}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editingItem.unitPrice}
+                  onChange={(e) => setEditingItem({ ...editingItem, unitPrice: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false)
+                  setEditingItem(null)
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                {t('common.save')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -65,6 +65,10 @@ export default function OutboundPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(20)
 
+  // 수정 모달 상태
+  const [editingItem, setEditingItem] = useState<OutboundItem | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+
   // USB QR 스캐너를 위한 input ref 및 타이머
   const codeInputRef = useRef<HTMLInputElement>(null)
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -429,6 +433,85 @@ export default function OutboundPage() {
         showError(t('inventory.cancelOutboundFailed'), t('inventory.cancelOutboundError'))
       }
     }
+  }
+
+  // 출고 내역 수정 핸들러
+  const handleEditOutbound = (item: OutboundItem) => {
+    setEditingItem(item)
+    setIsEditModalOpen(true)
+  }
+
+  // 출고 내역 수정 저장
+  const handleSaveEditOutbound = async () => {
+    if (!editingItem) return
+
+    const confirmationConfig = createSaveConfirmation(
+      t,
+      async () => {
+        try {
+          const response = await fetch(`/api/inventory/outbound/${editingItem.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              quantity: editingItem.quantity,
+              equipmentNumber: editingItem.equipmentNumber,
+              tNumber: editingItem.tNumber,
+              purpose: editingItem.purpose
+            })
+          })
+
+          const result = await response.json()
+
+          if (result.success) {
+            showSuccess(t('inventory.updateOutboundSuccess'))
+            setIsEditModalOpen(false)
+            setEditingItem(null)
+            await loadOutboundHistory()
+          } else {
+            showError(t('inventory.updateOutboundFailed'), result.error)
+          }
+        } catch (error) {
+          clientLogger.error('출고 내역 수정 오류:', error)
+          showError(t('inventory.updateOutboundFailed'), String(error))
+        }
+      }
+    )
+
+    confirmation.showConfirmation(confirmationConfig)
+  }
+
+  // 출고 내역 삭제 핸들러
+  const handleDeleteOutbound = async (id: string) => {
+    const confirmationConfig = {
+      title: t('inventory.deleteOutbound'),
+      message: t('inventory.deleteOutboundConfirm'),
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      confirmButtonStyle: 'bg-red-600 hover:bg-red-700' as const
+    }
+
+    confirmation.showConfirmation({
+      ...confirmationConfig,
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/inventory/outbound/${id}`, {
+            method: 'DELETE'
+          })
+
+          const result = await response.json()
+
+          if (result.success) {
+            showSuccess(t('inventory.deleteOutboundSuccess'))
+            await loadOutboundHistory()
+          } else {
+            showError(t('inventory.deleteOutboundFailed'), result.error)
+          }
+        } catch (error) {
+          clientLogger.error('출고 내역 삭제 오류:', error)
+          showError(t('inventory.deleteOutboundFailed'), String(error))
+        }
+      }
+    })
   }
 
   // 총액 계산
@@ -932,12 +1015,20 @@ export default function OutboundPage() {
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-green-600">{item.totalValue.toLocaleString()}</td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.processedBy}</td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm">
-                        <button
-                          onClick={() => handleCancelOutbound(item.id)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          {t('common.cancel')}
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditOutbound(item)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            {t('common.edit')}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteOutbound(item.id)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            {t('common.delete')}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -989,6 +1080,104 @@ export default function OutboundPage() {
           onCancel={confirmation.handleCancel}
           loading={confirmation.loading}
         />
+      )}
+
+      {/* 수정 모달 */}
+      {isEditModalOpen && editingItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium mb-4">{t('inventory.editOutbound')}</h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('inventory.endmillCode')}
+                </label>
+                <input
+                  type="text"
+                  value={editingItem.endmillCode}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('inventory.equipmentNumber')}
+                </label>
+                <input
+                  type="text"
+                  value={editingItem.equipmentNumber}
+                  onChange={(e) => setEditingItem({ ...editingItem, equipmentNumber: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  placeholder={t('inventory.equipmentNumberPlaceholder')}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('inventory.tNumber')}
+                </label>
+                <select
+                  value={editingItem.tNumber}
+                  onChange={(e) => setEditingItem({ ...editingItem, tNumber: parseInt(e.target.value) || 1 })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  {Array.from({length: tNumberRange.max - tNumberRange.min + 1}, (_, i) => i + tNumberRange.min).map(num => (
+                    <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('common.quantity')}
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={editingItem.quantity}
+                  onChange={(e) => setEditingItem({ ...editingItem, quantity: parseInt(e.target.value) || 1 })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('inventory.purpose')}
+                </label>
+                <select
+                  value={editingItem.purpose}
+                  onChange={(e) => setEditingItem({ ...editingItem, purpose: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">{t('inventory.selectPurpose')}</option>
+                  {toolChangesReasons.map(reason => (
+                    <option key={reason} value={reason}>{reasonTranslations[reason] || reason}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false)
+                  setEditingItem(null)
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={handleSaveEditOutbound}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                {t('common.save')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

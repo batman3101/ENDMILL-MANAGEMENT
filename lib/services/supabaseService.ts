@@ -450,7 +450,7 @@ export class ToolChangeService {
         *,
         equipment:equipment(*),
         endmill_type:endmill_types(*),
-        user:user_profiles(name, employee_id)
+        user:user_profiles!changed_by(name, employee_id)
       `)
       .order('change_date', { ascending: false })
 
@@ -490,7 +490,8 @@ export class ToolChangeService {
       .select(`
         *,
         equipment:equipment(*),
-        endmill_type:endmill_types(*)
+        endmill_type:endmill_types(*),
+        user:user_profiles!changed_by(name, employee_id)
       `)
       .eq('equipment_number', equipmentNumber)
       .order('change_date', { ascending: false })
@@ -519,7 +520,9 @@ export class ToolChangeService {
       .from('tool_changes')
       .select(`
         *,
-        user_profiles(name, employee_id)
+        equipment:equipment(*),
+        endmill_type:endmill_types(*),
+        user:user_profiles!changed_by(name, employee_id)
       `)
 
     // 설비 번호 필터
@@ -599,7 +602,8 @@ export class ToolChangeService {
       .select(`
         *,
         equipment:equipment(*),
-        endmill_type:endmill_types(*)
+        endmill_type:endmill_types(*),
+        user:user_profiles!changed_by(name, employee_id)
       `)
       .single()
 
