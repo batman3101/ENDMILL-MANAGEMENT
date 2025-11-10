@@ -281,7 +281,7 @@ async function getToolChangeStats(supabase: any) {
     .from('tool_changes')
     .select('id, change_date, equipment_number, t_number', { count: 'exact' })
 
-  logger.warn('🔍 tool_changes 쿼리 결과:', {
+  logger.log('🔍 tool_changes 쿼리 결과:', {
     error: error ? JSON.stringify(error) : null,
     dataLength: allChanges?.length || 0,
     count: count,
@@ -304,7 +304,7 @@ async function getToolChangeStats(supabase: any) {
     return acc
   }, {})
 
-  logger.warn('📊 교체 실적 집계:', {
+  logger.log('📊 교체 실적 집계:', {
     totalCount: allChanges?.length || 0,
     today,
     yesterday,
