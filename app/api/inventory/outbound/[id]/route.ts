@@ -191,13 +191,19 @@ export async function DELETE(
 
     // 관련된 tool_changes 이력도 삭제 (있는 경우)
     if (existingTransaction.equipment_id && existingTransaction.t_number) {
-      await supabase
-        .from('tool_changes')
-        .delete()
-        .eq('equipment_id', existingTransaction.equipment_id)
-        .eq('t_number', existingTransaction.t_number)
-        .gte('change_date', new Date(existingTransaction.created_at || existingTransaction.processed_at).toISOString())
-        .lte('change_date', new Date(new Date(existingTransaction.created_at || existingTransaction.processed_at).getTime() + 60000).toISOString()) // 1분 이내
+      const transactionDate = existingTransaction.created_at || existingTransaction.processed_at
+      if (transactionDate) {
+        const dateFrom = new Date(transactionDate).toISOString()
+        const dateTo = new Date(new Date(transactionDate).getTime() + 60000).toISOString() // 1분 이내
+
+        await supabase
+          .from('tool_changes')
+          .delete()
+          .eq('equipment_id', existingTransaction.equipment_id)
+          .eq('t_number', existingTransaction.t_number)
+          .gte('change_date', dateFrom)
+          .lte('change_date', dateTo)
+      }
     }
 
     // 트랜잭션 삭제
