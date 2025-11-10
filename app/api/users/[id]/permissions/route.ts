@@ -45,7 +45,7 @@ export async function GET(
     }
 
     if (!(currentUserProfile as any).user_roles) {
-      logger.error('User roles not found for profile:', currentUserProfile.id)
+      logger.error('User roles not found for profile:', (currentUserProfile as any).id)
       return NextResponse.json(
         { error: 'User role not found' },
         { status: 404 }
@@ -54,7 +54,7 @@ export async function GET(
 
     // 권한 확인 (시스템 관리자만 가능)
     const userRole = (currentUserProfile as any).user_roles.type
-    logger.info('GET permissions - Current user role:', { userId: user.id, profileId: currentUserProfile.id, role: userRole })
+    logger.info('GET permissions - Current user role:', { userId: user.id, profileId: (currentUserProfile as any).id, role: userRole })
 
     if (!isSystemAdmin(userRole)) {
       logger.warn('GET permissions - Access denied - not system admin:', { userId: user.id, role: userRole })
@@ -79,16 +79,16 @@ export async function GET(
     }
 
     // 사용자 개인 권한 반환 (user_profiles.permissions 우선, 없으면 user_roles.permissions 사용)
-    const permissions = targetProfile.permissions || targetProfile.user_roles?.permissions || {}
+    const permissions = (targetProfile as any).permissions || (targetProfile as any).user_roles?.permissions || {}
 
     return NextResponse.json({
       success: true,
       data: {
-        userId: targetProfile.id,
-        userName: targetProfile.name,
-        roleId: targetProfile.user_roles?.id || '',
-        roleName: targetProfile.user_roles?.name || '',
-        roleType: targetProfile.user_roles?.type || '',
+        userId: (targetProfile as any).id,
+        userName: (targetProfile as any).name,
+        roleId: (targetProfile as any).user_roles?.id || '',
+        roleName: (targetProfile as any).user_roles?.name || '',
+        roleType: (targetProfile as any).user_roles?.type || '',
         permissions
       }
     })
@@ -144,7 +144,7 @@ export async function PUT(
     }
 
     if (!(currentUserProfile as any).user_roles) {
-      logger.error('User roles not found for profile:', currentUserProfile.id)
+      logger.error('User roles not found for profile:', (currentUserProfile as any).id)
       return NextResponse.json(
         { error: 'User role not found' },
         { status: 404 }
@@ -153,7 +153,7 @@ export async function PUT(
 
     // 권한 확인 (시스템 관리자만 가능)
     const userRole = (currentUserProfile as any).user_roles.type
-    logger.info('PUT permissions - Current user role:', { userId: user.id, profileId: currentUserProfile.id, role: userRole })
+    logger.info('PUT permissions - Current user role:', { userId: user.id, profileId: (currentUserProfile as any).id, role: userRole })
 
     if (!isSystemAdmin(userRole)) {
       logger.warn('PUT permissions - Access denied - not system admin:', { userId: user.id, role: userRole })
@@ -190,7 +190,7 @@ export async function PUT(
     // 사용자 개인 권한 업데이트 (Service Role 사용)
     const adminSupabase = createAdminClient()
 
-    const { data: updatedProfile, error: updateError } = await adminSupabase
+    const { data: updatedProfile, error: updateError } = await (adminSupabase as any)
       .from('user_profiles')
       .update({
         permissions,
@@ -236,37 +236,17 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Supabase 클라이언트 생성
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options })
-          },
-        },
-      }
-    )
-
+    const supabase = createClient()
     const userId = params.id
 
-    // 현재 사용자 세션 확인
-    const { data: { session }, error: authError } = await supabase.auth.getSession()
-    if (authError || !session) {
+    // 현재 사용자 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-    const user = session.user
 
     // 사용자 프로필 조회 (권한 확인용)
     const { data: currentUserProfile, error: profileError } = await supabase
@@ -292,7 +272,7 @@ export async function POST(
     }
 
     if (!(currentUserProfile as any).user_roles) {
-      logger.error('User roles not found for profile:', currentUserProfile.id)
+      logger.error('User roles not found for profile:', (currentUserProfile as any).id)
       return NextResponse.json(
         { error: 'User role not found' },
         { status: 404 }
@@ -301,7 +281,7 @@ export async function POST(
 
     // 권한 확인 (시스템 관리자만 가능)
     const userRole = (currentUserProfile as any).user_roles.type
-    logger.info('POST permissions - Current user role:', { userId: user.id, profileId: currentUserProfile.id, role: userRole })
+    logger.info('POST permissions - Current user role:', { userId: user.id, profileId: (currentUserProfile as any).id, role: userRole })
 
     if (!isSystemAdmin(userRole)) {
       logger.warn('POST permissions - Access denied - not system admin:', { userId: user.id, role: userRole })
@@ -352,7 +332,7 @@ export async function POST(
     // 사용자의 역할을 템플릿 역할로 변경 (Service Role 사용)
     const adminSupabase = createAdminClient()
 
-    const { data: updatedProfile, error: updateError } = await adminSupabase
+    const { data: updatedProfile, error: updateError } = await (adminSupabase as any)
       .from('user_profiles')
       .update({
         role_id: templateRoleId,

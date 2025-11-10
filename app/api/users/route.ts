@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     let filteredProfiles = profiles || []
     if (search) {
       const searchLower = search.toLowerCase()
-      filteredProfiles = filteredProfiles.filter(profile =>
+      filteredProfiles = filteredProfiles.filter((profile: any) =>
         profile.name?.toLowerCase().includes(searchLower) ||
         profile.employee_id?.toLowerCase().includes(searchLower) ||
         profile.department?.toLowerCase().includes(searchLower) ||
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
 
     // auth.users 테이블에서 이메일 정보 가져오기
     const usersWithEmail = await Promise.all(
-      filteredProfiles.map(async (profile) => {
+      filteredProfiles.map(async (profile: any) => {
         if (!profile.user_id) {
           return {
             ...profile,
@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
     }
 
     // user_profiles 테이블에 프로필 생성
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await (supabase as any)
       .from('user_profiles')
       .insert({
         user_id: authData.user.id,

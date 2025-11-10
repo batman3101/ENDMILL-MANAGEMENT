@@ -67,15 +67,15 @@ export async function GET(
 
     // 이메일 정보 가져오기
     let email = ''
-    if (profile.user_id) {
-      const { data: authUser } = await supabase.auth.admin.getUserById(profile.user_id)
+    if ((profile as any).user_id) {
+      const { data: authUser } = await supabase.auth.admin.getUserById((profile as any).user_id)
       email = authUser?.user?.email || ''
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        ...profile,
+        ...(profile as any),
         email
       }
     })
@@ -164,7 +164,7 @@ export async function PUT(
     }
 
     // 사번 중복 확인 (자신 제외)
-    if (employeeId && employeeId !== targetProfile.employee_id) {
+    if (employeeId && employeeId !== (targetProfile as any).employee_id) {
       const { data: existingProfile } = await supabase
         .from('user_profiles')
         .select('id')
@@ -194,7 +194,7 @@ export async function PUT(
     if (isActive !== undefined) updateData.is_active = isActive
 
     // 프로필 업데이트
-    const { data: updatedProfile, error: updateError } = await supabase
+    const { data: updatedProfile, error: updateError } = await (supabase as any)
       .from('user_profiles')
       .update(updateData)
       .eq('id', userId)
@@ -210,9 +210,9 @@ export async function PUT(
     }
 
     // 이메일 업데이트 (Auth 사용자가 있는 경우)
-    if (email && targetProfile.user_id) {
+    if (email && (targetProfile as any).user_id) {
       const { error: emailUpdateError } = await supabase.auth.admin.updateUserById(
-        targetProfile.user_id,
+        (targetProfile as any).user_id,
         { email }
       )
 
@@ -223,8 +223,8 @@ export async function PUT(
 
     // 최신 이메일 정보 가져오기
     let currentEmail = ''
-    if (updatedProfile.user_id) {
-      const { data: authUser } = await supabase.auth.admin.getUserById(updatedProfile.user_id)
+    if ((updatedProfile as any).user_id) {
+      const { data: authUser } = await supabase.auth.admin.getUserById((updatedProfile as any).user_id)
       currentEmail = authUser?.user?.email || ''
     }
 
@@ -294,7 +294,7 @@ export async function DELETE(
     }
 
     // 자기 자신 삭제 방지
-    if (currentUserProfile.id === userId) {
+    if ((currentUserProfile as any).id === userId) {
       return NextResponse.json(
         { error: 'Cannot delete your own account' },
         { status: 400 }
@@ -317,9 +317,9 @@ export async function DELETE(
 
     // Auth 사용자 먼저 삭제 (있는 경우)
     // 이 순서가 중요: Auth를 먼저 삭제해야 나중에 같은 이메일로 재가입 가능
-    if (targetProfile.user_id) {
+    if ((targetProfile as any).user_id) {
       const { error: authDeleteError } = await supabase.auth.admin.deleteUser(
-        targetProfile.user_id
+        (targetProfile as any).user_id
       )
 
       if (authDeleteError) {
@@ -329,7 +329,7 @@ export async function DELETE(
           { status: 500 }
         )
       }
-      logger.log('Auth user deleted successfully:', targetProfile.user_id)
+      logger.log('Auth user deleted successfully:', (targetProfile as any).user_id)
     }
 
     // 프로필 삭제
