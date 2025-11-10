@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { createServerClient as createAdminClient } from '@/lib/supabase/client'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { isSystemAdmin } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
 
@@ -11,37 +9,17 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Supabase 클라이언트 생성
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options })
-          },
-        },
-      }
-    )
-
+    const supabase = createClient()
     const userId = params.id
 
-    // 현재 사용자 세션 확인
-    const { data: { session }, error: authError } = await supabase.auth.getSession()
-    if (authError || !session) {
+    // 현재 사용자 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-    const user = session.user
 
     // 사용자 프로필 조회 (권한 확인용)
     const { data: currentUserProfile, error: profileError } = await supabase
@@ -130,37 +108,17 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Supabase 클라이언트 생성
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options })
-          },
-        },
-      }
-    )
-
+    const supabase = createClient()
     const userId = params.id
 
-    // 현재 사용자 세션 확인
-    const { data: { session }, error: authError } = await supabase.auth.getSession()
-    if (authError || !session) {
+    // 현재 사용자 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-    const user = session.user
 
     // 사용자 프로필 조회 (권한 확인용)
     const { data: currentUserProfile, error: profileError } = await supabase

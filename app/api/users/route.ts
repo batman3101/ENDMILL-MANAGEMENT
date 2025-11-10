@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
 
 // GET /api/users - 모든 사용자 조회
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    const supabase = createClient()
 
     // 현재 사용자 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
 // POST /api/users - 새 사용자 생성
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    const supabase = createClient()
 
     // 현재 사용자 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
