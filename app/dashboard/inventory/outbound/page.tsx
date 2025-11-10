@@ -485,36 +485,34 @@ export default function OutboundPage() {
 
   // 출고 내역 삭제 핸들러
   const handleDeleteOutbound = async (id: string) => {
-    const confirmationConfig = {
+    const confirmed = await confirmation.showConfirmation({
+      type: 'delete',
       title: t('inventory.deleteOutbound'),
       message: t('inventory.deleteOutboundConfirm'),
-      confirmLabel: t('common.delete'),
-      cancelLabel: t('common.cancel'),
-      confirmButtonStyle: 'bg-red-600 hover:bg-red-700' as const
-    }
-
-    confirmation.showConfirmation({
-      ...confirmationConfig,
-      onConfirm: async () => {
-        try {
-          const response = await fetch(`/api/inventory/outbound/${id}`, {
-            method: 'DELETE'
-          })
-
-          const result = await response.json()
-
-          if (result.success) {
-            showSuccess(t('inventory.deleteOutboundSuccess'))
-            await loadOutboundHistory()
-          } else {
-            showError(t('inventory.deleteOutboundFailed'), result.error)
-          }
-        } catch (error) {
-          clientLogger.error('출고 내역 삭제 오류:', error)
-          showError(t('inventory.deleteOutboundFailed'), String(error))
-        }
-      }
+      confirmText: t('common.delete'),
+      cancelText: t('common.cancel'),
+      isDangerous: true
     })
+
+    if (confirmed) {
+      try {
+        const response = await fetch(`/api/inventory/outbound/${id}`, {
+          method: 'DELETE'
+        })
+
+        const result = await response.json()
+
+        if (result.success) {
+          showSuccess(t('inventory.deleteOutboundSuccess'))
+          await loadOutboundHistory()
+        } else {
+          showError(t('inventory.deleteOutboundFailed'), result.error)
+        }
+      } catch (error) {
+        clientLogger.error('출고 내역 삭제 오류:', error)
+        showError(t('inventory.deleteOutboundFailed'), String(error))
+      }
+    }
   }
 
   // 총액 계산
