@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     // 영구 삭제
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(
       user.id,
-      { shouldSoftDelete: false }
+      false // shouldSoftDelete = false
     )
 
     if (deleteError) {

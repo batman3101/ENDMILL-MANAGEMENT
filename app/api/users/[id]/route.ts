@@ -323,7 +323,7 @@ export async function DELETE(
       const adminClient = createAdminClient()
       const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(
         (targetProfile as any).user_id,
-        { shouldSoftDelete: false } // 영구 삭제: 같은 이메일로 재가입 가능
+        false // shouldSoftDelete = false (영구 삭제: 같은 이메일로 재가입 가능)
       )
 
       if (authDeleteError) {
