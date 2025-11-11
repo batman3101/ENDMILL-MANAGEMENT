@@ -109,43 +109,61 @@ export async function GET(_request: NextRequest) {
 
 // 설비 통계
 async function getEquipmentStats(supabase: any) {
-  const { data: equipment, error } = await supabase
-    .from('equipment')
-    .select('status, model_code, location')
+  try {
+    // 타임스탬프를 추가하여 캐시 무효화
+    const timestamp = Date.now()
 
-  if (error) {
-    console.error('equipment 조회 오류:', error)
+    const { data: equipment, error } = await supabase
+      .from('equipment')
+      .select('status, model_code, location, id')
+      .gte('id', '00000000-0000-0000-0000-000000000000') // 모든 레코드 포함 (캐시 회피)
+
+    if (error) {
+      logger.error('equipment 조회 오류:', error)
+      throw error
+    }
+
+    const total = equipment.length
+    const statusCounts = equipment.reduce((acc: any, item: any) => {
+      acc[item.status] = (acc[item.status] || 0) + 1
+      return acc
+    }, {})
+
+    logger.log(`📊 설비 통계 (ts: ${timestamp}):`, {
+      total,
+      statusDistribution: statusCounts,
+      firstEquipmentId: equipment[0]?.id
+    })
+
+    const operatingRate = Math.round((statusCounts['가동중'] || 0) / total * 100)
+
+    // tool_positions에서 실제 공구 수명 효율 계산
+    const { data: allPositions } = await supabase
+      .from('tool_positions')
+      .select('current_life, total_life, status')
+
+    const inUsePositions = (allPositions || []).filter((pos: any) => pos.status === 'in_use' && pos.total_life > 0)
+    const toolLifeEfficiency = inUsePositions.length > 0
+      ? Math.round(inUsePositions.reduce((sum: number, pos: any) => {
+          const efficiency = pos.total_life > 0 ? (pos.current_life / pos.total_life) * 100 : 0
+          return sum + efficiency
+        }, 0) / inUsePositions.length)
+      : 0
+
+    const result = {
+      total,
+      active: statusCounts['가동중'] || 0,
+      maintenance: statusCounts['점검중'] || 0,
+      setup: statusCounts['셋업중'] || 0,
+      operatingRate,
+      toolLifeEfficiency // 실제 계산된 공구 수명 효율
+    }
+
+    logger.log('📊 설비 통계 계산 완료:', result)
+    return result
+  } catch (error) {
+    logger.error('설비 통계 조회 오류:', error)
     throw error
-  }
-
-  const total = equipment.length
-  const statusCounts = equipment.reduce((acc: any, item: any) => {
-    acc[item.status] = (acc[item.status] || 0) + 1
-    return acc
-  }, {})
-
-  const operatingRate = Math.round((statusCounts['가동중'] || 0) / total * 100)
-
-  // tool_positions에서 실제 공구 수명 효율 계산
-  const { data: allPositions } = await supabase
-    .from('tool_positions')
-    .select('current_life, total_life, status')
-
-  const inUsePositions = (allPositions || []).filter((pos: any) => pos.status === 'in_use' && pos.total_life > 0)
-  const toolLifeEfficiency = inUsePositions.length > 0
-    ? Math.round(inUsePositions.reduce((sum: number, pos: any) => {
-        const efficiency = pos.total_life > 0 ? (pos.current_life / pos.total_life) * 100 : 0
-        return sum + efficiency
-      }, 0) / inUsePositions.length)
-    : 0
-
-  return {
-    total,
-    active: statusCounts['가동중'] || 0,
-    maintenance: statusCounts['점검중'] || 0,
-    setup: statusCounts['셋업중'] || 0,
-    operatingRate,
-    toolLifeEfficiency // 실제 계산된 공구 수명 효율
   }
 }
 

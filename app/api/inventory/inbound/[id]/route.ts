@@ -8,9 +8,13 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    logger.log('📝 입고 내역 수정 API 호출:', { transactionId: params.id })
+
     const supabase = createServerClient()
     const transactionId = params.id
     const body = await request.json()
+
+    logger.log('📝 받은 데이터:', body)
 
     const { quantity, unitPrice, supplier } = body
 
@@ -48,8 +52,7 @@ export async function PUT(
         quantity: quantity,
         unit_price: unitPrice,
         total_amount: quantity * unitPrice,
-        purpose: supplier,
-        updated_at: new Date().toISOString()
+        purpose: supplier
       })
       .eq('id', transactionId)
 

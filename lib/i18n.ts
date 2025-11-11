@@ -408,6 +408,28 @@ const resources = {
         inboundProcessError: '입고 처리 중 오류가 발생했습니다.',
         totalPrice: '총액',
 
+        // 입고 내역 수정/삭제
+        editInbound: '입고 내역 수정',
+        updateInbound: '입고 내역 수정',
+        updateInboundConfirm: '입고 내역을 수정하시겠습니까?',
+        updateInboundSuccess: '입고 내역이 수정되었습니다',
+        updateInboundFailed: '입고 내역 수정 실패',
+        deleteInbound: '입고 내역 삭제',
+        deleteInboundConfirm: '입고 내역을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+        deleteInboundSuccess: '입고 내역이 삭제되었습니다',
+        deleteInboundFailed: '입고 내역 삭제 실패',
+
+        // 출고 내역 수정/삭제
+        editOutbound: '출고 내역 수정',
+        updateOutbound: '출고 내역 수정',
+        updateOutboundConfirm: '출고 내역을 수정하시겠습니까?',
+        updateOutboundSuccess: '출고 내역이 수정되었습니다',
+        updateOutboundFailed: '출고 내역 수정 실패',
+        deleteOutbound: '출고 내역 삭제',
+        deleteOutboundConfirm: '출고 내역을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+        deleteOutboundSuccess: '출고 내역이 삭제되었습니다',
+        deleteOutboundFailed: '출고 내역 삭제 실패',
+
         // 출고 페이지 (기존 키 제거됨 - 상단에서 통합됨)
         outboundScanDescription: 'QR 스캔을 통한 앤드밀 출고 처리',
         outboundInfo: '출고 정보',
@@ -2691,6 +2713,28 @@ const resources = {
         uncategorized: 'Không phân loại',
         selectPurpose: 'Chọn mục đích',
         outboundNotePrefix: 'Xử lý xuất kho:',
+
+        // 입고 내역 수정/삭제
+        editInbound: 'Chỉnh sửa lịch sử nhập kho',
+        updateInbound: 'Chỉnh sửa lịch sử nhập kho',
+        updateInboundConfirm: 'Bạn có muốn chỉnh sửa lịch sử nhập kho này không?',
+        updateInboundSuccess: 'Lịch sử nhập kho đã được chỉnh sửa',
+        updateInboundFailed: 'Chỉnh sửa lịch sử nhập kho thất bại',
+        deleteInbound: 'Xóa lịch sử nhập kho',
+        deleteInboundConfirm: 'Bạn có muốn xóa lịch sử nhập kho này không? Hành động này không thể hoàn tác.',
+        deleteInboundSuccess: 'Lịch sử nhập kho đã được xóa',
+        deleteInboundFailed: 'Xóa lịch sử nhập kho thất bại',
+
+        // 출고 내역 수정/삭제
+        editOutbound: 'Chỉnh sửa lịch sử xuất kho',
+        updateOutbound: 'Chỉnh sửa lịch sử xuất kho',
+        updateOutboundConfirm: 'Bạn có muốn chỉnh sửa lịch sử xuất kho này không?',
+        updateOutboundSuccess: 'Lịch sử xuất kho đã được chỉnh sửa',
+        updateOutboundFailed: 'Chỉnh sửa lịch sử xuất kho thất bại',
+        deleteOutbound: 'Xóa lịch sử xuất kho',
+        deleteOutboundConfirm: 'Bạn có muốn xóa lịch sử xuất kho này không? Hành động này không thể hoàn tác.',
+        deleteOutboundSuccess: 'Lịch sử xuất kho đã được xóa',
+        deleteOutboundFailed: 'Xóa lịch sử xuất kho thất bại',
       },
 
       // CAM SHEET 관리

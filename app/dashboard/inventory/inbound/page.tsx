@@ -391,8 +391,14 @@ export default function InboundPage() {
 
   // 입고 내역 수정 저장
   const handleSaveEdit = async () => {
-    if (!editingItem) return
+    clientLogger.log('🔵 저장 버튼 클릭됨', { editingItem })
 
+    if (!editingItem) {
+      clientLogger.log('⚠️ editingItem이 없음')
+      return
+    }
+
+    clientLogger.log('🔵 확인 모달 표시 중...')
     const confirmed = await confirmation.showConfirmation({
       type: 'save',
       title: t('inventory.updateInbound'),
@@ -400,6 +406,8 @@ export default function InboundPage() {
       confirmText: t('common.save'),
       cancelText: t('common.cancel')
     })
+
+    clientLogger.log('🔵 확인 결과:', confirmed)
 
     if (confirmed) {
       try {
