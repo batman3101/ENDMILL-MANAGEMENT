@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
 
@@ -91,7 +91,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // auth.users 테이블에서 이메일 정보 가져오기
+    // auth.users 테이블에서 이메일 정보 가져오기 (Admin API 사용)
+    const adminClient = createAdminClient()
     const usersWithEmail = await Promise.all(
       filteredProfiles.map(async (profile: any) => {
         if (!profile.user_id) {
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        const { data: authUser } = await supabase.auth.admin.getUserById(profile.user_id)
+        const { data: authUser } = await adminClient.auth.admin.getUserById(profile.user_id)
         return {
           ...profile,
           email: authUser?.user?.email || ''
@@ -210,8 +211,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Supabase Auth를 통해 사용자 생성 (Admin API 사용)
-    const { data: authData, error: authCreateError } = await supabase.auth.admin.createUser({
+    // Supabase Auth를 통해 사용자 생성 (Admin API 사용 - Service Role Key 필요)
+    const adminClient = createAdminClient()
+    const { data: authData, error: authCreateError } = await adminClient.auth.admin.createUser({
       email,
       password,
       email_confirm: true, // 이메일 확인 없이 바로 활성화
@@ -223,8 +225,17 @@ export async function POST(request: NextRequest) {
 
     if (authCreateError || !authData.user) {
       logger.error('Error creating auth user:', authCreateError)
+
+      // 이메일 중복 에러 처리
+      if (authCreateError?.message?.includes('already been registered')) {
+        return NextResponse.json(
+          { error: '이미 등록된 이메일 주소입니다. 다른 이메일을 사용해주세요.' },
+          { status: 409 }
+        )
+      }
+
       return NextResponse.json(
-        { error: 'Failed to create user account', details: authCreateError?.message },
+        { error: authCreateError?.message || 'Failed to create user account' },
         { status: 500 }
       )
     }
@@ -250,7 +261,7 @@ export async function POST(request: NextRequest) {
       logger.error('Error creating user profile:', profileError)
 
       // 프로필 생성 실패 시 Auth 사용자 삭제 (롤백)
-      await supabase.auth.admin.deleteUser(authData.user.id)
+      await adminClient.auth.admin.deleteUser(authData.user.id)
 
       return NextResponse.json(
         { error: 'Failed to create user profile', details: profileError.message },

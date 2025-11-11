@@ -159,8 +159,7 @@ export default function EquipmentPage() {
     })
 
     return filtered
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [equipments])
+  }, [equipments, searchTerm, statusFilter, modelFilter, sortField, sortOrder])
 
 
 

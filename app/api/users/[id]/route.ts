@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
 
@@ -65,10 +65,11 @@ export async function GET(
       )
     }
 
-    // 이메일 정보 가져오기
+    // 이메일 정보 가져오기 (Admin API 사용)
     let email = ''
     if ((profile as any).user_id) {
-      const { data: authUser } = await supabase.auth.admin.getUserById((profile as any).user_id)
+      const adminClient = createAdminClient()
+      const { data: authUser } = await adminClient.auth.admin.getUserById((profile as any).user_id)
       email = authUser?.user?.email || ''
     }
 
@@ -209,9 +210,10 @@ export async function PUT(
       )
     }
 
-    // 이메일 업데이트 (Auth 사용자가 있는 경우)
+    // 이메일 업데이트 (Auth 사용자가 있는 경우, Admin API 사용)
+    const adminClient = createAdminClient()
     if (email && (targetProfile as any).user_id) {
-      const { error: emailUpdateError } = await supabase.auth.admin.updateUserById(
+      const { error: emailUpdateError } = await adminClient.auth.admin.updateUserById(
         (targetProfile as any).user_id,
         { email }
       )
@@ -224,7 +226,7 @@ export async function PUT(
     // 최신 이메일 정보 가져오기
     let currentEmail = ''
     if ((updatedProfile as any).user_id) {
-      const { data: authUser } = await supabase.auth.admin.getUserById((updatedProfile as any).user_id)
+      const { data: authUser } = await adminClient.auth.admin.getUserById((updatedProfile as any).user_id)
       currentEmail = authUser?.user?.email || ''
     }
 
@@ -315,11 +317,13 @@ export async function DELETE(
       )
     }
 
-    // Auth 사용자 먼저 삭제 (있는 경우)
+    // Auth 사용자 먼저 삭제 (있는 경우, Admin API 사용)
     // 이 순서가 중요: Auth를 먼저 삭제해야 나중에 같은 이메일로 재가입 가능
     if ((targetProfile as any).user_id) {
-      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(
-        (targetProfile as any).user_id
+      const adminClient = createAdminClient()
+      const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(
+        (targetProfile as any).user_id,
+        { shouldSoftDelete: false } // 영구 삭제: 같은 이메일로 재가입 가능
       )
 
       if (authDeleteError) {
