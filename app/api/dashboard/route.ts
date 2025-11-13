@@ -1,11 +1,17 @@
 import { NextRequest } from 'next/server'
+import { unstable_noStore as noStore } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
 // 동적 라우트로 명시적 설정 (캐싱 방지)
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 export async function GET(_request: NextRequest) {
+  // Next.js Data Cache 완전 비활성화
+  noStore()
+
   logger.log('🚀 대시보드 API 호출됨:', new Date().toISOString())
   try {
     // Service Role Key를 직접 사용하여 Supabase 클라이언트 생성
