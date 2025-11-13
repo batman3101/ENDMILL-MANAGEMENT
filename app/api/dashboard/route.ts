@@ -96,13 +96,29 @@ export async function GET(_request: NextRequest) {
       dataSource: 'realtime'
     }
 
-    return Response.json(dashboardData)
+    // Vercel 배포 시 캐싱 방지를 위한 헤더 추가
+    return Response.json(dashboardData, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
 
   } catch (error) {
     console.error('대시보드 데이터 조회 오류:', error)
     return Response.json(
       { error: '대시보드 데이터를 가져오는데 실패했습니다.' },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      }
     )
   }
 }
