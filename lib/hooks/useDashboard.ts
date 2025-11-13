@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useCallback } from 'react'
 
 // 대시보드 데이터 타입 정의
 export interface DashboardData {
@@ -111,93 +112,55 @@ interface UseDashboardReturn {
   lastRefresh: Date | null
 }
 
+const fetchDashboardData = async (): Promise<DashboardData> => {
+  // 타임스탬프를 추가하여 브라우저 캐시 무효화
+  const timestamp = Date.now()
+  const response = await fetch(`/api/dashboard?t=${timestamp}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    },
+    cache: 'no-store'
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  const result = await response.json()
+
+  if (result.error) {
+    throw new Error(result.error)
+  }
+
+  return result
+}
+
 export const useDashboard = (refreshInterval: number = 30000): UseDashboardReturn => {
-  const [data, setData] = useState<DashboardData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
-
-  const fetchDashboardData = useCallback(async () => {
-    try {
-      setError(null)
-      const response = await fetch('/api/dashboard', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        cache: 'no-store' // 실시간 데이터를 위해 캐시 비활성화
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const result = await response.json()
-      
-      if (result.error) {
-        throw new Error(result.error)
-      }
-
-      setData(result)
-      setLastRefresh(new Date())
-      
-    } catch (err) {
-      console.error('대시보드 데이터 조회 오류:', err)
-      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+  // React Query로 대시보드 데이터 관리
+  const { data, isLoading, error, refetch, dataUpdatedAt } = useQuery<DashboardData>({
+    queryKey: ['dashboard'],
+    queryFn: fetchDashboardData,
+    refetchInterval: refreshInterval, // 주기적 새로고침
+    refetchIntervalInBackground: false, // 백그라운드에서는 새로고침 안 함
+    staleTime: 0, // 항상 stale 상태
+    gcTime: 1000 * 60, // 1분 동안 캐시 유지
+    retry: 1
+  })
 
   const refreshData = useCallback(async () => {
-    setIsLoading(true)
-    await fetchDashboardData()
-  }, [fetchDashboardData])
+    await refetch()
+  }, [refetch])
 
-  // 초기 데이터 로드
-  useEffect(() => {
-    fetchDashboardData()
-  }, [fetchDashboardData])
-
-  // 주기적 데이터 업데이트 (페이지가 보일 때만)
-  useEffect(() => {
-    if (refreshInterval <= 0) return
-
-    let interval: NodeJS.Timeout | null = null
-
-    const startPolling = () => {
-      if (interval) clearInterval(interval)
-      interval = setInterval(() => {
-        if (!document.hidden) { // 페이지가 활성 상태일 때만 폴링
-          fetchDashboardData()
-        }
-      }, refreshInterval)
-    }
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        if (interval) {
-          clearInterval(interval)
-          interval = null
-        }
-      } else {
-        startPolling()
-      }
-    }
-
-    startPolling()
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      if (interval) clearInterval(interval)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [fetchDashboardData, refreshInterval])
+  const lastRefresh = dataUpdatedAt ? new Date(dataUpdatedAt) : null
 
   return {
-    data,
+    data: data || null,
     isLoading,
-    error,
+    error: error ? (error as Error).message : null,
     refreshData,
     lastRefresh
   }
