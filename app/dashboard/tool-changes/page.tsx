@@ -7,7 +7,7 @@ import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, createSaveConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useSettings } from '../../../lib/hooks/useSettings'
-import { useToolChanges, type ToolChange, type ToolChangeFilters } from '../../../lib/hooks/useToolChanges'
+import { useToolChanges, useToolChangeStats, type ToolChange, type ToolChangeFilters } from '../../../lib/hooks/useToolChanges'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { clientLogger } from '@/lib/utils/logger'
 
@@ -33,6 +33,13 @@ export default function ToolChangesPage() {
     hasMore,
     totalCount
   } = useToolChanges(filters)
+
+  // 통계 데이터 훅 사용 (오늘 날짜 기준, 실시간 업데이트 활성화)
+  const {
+    stats,
+    isLoading: isStatsLoading,
+    error: statsError
+  } = useToolChangeStats(undefined, true)
 
   // 폼 상태
   const [showAddForm, setShowAddForm] = useState(false)
@@ -649,7 +656,13 @@ export default function ToolChangesPage() {
             </div>
             <div>
               <p className="text-xs font-medium text-gray-600">{t('toolChanges.todayChanges')}</p>
-              <p className="text-xl font-bold text-blue-600">{toolChanges.filter(tc => tc.change_date?.startsWith(getTodayDate())).length}</p>
+              <p className="text-xl font-bold text-blue-600">
+                {isStatsLoading ? (
+                  <span className="text-sm">...</span>
+                ) : (
+                  stats?.todayTotal || 0
+                )}
+              </p>
             </div>
           </div>
         </div>
@@ -662,7 +675,11 @@ export default function ToolChangesPage() {
             <div>
               <p className="text-xs font-medium text-gray-600">{t('toolChanges.regularReplacement')}</p>
               <p className="text-xl font-bold text-green-600">
-                {toolChanges.filter(tc => tc.change_reason === '정기교체' || tc.reason === '정기교체').length}
+                {isStatsLoading ? (
+                  <span className="text-sm">...</span>
+                ) : (
+                  stats?.regularReplacement || 0
+                )}
               </p>
             </div>
           </div>
@@ -676,7 +693,11 @@ export default function ToolChangesPage() {
             <div>
               <p className="text-xs font-medium text-gray-600">{t('toolChanges.broken')}</p>
               <p className="text-xl font-bold text-red-600">
-                {toolChanges.filter(tc => tc.change_reason === '파손' || tc.reason === '파손').length}
+                {isStatsLoading ? (
+                  <span className="text-sm">...</span>
+                ) : (
+                  stats?.broken || 0
+                )}
               </p>
             </div>
           </div>
@@ -690,7 +711,11 @@ export default function ToolChangesPage() {
             <div>
               <p className="text-xs font-medium text-gray-600">{t('toolChanges.wear')}</p>
               <p className="text-xl font-bold text-yellow-600">
-                {toolChanges.filter(tc => tc.change_reason === '마모' || tc.reason === '마모').length}
+                {isStatsLoading ? (
+                  <span className="text-sm">...</span>
+                ) : (
+                  stats?.wear || 0
+                )}
               </p>
             </div>
           </div>
@@ -704,7 +729,11 @@ export default function ToolChangesPage() {
             <div>
               <p className="text-xs font-medium text-gray-600">{t('toolChanges.modelChange')}</p>
               <p className="text-xl font-bold text-purple-600">
-                {toolChanges.filter(tc => tc.change_reason === '모델변경' || tc.reason === '모델변경').length}
+                {isStatsLoading ? (
+                  <span className="text-sm">...</span>
+                ) : (
+                  stats?.modelChange || 0
+                )}
               </p>
             </div>
           </div>
@@ -718,75 +747,53 @@ export default function ToolChangesPage() {
             <div>
               <p className="text-xs font-medium text-gray-600">{t('toolChanges.qualityDefect')}</p>
               <p className="text-xl font-bold text-orange-600">
-                {toolChanges.filter(tc => tc.change_reason === '품질불량' || tc.reason === '품질불량').length}
+                {isStatsLoading ? (
+                  <span className="text-sm">...</span>
+                ) : (
+                  stats?.qualityDefect || 0
+                )}
               </p>
             </div>
           </div>
         </div>
 
-        {(() => {
-          // 오늘 교체 데이터만 필터링
-          const todayChanges = toolChanges.filter(tc => tc.change_date?.startsWith(getTodayDate()))
-          
-          // 모델별 교체 수량 계산
-          const modelCounts = todayChanges.reduce((acc: Record<string, number>, tc) => {
-            const model = tc.production_model || 'Unknown'
-            acc[model] = (acc[model] || 0) + 1
-            return acc
-          }, {})
-          
-          // 가장 많은 교체가 발생한 모델 찾기
-          const topModel = Object.entries(modelCounts).length > 0 
-            ? Object.entries(modelCounts).reduce((a, b) => a[1] > b[1] ? a : b)
-            : ['없음', 0]
-          
-          return (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-              <div className="flex items-center">
-                <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
-                  🏭
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600">{t('toolChanges.topModelToday')}</p>
-                  <p className="text-lg font-bold text-indigo-600">{topModel[0]}</p>
-                  <p className="text-xs text-gray-500">{topModel[1]} {t('toolChanges.cases')}</p>
-                </div>
-              </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
+              🏭
             </div>
-          )
-        })()}
+            <div>
+              <p className="text-xs font-medium text-gray-600">{t('toolChanges.topModelToday')}</p>
+              {isStatsLoading ? (
+                <p className="text-lg font-bold text-indigo-600">...</p>
+              ) : (
+                <>
+                  <p className="text-lg font-bold text-indigo-600">{stats?.topModelToday.name || '없음'}</p>
+                  <p className="text-xs text-gray-500">{stats?.topModelToday.count || 0} {t('toolChanges.cases')}</p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
 
-        {(() => {
-          // 오늘 교체 데이터만 필터링
-          const todayChanges = toolChanges.filter(tc => tc.change_date?.startsWith(getTodayDate()))
-          
-          // 공정별 교체 수량 계산
-          const processCounts = todayChanges.reduce((acc: Record<string, number>, tc) => {
-            const process = tc.process || 'Unknown'
-            acc[process] = (acc[process] || 0) + 1
-            return acc
-          }, {})
-          
-          // 가장 많은 교체가 발생한 공정 찾기
-          const topProcess = Object.entries(processCounts).length > 0 
-            ? Object.entries(processCounts).reduce((a, b) => a[1] > b[1] ? a : b)
-            : ['없음', 0]
-          
-          return (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-              <div className="flex items-center">
-                <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center mr-3">
-                  ⚙️
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600">{t('toolChanges.topProcessToday')}</p>
-                  <p className="text-lg font-bold text-teal-600">{topProcess[0]}</p>
-                  <p className="text-xs text-gray-500">{topProcess[1]} {t('toolChanges.cases')}</p>
-                </div>
-              </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center mr-3">
+              ⚙️
             </div>
-          )
-        })()}
+            <div>
+              <p className="text-xs font-medium text-gray-600">{t('toolChanges.topProcessToday')}</p>
+              {isStatsLoading ? (
+                <p className="text-lg font-bold text-teal-600">...</p>
+              ) : (
+                <>
+                  <p className="text-lg font-bold text-teal-600">{stats?.topProcessToday.name || '없음'}</p>
+                  <p className="text-xs text-gray-500">{stats?.topProcessToday.count || 0} {t('toolChanges.cases')}</p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 교체 실적 입력 폼 */}

@@ -286,3 +286,103 @@ export const useEquipmentToolChanges = (equipmentNumber: number) => {
 export const useRecentToolChanges = (limit: number = 10) => {
   return useToolChanges({ limit })
 }
+
+// 교체 실적 통계 인터페이스
+export interface ToolChangeStats {
+  todayTotal: number
+  regularReplacement: number
+  broken: number
+  wear: number
+  modelChange: number
+  qualityDefect: number
+  topModelToday: { name: string; count: number }
+  topProcessToday: { name: string; count: number }
+}
+
+interface UseToolChangeStatsReturn {
+  stats: ToolChangeStats | null
+  isLoading: boolean
+  error: string | null
+  refreshStats: () => Promise<void>
+}
+
+// 교체 실적 통계를 가져오는 훅
+export const useToolChangeStats = (
+  date?: string, // YYYY-MM-DD 형식, 기본값은 오늘
+  enableRealtime: boolean = true
+): UseToolChangeStatsReturn => {
+  const [stats, setStats] = useState<ToolChangeStats | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchStats = useCallback(async () => {
+    try {
+      setError(null)
+      setIsLoading(true)
+
+      const params = new URLSearchParams()
+      if (date) {
+        params.append('date', date)
+      }
+
+      const response = await fetch(`/api/tool-changes/stats?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        cache: 'no-store'
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch tool change stats')
+      }
+
+      setStats(result.data)
+    } catch (err) {
+      clientLogger.error('Tool change stats 조회 오류:', err)
+      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [date])
+
+  const refreshStats = useCallback(async () => {
+    await fetchStats()
+  }, [fetchStats])
+
+  // 초기 데이터 로드 및 날짜 변경시 재로드
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
+
+  // 실시간 업데이트 - tool_changes 테이블에 변경이 있을 때 통계 새로고침
+  useRealtime({
+    table: 'tool_changes',
+    enabled: enableRealtime,
+    onInsert: () => {
+      clientLogger.log('Tool change inserted, refreshing stats...')
+      refreshStats()
+    },
+    onUpdate: () => {
+      clientLogger.log('Tool change updated, refreshing stats...')
+      refreshStats()
+    },
+    onDelete: () => {
+      clientLogger.log('Tool change deleted, refreshing stats...')
+      refreshStats()
+    }
+  })
+
+  return {
+    stats,
+    isLoading,
+    error,
+    refreshStats
+  }
+}
