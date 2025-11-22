@@ -376,11 +376,11 @@ export const downloadInventorySurveyTemplate = async (inventoryData: any[]) => {
   inventoryData.forEach((item, index) => {
     const row = worksheet.addRow({
       no: index + 1,
-      code: item.endmill_code || item.code,
-      name: item.endmill_name || item.name,
-      category: item.category,
+      code: item.code || '',
+      name: item.name || '',
+      category: item.category || '',
       specifications: item.specifications || '',
-      systemStock: item.current_stock || 0,
+      systemStock: item.totalCurrentStock || 0,
       actualStock: '', // 빈 칸 (현장에서 입력)
       difference: '', // 수식으로 계산
       remarks: '' // 빈 칸
