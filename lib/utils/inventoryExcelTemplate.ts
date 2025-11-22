@@ -348,3 +348,175 @@ export const convertExcelToInventoryData = (data: any[]): any[] => {
     return inventoryItem
   })
 }
+
+// 재고 조사용 엑셀 다운로드 함수
+export const downloadInventorySurveyTemplate = async (inventoryData: any[]) => {
+  // 워크북 생성
+  const workbook = new ExcelJS.Workbook()
+
+  // 워크시트 생성
+  const worksheet = workbook.addWorksheet('재고조사')
+
+  // 헤더 정의
+  const columns = [
+    { header: 'No', key: 'no', width: 6 },
+    { header: '앤드밀코드', key: 'code', width: 15 },
+    { header: '앤드밀이름', key: 'name', width: 40 },
+    { header: '카테고리', key: 'category', width: 15 },
+    { header: '규격', key: 'specifications', width: 30 },
+    { header: '시스템재고', key: 'systemStock', width: 12 },
+    { header: '실물수량', key: 'actualStock', width: 12 },
+    { header: '차이', key: 'difference', width: 10 },
+    { header: '비고', key: 'remarks', width: 30 }
+  ]
+
+  worksheet.columns = columns
+
+  // 데이터 추가
+  inventoryData.forEach((item, index) => {
+    const row = worksheet.addRow({
+      no: index + 1,
+      code: item.endmill_code || item.code,
+      name: item.endmill_name || item.name,
+      category: item.category,
+      specifications: item.specifications || '',
+      systemStock: item.current_stock || 0,
+      actualStock: '', // 빈 칸 (현장에서 입력)
+      difference: '', // 수식으로 계산
+      remarks: '' // 빈 칸
+    })
+
+    // 차이 컬럼에 수식 추가 (실물수량 - 시스템재고)
+    const rowNumber = row.number
+    worksheet.getCell(`H${rowNumber}`).value = {
+      formula: `G${rowNumber}-F${rowNumber}`,
+      result: 0
+    }
+  })
+
+  // 헤더 스타일 적용
+  worksheet.getRow(1).font = { bold: true, size: 11 }
+  worksheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF4472C4' }
+  }
+  worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+  worksheet.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' }
+  worksheet.getRow(1).height = 25
+
+  // 입력 컬럼 강조 (연한 노란색)
+  inventoryData.forEach((_, index) => {
+    const rowNumber = index + 2
+    // 실물수량 컬럼
+    worksheet.getCell(`G${rowNumber}`).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFF9CC' }
+    }
+    // 비고 컬럼
+    worksheet.getCell(`I${rowNumber}`).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE7E6E6' }
+    }
+  })
+
+  // 차이 컬럼 조건부 서식 (차이가 있는 경우 빨간색)
+  inventoryData.forEach((_, index) => {
+    const rowNumber = index + 2
+    const diffCell = worksheet.getCell(`H${rowNumber}`)
+    diffCell.alignment = { horizontal: 'center', vertical: 'middle' }
+  })
+
+  // 데이터 검증 추가 (실물수량은 숫자만)
+  for (let row = 2; row <= inventoryData.length + 1; row++) {
+    worksheet.getCell(`G${row}`).dataValidation = {
+      type: 'whole',
+      operator: 'greaterThanOrEqual',
+      showErrorMessage: true,
+      formulae: [0],
+      errorStyle: 'warning',
+      errorTitle: '입력 오류',
+      error: '0 이상의 정수만 입력 가능합니다.'
+    }
+  }
+
+  // 전체 셀 테두리 추가
+  const borderStyle: Partial<ExcelJS.Border> = {
+    style: 'thin',
+    color: { argb: 'FF000000' }
+  }
+
+  for (let row = 1; row <= inventoryData.length + 1; row++) {
+    for (let col = 1; col <= columns.length; col++) {
+      const cell = worksheet.getCell(row, col)
+      cell.border = {
+        top: borderStyle,
+        left: borderStyle,
+        bottom: borderStyle,
+        right: borderStyle
+      }
+      cell.alignment = { vertical: 'middle' }
+    }
+  }
+
+  // 안내 시트 추가
+  const guideSheet = workbook.addWorksheet('작성가이드')
+  guideSheet.columns = [
+    { header: '항목', key: 'item', width: 20 },
+    { header: '설명', key: 'description', width: 80 }
+  ]
+
+  const guideData = [
+    { item: '📋 작성 방법', description: '' },
+    { item: '1. 실물수량 입력', description: '실제 창고에서 세어본 재고 수량을 "실물수량" 컬럼에 입력하세요.' },
+    { item: '2. 차이 확인', description: '"차이" 컬럼은 자동으로 계산됩니다. (실물수량 - 시스템재고)' },
+    { item: '3. 비고 작성', description: '차이가 있거나 특이사항이 있는 경우 "비고" 컬럼에 사유를 기입하세요.' },
+    { item: '', description: '' },
+    { item: '📌 주의사항', description: '' },
+    { item: '• 시스템재고', description: '현재 시스템에 등록된 재고입니다. 수정하지 마세요.' },
+    { item: '• 실물수량', description: '실제로 센 재고를 입력하세요. 0 이상의 정수만 입력 가능합니다.' },
+    { item: '• 차이', description: '자동 계산되므로 직접 입력하지 마세요.' },
+    { item: '• 양수 차이', description: '실물이 시스템보다 많음 (재고 추가 필요)' },
+    { item: '• 음수 차이', description: '실물이 시스템보다 적음 (재고 차감 또는 분실 확인 필요)' },
+    { item: '', description: '' },
+    { item: '💡 작업 팁', description: '' },
+    { item: '인쇄하기', description: '엑셀에서 "파일 > 인쇄"를 선택하여 용지로 출력 후 현장에서 작성 가능합니다.' },
+    { item: '정렬하기', description: '카테고리별로 정렬하여 작업하면 편리합니다.' },
+    { item: '필터 사용', description: '차이가 있는 항목만 필터링하여 확인할 수 있습니다.' }
+  ]
+
+  guideSheet.addRows(guideData)
+
+  // 가이드 시트 스타일
+  guideSheet.getRow(1).font = { bold: true, size: 12 }
+  guideSheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF70AD47' }
+  }
+  guideSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+  guideSheet.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' }
+
+  // 제목 행 강조
+  const titleRows = [2, 7, 14]
+  titleRows.forEach(rowNum => {
+    const row = guideSheet.getRow(rowNum)
+    row.font = { bold: true, size: 12, color: { argb: 'FF0066CC' } }
+  })
+
+  // 파일명 생성 (현재 날짜 포함)
+  const today = new Date().toISOString().split('T')[0]
+  const filename = `재고조사_${today}.xlsx`
+
+  // 파일 다운로드
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  window.URL.revokeObjectURL(url)
+}

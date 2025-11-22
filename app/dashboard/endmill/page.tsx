@@ -486,10 +486,10 @@ export default function EndmillPage() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
 
-      showSuccess('단가표 다운로드', '공급업체별 단가표가 다운로드되었습니다.')
+      showSuccess(t('endmill.downloadSupplierPriceList'), t('endmill.supplierPriceListDownloaded'))
     } catch (error) {
       clientLogger.error('단가표 다운로드 오류:', error)
-      showError('다운로드 실패', '단가표 다운로드 중 오류가 발생했습니다.')
+      showError(t('endmill.downloadPriceListFailed'), t('endmill.downloadPriceListError'))
     }
   }
 
@@ -552,9 +552,9 @@ export default function EndmillPage() {
           <button
             onClick={handleDownloadSupplierPriceList}
             className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 flex items-center gap-2"
-            title="보유 중인 모든 앤드밀의 공급업체별 단가표를 엑셀로 다운로드합니다"
+            title={t('endmill.supplierPriceListTooltip')}
           >
-            💰 공급업체별 단가표
+            💰 {t('endmill.supplierPriceList')}
           </button>
           <button
             onClick={() => setShowExcelUploader(true)}

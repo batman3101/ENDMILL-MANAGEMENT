@@ -12,7 +12,7 @@ import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { useTranslations } from '../../../lib/hooks/useTranslations'
 import ExcelJS from 'exceljs'
 import { clientLogger } from '../../../lib/utils/logger'
-import { downloadInventoryTemplate, validateInventoryData, convertExcelToInventoryData } from '../../../lib/utils/inventoryExcelTemplate'
+import { downloadInventoryTemplate, validateInventoryData, convertExcelToInventoryData, downloadInventorySurveyTemplate } from '../../../lib/utils/inventoryExcelTemplate'
 
 export default function InventoryPage() {
   const { t } = useTranslations()
@@ -509,6 +509,17 @@ export default function InventoryPage() {
     }
   }
 
+  const handleDownloadInventorySurvey = async () => {
+    try {
+      // 현재 필터링된 재고 데이터 사용
+      await downloadInventorySurveyTemplate(flattenedData)
+      showSuccess(t('inventory.surveyDownloadSuccess'), t('inventory.surveyDownloadSuccessMessage'))
+    } catch (error) {
+      showError(t('inventory.surveyDownloadFailed'), t('inventory.surveyDownloadError'))
+      clientLogger.error('Inventory survey download error:', error)
+    }
+  }
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -824,7 +835,14 @@ export default function InventoryPage() {
               onClick={handleDownloadInventoryTemplate}
               className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 whitespace-nowrap"
             >
-              📥 기초 재고 템플릿
+              📥 {t('inventory.inventoryTemplate')}
+            </button>
+            <button
+              onClick={handleDownloadInventorySurvey}
+              className="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 whitespace-nowrap flex items-center gap-1"
+              title={t('inventory.inventorySurveyTooltip')}
+            >
+              📋 {t('inventory.inventorySurvey')}
             </button>
           </div>
         </div>

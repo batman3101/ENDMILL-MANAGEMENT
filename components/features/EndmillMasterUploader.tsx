@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import ExcelJS from 'exceljs'
 import { downloadEndmillMasterTemplate, validateEndmillMasterData } from '../../lib/utils/excelTemplate'
 import { useToast } from '../shared/Toast'
@@ -35,6 +36,7 @@ interface EndmillMasterUploaderProps {
 }
 
 export default function EndmillMasterUploader({ onDataParsed, onClose }: EndmillMasterUploaderProps) {
+  const { t } = useTranslation()
   const { showSuccess, showError } = useToast()
   const [dragActive, setDragActive] = useState(false)
   const [processing, setProcessing] = useState(false)
@@ -47,7 +49,7 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
 
     const file = files[0]
     if (!file.name.match(/\.(xlsx|xls)$/)) {
-      showError('파일 형식 오류', '엑셀 파일(.xlsx, .xls)만 업로드 가능합니다.')
+      showError(t('equipment.fileFormatError'), t('equipment.fileFormatErrorMessage'))
       return
     }
 
@@ -62,7 +64,7 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
 
       const worksheet = workbook.worksheets[0]
       if (!worksheet) {
-        throw new Error('워크시트를 찾을 수 없습니다.')
+        throw new Error(t('endmill.worksheetNotFound'))
       }
 
       // JSON 데이터로 변환
@@ -97,13 +99,13 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
       setShowValidation(true)
 
       if (validation.isValid) {
-        showSuccess('데이터 검증 성공', `${validation.validData.length}개의 유효한 데이터를 발견했습니다.`)
+        showSuccess(t('endmill.dataValidationSuccess'), `${validation.validData.length}${t('endmill.validDataFound')}`)
       } else {
-        showError('데이터 검증 실패', `${validation.errors.length}개의 오류가 발견되었습니다.`)
+        showError(t('endmill.dataValidationFailed'), `${validation.errors.length}${t('endmill.errorsFound')}`)
       }
     } catch (error) {
       clientLogger.error('Excel parsing error:', error)
-      showError('파일 처리 오류', '엑셀 파일을 읽는 중 오류가 발생했습니다.')
+      showError(t('endmill.fileProcessingError'), t('endmill.excelReadingError'))
     } finally {
       setProcessing(false)
     }
@@ -176,8 +178,8 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
       <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">앤드밀 마스터 데이터 일괄 업데이트</h3>
-            <button 
+            <h3 className="text-lg font-medium">{t('endmill.bulkUpdateTitle')}</h3>
+            <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"
             >
@@ -189,21 +191,21 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
         <div className="p-6">
           {/* 템플릿 다운로드 섹션 */}
           <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="font-medium text-blue-900 mb-2">📋 1단계: 템플릿 다운로드</h4>
+            <h4 className="font-medium text-blue-900 mb-2">📋 {t('endmill.step1Title')}</h4>
             <p className="text-sm text-blue-700 mb-3">
-              먼저 앤드밀 마스터 데이터 템플릿을 다운로드하여 데이터를 입력하세요.
+              {t('endmill.step1Description')}
             </p>
             <button
               onClick={downloadEndmillMasterTemplate}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              📁 템플릿 다운로드
+              📁 {t('endmill.templateDownload')}
             </button>
           </div>
 
           {/* 파일 업로드 섹션 */}
           <div className="mb-6">
-            <h4 className="font-medium text-gray-900 mb-3">📤 2단계: 작성된 엑셀 파일 업로드</h4>
+            <h4 className="font-medium text-gray-900 mb-3">📤 {t('endmill.step2Title')}</h4>
             <div
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
                 dragActive
@@ -218,7 +220,7 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
               {processing ? (
                 <div className="flex flex-col items-center">
                   <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-gray-600">파일을 처리하고 있습니다...</p>
+                  <p className="text-gray-600">{t('endmill.processingFile')}</p>
                 </div>
               ) : (
                 <div>
@@ -226,16 +228,16 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
                     📊
                   </div>
                   <p className="text-lg font-medium text-gray-900 mb-2">
-                    엑셀 파일을 여기로 드래그하거나 클릭하여 선택하세요
+                    {t('endmill.dragDropText')}
                   </p>
                   <p className="text-sm text-gray-600 mb-4">
-                    .xlsx, .xls 파일만 지원됩니다
+                    {t('endmill.supportedFormats')}
                   </p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
                   >
-                    파일 선택
+                    {t('endmill.fileSelect')}
                   </button>
                   <input
                     ref={fileInputRef}
@@ -252,12 +254,12 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
           {/* 검증 결과 섹션 */}
           {showValidation && validationResult && (
             <div className="mb-6">
-              <h4 className="font-medium text-gray-900 mb-3">🔍 3단계: 데이터 검증 결과</h4>
-              
+              <h4 className="font-medium text-gray-900 mb-3">🔍 {t('endmill.step3Title')}</h4>
+
               {/* 오류 표시 */}
               {validationResult.errors.length > 0 && (
                 <div className="mb-4 p-4 bg-red-50 rounded-lg border border-red-200">
-                  <h5 className="font-medium text-red-900 mb-2">❌ 오류 ({validationResult.errors.length}개)</h5>
+                  <h5 className="font-medium text-red-900 mb-2">❌ {t('endmill.errorLabel')} ({validationResult.errors.length}개)</h5>
                   <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
                     {validationResult.errors.map((error: string, index: number) => (
                       <li key={index}>{error}</li>
@@ -269,7 +271,7 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
               {/* 경고 표시 */}
               {validationResult.warnings.length > 0 && (
                 <div className="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <h5 className="font-medium text-yellow-900 mb-2">⚠️ 경고 ({validationResult.warnings.length}개)</h5>
+                  <h5 className="font-medium text-yellow-900 mb-2">⚠️ {t('endmill.warningLabel')} ({validationResult.warnings.length}개)</h5>
                   <ul className="list-disc list-inside text-sm text-yellow-700 space-y-1">
                     {validationResult.warnings.map((warning: string, index: number) => (
                       <li key={index}>{warning}</li>
@@ -281,9 +283,9 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
               {/* 성공 표시 */}
               {validationResult.isValid && (
                 <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                  <h5 className="font-medium text-green-900 mb-2">✅ 검증 성공</h5>
+                  <h5 className="font-medium text-green-900 mb-2">✅ {t('endmill.validationSuccessTitle')}</h5>
                   <p className="text-sm text-green-700">
-                    {validationResult.validData.length}개의 앤드밀 마스터 데이터를 업데이트할 준비가 되었습니다.
+                    {validationResult.validData.length}{t('endmill.validationSuccessMessage')}
                   </p>
                 </div>
               )}
@@ -292,19 +294,19 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
 
           {/* 액션 버튼 */}
           <div className="flex justify-end space-x-3">
-            <button 
+            <button
               onClick={onClose}
               className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
             >
-              취소
+              {t('common.cancel')}
             </button>
-            
+
             {validationResult && validationResult.isValid && (
-              <button 
+              <button
                 onClick={processValidData}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
               >
-                ✅ 데이터 업데이트 진행
+                ✅ {t('endmill.proceedWithUpdate')}
               </button>
             )}
           </div>

@@ -768,7 +768,7 @@ export default function ToolChangesPage() {
                 <p className="text-lg font-bold text-indigo-600">...</p>
               ) : (
                 <>
-                  <p className="text-lg font-bold text-indigo-600">{stats?.topModelToday.name || '없음'}</p>
+                  <p className="text-lg font-bold text-indigo-600">{stats?.topModelToday.name || t('toolChanges.none')}</p>
                   <p className="text-xs text-gray-500">{stats?.topModelToday.count || 0} {t('toolChanges.cases')}</p>
                 </>
               )}
@@ -787,7 +787,7 @@ export default function ToolChangesPage() {
                 <p className="text-lg font-bold text-teal-600">...</p>
               ) : (
                 <>
-                  <p className="text-lg font-bold text-teal-600">{stats?.topProcessToday.name || '없음'}</p>
+                  <p className="text-lg font-bold text-teal-600">{stats?.topProcessToday.name || t('toolChanges.none')}</p>
                   <p className="text-xs text-gray-500">{stats?.topProcessToday.count || 0} {t('toolChanges.cases')}</p>
                 </>
               )}
@@ -887,15 +887,15 @@ export default function ToolChangesPage() {
                   ) : (
                     <option value={formData.t_number}>
                       {formData.production_model && formData.process
-                        ? 'CAM Sheet에 등록된 T번호 없음'
-                        : '모델, 공정, T번호 선택 시 자동 입력'}
+                        ? t('toolChanges.noCamSheetTNumber')
+                        : t('toolChanges.autoFilledEndmillCode')}
                     </option>
                   )}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
                   {availableTNumbers.length > 0
-                    ? `등록된 CAM SHEET의 모델들`
-                    : 'T번호 선택시 자동으로 입력됩니다'}
+                    ? t('toolChanges.registeredCAMSheetModels')
+                    : t('toolChanges.autoFilledOnTNumber')}
                 </p>
               </div>
 
@@ -1453,15 +1453,15 @@ export default function ToolChangesPage() {
                       ) : (
                         <option value={editingItem.t_number}>
                           {editingItem.production_model && editingItem.process
-                            ? 'CAM Sheet에 등록된 T번호 없음'
-                            : '모델, 공정 선택 시 자동 입력'}
+                            ? t('toolChanges.noCamSheetTNumber')
+                            : t('toolChanges.selectModelProcess')}
                         </option>
                       )}
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
                       {editAvailableTNumbers.length > 0
-                        ? `CAM Sheet에 등록된 T번호만 선택 가능`
-                        : 'T번호 선택시 자동으로 입력됩니다'}
+                        ? t('toolChanges.camSheetTNumbersOnly')
+                        : t('toolChanges.autoFilledOnTNumber')}
                     </p>
                   </div>
 

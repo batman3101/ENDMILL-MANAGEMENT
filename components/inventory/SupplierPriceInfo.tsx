@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { clientLogger } from '@/lib/utils/logger'
 
 interface SupplierPriceInfoProps {
@@ -23,6 +24,7 @@ interface SupplierPrice {
 }
 
 export default function SupplierPriceInfo({ endmillTypeId }: SupplierPriceInfoProps) {
+  const { t } = useTranslation()
   const [supplierPrices, setSupplierPrices] = useState<SupplierPrice[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -56,7 +58,7 @@ export default function SupplierPriceInfo({ endmillTypeId }: SupplierPriceInfoPr
     return (
       <div className="flex items-center justify-center p-4">
         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">로딩 중...</span>
+        <span className="ml-2 text-gray-600">{t('common.loading')}</span>
       </div>
     )
   }
@@ -64,7 +66,7 @@ export default function SupplierPriceInfo({ endmillTypeId }: SupplierPriceInfoPr
   if (supplierPrices.length === 0) {
     return (
       <div className="text-center p-4 bg-gray-50 rounded-lg">
-        <p className="text-gray-500">등록된 공급업체 정보가 없습니다.</p>
+        <p className="text-gray-500">{t('endmill.noSupplierInfo')}</p>
       </div>
     )
   }
@@ -83,7 +85,7 @@ export default function SupplierPriceInfo({ endmillTypeId }: SupplierPriceInfoPr
               <span className="font-medium text-gray-900">{item.supplier.name}</span>
               {item.is_preferred && (
                 <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                  선호
+                  {t('endmill.preferred')}
                 </span>
               )}
               <span className="ml-2 text-xs text-gray-500">
@@ -91,8 +93,8 @@ export default function SupplierPriceInfo({ endmillTypeId }: SupplierPriceInfoPr
               </span>
             </div>
             <div className="text-sm text-gray-500 mt-1">
-              재고: {item.current_stock}개 | 최소주문: {item.min_order_quantity}개 |
-              리드타임: {item.lead_time_days}일
+              {t('endmill.stockLabel')}: {item.current_stock}{t('endmill.pieces')} | {t('endmill.minOrder')}: {item.min_order_quantity}{t('endmill.pieces')} |
+              {t('endmill.leadTimeDays')}: {item.lead_time_days}{t('endmill.days')}
             </div>
           </div>
           <span className="font-mono text-gray-900 font-bold">

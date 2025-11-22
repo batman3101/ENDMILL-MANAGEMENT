@@ -348,7 +348,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
               {supplierPrices.map((price, index) => (
                 <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-300">
                   <div className="flex justify-between items-start mb-3">
-                    <h5 className="text-sm font-medium text-gray-700">{t('endmill.supplier')} {index + 1}</h5>
+                    <h5 className="text-sm font-medium text-gray-700">{t('endmill.supplierLabel')} {index + 1}</h5>
                     <button
                       type="button"
                       onClick={() => removeSupplierPrice(index)}
@@ -382,7 +382,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          {t('endmill.unitPriceVnd')} <span className="text-red-500">*</span>
+                          {t('endmill.supplierUnitPrice')} <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="number"
@@ -483,7 +483,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                 className="w-full px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-lg hover:bg-blue-100 disabled:opacity-50"
                 disabled={loading}
               >
-                + {t('endmill.addSupplier')}
+                {t('endmill.addSupplierButton')}
               </button>
 
               {supplierPrices.length === 0 && (
