@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
 
     if (existingProfile) {
       return NextResponse.json(
-        { error: 'Employee ID already exists' },
+        { error: '이미 사용 중인 사번입니다. 다른 사번을 입력해주세요.' },
         { status: 409 }
       )
     }

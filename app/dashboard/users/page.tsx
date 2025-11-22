@@ -235,8 +235,9 @@ function UsersPageContent() {
       } else {
         showError('수정 실패', '사용자 정보 수정에 실패했습니다.')
       }
-    } catch (_error) {
-      showError('수정 실패', '사용자 정보 수정 중 오류가 발생했습니다.')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '사용자 정보 수정 중 오류가 발생했습니다.'
+      showError('수정 실패', errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -266,8 +267,9 @@ function UsersPageContent() {
         } else {
           showError('삭제 실패', '사용자 삭제에 실패했습니다.')
         }
-      } catch (_error) {
-        showError('삭제 실패', '사용자 삭제 중 오류가 발생했습니다.')
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '사용자 삭제 중 오류가 발생했습니다.'
+        showError('삭제 실패', errorMessage)
       }
     }
   }
@@ -327,8 +329,9 @@ function UsersPageContent() {
         phone: '',
         isActive: true
       })
-    } catch (_error) {
-      showError('추가 실패', '사용자 추가 중 오류가 발생했습니다.')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '사용자 추가 중 오류가 발생했습니다.'
+      showError('추가 실패', errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -353,8 +356,9 @@ function UsersPageContent() {
         } else {
           showError(`${action} 실패`, `사용자 ${action}에 실패했습니다.`)
         }
-      } catch (_error) {
-        showError(`${action} 실패`, `사용자 ${action} 중 오류가 발생했습니다.`)
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : `사용자 ${action} 중 오류가 발생했습니다.`
+        showError(`${action} 실패`, errorMessage)
       }
     }
   }
@@ -479,8 +483,9 @@ function UsersPageContent() {
       setShowTemplateModal(false)
       setSelectedTemplate(null)
       setSelectedUsersForTemplate([])
-    } catch (_error) {
-      showError('템플릿 적용 실패', '권한 템플릿 적용 중 오류가 발생했습니다.')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '권한 템플릿 적용 중 오류가 발생했습니다.'
+      showError('템플릿 적용 실패', errorMessage)
     } finally {
       setIsSubmitting(false)
     }
