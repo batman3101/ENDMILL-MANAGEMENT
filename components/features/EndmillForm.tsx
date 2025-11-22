@@ -338,9 +338,9 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
           {/* 공급업체별 가격 정보 섹션 */}
           <div className="border-t pt-6">
             <div className="mb-4">
-              <h4 className="text-md font-medium text-gray-900 mb-2">💰 공급업체별 가격 정보</h4>
+              <h4 className="text-md font-medium text-gray-900 mb-2">💰 {t('endmill.supplierPriceInfo')}</h4>
               <p className="text-sm text-gray-600">
-                최소 1개 이상의 공급업체를 등록하는 것을 권장합니다. 나중에 추가할 수도 있습니다.
+                {t('endmill.supplierPriceDescription')}
               </p>
             </div>
 
@@ -348,21 +348,21 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
               {supplierPrices.map((price, index) => (
                 <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-300">
                   <div className="flex justify-between items-start mb-3">
-                    <h5 className="text-sm font-medium text-gray-700">공급업체 {index + 1}</h5>
+                    <h5 className="text-sm font-medium text-gray-700">{t('endmill.supplier')} {index + 1}</h5>
                     <button
                       type="button"
                       onClick={() => removeSupplierPrice(index)}
                       className="text-red-600 hover:text-red-800 text-sm font-medium"
                       disabled={supplierPrices.length === 1}
                     >
-                      삭제
+                      {t('common.delete')}
                     </button>
                   </div>
 
                   <div className="space-y-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        공급업체 선택 <span className="text-red-500">*</span>
+                        {t('endmill.selectSupplier')} <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={price.supplier_id}
@@ -370,7 +370,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         disabled={loading}
                       >
-                        <option value="">공급업체를 선택하세요</option>
+                        <option value="">{t('endmill.selectSupplierPlaceholder')}</option>
                         {suppliers.map(supplier => (
                           <option key={supplier.id} value={supplier.id}>
                             {supplier.code || supplier.name}
@@ -382,7 +382,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          단가 (VND) <span className="text-red-500">*</span>
+                          {t('endmill.unitPriceVnd')} <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="number"
@@ -398,7 +398,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          품질등급 (1-10)
+                          {t('endmill.qualityRating')}
                         </label>
                         <input
                           type="number"
@@ -416,7 +416,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                     <div className="grid grid-cols-3 gap-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          최소 주문
+                          {t('endmill.minOrder')}
                         </label>
                         <input
                           type="number"
@@ -431,7 +431,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          납기일 (일)
+                          {t('endmill.leadTimeDays')}
                         </label>
                         <input
                           type="number"
@@ -446,7 +446,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          현재 재고
+                          {t('endmill.currentStockLabel')}
                         </label>
                         <input
                           type="number"
@@ -470,7 +470,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                         disabled={loading}
                       />
                       <label htmlFor={`is_preferred_${index}`} className="text-sm text-gray-700">
-                        선호 공급업체로 설정
+                        {t('endmill.setAsPreferred')}
                       </label>
                     </div>
                   </div>
@@ -483,13 +483,13 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                 className="w-full px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-lg hover:bg-blue-100 disabled:opacity-50"
                 disabled={loading}
               >
-                + 공급업체 추가
+                + {t('endmill.addSupplier')}
               </button>
 
               {supplierPrices.length === 0 && (
                 <div className="text-center py-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm text-yellow-800">
-                    ⚠️ 공급업체 정보가 없습니다. 최소 1개 이상 추가하는 것을 권장합니다.
+                    {t('endmill.noSupplierWarning')}
                   </p>
                 </div>
               )}
