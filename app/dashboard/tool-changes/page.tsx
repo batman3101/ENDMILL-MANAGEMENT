@@ -10,6 +10,12 @@ import { useSettings } from '../../../lib/hooks/useSettings'
 import { useToolChanges, useToolChangeStats, type ToolChange, type ToolChangeFilters } from '../../../lib/hooks/useToolChanges'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { clientLogger } from '@/lib/utils/logger'
+import {
+  downloadToolChangesTemplate,
+  parseToolChangesExcel,
+  validateToolChangesData,
+  type ToolChangeExcelData
+} from '@/lib/utils/toolChangesExcelTemplate'
 
 export default function ToolChangesPage() {
   const { t } = useTranslation()
@@ -57,6 +63,15 @@ export default function ToolChangesPage() {
   const itemsPerPage = 20
   const [sortField, setSortField] = useState<string>('created_at')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+
+  // Excel 일괄 입력 상태
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false)
+  const [excelFile, setExcelFile] = useState<File | null>(null)
+  const [excelData, setExcelData] = useState<ToolChangeExcelData[]>([])
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [isValidating, setIsValidating] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [isDataValid, setIsDataValid] = useState(false)
 
   // 설정에서 값 가져오기
   const { settings } = useSettings()
@@ -645,6 +660,135 @@ export default function ToolChangesPage() {
     }
   }
 
+  // Excel 템플릿 다운로드
+  const handleDownloadTemplate = async () => {
+    try {
+      await downloadToolChangesTemplate(
+        availableModels,
+        ['CNC1', 'CNC2', 'CNC2-1'],
+        toolChangesReasons
+      )
+      showSuccess('템플릿 다운로드', 'Excel 템플릿이 다운로드되었습니다.')
+    } catch (error) {
+      clientLogger.error('템플릿 다운로드 오류:', error)
+      showError('다운로드 실패', '템플릿 다운로드에 실패했습니다.')
+    }
+  }
+
+  // Excel 파일 선택
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setExcelFile(file)
+    setValidationErrors([])
+    setIsDataValid(false)
+    setIsValidating(true)
+
+    try {
+      // 파일 파싱
+      const parsedData = await parseToolChangesExcel(file)
+      setExcelData(parsedData)
+
+      // 기본 유효성 검증
+      const validation = validateToolChangesData(parsedData, toolChangesReasons)
+
+      if (!validation.isValid) {
+        setValidationErrors(validation.errors)
+        setIsDataValid(false)
+        showError('검증 실패', `${validation.errors.length}개의 오류가 발견되었습니다.`)
+      } else {
+        setValidationErrors([])
+        setIsDataValid(true)
+        showSuccess('검증 완료', `${parsedData.length}건의 데이터가 검증되었습니다.`)
+      }
+    } catch (error) {
+      clientLogger.error('파일 파싱 오류:', error)
+      showError('파일 오류', error instanceof Error ? error.message : '파일을 읽을 수 없습니다.')
+      setExcelFile(null)
+    } finally {
+      setIsValidating(false)
+    }
+  }
+
+  // Excel 일괄 업로드
+  const handleBulkUpload = async () => {
+    if (!isDataValid || excelData.length === 0) {
+      showError('업로드 불가', '검증된 데이터가 없습니다.')
+      return
+    }
+
+    const confirmed = await confirmation.showConfirmation({
+      type: 'save',
+      title: '일괄 입력 확인',
+      message: `${excelData.length}건의 교체 실적을 일괄 등록하시겠습니까?`,
+      confirmText: '일괄 입력',
+      cancelText: '취소'
+    })
+
+    if (!confirmed) return
+
+    setIsUploading(true)
+
+    try {
+      const response = await fetch('/api/tool-changes/bulk-upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ data: excelData })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        // 검증 오류가 있는 경우
+        if (result.validationErrors) {
+          const errorMessages = result.validationErrors.map(
+            (err: any) => `행 ${err.row}: ${err.message}`
+          )
+          setValidationErrors(errorMessages)
+          showError('검증 실패', `${errorMessages.length}개의 오류가 발견되었습니다.`)
+        } else {
+          throw new Error(result.error || '일괄 업로드에 실패했습니다.')
+        }
+        return
+      }
+
+      if (result.success) {
+        // 성공
+        await refreshData()
+        setShowBulkUploadModal(false)
+        setExcelFile(null)
+        setExcelData([])
+        setValidationErrors([])
+        setIsDataValid(false)
+
+        showSuccess(
+          '일괄 입력 완료',
+          `${result.insertedCount}건의 교체 실적이 성공적으로 등록되었습니다.`
+        )
+      }
+    } catch (error) {
+      clientLogger.error('일괄 업로드 오류:', error)
+      showError(
+        '업로드 실패',
+        error instanceof Error ? error.message : '일괄 업로드 중 오류가 발생했습니다.'
+      )
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  // Excel 업로드 모달 닫기
+  const handleCloseBulkUploadModal = () => {
+    setShowBulkUploadModal(false)
+    setExcelFile(null)
+    setExcelData([])
+    setValidationErrors([])
+    setIsDataValid(false)
+  }
+
   return (
     <div className="space-y-6">
       {/* 통계 카드 */}
@@ -1077,6 +1221,15 @@ export default function ToolChangesPage() {
                 className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
               >
                 {t('toolChanges.resetFilters')}
+              </button>
+              <button
+                onClick={() => setShowBulkUploadModal(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                {t('toolChanges.bulkUpload')}
               </button>
               <button
                 onClick={() => setShowAddForm(true)}
@@ -1599,6 +1752,139 @@ export default function ToolChangesPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Excel 일괄 입력 모달 */}
+      {showBulkUploadModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">{t('toolChanges.bulkUploadTitle')}</h3>
+                <button
+                  onClick={handleCloseBulkUploadModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              {/* 템플릿 다운로드 */}
+              <div className="mb-6">
+                <button
+                  onClick={handleDownloadTemplate}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  {t('toolChanges.downloadTemplate')}
+                </button>
+              </div>
+
+              {/* 파일 업로드 영역 */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('toolChanges.uploadFile')}
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="excel-file-input"
+                    disabled={isValidating || isUploading}
+                  />
+                  <label
+                    htmlFor="excel-file-input"
+                    className="cursor-pointer"
+                  >
+                    <div className="flex flex-col items-center">
+                      <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="text-sm text-gray-600 mb-1">
+                        {excelFile ? excelFile.name : t('toolChanges.dragDropFile')}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {excelFile ? t('toolChanges.fileSelected') : 'Excel 파일 (.xlsx, .xls)'}
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* 검증 진행 중 */}
+              {isValidating && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                  <div className="flex items-center">
+                    <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mr-3"></div>
+                    <p className="text-sm text-blue-700">{t('toolChanges.validationInProgress')}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* 검증 성공 */}
+              {isDataValid && excelData.length > 0 && !isValidating && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-green-800">{t('toolChanges.validationSuccess')}</p>
+                      <p className="text-xs text-green-600 mt-1">{t('toolChanges.readyToInsert', { count: excelData.length })}</p>
+                    </div>
+                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+
+              {/* 검증 오류 */}
+              {validationErrors.length > 0 && (
+                <div className="mb-6">
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-sm font-medium text-red-800 mb-2">{t('toolChanges.validationFailed')}</p>
+                    <div className="max-h-40 overflow-y-auto">
+                      <ul className="text-xs text-red-600 space-y-1">
+                        {validationErrors.map((error, index) => (
+                          <li key={index}>• {error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 액션 버튼 */}
+              <div className="flex justify-end space-x-3 pt-6 border-t">
+                <button
+                  type="button"
+                  onClick={handleCloseBulkUploadModal}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                  disabled={isUploading}
+                >
+                  {t('toolChanges.closeModal')}
+                </button>
+                <button
+                  onClick={handleBulkUpload}
+                  disabled={!isDataValid || isUploading || excelData.length === 0}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isUploading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      {t('toolChanges.processingUpload')}
+                    </>
+                  ) : (
+                    t('toolChanges.bulkInsert')
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
