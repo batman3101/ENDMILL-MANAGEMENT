@@ -41,18 +41,61 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const date = searchParams.get('date') // YYYY-MM-DD 형식
+    const dateParam = searchParams.get('date') // YYYY-MM-DD 형식
 
-    // 오늘 날짜 기본값
-    const targetDate = date || new Date().toISOString().split('T')[0]
+    // 베트남 시간대(UTC+7) 기준, 08시를 기준으로 하루 구분
+    const vietnamOffset = 7 * 60 // UTC+7 (분 단위)
+    const now = new Date()
+    const vietnamTime = new Date(now.getTime() + vietnamOffset * 60 * 1000)
 
-    logger.log('GET /api/tool-changes/stats - date:', targetDate)
+    let targetDate: Date
 
-    // 전체 교체 실적 조회 (오늘 날짜 기준)
-    const result = await serverSupabaseService.toolChange.getFiltered({
-      startDate: targetDate,
-      endDate: targetDate
+    if (dateParam) {
+      // 특정 날짜가 지정된 경우
+      targetDate = new Date(dateParam + 'T00:00:00Z')
+    } else {
+      // 현재 베트남 시간 기준
+      targetDate = new Date(vietnamTime)
+
+      // 현재 시각이 08시 이전이면 전날로 설정
+      const currentHour = vietnamTime.getUTCHours()
+      if (currentHour < 8) {
+        targetDate.setUTCDate(targetDate.getUTCDate() - 1)
+      }
+    }
+
+    // 시작: targetDate 08:00 (베트남 시간)
+    // 종료: targetDate+1일 08:00 (베트남 시간)
+    const startDate = new Date(targetDate)
+    startDate.setUTCHours(8 - vietnamOffset / 60, 0, 0, 0) // 베트남 08:00 = UTC 01:00
+
+    const endDate = new Date(targetDate)
+    endDate.setUTCDate(endDate.getUTCDate() + 1)
+    endDate.setUTCHours(8 - vietnamOffset / 60, 0, 0, 0) // 다음날 베트남 08:00
+
+    const startDateTime = startDate.toISOString()
+    const endDateTime = endDate.toISOString()
+
+    logger.log('GET /api/tool-changes/stats - 조회 기간:', {
+      targetDate: targetDate.toISOString().split('T')[0],
+      startDateTime,
+      endDateTime,
+      vietnamTime: vietnamTime.toISOString()
     })
+
+    // created_at 기준으로 필터링 (시간 정보 포함)
+    const { data: toolChanges, error } = await supabase
+      .from('tool_changes')
+      .select('*')
+      .gte('created_at', startDateTime)
+      .lt('created_at', endDateTime)
+
+    if (error) {
+      logger.error('Tool changes 조회 오류:', error)
+      throw error
+    }
+
+    const result = toolChanges || []
 
     // 통계 계산
     const stats = {
@@ -69,7 +112,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: stats,
-      date: targetDate
+      date: targetDate.toISOString().split('T')[0],
+      period: {
+        start: startDateTime,
+        end: endDateTime
+      }
     })
   } catch (error: any) {
     logger.error('Error fetching tool change stats:', error)
