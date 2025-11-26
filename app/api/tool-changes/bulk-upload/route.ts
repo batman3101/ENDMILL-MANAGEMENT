@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
 import { z } from 'zod'
+import { normalizeChangeReason } from '@/lib/utils/toolChangesExcelTemplate'
 
 // 동적 라우트로 명시적 설정
 export const dynamic = 'force-dynamic'
@@ -101,6 +102,25 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
+    // 앤드밀 타입 전체 조회 (앤드밀 이름 검증용)
+    const { data: endmillTypes, error: endmillTypesError } = await supabase
+      .from('endmill_types')
+      .select('code, name')
+
+    if (endmillTypesError) {
+      logger.error('앤드밀 타입 조회 오류:', endmillTypesError)
+      return NextResponse.json({
+        success: false,
+        error: '앤드밀 타입 조회에 실패했습니다.'
+      }, { status: 500 })
+    }
+
+    // 앤드밀 코드 -> 이름 매핑 생성
+    const endmillCodeToName = new Map<string, string>()
+    endmillTypes?.forEach((et: any) => {
+      endmillCodeToName.set(et.code, et.name)
+    })
+
     // 각 행에 대해 검증
     for (let i = 0; i < toolChangesData.length; i++) {
       const row = toolChangesData[i]
@@ -134,7 +154,7 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      // 3. 앤드밀 코드/이름이 CAM Sheet와 일치하는지 확인
+      // 3. 앤드밀 코드가 CAM Sheet와 일치하는지 확인
       if (endmillInCamSheet.endmill_code !== row.endmill_code) {
         validationErrors.push({
           row: rowNum,
@@ -144,16 +164,18 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      if (endmillInCamSheet.specifications !== row.endmill_name) {
+      // 4. 앤드밀 이름이 endmill_types 테이블의 실제 이름과 일치하는지 확인
+      const expectedEndmillName = endmillCodeToName.get(row.endmill_code)
+      if (expectedEndmillName && expectedEndmillName !== row.endmill_name) {
         validationErrors.push({
           row: rowNum,
           field: 'endmill_name',
-          message: `앤드밀이름 불일치: 입력값 '${row.endmill_name}', CAM Sheet '${endmillInCamSheet.specifications}'`
+          message: `앤드밀이름 불일치: 입력값 '${row.endmill_name}', 등록된 이름 '${expectedEndmillName}'`
         })
         continue
       }
 
-      // 4. 교체자 확인 (이름 또는 사번으로 검색)
+      // 5. 교체자 확인 (이름 또는 사번으로 검색)
       const user = allUsers?.find(
         (u: any) => u.name === row.changed_by || u.employee_id === row.changed_by
       )
@@ -167,7 +189,7 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      // 5. 설비 번호 확인
+      // 6. 설비 번호 확인
       const equipmentNumber = parseInt(row.equipment_number.replace(/^C/, ''))
       const { data: equipment, error: equipmentError } = await supabase
         .from('equipment')
@@ -185,6 +207,9 @@ export async function POST(request: NextRequest) {
       }
 
       // 검증 통과한 레코드 저장
+      // 교체사유가 베트남어로 입력된 경우 한국어로 정규화
+      const normalizedChangeReason = normalizeChangeReason(row.change_reason)
+
       validatedRecords.push({
         equipment_number: equipmentNumber,
         equipment_id: (equipment as any).id,
@@ -194,7 +219,7 @@ export async function POST(request: NextRequest) {
         endmill_code: row.endmill_code,
         endmill_name: row.endmill_name,
         tool_life: row.tool_life,
-        change_reason: row.change_reason,
+        change_reason: normalizedChangeReason,
         changed_by: (user as any).id,
         change_date: new Date().toISOString().split('T')[0]
       })

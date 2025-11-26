@@ -720,10 +720,10 @@ export default function ToolChangesPage() {
 
     const confirmed = await confirmation.showConfirmation({
       type: 'save',
-      title: '일괄 입력 확인',
-      message: `${excelData.length}건의 교체 실적을 일괄 등록하시겠습니까?`,
-      confirmText: '일괄 입력',
-      cancelText: '취소'
+      title: t('toolChanges.bulkInsertConfirmTitle'),
+      message: t('toolChanges.bulkInsertConfirmMessage', { count: excelData.length }),
+      confirmText: t('toolChanges.bulkInsert'),
+      cancelText: t('common.cancel')
     })
 
     if (!confirmed) return

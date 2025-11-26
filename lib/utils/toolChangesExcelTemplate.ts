@@ -1,5 +1,62 @@
 import ExcelJS from 'exceljs'
 
+/**
+ * 교체사유 한국어-베트남어 매핑
+ * 베트남어 사용자가 엑셀에 베트남어로 입력해도 검증 통과 가능
+ */
+export const CHANGE_REASON_MAPPING = {
+  // 한국어 (기본값)
+  '수명완료': '수명완료',
+  '정기교체': '정기교체',
+  '파손': '파손',
+  '마모': '마모',
+  '예방교체': '예방교체',
+  '모델변경': '모델변경',
+  '추가SETUP': '추가SETUP',
+  '품질불량': '품질불량',
+  '공구테스트': '공구테스트',
+  '기타': '기타',
+  // 베트남어 → 한국어 매핑
+  'Hết tuổi thọ': '수명완료',
+  'Thay thế định kỳ': '정기교체',
+  'Hỏng': '파손',
+  'Mài mòn': '마모',
+  'Thay thế phòng ngừa': '예방교체',
+  'Thay đổi mẫu': '모델변경',
+  'SETUP bổ sung': '추가SETUP',
+  'Lỗi chất lượng': '품질불량',
+  'Kiểm tra công cụ': '공구테스트',
+  'Khác': '기타',
+} as const
+
+/**
+ * 교체사유가 유효한지 확인 (한국어/베트남어 모두 허용)
+ */
+export const isValidChangeReason = (reason: string): boolean => {
+  return reason in CHANGE_REASON_MAPPING
+}
+
+/**
+ * 교체사유를 한국어로 정규화 (베트남어 입력 시 한국어로 변환)
+ */
+export const normalizeChangeReason = (reason: string): string => {
+  return CHANGE_REASON_MAPPING[reason as keyof typeof CHANGE_REASON_MAPPING] || reason
+}
+
+/**
+ * 모든 유효한 교체사유 목록 반환 (한국어 + 베트남어)
+ */
+export const getAllValidChangeReasons = (): string[] => {
+  return Object.keys(CHANGE_REASON_MAPPING)
+}
+
+/**
+ * 한국어 교체사유 목록만 반환
+ */
+export const getKoreanChangeReasons = (): string[] => {
+  return Array.from(new Set(Object.values(CHANGE_REASON_MAPPING)))
+}
+
 export interface ToolChangeExcelData {
   equipment_number: string
   production_model: string
@@ -230,13 +287,17 @@ export const parseToolChangesExcel = (file: File): Promise<ToolChangeExcelData[]
 
 /**
  * 데이터 기본 유효성 검사 (형식만 체크, CAM Sheet 정합성은 서버에서 체크)
+ * 한국어와 베트남어 교체사유 모두 허용
  */
 export const validateToolChangesData = (
   data: ToolChangeExcelData[],
   changeReasons?: string[]
 ) => {
   const errors: string[] = []
-  const validReasons = changeReasons && changeReasons.length > 0 ? changeReasons : ['수명완료', '파손', '마모', '예방교체', '모델변경', '기타']
+  // changeReasons가 제공되면 해당 목록 사용, 아니면 기본 매핑 테이블 사용
+  const useCustomReasons = changeReasons && changeReasons.length > 0
+  const validReasons = useCustomReasons ? changeReasons : getAllValidChangeReasons()
+  const displayReasons = useCustomReasons ? changeReasons : getKoreanChangeReasons()
 
   data.forEach((item, index) => {
     const rowNum = index + 2 // 엑셀 행 번호 (헤더 제외)
@@ -274,8 +335,8 @@ export const validateToolChangesData = (
 
     if (!item.change_reason) {
       errors.push(`행 ${rowNum}: 교체사유가 입력되지 않았습니다.`)
-    } else if (!validReasons.includes(item.change_reason)) {
-      errors.push(`행 ${rowNum}: 교체사유는 ${validReasons.join(', ')} 중 하나여야 합니다.`)
+    } else if (!validReasons.includes(item.change_reason) && !isValidChangeReason(item.change_reason)) {
+      errors.push(`행 ${rowNum}: 교체사유는 ${displayReasons.join(', ')} 중 하나여야 합니다.`)
     }
 
     if (!item.changed_by) {
