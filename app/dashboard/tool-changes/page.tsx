@@ -218,7 +218,7 @@ export default function ToolChangesPage() {
 
     return {
       endmillCode: endmill.endmill_code,
-      endmillName: endmill.specifications, // specifications가 실제 앤드밀 이름
+      endmillName: endmill.endmill_name || endmill.specifications, // endmill_name을 우선 사용
       suggestedToolLife: endmill.tool_life
     }
   }, [camSheets])
@@ -324,18 +324,15 @@ export default function ToolChangesPage() {
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (추가 폼)
   useEffect(() => {
     if (formData.production_model && formData.process && formData.t_number && !isManualEndmillInput) {
-      // API 기반 자동입력 시도
-      autoFillByTNumber(formData.production_model, formData.process, formData.t_number)
+      // 먼저 기존 값 초기화 (새로운 T번호 선택 시)
+      setFormData(prev => ({
+        ...prev,
+        endmill_code: null,
+        endmill_name: null
+      }))
 
-      // 기존 CAM Sheet 기반 자동입력도 백업으로 유지
-      const endmillInfo = autoFillEndmillInfo(formData.production_model, formData.process, formData.t_number)
-      if (endmillInfo) {
-        setFormData(prev => ({
-          ...prev,
-          endmill_code: prev.endmill_code || endmillInfo.endmillCode || null,
-          endmill_name: prev.endmill_name || endmillInfo.endmillName || null
-        }))
-      }
+      // API 기반 자동입력 시도 (데이터베이스에서 최신 정보 가져옴)
+      autoFillByTNumber(formData.production_model, formData.process, formData.t_number)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.production_model, formData.process, formData.t_number, isManualEndmillInput])
@@ -416,18 +413,15 @@ export default function ToolChangesPage() {
   // 생산 모델, 공정, T번호가 변경될 때 앤드밀 정보 자동 입력 (수정 모달)
   useEffect(() => {
     if (editingItem && editingItem.production_model && editingItem.process && editingItem.t_number && !isEditManualEndmillInput) {
-      // API 기반 자동입력 시도
-      autoFillEditByTNumber(editingItem.production_model, editingItem.process, editingItem.t_number)
+      // 먼저 기존 값 초기화 (새로운 T번호 선택 시)
+      setEditingItem(prev => prev ? ({
+        ...prev,
+        endmill_code: '',
+        endmill_name: ''
+      }) : null)
 
-      // 기존 CAM Sheet 기반 자동입력도 백업으로 유지
-      const endmillInfo = autoFillEndmillInfo(editingItem.production_model, editingItem.process, editingItem.t_number)
-      if (endmillInfo) {
-        setEditingItem(prev => prev ? ({
-          ...prev,
-          endmill_code: prev.endmill_code || endmillInfo.endmillCode,
-          endmill_name: prev.endmill_name || endmillInfo.endmillName
-        }) : null)
-      }
+      // API 기반 자동입력 시도 (데이터베이스에서 최신 정보 가져옴)
+      autoFillEditByTNumber(editingItem.production_model, editingItem.process, editingItem.t_number)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingItem?.production_model, editingItem?.process, editingItem?.t_number, isEditManualEndmillInput])

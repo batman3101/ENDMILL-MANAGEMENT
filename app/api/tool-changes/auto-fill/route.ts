@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 2. T번호 기반 자동입력: model + process + tNumber -> endmill_code, endmill_name
+    // 2. T번호 기반 자동입력: model + process + tNumber -> endmill_code로 마스터 데이터 조회
     if (model && process && tNumber) {
       try {
         // CAM Sheet에서 해당 모델, 공정 찾기
@@ -66,9 +66,40 @@ export async function GET(request: NextRequest) {
           const endmills = await serverSupabaseService.camSheet.getEndmills(camSheet.id)
           const targetEndmill = endmills?.find(endmill => endmill.t_number === parseInt(tNumber))
 
-          if (targetEndmill) {
+          if (targetEndmill && targetEndmill.endmill_code) {
+            // endmill_code로 마스터 데이터(endmill_types) 조회
+            try {
+              const endmillMaster = await serverSupabaseService.endmillType.getByCode(targetEndmill.endmill_code)
+
+              if (endmillMaster) {
+                // 마스터 데이터 우선 사용
+                response.endmillInfo = {
+                  endmillCode: endmillMaster.code,
+                  endmillName: endmillMaster.name,
+                  category: endmillMaster.category?.name_ko || endmillMaster.category?.code,
+                  standardLife: endmillMaster.standard_life,
+                  suggestedToolLife: targetEndmill.tool_life // CAM Sheet의 tool_life 사용
+                }
+              } else {
+                // 마스터에 없으면 CAM Sheet 데이터 폴백
+                response.endmillInfo = {
+                  endmillCode: targetEndmill.endmill_code,
+                  endmillName: targetEndmill.endmill_name || targetEndmill.specifications,
+                  suggestedToolLife: targetEndmill.tool_life
+                }
+              }
+            } catch {
+              // 마스터 조회 실패 시 CAM Sheet 데이터 폴백
+              response.endmillInfo = {
+                endmillCode: targetEndmill.endmill_code,
+                endmillName: targetEndmill.endmill_name || targetEndmill.specifications,
+                suggestedToolLife: targetEndmill.tool_life
+              }
+            }
+          } else if (targetEndmill) {
+            // endmill_code가 없는 경우 CAM Sheet 데이터 사용
             response.endmillInfo = {
-              endmillCode: targetEndmill.endmill_code,
+              endmillCode: targetEndmill.endmill_code || '',
               endmillName: targetEndmill.endmill_name || targetEndmill.specifications,
               suggestedToolLife: targetEndmill.tool_life
             }
