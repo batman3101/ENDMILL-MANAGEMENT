@@ -169,7 +169,12 @@ export default function ToolChangesPage() {
     if (!equipmentNumber.trim()) return
 
     try {
-      const response = await fetch(`/api/tool-changes/auto-fill?equipmentNumber=${equipmentNumber}`)
+      const response = await fetch(`/api/tool-changes/auto-fill?equipmentNumber=${equipmentNumber}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
       const result = await response.json()
 
       if (result.success && result.data.equipmentInfo) {
@@ -190,7 +195,12 @@ export default function ToolChangesPage() {
     if (!model || !process || !tNumber) return
 
     try {
-      const response = await fetch(`/api/tool-changes/auto-fill?model=${model}&process=${process}&tNumber=${tNumber}`)
+      const response = await fetch(`/api/tool-changes/auto-fill?model=${model}&process=${process}&tNumber=${tNumber}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
       const result = await response.json()
 
       if (result.success && result.data.endmillInfo) {
@@ -342,7 +352,12 @@ export default function ToolChangesPage() {
     if (!equipmentNumber.trim()) return
 
     try {
-      const response = await fetch(`/api/tool-changes/auto-fill?equipmentNumber=${equipmentNumber}`)
+      const response = await fetch(`/api/tool-changes/auto-fill?equipmentNumber=${equipmentNumber}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
       const result = await response.json()
 
       if (result.success && result.data.equipmentInfo) {
@@ -363,7 +378,12 @@ export default function ToolChangesPage() {
     if (!model || !process || !tNumber) return
 
     try {
-      const response = await fetch(`/api/tool-changes/auto-fill?model=${model}&process=${process}&tNumber=${tNumber}`)
+      const response = await fetch(`/api/tool-changes/auto-fill?model=${model}&process=${process}&tNumber=${tNumber}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
       const result = await response.json()
 
       if (result.success && result.data.endmillInfo) {

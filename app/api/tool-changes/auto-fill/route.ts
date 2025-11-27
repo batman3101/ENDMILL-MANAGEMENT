@@ -44,6 +44,13 @@ export async function GET(request: NextRequest) {
         }
 
         if (equipmentData) {
+          logger.log('📋 설비 자동입력 데이터:', {
+            equipmentNumber,
+            current_model: equipmentData.current_model,
+            model_code: equipmentData.model_code,
+            process: equipmentData.process,
+            selectedModel: equipmentData.current_model || equipmentData.model_code
+          })
           response.equipmentInfo = {
             model: equipmentData.current_model || equipmentData.model_code,
             process: equipmentData.process
@@ -113,6 +120,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: response
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     })
 
   } catch (error) {
