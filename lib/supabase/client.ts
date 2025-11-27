@@ -74,5 +74,15 @@ export const createServerClient = () => {
       autoRefreshToken: false,
       persistSession: false,
     },
+    global: {
+      // Next.js 프로덕션 빌드에서 Data Cache 비활성화
+      // 항상 최신 데이터를 가져오도록 설정
+      fetch: (url, options = {}) => {
+        return fetch(url, {
+          ...options,
+          cache: 'no-store',
+        });
+      },
+    },
   });
 };
