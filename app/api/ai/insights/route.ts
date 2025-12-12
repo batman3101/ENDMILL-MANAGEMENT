@@ -11,6 +11,9 @@ import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '
 // 동적 라우트로 명시적 설정 (cookies 사용으로 인해 필요)
 export const dynamic = 'force-dynamic'
 
+// Vercel 서버리스 함수 타임아웃 설정 (최대 60초)
+export const maxDuration = 60
+
 /**
  * GET /api/ai/insights
  * 자동 인사이트 생성 (최근 7일 데이터 기반)
@@ -105,21 +108,76 @@ export async function GET(_request: NextRequest) {
       .in('status', ['low', 'critical'])
       .limit(50)
 
-    // 데이터 정리
-    const recentData = {
-      toolChanges: toolChanges || [],
-      inventory: inventoryData || [],
-      summary: {
-        totalChanges: toolChanges?.length || 0,
-        damageCount:
-          (toolChanges as any)?.filter((tc: any) => tc.change_reason === '파손').length || 0,
-        lowStockCount: inventoryData?.length || 0,
+    // 데이터 정리 및 요약 (Gemini API 응답 시간 최적화)
+    const toolChangesData = toolChanges || []
+    const inventoryItems = inventoryData || []
+
+    // 파손 건수 계산
+    const damageCount = toolChangesData.filter((tc: any) => tc.change_reason === '파손').length
+
+    // 모델별 파손 통계
+    const damageByModel: Record<string, number> = {}
+    toolChangesData
+      .filter((tc: any) => tc.change_reason === '파손')
+      .forEach((tc: any) => {
+        const model = tc.model || 'Unknown'
+        damageByModel[model] = (damageByModel[model] || 0) + 1
+      })
+
+    // 엔드밀별 파손 통계 (상위 10개)
+    const damageByEndmill: Record<string, number> = {}
+    toolChangesData
+      .filter((tc: any) => tc.change_reason === '파손')
+      .forEach((tc: any) => {
+        const code = tc.endmill_code || 'Unknown'
+        damageByEndmill[code] = (damageByEndmill[code] || 0) + 1
+      })
+    const topDamagedEndmills = Object.entries(damageByEndmill)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+
+    // 요약된 데이터 구성 (원본 데이터 대신 통계만 전달)
+    const summarizedData = {
+      period: {
+        from: sevenDaysAgo.toISOString().split('T')[0],
+        to: new Date().toISOString().split('T')[0],
+      },
+      toolChanges: {
+        total: toolChangesData.length,
+        damageCount,
+        normalLifeCount: toolChangesData.filter((tc: any) => tc.change_reason === '수명완료').length,
+        prematureCount: toolChangesData.filter((tc: any) => tc.change_reason === '조기교체').length,
+        damageRate: toolChangesData.length > 0 ? Math.round((damageCount / toolChangesData.length) * 100) : 0,
+      },
+      damageByModel,
+      topDamagedEndmills,
+      inventory: {
+        lowStockCount: inventoryItems.length,
+        criticalItems: inventoryItems.filter((inv: any) => inv.status === 'critical').length,
+        lowItems: inventoryItems.filter((inv: any) => inv.status === 'low').length,
+        items: inventoryItems.slice(0, 20).map((inv: any) => ({
+          code: (inv as any).endmill_types?.code,
+          name: (inv as any).endmill_types?.name,
+          currentStock: inv.current_stock,
+          minStock: inv.min_stock,
+          status: inv.status,
+        })),
       },
     }
 
-    // 5. Gemini로 인사이트 분석
+    const recentData = {
+      toolChanges: toolChangesData,
+      inventory: inventoryItems,
+      summary: {
+        totalChanges: toolChangesData.length,
+        damageCount,
+        lowStockCount: inventoryItems.length,
+      },
+    }
+
+    // 5. Gemini로 인사이트 분석 (요약된 데이터 사용)
     const geminiService = getGeminiService()
-    const insights = await geminiService.analyzeDataForInsights(recentData as any)
+    const insights = await geminiService.analyzeDataForInsights(summarizedData as any)
 
     return NextResponse.json({
       insights,

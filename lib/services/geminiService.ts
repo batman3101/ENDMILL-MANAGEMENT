@@ -186,35 +186,38 @@ ${dataJson}
   /**
    * 데이터에서 인사이트 발견
    */
-  async analyzeDataForInsights(data: any[]): Promise<Insight[]> {
+  async analyzeDataForInsights(data: any[] | Record<string, any>): Promise<Insight[]> {
     const dataJson = JSON.stringify(data, null, 2)
 
     const prompt = `
-당신은 데이터 분석 전문가입니다.
-다음 CNC 공구 관리 데이터를 분석하여 중요한 인사이트를 발견하세요.
+당신은 CNC 공구 관리 데이터 분석 전문가입니다.
+다음 데이터를 분석하여 3-5개의 핵심 인사이트를 발견하세요.
 
 ## 데이터
 ${dataJson}
 
-## 찾아야 할 인사이트 유형
-1. 비정상적인 패턴 (예: 특정 모델/공정에서 파손률 급증)
-2. 재고 부족 경고
-3. 비용 절감 기회
-4. 효율성 개선 제안
-5. 예방 조치 필요 사항
+## 인사이트 유형 (우선순위 순)
+1. 긴급: 파손률이 높은 모델/엔드밀 (priority: high)
+2. 중요: 재고 부족 품목 (priority: high/medium)
+3. 개선: 비용 절감 기회 (priority: medium)
+4. 참고: 효율성 개선 제안 (priority: low)
 
-## 응답 형식 (JSON 배열)
+## 응답 규칙
+- 반드시 3-5개의 인사이트만 제공
+- 각 인사이트는 구체적인 수치 포함
+- 한국어로 작성
+- JSON 배열 형식만 반환 (설명 없이)
+
+## 응답 형식
 [
   {
-    "title": "인사이트 제목",
-    "summary": "2-3문장 요약",
+    "title": "인사이트 제목 (15자 이내)",
+    "summary": "구체적인 수치와 함께 2-3문장 요약",
     "priority": "high|medium|low",
-    "category": "파손|재고|비용|효율성|유지보수",
-    "data": { 관련 데이터 }
+    "category": "파손|재고|비용|효율성",
+    "data": {}
   }
 ]
-
-JSON 배열만 반환하세요:
 `.trim()
 
     const response = await this.generateContent(prompt)
