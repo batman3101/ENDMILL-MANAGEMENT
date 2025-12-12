@@ -67,33 +67,78 @@ export async function GET(_request: NextRequest) {
     // 4. 최근 7일 데이터 조회
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    const dateFilter = sevenDaysAgo.toISOString().split('T')[0]
 
-    // 공구 교체 데이터
-    const { data: toolChanges } = await supabase
+    // 4-1. 전체 통계 조회 (정확한 COUNT)
+    const { count: totalChangesCount } = await supabase
       .from('tool_changes')
-      .select(
-        `
-        id,
-        equipment_number,
-        model,
-        process,
-        t_number,
-        endmill_code,
-        endmill_name,
-        change_date,
-        change_reason,
-        tool_life
-      `
-      )
-      .gte('change_date', sevenDaysAgo.toISOString().split('T')[0])
-      .order('change_date', { ascending: false })
-      .limit(200)
+      .select('*', { count: 'exact', head: true })
+      .gte('change_date', dateFilter)
 
-    // 재고 데이터
-    const { data: inventoryData } = await supabase
+    // 교체 사유별 통계
+    const { data: reasonStats } = await supabase
+      .from('tool_changes')
+      .select('change_reason')
+      .gte('change_date', dateFilter)
+
+    const reasonCounts = (reasonStats || []).reduce((acc: Record<string, number>, item: any) => {
+      const reason = item.change_reason || 'Unknown'
+      acc[reason] = (acc[reason] || 0) + 1
+      return acc
+    }, {})
+
+    // 모델별 파손 통계
+    const { data: modelDamageStats } = await supabase
+      .from('tool_changes')
+      .select('model')
+      .gte('change_date', dateFilter)
+      .eq('change_reason', '파손')
+
+    const damageByModel = (modelDamageStats || []).reduce((acc: Record<string, number>, item: any) => {
+      const model = item.model || 'Unknown'
+      acc[model] = (acc[model] || 0) + 1
+      return acc
+    }, {})
+
+    // 엔드밀별 파손 통계 (상위 10개)
+    const { data: endmillDamageStats } = await supabase
+      .from('tool_changes')
+      .select('endmill_code, endmill_name')
+      .gte('change_date', dateFilter)
+      .eq('change_reason', '파손')
+
+    const damageByEndmill = (endmillDamageStats || []).reduce((acc: Record<string, { count: number; name: string }>, item: any) => {
+      const code = item.endmill_code || 'Unknown'
+      if (!acc[code]) {
+        acc[code] = { count: 0, name: item.endmill_name || code }
+      }
+      acc[code].count += 1
+      return acc
+    }, {})
+
+    const topDamagedEndmills = Object.entries(damageByEndmill)
+      .map(([code, data]) => ({ code, count: (data as any).count, name: (data as any).name }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+
+    // 재고 부족 통계
+    const { count: lowStockCount } = await supabase
       .from('inventory')
-      .select(
-        `
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['low', 'critical'])
+
+    const { data: inventoryStats } = await supabase
+      .from('inventory')
+      .select('status')
+      .in('status', ['low', 'critical'])
+
+    const criticalCount = (inventoryStats || []).filter((inv: any) => inv.status === 'critical').length
+    const lowCount = (inventoryStats || []).filter((inv: any) => inv.status === 'low').length
+
+    // 재고 부족 품목 상세 (상위 20개)
+    const { data: inventoryItems } = await supabase
+      .from('inventory')
+      .select(`
         id,
         current_stock,
         min_stock,
@@ -103,59 +148,38 @@ export async function GET(_request: NextRequest) {
           name,
           unit_cost
         )
-      `
-      )
+      `)
       .in('status', ['low', 'critical'])
-      .limit(50)
+      .order('current_stock', { ascending: true })
+      .limit(20)
 
-    // 데이터 정리 및 요약 (Gemini API 응답 시간 최적화)
-    const toolChangesData = toolChanges || []
-    const inventoryItems = inventoryData || []
+    // 실제 통계 값
+    const totalChanges = totalChangesCount || 0
+    const damageCount = reasonCounts['파손'] || 0
+    const wearCount = reasonCounts['마모'] || 0
+    const modelChangeCount = reasonCounts['모델변경'] || 0
 
-    // 파손 건수 계산
-    const damageCount = toolChangesData.filter((tc: any) => tc.change_reason === '파손').length
-
-    // 모델별 파손 통계
-    const damageByModel: Record<string, number> = {}
-    toolChangesData
-      .filter((tc: any) => tc.change_reason === '파손')
-      .forEach((tc: any) => {
-        const model = tc.model || 'Unknown'
-        damageByModel[model] = (damageByModel[model] || 0) + 1
-      })
-
-    // 엔드밀별 파손 통계 (상위 10개)
-    const damageByEndmill: Record<string, number> = {}
-    toolChangesData
-      .filter((tc: any) => tc.change_reason === '파손')
-      .forEach((tc: any) => {
-        const code = tc.endmill_code || 'Unknown'
-        damageByEndmill[code] = (damageByEndmill[code] || 0) + 1
-      })
-    const topDamagedEndmills = Object.entries(damageByEndmill)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-
-    // 요약된 데이터 구성 (원본 데이터 대신 통계만 전달)
+    // 요약된 데이터 구성 (정확한 통계 기반)
     const summarizedData = {
       period: {
-        from: sevenDaysAgo.toISOString().split('T')[0],
+        from: dateFilter,
         to: new Date().toISOString().split('T')[0],
       },
       toolChanges: {
-        total: toolChangesData.length,
+        total: totalChanges,
         damageCount,
-        normalLifeCount: toolChangesData.filter((tc: any) => tc.change_reason === '수명완료').length,
-        prematureCount: toolChangesData.filter((tc: any) => tc.change_reason === '조기교체').length,
-        damageRate: toolChangesData.length > 0 ? Math.round((damageCount / toolChangesData.length) * 100) : 0,
+        wearCount,
+        modelChangeCount,
+        damageRate: totalChanges > 0 ? Math.round((damageCount / totalChanges) * 100) : 0,
+        reasonBreakdown: reasonCounts,
       },
       damageByModel,
       topDamagedEndmills,
       inventory: {
-        lowStockCount: inventoryItems.length,
-        criticalItems: inventoryItems.filter((inv: any) => inv.status === 'critical').length,
-        lowItems: inventoryItems.filter((inv: any) => inv.status === 'low').length,
-        items: inventoryItems.slice(0, 20).map((inv: any) => ({
+        totalLowStock: lowStockCount || 0,
+        criticalCount,
+        lowCount,
+        items: (inventoryItems || []).map((inv: any) => ({
           code: (inv as any).endmill_types?.code,
           name: (inv as any).endmill_types?.name,
           currentStock: inv.current_stock,
@@ -166,12 +190,12 @@ export async function GET(_request: NextRequest) {
     }
 
     const recentData = {
-      toolChanges: toolChangesData,
-      inventory: inventoryItems,
+      toolChanges: [],
+      inventory: inventoryItems || [],
       summary: {
-        totalChanges: toolChangesData.length,
+        totalChanges,
         damageCount,
-        lowStockCount: inventoryItems.length,
+        lowStockCount: lowStockCount || 0,
       },
     }
 
