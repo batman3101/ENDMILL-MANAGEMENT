@@ -39,7 +39,7 @@ class GeminiService {
       throw new Error('GEMINI_API_KEY is not configured in environment variables')
     }
 
-    this.modelName = process.env.GEMINI_MODEL || 'gemini-2.5-pro'
+    this.modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
     this.client = new GoogleGenerativeAI(apiKey)
     this.model = this.client.getGenerativeModel({ model: this.modelName })
   }
