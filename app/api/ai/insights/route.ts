@@ -87,15 +87,16 @@ export async function GET(_request: NextRequest) {
       return acc
     }, {})
 
-    // 모델별 파손 통계
+    // 모델별 파손 통계 (production_model 컬럼 사용)
     const { data: modelDamageStats } = await supabase
       .from('tool_changes')
-      .select('model')
+      .select('production_model')
       .gte('change_date', dateFilter)
       .eq('change_reason', '파손')
+      .not('production_model', 'is', null)
 
     const damageByModel = (modelDamageStats || []).reduce((acc: Record<string, number>, item: any) => {
-      const model = item.model || 'Unknown'
+      const model = item.production_model || 'Unknown'
       acc[model] = (acc[model] || 0) + 1
       return acc
     }, {})
