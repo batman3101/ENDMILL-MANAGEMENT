@@ -6,6 +6,7 @@ import { I18nProvider } from '../lib/providers/I18nProvider';
 import { ToastProvider } from '../components/shared/Toast';
 import { AuthProvider } from '../lib/hooks/useAuth';
 import { SettingsProvider } from '../lib/providers/SettingsProvider';
+import { ServiceWorkerRegister, InstallPrompt } from '../components/pwa';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -73,6 +74,9 @@ export default function RootLayout({
           본문으로 건너뛰기
         </a>
         
+        {/* PWA Service Worker 등록 */}
+        <ServiceWorkerRegister />
+
         <main id="main-content" className="min-h-screen">
           <I18nProvider>
             <ToastProvider>
@@ -80,6 +84,8 @@ export default function RootLayout({
                 <AuthProvider>
                   <SettingsProvider>
                     {children}
+                    {/* PWA 설치 프롬프트 */}
+                    <InstallPrompt />
                   </SettingsProvider>
                 </AuthProvider>
               </QueryProvider>

@@ -781,20 +781,26 @@ export default function InventoryPage() {
       </div>
 
       {/* 필터 및 검색 */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="flex gap-4 flex-1">
+      <div className="bg-white p-3 md:p-4 rounded-lg shadow-sm border hover:shadow-xl transition-all duration-200">
+        {/* 검색 및 필터 */}
+        <div className="space-y-3 md:space-y-0 md:flex md:gap-4 md:items-center md:justify-between">
+          {/* 검색 입력 */}
+          <div className="w-full md:flex-1">
             <input
               type="text"
               placeholder={t('inventory.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          {/* 필터 드롭다운 - 모바일에서 2열 그리드 */}
+          <div className="grid grid-cols-2 gap-2 md:flex md:gap-2">
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">{t('inventory.allCategories')}</option>
               {availableCategories.map(category => (
@@ -804,7 +810,7 @@ export default function InventoryPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">{t('inventory.stockStatusFilter')}</option>
               <option value="sufficient">{t('inventory.sufficient')}</option>
@@ -812,39 +818,50 @@ export default function InventoryPage() {
               <option value="critical">{t('inventory.critical')}</option>
             </select>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 whitespace-nowrap"
-            >
-              {t('inventory.addNewEndmill')}
-            </button>
-            <button
-              onClick={handleExcelUpload}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 whitespace-nowrap"
-            >
-              {t('inventory.excelUpload')}
-            </button>
-            <button
-              onClick={handleExcelDownload}
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 whitespace-nowrap"
-            >
-              {t('inventory.excelDownload')}
-            </button>
-            <button
-              onClick={handleDownloadInventoryTemplate}
-              className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 whitespace-nowrap"
-            >
-              📥 {t('inventory.inventoryTemplate')}
-            </button>
-            <button
-              onClick={handleDownloadInventorySurvey}
-              className="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 whitespace-nowrap flex items-center gap-1"
-              title={t('inventory.inventorySurveyTooltip')}
-            >
-              📋 {t('inventory.inventorySurvey')}
-            </button>
-          </div>
+        </div>
+
+        {/* 액션 버튼 - 모바일에서 그리드 레이아웃 */}
+        <div className="mt-3 grid grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-2">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+          >
+            <span>➕</span>
+            <span className="hidden sm:inline">{t('inventory.addNewEndmill')}</span>
+            <span className="sm:hidden">{t('common.add')}</span>
+          </button>
+          <button
+            onClick={handleExcelUpload}
+            className="flex items-center justify-center gap-1 px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
+          >
+            <span>📤</span>
+            <span className="hidden sm:inline">{t('inventory.excelUpload')}</span>
+            <span className="sm:hidden">{t('common.upload')}</span>
+          </button>
+          <button
+            onClick={handleExcelDownload}
+            className="flex items-center justify-center gap-1 px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700"
+          >
+            <span>📥</span>
+            <span className="hidden sm:inline">{t('inventory.excelDownload')}</span>
+            <span className="sm:hidden">{t('common.download')}</span>
+          </button>
+          <button
+            onClick={handleDownloadInventoryTemplate}
+            className="flex items-center justify-center gap-1 px-3 py-2 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700"
+          >
+            <span>📋</span>
+            <span className="hidden sm:inline">{t('inventory.inventoryTemplate')}</span>
+            <span className="sm:hidden">{t('common.template')}</span>
+          </button>
+          <button
+            onClick={handleDownloadInventorySurvey}
+            className="col-span-2 md:col-span-1 flex items-center justify-center gap-1 px-3 py-2 bg-cyan-600 text-white text-sm rounded-md hover:bg-cyan-700"
+            title={t('inventory.inventorySurveyTooltip')}
+          >
+            <span>📊</span>
+            <span>{t('inventory.inventorySurvey')}</span>
+          </button>
         </div>
       </div>
 

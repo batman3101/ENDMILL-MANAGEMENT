@@ -34,6 +34,9 @@ const resources = {
         shift: '교대',
         verifyingAuth: '인증 확인 중...',
         profile: '프로필 관리',
+        menu: '메뉴',
+        more: '더보기',
+        template: '템플릿',
 
         // 상태
         status: '상태',
@@ -80,6 +83,30 @@ const resources = {
         loadError: '데이터를 불러오는데 실패했습니다.',
         saveError: '저장에 실패했습니다.',
         deleteError: '삭제에 실패했습니다.',
+      },
+
+      // PWA 관련
+      pwa: {
+        installApp: '앱 설치',
+        installDescription: 'CNC 앤드밀 관리 시스템을 홈 화면에 추가하여 더 빠르게 접근하세요.',
+        installButton: '앱 설치하기',
+        offlineAvailable: '오프라인에서도 사용 가능합니다',
+        iosInstallTitle: 'iOS 설치 방법:',
+        iosStep1: 'Safari 하단의 공유 버튼 탭',
+        iosStep2: '홈 화면에 추가 선택',
+        iosStep3: '추가 탭',
+        share: '공유',
+        addToHomeScreen: '홈 화면에 추가',
+        add: '추가',
+        // 오프라인 페이지
+        noConnection: '인터넷 연결 없음',
+        offlineStatus: '현재 오프라인 상태입니다.',
+        checkConnection: '네트워크 연결을 확인하고 다시 시도해 주세요.',
+        retry: '다시 시도',
+        offlineGuide: '오프라인 모드 안내',
+        offlineGuide1: '이전에 방문한 페이지는 캐시에서 볼 수 있습니다',
+        offlineGuide2: '새로운 데이터는 온라인 연결 후 동기화됩니다',
+        offlineGuide3: 'Wi-Fi 또는 모바일 데이터를 확인하세요',
       },
 
       // 네비게이션
@@ -1801,6 +1828,9 @@ const resources = {
         shift: 'ca',
         verifyingAuth: 'Đang xác thực...',
         profile: 'Quản lý hồ sơ',
+        menu: 'Menu',
+        more: 'Thêm',
+        template: 'Mẫu',
 
         // 상태
         status: 'Trạng thái',
@@ -1847,6 +1877,30 @@ const resources = {
         loadError: 'Không thể tải dữ liệu.',
         saveError: 'Lưu thất bại.',
         deleteError: 'Xóa thất bại.',
+      },
+
+      // PWA 관련
+      pwa: {
+        installApp: 'Cài đặt ứng dụng',
+        installDescription: 'Thêm Hệ thống quản lý dao phay CNC vào màn hình chính để truy cập nhanh hơn.',
+        installButton: 'Cài đặt ứng dụng',
+        offlineAvailable: 'Có thể sử dụng ngoại tuyến',
+        iosInstallTitle: 'Cách cài đặt trên iOS:',
+        iosStep1: 'Nhấn nút Chia sẻ ở cuối Safari',
+        iosStep2: 'Chọn Thêm vào màn hình chính',
+        iosStep3: 'Nhấn Thêm',
+        share: 'Chia sẻ',
+        addToHomeScreen: 'Thêm vào màn hình chính',
+        add: 'Thêm',
+        // 오프라인 페이지
+        noConnection: 'Không có kết nối Internet',
+        offlineStatus: 'Bạn đang ở chế độ ngoại tuyến.',
+        checkConnection: 'Vui lòng kiểm tra kết nối mạng và thử lại.',
+        retry: 'Thử lại',
+        offlineGuide: 'Hướng dẫn chế độ ngoại tuyến',
+        offlineGuide1: 'Các trang đã truy cập trước đó có thể xem từ bộ nhớ đệm',
+        offlineGuide2: 'Dữ liệu mới sẽ được đồng bộ sau khi có kết nối',
+        offlineGuide3: 'Vui lòng kiểm tra Wi-Fi hoặc dữ liệu di động',
       },
 
       // 네비게이션

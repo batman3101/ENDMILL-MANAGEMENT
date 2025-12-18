@@ -4,10 +4,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import { Menu, X } from 'lucide-react'
 import { useTranslation } from '../../lib/hooks/useTranslations'
 import { useAuth } from '../../lib/hooks/useAuth'
 import { usePermissions } from '../../lib/hooks/usePermissions'
 import Breadcrumb from '../../components/shared/Breadcrumb'
+import { MobileBottomNav } from '../../components/mobile'
 import { clientLogger } from '@/lib/utils/logger'
 
 export default function DashboardLayout({
@@ -21,6 +23,7 @@ export default function DashboardLayout({
   const { user, signOut, loading } = useAuth()
   const { canAccessPage, isAdmin } = usePermissions()
   const [currentTime, setCurrentTime] = useState<string>('')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
 
   // 실시간 시계
@@ -174,9 +177,100 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 상단 네비게이션 바 */}
+      {/* 상단 네비게이션 바 - 모바일에서 축소 */}
       <header className="bg-blue-800 text-white shadow-lg">
-        <div className="px-6 py-4">
+        {/* 모바일 헤더 */}
+        <div className="md:hidden px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* 로고 */}
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center p-0.5">
+                <Image
+                  src="/icons/endmill.png"
+                  alt={t('auth.loginTitle')}
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div>
+                <h1 className="text-sm font-bold leading-tight">{t('auth.loginTitle')}</h1>
+                <p className="text-blue-200 text-xs">{t('dashboard.subtitle')}</p>
+              </div>
+            </div>
+
+            {/* 모바일 우측 영역 */}
+            <div className="flex items-center space-x-2">
+              {/* 언어 선택 */}
+              <div className="flex space-x-1">
+                <button
+                  onClick={() => handleLanguageChange('ko')}
+                  className={`px-2 py-1 text-xs rounded transition-colors ${
+                    currentLanguage === 'ko'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-blue-700/50 text-blue-200'
+                  }`}
+                >
+                  🇰🇷
+                </button>
+                <button
+                  onClick={() => handleLanguageChange('vi')}
+                  className={`px-2 py-1 text-xs rounded transition-colors ${
+                    currentLanguage === 'vi'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-blue-700/50 text-blue-200'
+                  }`}
+                >
+                  🇻🇳
+                </button>
+              </div>
+
+              {/* 시계 */}
+              <div className="bg-blue-700/50 rounded px-2 py-1">
+                <p className="text-xs font-bold">{currentTime || '--:--'}</p>
+              </div>
+
+              {/* 사용자 메뉴 버튼 */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-lg hover:bg-blue-700"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* 모바일 사용자 메뉴 드롭다운 */}
+          {mobileMenuOpen && (
+            <div className="mt-3 pt-3 border-t border-blue-700 animate-slideInUp">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-sm font-medium">{user?.name || t('common.user')}</p>
+                  <p className="text-xs text-blue-200">{user?.department || t('common.noDepartment')}</p>
+                </div>
+                <span className="text-xs bg-blue-700 px-2 py-1 rounded">{user?.shift || 'A'}{t('common.shift')}</span>
+              </div>
+              <div className="flex space-x-2">
+                <Link
+                  href="/dashboard/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex-1 text-center py-2 text-sm bg-blue-700 rounded hover:bg-blue-600"
+                >
+                  {t('common.profile')}
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 text-center py-2 text-sm bg-red-600 rounded hover:bg-red-500"
+                >
+                  {t('navigation.logout')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 데스크톱 헤더 */}
+        <div className="hidden md:block px-6 py-4">
           <div className="flex items-center justify-between">
             {/* 로고 및 제목 */}
             <div className="flex items-center space-x-3">
@@ -273,8 +367,8 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        {/* 네비게이션 메뉴 */}
-        <nav className="border-t border-blue-700">
+        {/* 네비게이션 메뉴 - 데스크톱에서만 표시 */}
+        <nav className="hidden md:block border-t border-blue-700">
           <div className="px-6">
             <div className="flex space-x-1 overflow-x-auto">
               {menuItems.map((item) => (
@@ -305,21 +399,23 @@ export default function DashboardLayout({
         </nav>
       </header>
 
-      {/* 메인 콘텐츠 영역 */}
-      <main className="p-6 relative">
-        {/* 브레드크럼 */}
-        <Breadcrumb />
+      {/* 메인 콘텐츠 영역 - 모바일에서 하단 네비게이션 공간 확보 */}
+      <main className="p-4 md:p-6 relative pb-20 md:pb-6">
+        {/* 브레드크럼 - 데스크톱에서만 표시 */}
+        <div className="hidden md:block">
+          <Breadcrumb />
+        </div>
 
         {/* 페이지 제목 - 메인 페이지에서만 표시 (상세 페이지 및 AI Insights에서는 숨김) */}
         {!pathname.match(/\/dashboard\/[^\/]+\/[^\/]+/) &&
          !pathname.startsWith('/dashboard/ai-insights') && (
-          <div className="mb-6">
+          <div className="mb-4 md:mb-6">
             <div className="flex items-center space-x-3">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900">
                 {menuItems.find(item => item.active)?.label || t('navigation.dashboard')}
               </h1>
             </div>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 text-xs md:text-sm">
               {menuItems.find(item => item.active)?.description || t('dashboard.subtitle')}
             </p>
           </div>
@@ -330,6 +426,9 @@ export default function DashboardLayout({
           {children}
         </div>
       </main>
+
+      {/* 모바일 하단 네비게이션 */}
+      <MobileBottomNav />
     </div>
   )
 }
