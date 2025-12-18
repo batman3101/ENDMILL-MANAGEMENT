@@ -358,7 +358,7 @@ export default function DashboardPage() {
         {/* 최다 파손 교체 엔드밀 Top 3 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">최다 파손 교체 엔드밀 Top 3</h4>
+            <h4 className="text-lg font-semibold text-gray-800">{t('dashboard.topBrokenEndmillsTitle')}</h4>
             <span className="text-2xl">🔨</span>
           </div>
           {isLoading ? (
@@ -371,8 +371,8 @@ export default function DashboardPage() {
             <div className="space-y-3">
               {(data?.topBrokenEndmills || []).map((item: any, index: number) => (
                 <div key={index} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
-                  <span className="font-medium text-gray-700">{index + 1}위: {item.code}</span>
-                  <span className="font-bold text-red-600">{item.count}회</span>
+                  <span className="font-medium text-gray-700">{index + 1}{t('dashboard.rank')}: {item.code}</span>
+                  <span className="font-bold text-red-600">{item.count}{t('dashboard.times')}</span>
                 </div>
               ))}
             </div>
@@ -380,7 +380,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-center h-24 text-gray-400">
               <div className="text-center">
                 <div className="text-sm">{t('common.noData')}</div>
-                <div className="text-xs mt-1">최근 30일간 파손 교체 없음</div>
+                <div className="text-xs mt-1">{t('dashboard.noBrokenEndmillsRecent')}</div>
               </div>
             </div>
           )}

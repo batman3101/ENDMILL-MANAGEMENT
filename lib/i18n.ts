@@ -165,6 +165,11 @@ const resources = {
         broken: '파손',
         premature: '조기 교체',
         highBrokenRateWarning: '파손률이 10%를 초과했습니다. 주의가 필요합니다.',
+        // 최다 파손 교체 엔드밀 Top 3 관련
+        topBrokenEndmillsTitle: '최다 파손 교체 엔드밀 Top 3',
+        rank: '위',
+        times: '회',
+        noBrokenEndmillsRecent: '최근 30일간 파손 교체 없음',
       },
 
       // 재고 관리
@@ -1928,6 +1933,11 @@ const resources = {
         broken: 'Hư hỏng',
         premature: 'Thay sớm',
         highBrokenRateWarning: 'Tỷ lệ hư hỏng vượt quá 10%. Cần chú ý.',
+        // 최다 파손 교체 엔드밀 Top 3 관련
+        topBrokenEndmillsTitle: 'Top 3 dao phay thay thế do hư hỏng nhiều nhất',
+        rank: 'hạng',
+        times: 'lần',
+        noBrokenEndmillsRecent: 'Không có thay thế do hư hỏng trong 30 ngày gần đây',
       },
 
       // 설비 관리
