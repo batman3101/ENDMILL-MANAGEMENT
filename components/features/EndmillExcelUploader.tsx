@@ -207,19 +207,19 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b flex items-center justify-between">
+    <div className="mobile-modal-container" onClick={onClose}>
+      <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mobile-modal-header">
           <h3 className="text-lg font-medium">{t('endmill.bulkUploadTitle')}</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
           >
             ✕
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="mobile-modal-body space-y-6">
           {/* 파일 선택 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -347,6 +347,15 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
               )}
             </div>
           )}
+        </div>
+
+        <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+          >
+            {t('common.close')}
+          </button>
         </div>
       </div>
     </div>

@@ -236,21 +236,22 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b flex items-center justify-between">
+    <div className="mobile-modal-container" onClick={onClose}>
+      <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mobile-modal-header">
           <h3 className="text-lg font-medium">
             {editData ? t('endmill.editEndmillTitle') : t('endmill.newEndmillTitle')}
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
           >
             ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="mobile-modal-body space-y-6">
           {/* 엔드밀 코드 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -379,7 +380,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                       </select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           {t('endmill.supplierUnitPrice')} <span className="text-red-500">*</span>
@@ -413,7 +414,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           {t('endmill.minOrder')}
@@ -495,20 +496,21 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
               )}
             </div>
           </div>
+          </div>
 
           {/* 버튼 */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-300 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2 text-gray-700 bg-gray-300 rounded-lg hover:bg-gray-400 disabled:opacity-50"
               disabled={loading}
             >
               {t('endmill.cancelButton')}
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading}
             >
               {loading ? t('endmill.submitting') : (editData ? t('endmill.editButton') : t('endmill.submitButton'))}

@@ -919,11 +919,19 @@ export default function InboundPage() {
 
       {/* 수정 모달 */}
       {isEditModalOpen && editingItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium mb-4">{t('inventory.editInbound')}</h3>
+        <div className="mobile-modal-container" onClick={() => { setIsEditModalOpen(false); setEditingItem(null); }}>
+          <div className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3 className="text-lg font-medium">{t('inventory.editInbound')}</h3>
+              <button
+                onClick={() => { setIsEditModalOpen(false); setEditingItem(null); }}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+              >
+                ✕
+              </button>
+            </div>
 
-            <div className="space-y-4">
+            <div className="mobile-modal-body space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t('inventory.endmillCode')}
@@ -975,19 +983,19 @@ export default function InboundPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex gap-2 justify-end">
+            <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
               <button
                 onClick={() => {
                   setIsEditModalOpen(false)
                   setEditingItem(null)
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 {t('common.save')}
               </button>

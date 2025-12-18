@@ -1108,21 +1108,20 @@ export default function InventoryPage() {
 
       {/* 신규 앤드밀 추가 모달 */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">{t('inventory.addNewEndmillModal')}</h3>
-                <button
-                  onClick={() => setShowAddModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
+        <div className="mobile-modal-container" onClick={() => setShowAddModal(false)}>
+          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3 className="text-lg font-medium">{t('inventory.addNewEndmillModal')}</h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleAddEndmill} className="p-6">
+            <form onSubmit={handleAddEndmill} className="flex flex-col flex-1 overflow-hidden">
+              <div className="mobile-modal-body">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.endmillCodeLabel')} {t('inventory.required')}</label>
@@ -1282,18 +1281,19 @@ export default function InventoryPage() {
                   />
                 </div>
               </div>
+              </div>
 
-              <div className="flex justify-end space-x-3">
+              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                  className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                 >
                   {t('inventory.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   {t('inventory.add')}
                 </button>
@@ -1305,22 +1305,20 @@ export default function InventoryPage() {
 
       {/* 상세보기 모달 */}
       {showDetailModal && selectedItem && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4">
-            <div className="px-6 py-4 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">{t('inventory.endmillDetail')}</h3>
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
+        <div className="mobile-modal-container" onClick={() => setShowDetailModal(false)}>
+          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3 className="text-lg font-medium">{t('inventory.endmillDetail')}</h3>
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-6">
+            <div className="mobile-modal-body">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h4 className="font-medium text-gray-900 mb-4">{t('inventory.basicInfo')}</h4>
                   <div className="space-y-3">
@@ -1377,15 +1375,15 @@ export default function InventoryPage() {
                 <h4 className="font-medium text-gray-900 mb-4">{t('inventory.supplierPriceInfo')}</h4>
                 <SupplierPriceInfo endmillTypeId={selectedItem.endmill_type_id} />
               </div>
+            </div>
 
-              <div className="flex justify-end pt-6 border-t mt-6">
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                >
-                  {t('inventory.close')}
-                </button>
-              </div>
+            <div className="mobile-modal-footer">
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              >
+                {t('inventory.close')}
+              </button>
             </div>
           </div>
         </div>
@@ -1393,22 +1391,21 @@ export default function InventoryPage() {
 
       {/* 수정 모달 */}
       {showEditModal && editFormData && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">{t('inventory.editEndmillInfo')}</h3>
-                <button
-                  onClick={() => setShowEditModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
+        <div className="mobile-modal-container" onClick={() => setShowEditModal(false)}>
+          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3 className="text-lg font-medium">{t('inventory.editEndmillInfo')}</h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="p-6">
-              <div className="grid grid-cols-2 gap-6">
+            <form onSubmit={handleSaveEdit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="mobile-modal-body">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.endmillCodeLabel')}</label>
                   <input
@@ -1468,45 +1465,44 @@ export default function InventoryPage() {
                     min="0"
                   />
                 </div>
+                </div>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-6 border-t mt-6">
+              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                  className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                 >
                   {t('inventory.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   {t('inventory.save')}
                 </button>
               </div>
-                         </form>
-           </div>
-         </div>
-       )}
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* 엑셀 업로드 모달 */}
       {showExcelUploadModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">{t('inventory.excelMasterDataUpload')}</h3>
-                <button
-                  onClick={() => setShowExcelUploadModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
+        <div className="mobile-modal-container" onClick={() => setShowExcelUploadModal(false)}>
+          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3 className="text-lg font-medium">{t('inventory.excelMasterDataUpload')}</h3>
+              <button
+                onClick={() => setShowExcelUploadModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="p-6">
+            <div className="mobile-modal-body">
               {/* 업로드 안내 */}
               <div className="mb-6 p-4 bg-blue-50 rounded-lg">
                 <h4 className="text-sm font-medium text-blue-900 mb-2">{t('inventory.uploadFormatGuide')}</h4>
@@ -1572,23 +1568,23 @@ export default function InventoryPage() {
                 </div>
               )}
 
-              {/* 버튼 */}
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowExcelUploadModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                >
-                  {t('inventory.close')}
-                </button>
-                <button
-                  onClick={handleProcessExcel}
-                  disabled={!excelFile || uploadProgress.processing}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  {uploadProgress.processing ? t('inventory.loading') : t('inventory.processUpload')}
-                </button>
-              </div>
+            </div>
+
+            <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowExcelUploadModal(false)}
+                className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              >
+                {t('inventory.close')}
+              </button>
+              <button
+                onClick={handleProcessExcel}
+                disabled={!excelFile || uploadProgress.processing}
+                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {uploadProgress.processing ? t('inventory.loading') : t('inventory.processUpload')}
+              </button>
             </div>
           </div>
         </div>
@@ -1596,21 +1592,19 @@ export default function InventoryPage() {
 
       {/* QR 스캐너 모달 */}
       {showQRScanner && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
-            <div className="px-6 py-4 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">{t('inventory.qrCodeScan')}</h3>
-                <button
-                  onClick={() => setShowQRScanner(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
+        <div className="mobile-modal-container" onClick={() => setShowQRScanner(false)}>
+          <div className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3 className="text-lg font-medium">{t('inventory.qrCodeScan')}</h3>
+              <button
+                onClick={() => setShowQRScanner(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="p-6">
+            <div className="mobile-modal-body">
               <div className="text-center">
                 <div className="w-24 h-24 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                   <span className="text-4xl">📷</span>
@@ -1641,15 +1635,15 @@ export default function InventoryPage() {
                   {t('inventory.qrFeatureNotice')}
                 </div>
               </div>
+            </div>
 
-              <div className="flex justify-end pt-4 border-t mt-4">
-                <button
-                  onClick={() => setShowQRScanner(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                >
-                  {t('inventory.close')}
-                </button>
-              </div>
+            <div className="mobile-modal-footer">
+              <button
+                onClick={() => setShowQRScanner(false)}
+                className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              >
+                {t('inventory.close')}
+              </button>
             </div>
           </div>
         </div>

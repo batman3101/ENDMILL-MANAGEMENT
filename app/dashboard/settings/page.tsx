@@ -2745,15 +2745,22 @@ function SettingsPageContent() {
 
           {/* 카테고리 추가/수정 모달 */}
           {showCategoryModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-                <div className="px-6 py-4 border-b border-gray-200">
+            <div className="mobile-modal-container" onClick={() => !isCategoryLoading && setShowCategoryModal(false)}>
+              <div className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
+                <div className="mobile-modal-header">
                   <h3 className="text-lg font-semibold text-gray-900">
                     {modalMode === 'add' ? '새 카테고리 추가' : '카테고리 수정'}
                   </h3>
+                  <button
+                    onClick={() => setShowCategoryModal(false)}
+                    disabled={isCategoryLoading}
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                  >
+                    ✕
+                  </button>
                 </div>
 
-                <div className="px-6 py-4 space-y-4">
+                <div className="mobile-modal-body space-y-4">
                   {modalMode === 'add' && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2805,18 +2812,18 @@ function SettingsPageContent() {
                   </div>
                 </div>
 
-                <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
                     onClick={() => setShowCategoryModal(false)}
                     disabled={isCategoryLoading}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                    className="w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
                   >
                     취소
                   </button>
                   <button
                     onClick={modalMode === 'add' ? handleSubmitAddCategory : handleSubmitUpdateCategory}
                     disabled={isCategoryLoading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                    className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
                   >
                     {isCategoryLoading && (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -2830,15 +2837,22 @@ function SettingsPageContent() {
 
           {/* 공급업체 추가/수정 모달 */}
           {showSupplierModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-                <div className="px-6 py-4 border-b border-gray-200">
+            <div className="mobile-modal-container" onClick={() => !isSupplierLoading && setShowSupplierModal(false)}>
+              <div className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
+                <div className="mobile-modal-header">
                   <h3 className="text-lg font-semibold text-gray-900">
                     {modalSupplierMode === 'add' ? '새 공급업체 추가' : '공급업체 수정'}
                   </h3>
+                  <button
+                    onClick={() => setShowSupplierModal(false)}
+                    disabled={isSupplierLoading}
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                  >
+                    ✕
+                  </button>
                 </div>
 
-                <div className="px-6 py-4 space-y-4">
+                <div className="mobile-modal-body space-y-4">
                   {modalSupplierMode === 'add' && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2909,18 +2923,18 @@ function SettingsPageContent() {
                   </div>
                 </div>
 
-                <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
                     onClick={() => setShowSupplierModal(false)}
                     disabled={isSupplierLoading}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                    className="w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
                   >
                     취소
                   </button>
                   <button
                     onClick={modalSupplierMode === 'add' ? handleSubmitAddSupplier : handleSubmitUpdateSupplier}
                     disabled={isSupplierLoading}
-                    className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:opacity-50 flex items-center"
+                    className="w-full sm:w-auto px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:opacity-50 flex items-center justify-center"
                   >
                     {isSupplierLoading && (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>

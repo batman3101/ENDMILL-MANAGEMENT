@@ -157,23 +157,22 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">
-              {initialData ? t('camSheets.camSheetFormEditTitle') : t('camSheets.camSheetFormTitle')}
-            </h3>
-            <button
-              onClick={onCancel}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              ✕
-            </button>
-          </div>
+    <div className="mobile-modal-container" onClick={onCancel}>
+      <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mobile-modal-header">
+          <h3 className="text-lg font-medium">
+            {initialData ? t('camSheets.camSheetFormEditTitle') : t('camSheets.camSheetFormTitle')}
+          </h3>
+          <button
+            onClick={onCancel}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+          >
+            ✕
+          </button>
         </div>
-        
-        <form onSubmit={handleSubmit} className="p-6">
+
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="mobile-modal-body">
           {/* 기본 정보 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
@@ -363,18 +362,20 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
             )}
           </div>
 
+          </div>
+
           {/* 버튼 */}
-          <div className="flex justify-end space-x-3 pt-6 border-t">
+          <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
             >
               {t('camSheets.cancelButton')}
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               {initialData ? t('camSheets.updateButton') : t('camSheets.saveButton')}
             </button>

@@ -129,9 +129,10 @@ export function MobileBottomNav() {
             onClick={() => setShowMore(false)}
           />
 
-          {/* 메뉴 패널 */}
-          <div className="absolute bottom-16 left-0 right-0 bg-white rounded-t-2xl shadow-2xl p-4 pb-safe animate-slide-up">
-            <div className="flex items-center justify-between mb-4">
+          {/* 메뉴 패널 - 하단 네비게이션 위에 표시, 스크롤 가능 */}
+          <div className="absolute bottom-16 left-0 right-0 max-h-[70vh] bg-white rounded-t-2xl shadow-2xl overflow-hidden animate-slide-up">
+            {/* 헤더 - 고정 */}
+            <div className="sticky top-0 bg-white px-4 py-3 border-b border-gray-100 flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">{t('common.menu')}</h3>
               <button
                 onClick={() => setShowMore(false)}
@@ -141,22 +142,25 @@ export function MobileBottomNav() {
               </button>
             </div>
 
-            <div className="grid grid-cols-4 gap-3">
-              {filteredMoreItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setShowMore(false)}
-                  className={`flex flex-col items-center p-3 rounded-xl transition-all ${
-                    isActive(item.href)
-                      ? 'bg-primary-100 text-primary-600'
-                      : 'hover:bg-gray-100 text-gray-600'
-                  }`}
-                >
-                  {item.icon}
-                  <span className="text-xs mt-1.5 text-center line-clamp-1">{item.label}</span>
-                </Link>
-              ))}
+            {/* 메뉴 그리드 - 스크롤 가능 */}
+            <div className="overflow-y-auto max-h-[calc(70vh-60px)] p-4 pb-safe">
+              <div className="grid grid-cols-4 gap-3">
+                {filteredMoreItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setShowMore(false)}
+                    className={`flex flex-col items-center p-3 rounded-xl transition-all ${
+                      isActive(item.href)
+                        ? 'bg-primary-100 text-primary-600'
+                        : 'hover:bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {item.icon}
+                    <span className="text-xs mt-1.5 text-center line-clamp-2">{item.label}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>

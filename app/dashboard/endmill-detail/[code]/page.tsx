@@ -745,20 +745,18 @@ export default function EndmillDetailPage() {
 
       {/* 수정 모달 */}
       {showEditModal && endmillData && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">{t('endmill.editInfoTitle')} {endmillData.code}</h3>
-                <button
-                  onClick={() => setShowEditModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
+        <div className="mobile-modal-container" onClick={() => setShowEditModal(false)}>
+          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3 className="text-lg font-medium">{t('endmill.editInfoTitle')} {endmillData.code}</h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+              >
+                ✕
+              </button>
             </div>
-            <div className="p-6">
+            <div className="mobile-modal-body">
               <div className="space-y-6">
                 {/* 기본 정보 섹션 - 수정불가 필드 */}
                 <div>
@@ -825,22 +823,21 @@ export default function EndmillDetailPage() {
                   </div>
                 </div>
               </div>
-
-              {/* 버튼 */}
-              <div className="flex justify-end space-x-3 mt-8 pt-6 border-t">
-                <button
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                >
-                  {t('endmill.cancel')}
-                </button>
-                <button
-                  onClick={handleSaveEdit}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  {t('inventory.save')}
-                </button>
-              </div>
+            </div>
+            {/* 버튼 */}
+            <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              >
+                {t('endmill.cancel')}
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                {t('inventory.save')}
+              </button>
             </div>
           </div>
         </div>

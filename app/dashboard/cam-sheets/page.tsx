@@ -953,21 +953,19 @@ export default function CAMSheetsPage() {
 
       {/* CAM Sheet 상세 모달 */}
       {selectedSheet && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">{t('camSheets.camSheetDetail')} - {selectedSheet.model}</h3>
-                <button
-                  onClick={() => setSelectedSheet(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
+        <div className="mobile-modal-container" onClick={() => setSelectedSheet(null)}>
+          <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3 className="text-lg font-medium">{t('camSheets.camSheetDetail')} - {selectedSheet.model}</h3>
+              <button
+                onClick={() => setSelectedSheet(null)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+              >
+                ✕
+              </button>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="mobile-modal-body">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">{t('camSheets.model')}</label>
                   <p className="text-lg font-semibold">{selectedSheet.model}</p>
@@ -1037,6 +1035,14 @@ export default function CAMSheetsPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+            <div className="mobile-modal-footer">
+              <button
+                onClick={() => setSelectedSheet(null)}
+                className="w-full px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              >
+                {t('common.close')}
+              </button>
             </div>
           </div>
         </div>

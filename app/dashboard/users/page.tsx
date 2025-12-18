@@ -1330,36 +1330,34 @@ function UsersPageContent() {
 
       {/* 사용자 상세보기 모달 */}
       {showDetailModal && selectedUser && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="mobile-modal-container" onClick={() => { setShowDetailModal(false); setSelectedUser(null); }}>
+          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
             {/* 모달 헤더 */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-lg font-bold text-blue-600">
-                      {selectedUser.name.charAt(0)}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">사용자 상세 정보</h3>
-                    <p className="text-sm text-gray-500">{selectedUser.name}의 계정 정보</p>
-                  </div>
+            <div className="mobile-modal-header">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-lg font-bold text-blue-600">
+                    {selectedUser.name.charAt(0)}
+                  </span>
                 </div>
-                <button 
-                  onClick={() => {
-                    setShowDetailModal(false)
-                    setSelectedUser(null)
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">사용자 상세 정보</h3>
+                  <p className="text-sm text-gray-500">{selectedUser.name}의 계정 정보</p>
+                </div>
               </div>
+              <button
+                onClick={() => {
+                  setShowDetailModal(false)
+                  setSelectedUser(null)
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+              >
+                ✕
+              </button>
             </div>
-            
+
             {/* 모달 내용 */}
-            <div className="p-6 space-y-6">
+            <div className="mobile-modal-body space-y-6">
               {/* 기본 정보 섹션 */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
@@ -1520,27 +1518,25 @@ function UsersPageContent() {
             </div>
             
             {/* 모달 푸터 */}
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => {
-                    setShowDetailModal(false)
-                    handleEdit(selectedUser)
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  수정하기
-                </button>
-                <button
-                  onClick={() => {
-                    setShowDetailModal(false)
-                    setSelectedUser(null)
-                  }}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                >
-                  닫기
-                </button>
-              </div>
+            <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDetailModal(false)
+                  setSelectedUser(null)
+                }}
+                className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              >
+                닫기
+              </button>
+              <button
+                onClick={() => {
+                  setShowDetailModal(false)
+                  handleEdit(selectedUser)
+                }}
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                수정하기
+              </button>
             </div>
           </div>
         </div>
@@ -1548,36 +1544,35 @@ function UsersPageContent() {
 
       {/* 사용자 수정 모달 */}
       {showEditModal && selectedUser && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="mobile-modal-container" onClick={() => { setShowEditModal(false); setSelectedUser(null); }}>
+          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
             {/* 모달 헤더 */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <span className="text-lg">✏️</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">사용자 정보 수정</h3>
-                    <p className="text-sm text-gray-500">{selectedUser.name}의 정보를 수정합니다</p>
-                  </div>
+            <div className="mobile-modal-header">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-lg">✏️</span>
                 </div>
-                <button 
-                  onClick={() => {
-                    setShowEditModal(false)
-                    setSelectedUser(null)
-                    setEditFormData({})
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                  disabled={isSubmitting}
-                >
-                  ✕
-                </button>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">사용자 정보 수정</h3>
+                  <p className="text-sm text-gray-500">{selectedUser.name}의 정보를 수정합니다</p>
+                </div>
               </div>
+              <button
+                onClick={() => {
+                  setShowEditModal(false)
+                  setSelectedUser(null)
+                  setEditFormData({})
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                disabled={isSubmitting}
+              >
+                ✕
+              </button>
             </div>
-            
+
             {/* 수정 폼 */}
-            <form onSubmit={handleSaveEdit} className="p-6 space-y-6">
+            <form onSubmit={handleSaveEdit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="mobile-modal-body space-y-6">
               {/* 기본 정보 섹션 */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
@@ -1769,9 +1764,10 @@ function UsersPageContent() {
                   <span className="font-medium">💡 안내:</span> 수정 사항은 즉시 적용되며, 수정 일시가 자동으로 기록됩니다.
                 </p>
               </div>
+              </div>
 
               {/* 모달 푸터 - 폼 내부 */}
-              <div className="flex justify-end space-x-3 pt-4 border-t">
+              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -1779,14 +1775,14 @@ function UsersPageContent() {
                     setSelectedUser(null)
                     setEditFormData({})
                   }}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
                   disabled={isSubmitting}
                 >
                   취소
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                  className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
                   disabled={isSubmitting}
                 >
                   {isSubmitting && (
@@ -1802,46 +1798,45 @@ function UsersPageContent() {
 
       {/* 사용자 추가 모달 */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="mobile-modal-container" onClick={() => !isSubmitting && setShowAddModal(false)}>
+          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
             {/* 모달 헤더 */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <span className="text-lg">➕</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">새 사용자 추가</h3>
-                    <p className="text-sm text-gray-500">새로운 사용자 계정을 생성합니다</p>
-                  </div>
+            <div className="mobile-modal-header">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-lg">➕</span>
                 </div>
-                <button 
-                  onClick={() => {
-                    setShowAddModal(false)
-                    setAddFormData({
-                      name: '',
-                      email: '',
-                      password: '',
-                      employeeId: '',
-                      department: '',
-                      position: '',
-                      roleId: '',
-                      shift: '',
-                      phone: '',
-                      isActive: true
-                    })
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                  disabled={isSubmitting}
-                >
-                  ✕
-                </button>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">새 사용자 추가</h3>
+                  <p className="text-sm text-gray-500">새로운 사용자 계정을 생성합니다</p>
+                </div>
               </div>
+              <button
+                onClick={() => {
+                  setShowAddModal(false)
+                  setAddFormData({
+                    name: '',
+                    email: '',
+                    password: '',
+                    employeeId: '',
+                    department: '',
+                    position: '',
+                    roleId: '',
+                    shift: '',
+                    phone: '',
+                    isActive: true
+                  })
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                disabled={isSubmitting}
+              >
+                ✕
+              </button>
             </div>
-            
+
             {/* 추가 폼 */}
-            <form onSubmit={handleAddUser} className="p-6 space-y-6">
+            <form onSubmit={handleAddUser} className="flex flex-col flex-1 overflow-hidden">
+              <div className="mobile-modal-body space-y-6">
               {/* 기본 정보 섹션 */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
@@ -2057,9 +2052,10 @@ function UsersPageContent() {
                   </div>
                 </div>
               </div>
+              </div>
 
-              {/* 모달 푸터 - 폼 내부 */}
-              <div className="flex justify-end space-x-3 pt-4 border-t">
+              {/* 모달 푸터 */}
+              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -2077,14 +2073,14 @@ function UsersPageContent() {
                       isActive: true
                     })
                   }}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
                   disabled={isSubmitting}
                 >
                   취소
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center"
+                  className="w-full sm:w-auto px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center justify-center"
                   disabled={isSubmitting}
                 >
                   {isSubmitting && (
@@ -2100,36 +2096,35 @@ function UsersPageContent() {
 
       {/* 권한 편집 모달 */}
       {showPermissionModal && selectedUserForPermission && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="mobile-modal-container" onClick={() => !isSubmitting && setShowPermissionModal(false)}>
+          <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
             {/* 모달 헤더 */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                    <span className="text-lg">🔐</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">사용자 권한 편집</h3>
-                    <p className="text-sm text-gray-500">{selectedUserForPermission.name}의 모듈별 접근 권한 설정</p>
-                  </div>
+            <div className="mobile-modal-header">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <span className="text-lg">🔐</span>
                 </div>
-                <button 
-                  onClick={() => {
-                    setShowPermissionModal(false)
-                    setSelectedUserForPermission(null)
-                    setPermissionFormData({})
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                  disabled={isSubmitting}
-                >
-                  ✕
-                </button>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">사용자 권한 편집</h3>
+                  <p className="text-sm text-gray-500">{selectedUserForPermission.name}의 모듈별 접근 권한 설정</p>
+                </div>
               </div>
+              <button
+                onClick={() => {
+                  setShowPermissionModal(false)
+                  setSelectedUserForPermission(null)
+                  setPermissionFormData({})
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                disabled={isSubmitting}
+              >
+                ✕
+              </button>
             </div>
-            
+
             {/* 모달 내용 */}
-            <form onSubmit={handleSavePermissions} className="p-6 space-y-6">
+            <form onSubmit={handleSavePermissions} className="flex flex-col flex-1 overflow-hidden">
+              <div className="mobile-modal-body space-y-6">
               {/* 사용자 정보 요약 */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center space-x-4">
@@ -2281,9 +2276,10 @@ function UsersPageContent() {
                   </div>
                 </div>
               </div>
+              </div>
 
               {/* 모달 푸터 */}
-              <div className="flex justify-end space-x-3 pt-4 border-t">
+              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -2291,14 +2287,14 @@ function UsersPageContent() {
                     setSelectedUserForPermission(null)
                     setPermissionFormData({})
                   }}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
                   disabled={isSubmitting}
                 >
                   취소
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 flex items-center"
+                  className="w-full sm:w-auto px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center"
                   disabled={isSubmitting}
                 >
                   {isSubmitting && (
@@ -2314,36 +2310,35 @@ function UsersPageContent() {
 
       {/* 권한 템플릿 적용 모달 */}
       {showTemplateModal && selectedTemplate && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="mobile-modal-container" onClick={() => !isSubmitting && setShowTemplateModal(false)}>
+          <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
             {/* 모달 헤더 */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <span className="text-lg">🎯</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">권한 템플릿 적용</h3>
-                    <p className="text-sm text-gray-500">&quot;{selectedTemplate.name}&quot; 템플릿을 사용자에게 적용</p>
-                  </div>
+            <div className="mobile-modal-header">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-lg">🎯</span>
                 </div>
-                <button 
-                  onClick={() => {
-                    setShowTemplateModal(false)
-                    setSelectedTemplate(null)
-                    setSelectedUsersForTemplate([])
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                  disabled={isSubmitting}
-                >
-                  ✕
-                </button>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">권한 템플릿 적용</h3>
+                  <p className="text-sm text-gray-500">&quot;{selectedTemplate.name}&quot; 템플릿을 사용자에게 적용</p>
+                </div>
               </div>
+              <button
+                onClick={() => {
+                  setShowTemplateModal(false)
+                  setSelectedTemplate(null)
+                  setSelectedUsersForTemplate([])
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                disabled={isSubmitting}
+              >
+                ✕
+              </button>
             </div>
-            
+
             {/* 모달 내용 */}
-            <form onSubmit={handleApplyTemplateToUsers} className="p-6 space-y-6">
+            <form onSubmit={handleApplyTemplateToUsers} className="flex flex-col flex-1 overflow-hidden">
+              <div className="mobile-modal-body space-y-6">
               {/* 템플릿 정보 요약 */}
               <div className="bg-green-50 rounded-lg p-4">
                 <div className="flex items-center space-x-4">
@@ -2466,9 +2461,10 @@ function UsersPageContent() {
                   </div>
                 </div>
               </div>
+              </div>
 
               {/* 모달 푸터 */}
-              <div className="flex justify-end space-x-3 pt-4 border-t">
+              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -2476,14 +2472,14 @@ function UsersPageContent() {
                     setSelectedTemplate(null)
                     setSelectedUsersForTemplate([])
                   }}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
                   disabled={isSubmitting}
                 >
                   취소
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center"
+                  className="w-full sm:w-auto px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center justify-center"
                   disabled={isSubmitting || selectedUsersForTemplate.length === 0}
                 >
                   {isSubmitting && (

@@ -821,25 +821,25 @@ export default function EndmillPage() {
 
       {/* 상세 모달 */}
       {selectedEndmill && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b flex items-center justify-between">
+        <div className="mobile-modal-container" onClick={() => setSelectedEndmill(null)}>
+          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
               <h3 className="text-lg font-medium">{t('endmill.statusDetailTitle')} - {selectedEndmill.code}</h3>
               <button
                 onClick={() => setSelectedEndmill(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
               >
                 ✕
               </button>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="mobile-modal-body space-y-6">
               {/* 현황 정보 */}
               {(() => {
                 const usage = getEndmillUsageInfo(selectedEndmill.code)
                 return (
                   <div className="mb-6">
                     <h4 className="text-md font-semibold mb-3">{t('endmill.currentUsageStatus')}</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <span className="text-sm text-gray-600">{t('endmill.usedEquipmentCount')}</span>
                         <div className="text-lg font-bold text-blue-600">{usage.usedEquipmentCount}{t('endmill.unit')}</div>
@@ -943,6 +943,14 @@ export default function EndmillPage() {
                   endmillCode={selectedEndmill.code}
                 />
               </div>
+            </div>
+            <div className="mobile-modal-footer">
+              <button
+                onClick={() => setSelectedEndmill(null)}
+                className="w-full px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              >
+                {t('common.close')}
+              </button>
             </div>
           </div>
         </div>

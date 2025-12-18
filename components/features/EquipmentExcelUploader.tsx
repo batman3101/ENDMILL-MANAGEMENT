@@ -160,26 +160,24 @@ export default function EquipmentExcelUploader({
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+    <div className="mobile-modal-container" onClick={() => !isUploading && onCancel()}>
+      <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
         {/* 헤더 */}
-        <div className="px-6 py-4 border-b bg-gray-50">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {t('equipment.bulkRegistration')}
-            </h3>
-            <button
-              onClick={onCancel}
-              className="text-gray-400 hover:text-gray-600"
-              disabled={isUploading}
-            >
-              ✕
-            </button>
-          </div>
+        <div className="mobile-modal-header">
+          <h3 className="text-lg font-semibold text-gray-900">
+            {t('equipment.bulkRegistration')}
+          </h3>
+          <button
+            onClick={onCancel}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+            disabled={isUploading}
+          >
+            ✕
+          </button>
         </div>
 
         {/* 본문 */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="mobile-modal-body">
           {/* 단계 표시 */}
           <div className="mb-6">
             <div className="flex items-center justify-between">
@@ -357,45 +355,43 @@ export default function EquipmentExcelUploader({
         </div>
 
         {/* 푸터 */}
-        <div className="px-6 py-4 border-t bg-gray-50">
-          <div className="flex justify-end space-x-3">
-            {!uploadResults && (
-              <>
-                <button
-                  onClick={handleReset}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                  disabled={isUploading}
-                >
-                  {t('equipment.reset')}
-                </button>
-                <button
-                  onClick={onCancel}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                  disabled={isUploading}
-                >
-                  {t('equipment.cancel')}
-                </button>
-                <button
-                  onClick={handleUpload}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                  disabled={parsedData.length === 0 || isUploading}
-                >
-                  {isUploading && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  )}
-                  {isUploading ? t('equipment.uploading') : t('equipment.uploadStart')}
-                </button>
-              </>
-            )}
-            {uploadResults && (
+        <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+          {!uploadResults && (
+            <>
+              <button
+                onClick={handleReset}
+                className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                disabled={isUploading}
+              >
+                {t('equipment.reset')}
+              </button>
               <button
                 onClick={onCancel}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                disabled={isUploading}
               >
-                {t('equipment.close')}
+                {t('equipment.cancel')}
               </button>
-            )}
-          </div>
+              <button
+                onClick={handleUpload}
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                disabled={parsedData.length === 0 || isUploading}
+              >
+                {isUploading && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                )}
+                {isUploading ? t('equipment.uploading') : t('equipment.uploadStart')}
+              </button>
+            </>
+          )}
+          {uploadResults && (
+            <button
+              onClick={onCancel}
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              {t('equipment.close')}
+            </button>
+          )}
         </div>
       </div>
     </div>

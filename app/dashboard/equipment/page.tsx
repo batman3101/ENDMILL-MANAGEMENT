@@ -446,22 +446,21 @@ export default function EquipmentPage() {
 
         {/* 설비 추가 모달 - 완전한 기능 구현 */}
         {showAddModal && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
-              <div className="px-6 py-4 border-b">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900">{t('equipment.newEquipment')}</h3>
-                  <button
-                    onClick={() => setShowAddModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                    disabled={isSubmitting}
-                  >
-                    ✕
-                  </button>
-                </div>
+          <div className="mobile-modal-container" onClick={() => !isSubmitting && setShowAddModal(false)}>
+            <div className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
+              <div className="mobile-modal-header">
+                <h3 className="text-lg font-medium text-gray-900">{t('equipment.newEquipment')}</h3>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                  disabled={isSubmitting}
+                >
+                  ✕
+                </button>
               </div>
 
-              <form onSubmit={handleAddEquipment} className="p-6 space-y-4">
+              <form onSubmit={handleAddEquipment} className="flex flex-col flex-1 overflow-hidden">
+                <div className="mobile-modal-body space-y-4">
                 {/* 설비번호 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -594,19 +593,20 @@ export default function EquipmentPage() {
                   </select>
                 </div>
 
-                {/* 버튼 */}
-                <div className="flex justify-end space-x-3 pt-4">
+                </div>
+
+                <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+                    className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
                     disabled={isSubmitting}
                   >
                     {t('equipment.cancel')}
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                    className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
                     disabled={isSubmitting}
                   >
                     {isSubmitting && (
@@ -1187,22 +1187,21 @@ export default function EquipmentPage() {
 
       {/* 설비 추가 모달 - 완전한 기능 구현 */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
-            <div className="px-6 py-4 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">{t('equipment.newEquipment')}</h3>
-                <button
-                  onClick={() => setShowAddModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                  disabled={isSubmitting}
-                >
-                  ✕
-                </button>
-              </div>
+        <div className="mobile-modal-container" onClick={() => !isSubmitting && setShowAddModal(false)}>
+          <div className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3 className="text-lg font-medium text-gray-900">{t('equipment.newEquipment')}</h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                disabled={isSubmitting}
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleAddEquipment} className="p-6 space-y-4">
+            <form onSubmit={handleAddEquipment} className="flex flex-col flex-1 overflow-hidden">
+              <div className="mobile-modal-body space-y-4">
               {/* 설비번호 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1334,19 +1333,20 @@ export default function EquipmentPage() {
                 </select>
               </div>
 
+              </div>
               {/* 버튼 */}
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
                   disabled={isSubmitting}
                 >
                   {t('equipment.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
                   disabled={isSubmitting}
                 >
                   {isSubmitting && (
@@ -1362,25 +1362,24 @@ export default function EquipmentPage() {
 
       {/* 설비 수정 모달 */}
       {showEditModal && editEquipment && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4">
-            <div className="px-6 py-4 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">
-                  {t('equipment.equipmentDetail')} - {editEquipment.equipmentNumber}
-                </h3>
-                <button
-                  onClick={() => setShowEditModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
+        <div className="mobile-modal-container" onClick={() => setShowEditModal(false)}>
+          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3 className="text-lg font-medium text-gray-900">
+                {t('equipment.equipmentDetail')} - {editEquipment.equipmentNumber}
+              </h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleUpdateEquipment} className="p-6">
+            <form onSubmit={handleUpdateEquipment} className="flex flex-col flex-1 overflow-hidden">
+              <div className="mobile-modal-body">
               {/* 설비 정보 */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* 설비번호 (읽기 전용) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1475,7 +1474,7 @@ export default function EquipmentPage() {
 
               {/* 생성/수정 정보 */}
               <div className="mt-6 pt-6 border-t">
-                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
                   {editEquipment.created_at && (
                     <div>
                       <span className="font-medium">{t('equipment.registeredDate')}:</span>{' '}
@@ -1490,20 +1489,21 @@ export default function EquipmentPage() {
                   )}
                 </div>
               </div>
+              </div>
 
               {/* 버튼 */}
-              <div className="flex justify-end space-x-3 mt-6">
+              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
                   disabled={isSubmitting}
                 >
                   {t('equipment.close')}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
                   disabled={isSubmitting}
                 >
                   {isSubmitting && (

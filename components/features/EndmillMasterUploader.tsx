@@ -174,21 +174,19 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">{t('endmill.bulkUpdateTitle')}</h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              ✕
-            </button>
-          </div>
+    <div className="mobile-modal-container" onClick={onClose}>
+      <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mobile-modal-header">
+          <h3 className="text-lg font-medium">{t('endmill.bulkUpdateTitle')}</h3>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+          >
+            ✕
+          </button>
         </div>
-        
-        <div className="p-6">
+
+        <div className="mobile-modal-body">
           {/* 템플릿 다운로드 섹션 */}
           <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <h4 className="font-medium text-blue-900 mb-2">📋 {t('endmill.step1Title')}</h4>
@@ -292,24 +290,25 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
             </div>
           )}
 
-          {/* 액션 버튼 */}
-          <div className="flex justify-end space-x-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-            >
-              {t('common.cancel')}
-            </button>
+        </div>
 
-            {validationResult && validationResult.isValid && (
-              <button
-                onClick={processValidData}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-              >
-                ✅ {t('endmill.proceedWithUpdate')}
-              </button>
-            )}
-          </div>
+        {/* 액션 버튼 */}
+        <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+          >
+            {t('common.cancel')}
+          </button>
+
+          {validationResult && validationResult.isValid && (
+            <button
+              onClick={processValidData}
+              className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              ✅ {t('endmill.proceedWithUpdate')}
+            </button>
+          )}
         </div>
       </div>
     </div>
