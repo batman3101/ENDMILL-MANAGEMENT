@@ -1936,7 +1936,6 @@ const resources = {
         // 최다 파손 교체 엔드밀 Top 3 관련
         topBrokenEndmillsTitle: 'Top 3 dao phay thay thế do hư hỏng nhiều nhất',
         rank: 'hạng',
-        times: 'lần',
         noBrokenEndmillsRecent: 'Không có thay thế do hư hỏng trong 30 ngày gần đây',
       },
 
