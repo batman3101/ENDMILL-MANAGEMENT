@@ -237,10 +237,27 @@ export default function OutboundPage() {
     clientLogger.log('QR 코드 검색 시작:', code)
     setErrorMessage('')
 
-    // 앤드밀 마스터 데이터에서 검색
-    const foundEndmill = availableEndmills.find(endmill =>
-      endmill.code === code.trim().toUpperCase()
+    const searchCode = code.trim().toUpperCase()
+
+    // 앤드밀 마스터 데이터에서 검색 (정확히 일치 또는 부분 일치)
+    // 1. 정확히 일치하는 코드 찾기
+    let foundEndmill = availableEndmills.find(endmill =>
+      endmill.code === searchCode
     )
+
+    // 2. 정확히 일치하는 것이 없으면 코드 끝부분이 일치하는 것을 찾음 (예: "002" -> "AT002")
+    if (!foundEndmill) {
+      foundEndmill = availableEndmills.find(endmill =>
+        endmill.code.endsWith(searchCode)
+      )
+    }
+
+    // 3. 그래도 없으면 코드에 포함된 것을 찾음
+    if (!foundEndmill) {
+      foundEndmill = availableEndmills.find(endmill =>
+        endmill.code.includes(searchCode)
+      )
+    }
 
     if (foundEndmill) {
       // 재고 정보를 별도로 가져오기 (기존 아키텍처 사용)
