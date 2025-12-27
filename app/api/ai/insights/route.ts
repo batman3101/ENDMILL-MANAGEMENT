@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getGeminiService } from '@/lib/services/geminiService'
 import { createClient } from '@/lib/supabase/server'
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
+import { getFactoryToday, getFactoryDayRange } from '@/lib/utils/dateUtils'
 
 // 동적 라우트로 명시적 설정 (cookies 사용으로 인해 필요)
 export const dynamic = 'force-dynamic'
@@ -64,22 +65,29 @@ export async function GET(_request: NextRequest) {
       )
     }
 
-    // 4. 최근 7일 데이터 조회
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-    const dateFilter = sevenDaysAgo.toISOString().split('T')[0]
+    // 4. 최근 7일 데이터 조회 (공장 근무시간 기준)
+    const factoryToday = getFactoryToday()
+    const todayDate = new Date(factoryToday + 'T00:00:00Z')
+    const sevenDaysAgo = new Date(todayDate)
+    sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7)
 
-    // 4-1. 전체 통계 조회 (정확한 COUNT)
+    // 7일 전 08:00 베트남 시간부터 조회
+    const { start: dateFrom } = getFactoryDayRange(sevenDaysAgo.toISOString().split('T')[0])
+    const { end: dateTo } = getFactoryDayRange(factoryToday)
+
+    // 4-1. 전체 통계 조회 (정확한 COUNT) - created_at 사용
     const { count: totalChangesCount } = await supabase
       .from('tool_changes')
       .select('*', { count: 'exact', head: true })
-      .gte('change_date', dateFilter)
+      .gte('created_at', dateFrom)
+      .lt('created_at', dateTo)
 
     // 교체 사유별 통계
     const { data: reasonStats } = await supabase
       .from('tool_changes')
       .select('change_reason')
-      .gte('change_date', dateFilter)
+      .gte('created_at', dateFrom)
+      .lt('created_at', dateTo)
 
     const reasonCounts = (reasonStats || []).reduce((acc: Record<string, number>, item: any) => {
       const reason = item.change_reason || 'Unknown'
@@ -91,7 +99,8 @@ export async function GET(_request: NextRequest) {
     const { data: modelDamageStats } = await supabase
       .from('tool_changes')
       .select('production_model')
-      .gte('change_date', dateFilter)
+      .gte('created_at', dateFrom)
+      .lt('created_at', dateTo)
       .eq('change_reason', '파손')
       .not('production_model', 'is', null)
 
@@ -105,7 +114,8 @@ export async function GET(_request: NextRequest) {
     const { data: endmillDamageStats } = await supabase
       .from('tool_changes')
       .select('endmill_code, endmill_name')
-      .gte('change_date', dateFilter)
+      .gte('created_at', dateFrom)
+      .lt('created_at', dateTo)
       .eq('change_reason', '파손')
 
     const damageByEndmill = (endmillDamageStats || []).reduce((acc: Record<string, { count: number; name: string }>, item: any) => {
@@ -163,8 +173,8 @@ export async function GET(_request: NextRequest) {
     // 요약된 데이터 구성 (정확한 통계 기반)
     const summarizedData = {
       period: {
-        from: dateFilter,
-        to: new Date().toISOString().split('T')[0],
+        from: sevenDaysAgo.toISOString().split('T')[0],
+        to: factoryToday,
       },
       toolChanges: {
         total: totalChanges,
@@ -207,8 +217,8 @@ export async function GET(_request: NextRequest) {
     return NextResponse.json({
       insights,
       dataRange: {
-        from: sevenDaysAgo.toISOString(),
-        to: new Date().toISOString(),
+        from: dateFrom,
+        to: dateTo,
       },
       summary: recentData.summary,
     })

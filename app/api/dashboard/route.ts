@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { unstable_noStore as noStore } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
+import { getFactoryToday, getFactoryYesterday, getFactoryDayRange } from '@/lib/utils/dateUtils'
 
 // 동적 라우트로 명시적 설정 (캐싱 방지)
 export const dynamic = 'force-dynamic'
@@ -309,54 +310,58 @@ async function getInventoryStats(supabase: any) {
   }
 }
 
-// 교체 실적 통계
+// 교체 실적 통계 (공장 근무시간 기준: 베트남 08:00 시작)
 async function getToolChangeStats(supabase: any) {
-  const today = new Date().toISOString().split('T')[0]
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  // 공장 근무시간 기준 오늘/어제 날짜 및 범위 계산
+  const today = getFactoryToday()
+  const yesterday = getFactoryYesterday()
+  const todayRange = getFactoryDayRange(today)
+  const yesterdayRange = getFactoryDayRange(yesterday)
 
-  logger.log('📅 교체 실적 조회:', { today, yesterday })
-
-  // .gte()가 작동하지 않을 수 있으므로 전체 데이터를 가져와서 JavaScript로 필터링
-  const { data: allChanges, error, count } = await supabase
-    .from('tool_changes')
-    .select('id, change_date, equipment_number, t_number', { count: 'exact' })
-
-  logger.log('🔍 tool_changes 쿼리 결과:', {
-    error: error ? JSON.stringify(error) : null,
-    dataLength: allChanges?.length || 0,
-    count: count,
-    firstRecord: allChanges?.[0],
-    lastRecord: allChanges?.[allChanges.length - 1]
-  })
-
-  if (error) {
-    console.error('tool_changes 조회 오류:', error)
-    throw error
-  }
-
-  // JavaScript로 필터링 - 정확한 날짜 매칭
-  const todayChanges = (allChanges || []).filter((change: any) => change.change_date === today)
-  const yesterdayChanges = (allChanges || []).filter((change: any) => change.change_date === yesterday)
-
-  // 날짜별 분포 계산
-  const dateDistribution = (allChanges || []).reduce((acc: any, change: any) => {
-    acc[change.change_date] = (acc[change.change_date] || 0) + 1
-    return acc
-  }, {})
-
-  logger.log('📊 교체 실적 집계:', {
-    totalCount: allChanges?.length || 0,
+  logger.log('📅 교체 실적 조회 (공장 근무시간 기준):', {
     today,
     yesterday,
-    todayCount: todayChanges.length,
-    yesterdayCount: yesterdayChanges.length,
-    dateDistribution: Object.entries(dateDistribution).sort((a: any, b: any) => b[0].localeCompare(a[0])).slice(0, 5),
-    todaySample: todayChanges.slice(0, 3),
-    allDatesSample: (allChanges || []).slice(0, 5).map((c: any) => ({ date: c.change_date, equipment: c.equipment_number }))
+    todayRange,
+    yesterdayRange
   })
 
-  const todayCount = todayChanges.length
-  const yesterdayCount = yesterdayChanges.length
+  // created_at 기준으로 오늘 범위의 데이터 조회
+  const { data: todayChanges, error: todayError } = await supabase
+    .from('tool_changes')
+    .select('id, created_at, equipment_number, t_number')
+    .gte('created_at', todayRange.start)
+    .lt('created_at', todayRange.end)
+
+  if (todayError) {
+    console.error('tool_changes 오늘 조회 오류:', todayError)
+    throw todayError
+  }
+
+  // created_at 기준으로 어제 범위의 데이터 조회
+  const { data: yesterdayChanges, error: yesterdayError } = await supabase
+    .from('tool_changes')
+    .select('id, created_at, equipment_number, t_number')
+    .gte('created_at', yesterdayRange.start)
+    .lt('created_at', yesterdayRange.end)
+
+  if (yesterdayError) {
+    console.error('tool_changes 어제 조회 오류:', yesterdayError)
+    throw yesterdayError
+  }
+
+  logger.log('📊 교체 실적 집계 (공장 근무시간 기준):', {
+    today,
+    yesterday,
+    todayCount: todayChanges?.length || 0,
+    yesterdayCount: yesterdayChanges?.length || 0,
+    todaySample: (todayChanges || []).slice(0, 3).map((c: any) => ({
+      created_at: c.created_at,
+      equipment: c.equipment_number
+    }))
+  })
+
+  const todayCount = todayChanges?.length || 0
+  const yesterdayCount = yesterdayChanges?.length || 0
   const difference = todayCount - yesterdayCount
 
   // 일일 교체 실적 목표를 system_settings에서 조회

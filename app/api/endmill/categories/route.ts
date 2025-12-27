@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 
+// Vercel 동적 렌더링 강제 설정
+export const dynamic = 'force-dynamic'
+
 // Supabase 클라이언트 생성 (Service Role)
 const supabase = createServerClient()
 

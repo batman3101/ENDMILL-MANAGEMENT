@@ -1,65 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '../../../../lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
+import { getFactoryPeriodRange, getFactoryDayRange } from '@/lib/utils/dateUtils'
 
 export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url)
-    const period = url.searchParams.get('period') // 'today', 'lastWeek', 'thisWeek', 'thisMonth', 'custom'
+    const period = url.searchParams.get('period') as 'today' | 'yesterday' | 'thisWeek' | 'lastWeek' | 'thisMonth' | 'custom' | null
     const startDate = url.searchParams.get('startDate')
     const endDate = url.searchParams.get('endDate')
     const date = url.searchParams.get('date') // 기존 호환성 유지
 
-    // 기간 계산
+    // 공장 근무시간 기준으로 기간 계산 (베트남 08:00 시작)
     let dateFrom: string
     let dateTo: string
 
-    if (period === 'custom' && startDate && endDate) {
-      dateFrom = `${startDate}T00:00:00.000Z`
-      dateTo = `${endDate}T23:59:59.999Z`
-    } else if (date) {
-      // 기존 date 파라미터 호환성 유지
-      const start = new Date(date)
-      start.setHours(0, 0, 0, 0)
-      const end = new Date(date)
-      end.setHours(23, 59, 59, 999)
-      dateFrom = start.toISOString()
-      dateTo = end.toISOString()
+    if (date) {
+      // 기존 date 파라미터 - 공장 시간 기준으로 변환
+      const { start, end } = getFactoryDayRange(date)
+      dateFrom = start
+      dateTo = end
     } else {
-      const now = new Date()
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-
-      switch (period) {
-        case 'lastWeek': {
-          const weekAgo = new Date(today)
-          weekAgo.setDate(today.getDate() - 7)
-          dateFrom = weekAgo.toISOString()
-          dateTo = now.toISOString()
-          break
-        }
-        case 'thisWeek': {
-          const firstDayOfWeek = new Date(today)
-          const dayOfWeek = today.getDay()
-          const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-          firstDayOfWeek.setDate(today.getDate() + diff)
-          dateFrom = firstDayOfWeek.toISOString()
-          dateTo = now.toISOString()
-          break
-        }
-        case 'thisMonth': {
-          const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-          dateFrom = firstDayOfMonth.toISOString()
-          dateTo = now.toISOString()
-          break
-        }
-        default: {
-          // 'today' 또는 파라미터 없음
-          today.setHours(0, 0, 0, 0)
-          dateFrom = today.toISOString()
-          dateTo = now.toISOString()
-        }
-      }
+      // period 기반 필터링 - 공장 시간 기준
+      const { start, end } = getFactoryPeriodRange(
+        period || 'today',
+        startDate || undefined,
+        endDate || undefined
+      )
+      dateFrom = start
+      dateTo = end
     }
+
+    logger.log('출고 내역 조회 기간 (공장 근무시간 기준):', { period, dateFrom, dateTo })
 
     // 출고 트랜잭션 조회
     const { data: transactions, error } = await supabase

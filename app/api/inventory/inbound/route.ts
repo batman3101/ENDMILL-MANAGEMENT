@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../../lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
+import { getFactoryPeriodRange } from '@/lib/utils/dateUtils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,51 +9,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
 
     // 기간 필터 파라미터 가져오기
-    const period = searchParams.get('period') // 'today', 'lastWeek', 'thisWeek', 'thisMonth', 'custom'
+    const period = searchParams.get('period') as 'today' | 'yesterday' | 'thisWeek' | 'lastWeek' | 'thisMonth' | 'custom' | null
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
 
-    // 기간 계산
-    let dateFrom: string
-    let dateTo: string
+    // 공장 근무시간 기준으로 기간 계산 (베트남 08:00 시작)
+    const { start: dateFrom, end: dateTo } = getFactoryPeriodRange(
+      period || 'today',
+      startDate || undefined,
+      endDate || undefined
+    )
 
-    if (period === 'custom' && startDate && endDate) {
-      dateFrom = `${startDate}T00:00:00.000Z`
-      dateTo = `${endDate}T23:59:59.999Z`
-    } else {
-      const now = new Date()
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-
-      switch (period) {
-        case 'lastWeek': {
-          const weekAgo = new Date(today)
-          weekAgo.setDate(today.getDate() - 7)
-          dateFrom = weekAgo.toISOString()
-          dateTo = today.toISOString()
-          break
-        }
-        case 'thisWeek': {
-          const firstDayOfWeek = new Date(today)
-          const dayOfWeek = today.getDay()
-          const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-          firstDayOfWeek.setDate(today.getDate() + diff)
-          dateFrom = firstDayOfWeek.toISOString()
-          dateTo = now.toISOString()
-          break
-        }
-        case 'thisMonth': {
-          const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-          dateFrom = firstDayOfMonth.toISOString()
-          dateTo = now.toISOString()
-          break
-        }
-        default: {
-          // 'today' 또는 파라미터 없음
-          dateFrom = `${today.toISOString().split('T')[0]}T00:00:00.000Z`
-          dateTo = `${today.toISOString().split('T')[0]}T23:59:59.999Z`
-        }
-      }
-    }
+    logger.log('입고 내역 조회 기간 (공장 근무시간 기준):', { period, dateFrom, dateTo })
 
     const { data: transactions, error } = await supabase
       .from('inventory_transactions')

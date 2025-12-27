@@ -5,38 +5,42 @@
  */
 
 import { ReportFilter } from '../types/reports'
+import { getFactoryToday } from './dateUtils'
 
 // ========================================
 // 날짜 관련 유틸리티
 // ========================================
 
 /**
- * 리포트 필터에서 시작일과 종료일을 계산합니다
+ * 리포트 필터에서 시작일과 종료일을 계산합니다 (공장 근무시간 기준)
+ *
+ * 베트남 공장 근무시간 기준 (08:00 시작)
  */
 export function getDateRangeFromFilter(filter: ReportFilter): { startDate: string; endDate: string } {
-  const today = new Date()
+  // 공장 근무시간 기준 오늘 날짜
+  const factoryToday = getFactoryToday()
+  const todayDate = new Date(factoryToday + 'T00:00:00Z')
   let startDate: Date
-  const endDate: Date = today
 
   switch (filter.period) {
     case 'today':
-      startDate = new Date(today)
+      startDate = new Date(todayDate)
       break
     case 'week':
-      startDate = new Date(today)
-      startDate.setDate(today.getDate() - 7)
+      startDate = new Date(todayDate)
+      startDate.setUTCDate(todayDate.getUTCDate() - 7)
       break
     case 'month':
-      startDate = new Date(today)
-      startDate.setMonth(today.getMonth() - 1)
+      startDate = new Date(todayDate)
+      startDate.setUTCMonth(todayDate.getUTCMonth() - 1)
       break
     case 'quarter':
-      startDate = new Date(today)
-      startDate.setMonth(today.getMonth() - 3)
+      startDate = new Date(todayDate)
+      startDate.setUTCMonth(todayDate.getUTCMonth() - 3)
       break
     case 'year':
-      startDate = new Date(today)
-      startDate.setFullYear(today.getFullYear() - 1)
+      startDate = new Date(todayDate)
+      startDate.setUTCFullYear(todayDate.getUTCFullYear() - 1)
       break
     case 'custom':
       if (!filter.startDate || !filter.endDate) {
@@ -47,13 +51,13 @@ export function getDateRangeFromFilter(filter: ReportFilter): { startDate: strin
         endDate: filter.endDate
       }
     default:
-      startDate = new Date(today)
-      startDate.setMonth(today.getMonth() - 1)
+      startDate = new Date(todayDate)
+      startDate.setUTCMonth(todayDate.getUTCMonth() - 1)
   }
 
   return {
     startDate: startDate.toISOString().split('T')[0],
-    endDate: endDate.toISOString().split('T')[0]
+    endDate: factoryToday
   }
 }
 

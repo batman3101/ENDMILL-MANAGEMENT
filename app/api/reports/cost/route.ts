@@ -15,6 +15,7 @@ import {
   maxBy,
   minBy
 } from '../../../../lib/utils/reportCalculations'
+import { getFactoryDayRange, getFactoryDateFromCreatedAt } from '../../../../lib/utils/dateUtils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,15 +27,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Filter is required' }, { status: 400 })
     }
 
-    // 날짜 범위 계산
+    // 날짜 범위 계산 (공장 근무시간 기준)
     const { startDate, endDate } = getDateRangeFromFilter(filter)
 
-    // 1. tool_changes 데이터 조회
+    // 공장 시간 기준 UTC 범위로 변환
+    const { start: dateFrom } = getFactoryDayRange(startDate)
+    const { end: dateTo } = getFactoryDayRange(endDate)
+
+    // 1. tool_changes 데이터 조회 (created_at 사용)
     let tcQuery = supabase
       .from('tool_changes')
-      .select('id, change_date, equipment_number, production_model, tool_life, endmill_code')
-      .gte('change_date', startDate)
-      .lte('change_date', endDate)
+      .select('id, change_date, created_at, equipment_number, production_model, tool_life, endmill_code')
+      .gte('created_at', dateFrom)
+      .lt('created_at', dateTo)
 
     if (filter.equipmentModel) {
       tcQuery = tcQuery.eq('production_model', filter.equipmentModel)
@@ -81,15 +86,20 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // 5. 데이터 변환
+    // 5. 데이터 변환 (공장 근무시간 기준 날짜 사용)
     const changes = filteredChanges.map((change: any) => {
       const unitCostString = change.endmill_types?.unit_cost || '0'
       const unitCost = typeof unitCostString === 'string'
         ? parseFloat(unitCostString)
         : Number(unitCostString)
 
+      // created_at에서 공장 근무일 날짜 계산
+      const factoryDate = change.created_at
+        ? getFactoryDateFromCreatedAt(change.created_at)
+        : change.change_date
+
       return {
-        date: change.change_date,
+        date: factoryDate,
         equipmentNumber: change.equipment_number,
         model: change.production_model || '미지정',
         toolCode: change.endmill_types?.code || change.endmill_code,
