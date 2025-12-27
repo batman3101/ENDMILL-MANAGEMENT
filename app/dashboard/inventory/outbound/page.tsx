@@ -1011,8 +1011,6 @@ export default function OutboundPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.processedTime')}</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.endmillCode')}</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.endmillName')}</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.equipmentNumber')}</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">T{t('common.code')}</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('common.quantity')}</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.purpose')}</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.currentStockValue')} (VND)</th>
@@ -1026,8 +1024,6 @@ export default function OutboundPage() {
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.processedAt}</td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.endmillCode}</td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.endmillName}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.equipmentNumber}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">T{item.tNumber.toString().padStart(2, '0')}</td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{reasonTranslations[item.purpose] || item.purpose}</td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-green-600">{item.totalValue.toLocaleString()}</td>
@@ -1125,34 +1121,6 @@ export default function OutboundPage() {
                   disabled
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('inventory.equipmentNumber')}
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.equipmentNumber}
-                  onChange={(e) => setEditingItem({ ...editingItem, equipmentNumber: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  placeholder={t('inventory.equipmentNumberPlaceholder')}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('inventory.tNumber')}
-                </label>
-                <select
-                  value={editingItem.tNumber}
-                  onChange={(e) => setEditingItem({ ...editingItem, tNumber: parseInt(e.target.value) || 1 })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                >
-                  {Array.from({length: tNumberRange.max - tNumberRange.min + 1}, (_, i) => i + tNumberRange.min).map(num => (
-                    <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
-                  ))}
-                </select>
               </div>
 
               <div>
