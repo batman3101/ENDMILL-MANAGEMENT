@@ -422,7 +422,8 @@ export default function OutboundPage() {
     }
   }
 
-  const handleCancelOutbound = async (transactionId: string) => {
+  // 향후 사용 예정
+  const _handleCancelOutbound = async (transactionId: string) => {
     const confirmed = await confirmation.showConfirmation({
       title: t('inventory.cancelOutbound'),
       message: t('inventory.cancelOutboundConfirm'),

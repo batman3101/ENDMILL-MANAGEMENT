@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     // Admin 클라이언트를 사용하여 RLS 우회하여 업로드
     const adminClient = createAdminClient()
-    const { data: uploadData, error: uploadError } = await adminClient.storage
+    const { error: uploadError } = await adminClient.storage
       .from(bucket)
       .upload(filePath, fileBuffer, {
         contentType,

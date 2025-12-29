@@ -44,7 +44,7 @@ export default function ToolChangesPage() {
   const {
     stats,
     isLoading: isStatsLoading,
-    error: statsError
+    error: _statsError
   } = useToolChangeStats(undefined, true)
 
   // 폼 상태
@@ -76,6 +76,7 @@ export default function ToolChangesPage() {
   // 설정에서 값 가져오기
   const { settings } = useSettings()
   const toolChangesReasons = settings.toolChanges.reasons
+  const availableProcessesFromSettings = settings.equipment.processes
 
   // 교체사유 번역 매핑 함수
   const getReasonTranslation = (reason: string) => {
@@ -243,7 +244,8 @@ export default function ToolChangesPage() {
     return `${year}-${month}-${day} ${hour}:${minute}`
   }
 
-  const getTodayDate = () => {
+  // 향후 사용 예정
+  const _getTodayDate = () => {
     const now = new Date()
     const year = now.getFullYear()
     const month = String(now.getMonth() + 1).padStart(2, '0')
@@ -679,7 +681,7 @@ export default function ToolChangesPage() {
     try {
       await downloadToolChangesTemplate(
         availableModels,
-        ['CNC1', 'CNC2', 'CNC2-1'],
+        availableProcessesFromSettings,
         toolChangesReasons
       )
       showSuccess('템플릿 다운로드', 'Excel 템플릿이 다운로드되었습니다.')
@@ -1020,9 +1022,9 @@ export default function ToolChangesPage() {
                   required
                 >
                   <option value="">{t('toolChanges.selectProcess')}</option>
-                  <option value="CNC1">CNC1</option>
-                  <option value="CNC2">CNC2</option>
-                  <option value="CNC2-1">CNC2-1</option>
+                  {availableProcessesFromSettings.map(process => (
+                    <option key={process} value={process}>{process}</option>
+                  ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
                   {formData.equipment_number ? t('toolChanges.autoFilledByEquipment') : t('toolChanges.selectProcessPrompt')}
@@ -1593,9 +1595,9 @@ export default function ToolChangesPage() {
                       }`}
                       required
                     >
-                      <option value="CNC1">CNC1</option>
-                      <option value="CNC2">CNC2</option>
-                      <option value="CNC2-1">CNC2-1</option>
+                      {availableProcessesFromSettings.map(process => (
+                        <option key={process} value={process}>{process}</option>
+                      ))}
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
                       {editingItem.equipment_number ? t('toolChanges.autoFilledBasis') : t('toolChanges.selectProcessOption')}

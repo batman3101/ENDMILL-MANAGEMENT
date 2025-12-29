@@ -58,6 +58,8 @@ export default function EquipmentPage() {
   const itemsPerPage = 20 // 20대씩 고정 표시
   const equipmentLocations = getAvailableLocations()
   const equipmentStatuses = settings.equipment.statuses
+  const settingsProcesses = settings.equipment.processes // 설정에서 공정 목록
+  const settingsModels = settings.equipment.models // 설정에서 모델 목록
 
   // 미사용 변수 (향후 사용 예정)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -790,7 +792,7 @@ export default function EquipmentPage() {
         <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 {t('equipment.modelDistribution')}</h3>
           <div className="space-y-3">
-            {(availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7'])
+            {(availableModels.length > 0 ? availableModels : settingsModels)
               .map(model => {
                 const modelEquipments = equipments.filter(eq => eq.current_model === model)
                 const aCount = modelEquipments.filter(eq => eq.location === 'A동').length
@@ -818,7 +820,7 @@ export default function EquipmentPage() {
                 </div>
               ))}
             {/* 배치된 설비가 없을 때 */}
-            {(availableModels.length > 0 ? availableModels : ['PA1', 'PA2', 'PS', 'B7', 'Q7'])
+            {(availableModels.length > 0 ? availableModels : settingsModels)
               .filter(model => equipments.filter(eq => eq.current_model === model).length > 0).length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <p>{t('equipment.noDeployedEquipment')}</p>
@@ -831,7 +833,7 @@ export default function EquipmentPage() {
         <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">⚙️ {t('equipment.processDistribution')}</h3>
           <div className="space-y-3">
-            {(availableProcesses.length > 0 ? availableProcesses : ['CNC1', 'CNC2', 'CNC2-1'])
+            {(availableProcesses.length > 0 ? availableProcesses : settingsProcesses)
               .map(process => {
                 const processEquipments = equipments.filter(eq => eq.process === process)
                 const aCount = processEquipments.filter(eq => eq.location === 'A동').length
@@ -862,7 +864,7 @@ export default function EquipmentPage() {
                 </div>
               ))}
             {/* 배치된 설비가 없을 때 */}
-            {(availableProcesses.length > 0 ? availableProcesses : ['CNC1', 'CNC2', 'CNC2-1'])
+            {(availableProcesses.length > 0 ? availableProcesses : settingsProcesses)
               .filter(process => equipments.filter(eq => eq.process === process).length > 0).length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <p>{t('equipment.noDeployedEquipment')}</p>

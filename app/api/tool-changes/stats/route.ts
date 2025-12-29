@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { serverSupabaseService } from '../../../../lib/services/supabaseService'
 import { logger } from '../../../../lib/utils/logger'
 import { createClient } from '@/lib/supabase/server'
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'

@@ -147,17 +147,19 @@ export default function CAMSheetsPage() {
     logger.log('교체 실적 개수:', toolChanges.length)
     logger.log('재고 데이터 개수:', inventoryData.length)
 
+    // 설정에서 가져온 공정 목록으로 동적 초기화
+    const initialProcessAccuracy: { [key: string]: number } = {}
+    availableProcesses.forEach(process => {
+      initialProcessAccuracy[process] = 0
+    })
+
     if (camSheets.length === 0) {
       return {
         toolLifeAccuracy: 0,
         averageChangeInterval: 0,
         inventoryLinkage: 0,
         standardization: 0,
-        processAccuracy: {
-          'CNC1': 0,
-          'CNC2': 0,
-          'CNC2-1': 0
-        },
+        processAccuracy: initialProcessAccuracy,
         endmillTypeIntervals: {
           FLAT: 0,
           BALL: 0,
@@ -179,11 +181,7 @@ export default function CAMSheetsPage() {
 
     // 1. Tool Life 예측 정확도 (실제 교체 실적 데이터 기반)
     let toolLifeAccuracy = 0
-    const processAccuracy: { [key: string]: number } = {
-      'CNC1': 0,
-      'CNC2': 0,
-      'CNC2-1': 0
-    }
+    const processAccuracy: { [key: string]: number } = { ...initialProcessAccuracy }
 
     logger.log('=== Tool Life 예측 정확도 계산 ===')
     logger.log('교체 실적 데이터 개수:', toolChanges.length)
@@ -224,8 +222,7 @@ export default function CAMSheetsPage() {
       }
 
       // 공정별 정확도 계산
-      const processes = ['CNC1', 'CNC2', 'CNC2-1']
-      processes.forEach(process => {
+      availableProcesses.forEach(process => {
         const processChanges = validChanges.filter(change => change.process === process)
         if (processChanges.length > 0) {
           const processTotal = processChanges.reduce((sum, change) => {
@@ -369,11 +366,11 @@ export default function CAMSheetsPage() {
 
   const insights = calculateInsights()
   const processKeys = Object.keys(insights.processAccuracy) as (keyof typeof insights.processAccuracy)[]
-  const bestProcessKey = processKeys.length > 0 
-    ? processKeys.reduce((a, b) => 
+  const bestProcessKey = processKeys.length > 0
+    ? processKeys.reduce((a, b) =>
         insights.processAccuracy[a] > insights.processAccuracy[b] ? a : b
       )
-    : 'CNC1'
+    : availableProcesses[0] || ''
   const bestProcess = [bestProcessKey, insights.processAccuracy[bestProcessKey] || 0]
 
   // 정렬 처리

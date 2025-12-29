@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useInventorySearch } from '../../lib/hooks/useInventory'
 import { useToast } from '../../components/shared/Toast'
+import { useSettings } from '../../lib/hooks/useSettings'
 
 interface EndmillInfo {
   tNumber: number
@@ -31,6 +32,8 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
   const { t } = useTranslation()
   const { showSuccess, showError, showWarning } = useToast()
   const { searchByCode } = useInventorySearch()
+  const { settings } = useSettings()
+  const availableProcesses = settings.equipment.processes
 
   const [formData, setFormData] = useState<CAMSheetFormData>({
     model: initialData?.model || '',
@@ -200,9 +203,9 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
                 required
               >
                 <option value="">{t('camSheets.selectProcess')}</option>
-                <option value="CNC1">CNC1</option>
-                <option value="CNC2">CNC2</option>
-                <option value="CNC2-1">CNC2-1</option>
+                {availableProcesses.map(process => (
+                  <option key={process} value={process}>{process}</option>
+                ))}
               </select>
             </div>
 

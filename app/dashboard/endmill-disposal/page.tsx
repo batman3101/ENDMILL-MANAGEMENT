@@ -8,7 +8,6 @@ import ConfirmationModal from '@/components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation } from '@/lib/hooks/useConfirmation'
 import { clientLogger } from '@/lib/utils/logger'
 import { useAuth } from '@/lib/hooks/useAuth'
-import { supabase } from '@/lib/supabase/client'
 
 interface EndmillDisposal {
   id: string

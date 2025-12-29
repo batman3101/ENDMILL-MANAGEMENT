@@ -46,7 +46,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [supplierPrices, setSupplierPrices] = useState<SupplierPrice[]>([])
-  const [showSupplierSection, setShowSupplierSection] = useState(!editData) // 신규 등록 시 기본 표시
+  const [_showSupplierSection, setShowSupplierSection] = useState(!editData) // 신규 등록 시 기본 표시
   const [categories, setCategories] = useState<any[]>([])
   const { showSuccess, showError } = useToast()
 
