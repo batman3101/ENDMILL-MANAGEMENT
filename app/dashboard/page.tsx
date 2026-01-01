@@ -324,8 +324,11 @@ export default function DashboardPage() {
         {/* 설비별 교체 빈도 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('equipment.model')} {t('toolChanges.changeReason')}</h4>
-            <span className="text-2xl">⚡</span>
+            <div className="flex items-center gap-2">
+              <h4 className="text-lg font-semibold text-gray-800">{t('equipment.model')} {t('toolChanges.changeReason')}</h4>
+              <span className="text-2xl">⚡</span>
+            </div>
+            <span className="text-sm text-gray-500">{t('dashboard.lastMonth')}</span>
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
@@ -358,8 +361,11 @@ export default function DashboardPage() {
         {/* 최다 파손 교체 엔드밀 Top 3 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('dashboard.topBrokenEndmillsTitle')}</h4>
-            <span className="text-2xl">🔨</span>
+            <div className="flex items-center gap-2">
+              <h4 className="text-lg font-semibold text-gray-800">{t('dashboard.topBrokenEndmillsTitle')}</h4>
+              <span className="text-2xl">🔨</span>
+            </div>
+            <span className="text-sm text-gray-500">{t('dashboard.lastMonth')}</span>
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
@@ -519,8 +525,11 @@ export default function DashboardPage() {
         {/* 앤드밀 소진율 높은 설비 Top5 */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('dashboard.endmill')} {t('dashboard.lifeConsumption')} {t('common.high')} {t('dashboard.equipment')} Top5</h4>
-            <span className="text-2xl">⚙️</span>
+            <div className="flex items-center gap-2">
+              <h4 className="text-lg font-semibold text-gray-800">{t('dashboard.endmill')} {t('dashboard.lifeConsumption')} {t('common.high')} {t('dashboard.equipment')} Top5</h4>
+              <span className="text-2xl">⚙️</span>
+            </div>
+            <span className="text-sm text-gray-500">{t('dashboard.lastMonth')}</span>
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
@@ -607,12 +616,15 @@ export default function DashboardPage() {
                   message = `${alert.endmillCode || 'Unknown'} ${alert.endmillName || ''} - ${t('inventory.stockStatus')} ${alert.currentStock}${t('dashboard.pieceCount')} (${t('dashboard.minStock')} ${alert.minStock}${t('dashboard.pieceCount')})`
                 } else if (alert.type === 'trend_increase') {
                   title = t('dashboard.trendIncrease')
-                  message = `${t('dashboard.trendMessage')} - ${t('dashboard.recentDays')} ${alert.recentCount}${t('dashboard.cases')} (${t('dashboard.vsLastWeek')} +${alert.increase}%)`
+                  message = `${alert.equipmentNumber || 'Unknown'} ${t('equipment.title')} - ${t('dashboard.recentDays')} ${alert.recentCount}${t('dashboard.cases')} (${t('dashboard.vsLastWeek')} +${alert.increase}%)`
                 }
 
-                const timeText = alert.minutesAgo < 60
-                  ? `${alert.minutesAgo}${t('dashboard.minute')} ${t('dashboard.ago')}`
-                  : `${Math.floor(alert.minutesAgo / 60)}${t('dashboard.hour')} ${t('dashboard.ago')}`
+                // 추세 분석은 실시간이 아니므로 "최근 7일" 표시
+                const timeText = alert.type === 'trend_increase'
+                  ? t('dashboard.last7Days') || '최근 7일'
+                  : alert.minutesAgo < 60
+                    ? `${alert.minutesAgo}${t('dashboard.minute')} ${t('dashboard.ago')}`
+                    : `${Math.floor(alert.minutesAgo / 60)}${t('dashboard.hour')} ${t('dashboard.ago')}`
 
                 return (
                   <div key={index} className={`flex items-start p-4 bg-${alert.color}-50 rounded-lg border border-${alert.color}-200`}>

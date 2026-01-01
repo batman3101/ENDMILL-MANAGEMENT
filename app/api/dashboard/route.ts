@@ -518,7 +518,7 @@ async function getFrequencyAnalysis(supabase: any) {
     return acc
   }, {})
 
-  // 각 시리즈별 평균 교체 간격 계산
+  // 각 시리즈별 평균 교체 간격 계산 및 횟수 내림차순 정렬
   const frequencyData = Object.entries(modelStats).map(([series, stats]: [string, any]) => {
     const avgInterval = stats.count > 1 ? Math.round(7 / stats.count * 10) / 10 : 7
     return {
@@ -526,7 +526,7 @@ async function getFrequencyAnalysis(supabase: any) {
       count: stats.count,
       avgInterval
     }
-  })
+  }).sort((a, b) => b.count - a.count) // 횟수 내림차순 정렬
 
   return frequencyData
 }
@@ -689,11 +689,12 @@ async function getModelCostAnalysis(supabase: any) {
   })).sort((a, b) => b.cost - a.cost)
 }
 
-// 최근 경고 및 알림 조회
+// 최근 경고 및 알림 조회 (각 유형당 최대 3개씩)
 async function getRecentAlerts(supabase: any) {
   logger.log('🚨 최근 알림 조회 시작')
 
-  const alerts = []
+  const alerts: any[] = []
+  const MAX_ALERTS_PER_TYPE = 3
 
   // 1. 비정상 파손 감지: 파손 사유로 교체된 최근 이력 (가장 중요하므로 먼저)
   const { data: allChanges, error: changesError } = await supabase
@@ -714,11 +715,11 @@ async function getRecentAlerts(supabase: any) {
       latestBroken: brokenTools[0] || null
     })
 
-    if (brokenTools.length > 0) {
-      const change = brokenTools[0]
+    // 최대 3개까지 추가
+    brokenTools.slice(0, MAX_ALERTS_PER_TYPE).forEach((change: any) => {
       const minutesAgo = Math.floor((new Date().getTime() - new Date(change.created_at).getTime()) / 60000)
 
-      logger.log('⚠️ 최근 파손 발견:', {
+      logger.log('⚠️ 파손 발견:', {
         equipment: change.equipment_number,
         tNumber: change.t_number,
         createdAt: change.created_at,
@@ -733,13 +734,13 @@ async function getRecentAlerts(supabase: any) {
         minutesAgo,
         color: 'orange'
       })
-    }
+    })
 
     // 2. 비정상 마모 감지: 표준 수명보다 빠르게 소진된 교체 이력
     const recentChangesWithLife = (allChanges || [])
       .filter((change: any) => change.tool_life != null && change.endmill_type_id != null)
       .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 10)
+      .slice(0, 30) // 더 많은 데이터에서 찾기 위해 확장
 
     // endmill_types 조회 (standard_life 필요)
     const { data: endmillTypes, error: etError } = await supabase
@@ -748,8 +749,11 @@ async function getRecentAlerts(supabase: any) {
 
     if (!etError && endmillTypes) {
       const endmillMap = new Map(endmillTypes.map((et: any) => [et.id, et]))
+      let abnormalWearCount = 0
 
       for (const change of recentChangesWithLife) {
+        if (abnormalWearCount >= MAX_ALERTS_PER_TYPE) break
+
         const endmillType: any = endmillMap.get(change.endmill_type_id)
         const standardLife = endmillType?.standard_life || 800
         const actualLife = change.tool_life || 0
@@ -767,10 +771,72 @@ async function getRecentAlerts(supabase: any) {
             minutesAgo,
             color: 'red'
           })
-          break // 첫 번째만 추가
+          abnormalWearCount++
         }
       }
     }
+
+    // 4. 추세 상승 경보: 이전 주 대비 교체 건수 20% 이상 증가
+    const now = new Date()
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+
+    // 최근 7일 교체 건수 (모델별)
+    const recentChanges = (allChanges || []).filter((c: any) => new Date(c.created_at) >= sevenDaysAgo)
+    // 이전 7일 교체 건수 (모델별)
+    const previousChanges = (allChanges || []).filter((c: any) =>
+      new Date(c.created_at) >= fourteenDaysAgo &&
+      new Date(c.created_at) < sevenDaysAgo
+    )
+
+    // 설비번호별로 교체 건수 집계
+    const recentByEquipment = new Map<string, number>()
+    const previousByEquipment = new Map<string, number>()
+
+    recentChanges.forEach((c: any) => {
+      const key = c.equipment_number
+      recentByEquipment.set(key, (recentByEquipment.get(key) || 0) + 1)
+    })
+
+    previousChanges.forEach((c: any) => {
+      const key = c.equipment_number
+      previousByEquipment.set(key, (previousByEquipment.get(key) || 0) + 1)
+    })
+
+    // 20% 이상 증가한 설비 찾기
+    const trendAlerts: any[] = []
+    recentByEquipment.forEach((recentCount, equipmentNumber) => {
+      const previousCount = previousByEquipment.get(equipmentNumber) || 0
+
+      // 이전 주에 데이터가 있고, 20% 이상 증가한 경우
+      if (previousCount > 0) {
+        const increaseRate = ((recentCount - previousCount) / previousCount) * 100
+        if (increaseRate >= 20) {
+          trendAlerts.push({
+            equipmentNumber,
+            recentCount,
+            previousCount,
+            increaseRate: Math.round(increaseRate)
+          })
+        }
+      }
+    })
+
+    // 증가율 높은 순으로 정렬 후 최대 3개 추가
+    trendAlerts
+      .sort((a, b) => b.increaseRate - a.increaseRate)
+      .slice(0, MAX_ALERTS_PER_TYPE)
+      .forEach((trend) => {
+        alerts.push({
+          type: 'trend_increase',
+          severity: 'info',
+          equipmentNumber: trend.equipmentNumber,
+          recentCount: trend.recentCount,
+          increase: trend.increaseRate,
+          minutesAgo: 0, // 추세 분석은 실시간이 아님
+          color: 'blue'
+        })
+      })
   }
 
   // 3. 재고 부족 경보: 최소 재고 이하인 항목
@@ -786,17 +852,18 @@ async function getRecentAlerts(supabase: any) {
 
     logger.log('📦 재고 부족 항목:', { criticalCount: criticalItems.length })
 
-    if (criticalItems.length > 0) {
-      const item = criticalItems[0]
+    // endmill_types 조회 (모든 재고 부족 항목에 대해)
+    const { data: endmillTypesForStock } = await supabase
+      .from('endmill_types')
+      .select('id, code, name')
 
-      // endmill_types 정보 조회
-      const { data: endmillType } = await supabase
-        .from('endmill_types')
-        .select('code, name')
-        .eq('id', item.endmill_type_id)
-        .single()
+    const endmillStockMap = new Map((endmillTypesForStock || []).map((et: any) => [et.id, et]))
 
+    // 최대 3개까지 추가
+    criticalItems.slice(0, MAX_ALERTS_PER_TYPE).forEach((item: any) => {
+      const endmillType: any = endmillStockMap.get(item.endmill_type_id)
       const minutesAgo = Math.floor((new Date().getTime() - new Date(item.last_updated).getTime()) / 60000)
+
       alerts.push({
         type: 'low_stock',
         severity: 'medium',
@@ -807,7 +874,7 @@ async function getRecentAlerts(supabase: any) {
         minutesAgo,
         color: 'yellow'
       })
-    }
+    })
   }
 
   logger.log('✅ 최근 알림 조회 완료:', { alertCount: alerts.length })
