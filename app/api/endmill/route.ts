@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
 
       // 최근 교체 이력 조회 (상세 페이지용)
       if (result.data?.code) {
-        const changesResult = await supabase
+        // 모든 교체 이력 조회 (평균 수명 계산용)
+        const allChangesResult = await supabase
           .from('tool_changes')
           .select(`
             id,
@@ -70,10 +71,10 @@ export async function GET(request: NextRequest) {
           `)
           .eq('endmill_code', result.data.code)
           .order('change_date', { ascending: false })
-          .limit(20)
 
-        if (changesResult.data) {
-          recentChanges = changesResult.data.map((change: any) => ({
+        if (allChangesResult.data) {
+          // 최근 20개만 recentChanges로 사용
+          recentChanges = allChangesResult.data.slice(0, 20).map((change: any) => ({
             equipmentNumber: change.equipment_number ? `C${change.equipment_number.toString().padStart(3, '0')}` : 'N/A',
             equipmentModel: change.production_model || change.model || 'N/A',
             changeDate: change.change_date ? new Date(change.change_date).toLocaleString('ko-KR') : 'N/A',
@@ -82,6 +83,34 @@ export async function GET(request: NextRequest) {
             previousLife: change.tool_life || 0,
             changedBy: change.user_profiles?.name || '알 수 없음'
           }))
+
+          // 모델/공정 조합별 실제 평균 수명 계산
+          const averageLifeByModelProcess: Record<string, { total: number; count: number }> = {}
+
+          allChangesResult.data.forEach((change: any) => {
+            if (change.tool_life && change.tool_life > 0) {
+              const model = change.production_model || change.model || 'N/A'
+              const process = change.process || 'N/A'
+              const key = `${model}|${process}`
+
+              if (!averageLifeByModelProcess[key]) {
+                averageLifeByModelProcess[key] = { total: 0, count: 0 }
+              }
+              averageLifeByModelProcess[key].total += change.tool_life
+              averageLifeByModelProcess[key].count += 1
+            }
+          })
+
+          // 평균 계산하여 맵에 저장
+          const averageLifeMap: Record<string, number> = {}
+          Object.entries(averageLifeByModelProcess).forEach(([key, value]) => {
+            if (value.count > 0) {
+              averageLifeMap[key] = Math.round(value.total / value.count)
+            }
+          })
+
+          // result.data에 averageLifeMap 추가
+          ;(result.data as any).averageLifeMap = averageLifeMap
         }
       }
 
@@ -147,21 +176,31 @@ export async function GET(request: NextRequest) {
         tNumber: cs.t_number
       })) || []
 
+      // 모델/공정별 평균 수명 맵 (상세 조회 시에만 존재)
+      const averageLifeMap = endmill.averageLifeMap || {}
+
       // 현재 사용 중인 설비 정보 (tool_positions에서 status가 'in_use'인 것만)
       const currentUsage = endmill.tool_positions?.filter((tp: any) => tp.status === 'in_use' && tp.equipment)
-        .map((tp: any) => ({
-          equipmentNumber: tp.equipment?.equipment_number || 'N/A',
-          equipmentModel: tp.equipment?.current_model || 'N/A',
-          equipmentProcess: tp.equipment?.process || 'N/A',
-          positionNumber: tp.position_number,
-          currentLife: tp.current_life || 0,
-          totalLife: tp.total_life || 0,
-          specToolLife: camSheets.find((cs: any) =>
-            cs.model === tp.equipment?.current_model &&
-            cs.process === tp.equipment?.process
-          )?.toolLife || null,
-          installDate: tp.install_date
-        })) || []
+        .map((tp: any) => {
+          const equipmentModel = tp.equipment?.current_model || 'N/A'
+          const equipmentProcess = tp.equipment?.process || 'N/A'
+          const averageLifeKey = `${equipmentModel}|${equipmentProcess}`
+
+          return {
+            equipmentNumber: tp.equipment?.equipment_number || 'N/A',
+            equipmentModel,
+            equipmentProcess,
+            positionNumber: tp.position_number,
+            currentLife: tp.current_life || 0,
+            totalLife: tp.total_life || 0,
+            specToolLife: camSheets.find((cs: any) =>
+              cs.model === equipmentModel &&
+              cs.process === equipmentProcess
+            )?.toolLife || null,
+            installDate: tp.install_date,
+            averageActualLife: averageLifeMap[averageLifeKey] || null
+          }
+        }) || []
 
       // 총 사용 횟수 계산
       const totalUsageCount = endmill.tool_positions?.reduce((sum: number, tp: any) => {

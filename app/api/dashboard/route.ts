@@ -192,12 +192,11 @@ async function getEquipmentStats(supabase: any) {
 
 // 교체 사유 분석 (교체 실적 기반)
 async function getEndmillUsageStats(supabase: any) {
-  // 이번 달 교체 실적 조회
-  const currentMonth = new Date().getMonth() + 1
-  const currentYear = new Date().getFullYear()
-  const startDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`
+  // 최근 30일 교체 실적 조회
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const startDate = thirtyDaysAgo
 
-  logger.log('🔧 교체 사유 분석 시작:', { currentMonth, currentYear, startDate })
+  logger.log('🔧 교체 사유 분석 시작:', { startDate, period: '최근 30일' })
 
   const { data: allChanges, error } = await supabase
     .from('tool_changes')
@@ -208,10 +207,10 @@ async function getEndmillUsageStats(supabase: any) {
     throw error
   }
 
-  // JavaScript로 필터링: 이번 달 데이터만
-  const monthlyChanges = (allChanges || []).filter((change: any) => change.change_date >= startDate)
+  // JavaScript로 필터링: 최근 30일 데이터만
+  const recentChanges = (allChanges || []).filter((change: any) => change.change_date >= startDate)
 
-  if (!monthlyChanges || monthlyChanges.length === 0) {
+  if (!recentChanges || recentChanges.length === 0) {
     return {
       total: 0,
       normalLife: 0,
@@ -222,7 +221,7 @@ async function getEndmillUsageStats(supabase: any) {
   }
 
   // 교체 사유별 집계
-  const stats = monthlyChanges.reduce((acc: any, change: any) => {
+  const stats = recentChanges.reduce((acc: any, change: any) => {
     const reason = change.change_reason || '기타'
 
     if (reason === '수명완료') {
@@ -237,7 +236,7 @@ async function getEndmillUsageStats(supabase: any) {
     return acc
   }, { normalLife: 0, broken: 0, premature: 0 })
 
-  const total = monthlyChanges.length
+  const total = recentChanges.length
   const brokenRate = total > 0 ? Math.round((stats.broken / total) * 100) : 0
 
   logger.log('✅ 교체 사유 분석 완료:', {

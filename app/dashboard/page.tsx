@@ -138,7 +138,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-800">{t('dashboard.changeReasonAnalysis')}</h3>
-            <span className="text-sm text-gray-500">{t('dashboard.thisMonth')}</span>
+            <span className="text-sm text-gray-500">{t('dashboard.lastMonth')}</span>
           </div>
           <div className="flex items-center justify-center">
             <DonutChart
