@@ -58,6 +58,8 @@ export default function ToolChangesPage() {
   const [editAvailableTNumbers, setEditAvailableTNumbers] = useState<number[]>([]) // CAM Sheet 기준 T번호 목록 (수정 모달용)
   const [isManualEndmillInput, setIsManualEndmillInput] = useState(false)
   const [isEditManualEndmillInput, setIsEditManualEndmillInput] = useState(false)
+  const [suggestedToolLife, setSuggestedToolLife] = useState<number | null>(null) // CAM Sheet 적용 Tool life (추가 폼용)
+  const [editSuggestedToolLife, setEditSuggestedToolLife] = useState<number | null>(null) // CAM Sheet 적용 Tool life (수정 모달용)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 20
@@ -205,15 +207,20 @@ export default function ToolChangesPage() {
       const result = await response.json()
 
       if (result.success && result.data.endmillInfo) {
-        const { endmillCode, endmillName } = result.data.endmillInfo
+        const { endmillCode, endmillName, suggestedToolLife: apiSuggestedToolLife } = result.data.endmillInfo
         setFormData(prev => ({
           ...prev,
           endmill_code: endmillCode || '',
           endmill_name: endmillName || ''
         }))
+        // CAM Sheet에서 가져온 적용 Tool life 설정
+        setSuggestedToolLife(apiSuggestedToolLife || null)
+      } else {
+        setSuggestedToolLife(null)
       }
     } catch (error) {
       clientLogger.error('T번호 자동입력 오류:', error)
+      setSuggestedToolLife(null)
     }
   }, [])
 
@@ -389,15 +396,20 @@ export default function ToolChangesPage() {
       const result = await response.json()
 
       if (result.success && result.data.endmillInfo) {
-        const { endmillCode, endmillName } = result.data.endmillInfo
+        const { endmillCode, endmillName, suggestedToolLife: apiSuggestedToolLife } = result.data.endmillInfo
         setEditingItem(prev => prev ? ({
           ...prev,
           endmill_code: endmillCode || '',
           endmill_name: endmillName || ''
         }) : null)
+        // CAM Sheet에서 가져온 적용 Tool life 설정
+        setEditSuggestedToolLife(apiSuggestedToolLife || null)
+      } else {
+        setEditSuggestedToolLife(null)
       }
     } catch (error) {
       clientLogger.error('수정 모달 T번호 자동입력 오류:', error)
+      setEditSuggestedToolLife(null)
     }
   }, [])
 
@@ -509,6 +521,7 @@ export default function ToolChangesPage() {
             changed_by: ''
           })
           setIsManualEndmillInput(false)
+          setSuggestedToolLife(null)
         } else {
           showError('등록 실패', result.error || '교체 실적 등록에 실패했습니다.')
         }
@@ -559,6 +572,13 @@ export default function ToolChangesPage() {
     setEditingItem(item)
     setIsEditManualEndmillInput(false) // 수동 입력 모드 초기화
     setShowEditModal(true)
+
+    // CAM Sheet에서 적용 Tool life 조회
+    if (item.production_model && item.process && item.t_number) {
+      autoFillEditByTNumber(item.production_model, item.process, item.t_number)
+    } else {
+      setEditSuggestedToolLife(null)
+    }
   }
 
   // 수정 내용 저장
@@ -630,6 +650,7 @@ export default function ToolChangesPage() {
     setShowEditModal(false)
     setEditingItem(null)
     setIsEditManualEndmillInput(false) // 수동 입력 모드 초기화
+    setEditSuggestedToolLife(null) // CAM Sheet Tool life 초기화
   }
 
   // 삭제 처리
@@ -1147,6 +1168,19 @@ export default function ToolChangesPage() {
                 <p className="text-xs text-gray-500 mt-1">
                   {isManualEndmillInput ? t('toolChanges.pleaseEnterManually') : t('toolChanges.autoFilledOnTNumber')}
                 </p>
+              </div>
+
+              {/* 적용중인 Tool life (CAM Sheet 기준, 읽기 전용) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.appliedToolLife')}</label>
+                <input
+                  type="text"
+                  value={suggestedToolLife ? `${suggestedToolLife.toLocaleString()}회` : '-'}
+                  readOnly
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                />
+                <p className="text-xs text-gray-500 mt-1">{t('toolChanges.appliedToolLifeDesc')}</p>
               </div>
 
               <div>
@@ -1720,6 +1754,19 @@ export default function ToolChangesPage() {
                     <p className="text-xs text-gray-500 mt-1">
                       {isEditManualEndmillInput ? t('toolChanges.pleaseEnterManually') : t('toolChanges.camSheetAutoFill')}
                     </p>
+                  </div>
+
+                  {/* 적용중인 Tool life (CAM Sheet 기준, 읽기 전용) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.appliedToolLife')}</label>
+                    <input
+                      type="text"
+                      value={editSuggestedToolLife ? `${editSuggestedToolLife.toLocaleString()}회` : '-'}
+                      readOnly
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">{t('toolChanges.appliedToolLifeDesc')}</p>
                   </div>
 
                   <div>
