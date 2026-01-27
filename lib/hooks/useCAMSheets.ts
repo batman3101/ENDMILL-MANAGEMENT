@@ -44,8 +44,7 @@ export interface EndmillSearchResult {
 
 export const useCAMSheets = (filter?: CAMSheetFilter) => {
   const queryClient = useQueryClient()
-
-  // CAM Sheet 데이터 조회
+  // CAM Sheet 데이터 조회 (공장 공용)
   const {
     data: camSheets = [],
     isLoading: loading,
@@ -79,7 +78,8 @@ export const useCAMSheets = (filter?: CAMSheetFilter) => {
       clientLogger.log('정규화된 CAM Sheet 데이터:', normalizedData)
 
       return normalizedData as CAMSheet[]
-    }
+    },
+    enabled: true
   })
 
   // 실시간 구독 설정
@@ -110,7 +110,7 @@ export const useCAMSheets = (filter?: CAMSheetFilter) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
-      
+
       if (!response.ok) {
         throw new Error('CAM Sheet 생성에 실패했습니다.')
       }
@@ -144,7 +144,7 @@ export const useCAMSheets = (filter?: CAMSheetFilter) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
-      
+
       if (!response.ok) {
         throw new Error('CAM Sheet 일괄 생성에 실패했습니다.')
       }
@@ -175,7 +175,7 @@ export const useCAMSheets = (filter?: CAMSheetFilter) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...data })
       })
-      
+
       if (!response.ok) {
         throw new Error('CAM Sheet 업데이트에 실패했습니다.')
       }

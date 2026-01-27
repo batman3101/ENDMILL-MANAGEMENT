@@ -4,7 +4,7 @@ import { logger } from '@/lib/utils/logger'
 
 export async function POST(request: NextRequest) {
   try {
-    const { supplier_prices, cam_sheet_data, ...endmillData } = await request.json()
+    const { supplier_prices, cam_sheet_data, factory_id, ...endmillData } = await request.json()
 
     // 기본 유효성 검사
     if (!endmillData.code || !endmillData.category || !endmillData.name) {
@@ -81,14 +81,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 인벤토리에 기본 정보 추가
+    // 인벤토리에 기본 정보 추가 (공장별 분리)
     const inventoryData = {
       endmill_type_id: newEndmill.id,
       current_stock: 0,
       min_stock: 5,
       max_stock: 50,
       status: 'critical' as const,
-      location: 'A동 공구창고'
+      location: 'A동 공구창고',
+      factory_id: factory_id || null
     }
 
     const { error: inventoryError } = await supabase
@@ -137,7 +138,7 @@ export async function POST(request: NextRequest) {
 
           let camSheetDbId = existingCamSheet?.id
 
-          // CAM Sheet가 없으면 새로 생성
+          // CAM Sheet가 없으면 새로 생성 (공장별)
           if (!existingCamSheet) {
             const { data: newCamSheet, error: camSheetError } = await supabase
               .from('cam_sheets')
@@ -145,7 +146,8 @@ export async function POST(request: NextRequest) {
                 model: camData.model,
                 process: camData.process,
                 cam_version: 'v1.0',
-                version_date: new Date().toISOString().split('T')[0]
+                version_date: new Date().toISOString().split('T')[0],
+                factory_id: factory_id || null
               })
               .select('id')
               .single()

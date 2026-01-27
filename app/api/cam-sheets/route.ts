@@ -44,12 +44,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const model = searchParams.get('model')
     const process = searchParams.get('process')
+    const factoryId = searchParams.get('factoryId') || undefined
 
     let camSheets
     if (model && process) {
-      camSheets = await serverSupabaseService.camSheet.getByModelAndProcess(model, process)
+      camSheets = await serverSupabaseService.camSheet.getByModelAndProcess(model, process, { factoryId })
     } else {
-      camSheets = await serverSupabaseService.camSheet.getAll()
+      camSheets = await serverSupabaseService.camSheet.getAll({ factoryId })
     }
 
     return NextResponse.json({
@@ -102,13 +103,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    const factory_id = body.factory_id || null
     logger.log('CAM Sheet API 요청 데이터:', body)
 
     if (body.batch && Array.isArray(body.data)) {
       // 일괄 업로드 처리
       const results = []
       for (const camSheetData of body.data) {
-        const result = await createCAMSheetWithEndmills(camSheetData)
+        const result = await createCAMSheetWithEndmills({ ...camSheetData, factory_id })
         results.push(result)
       }
 
@@ -119,7 +121,7 @@ export async function POST(request: NextRequest) {
       })
     } else {
       // 단일 CAM Sheet 생성
-      const result = await createCAMSheetWithEndmills(body)
+      const result = await createCAMSheetWithEndmills({ ...body, factory_id })
 
       return NextResponse.json({
         success: true,
@@ -147,7 +149,8 @@ async function createCAMSheetWithEndmills(data: any) {
     model: data.model,
     process: data.process,
     cam_version: data.camVersion || data.cam_version,
-    version_date: data.versionDate || data.version_date
+    version_date: data.versionDate || data.version_date,
+    factory_id: data.factory_id || null
   }
 
   logger.log('변환된 CAM Sheet 데이터:', camSheetData)
@@ -264,7 +267,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // CAM Sheet 기본 정보 업데이트
+    // CAM Sheet 기본 정보 업데이트 (factory_id는 변경 불가하므로 제외)
     const camSheetData = {
       model: updateData.model,
       process: updateData.process,

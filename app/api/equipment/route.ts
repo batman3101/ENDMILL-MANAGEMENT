@@ -69,12 +69,13 @@ export async function GET(request: NextRequest) {
     const statusFilter = url.searchParams.get('status')
     const modelFilter = url.searchParams.get('model')
     const locationFilter = url.searchParams.get('location')
+    const factoryId = url.searchParams.get('factoryId') || undefined
 
     // Supabase에서 설비 데이터 조회
-    let equipments = await serverSupabaseService.equipment.getAll()
+    let equipments = await serverSupabaseService.equipment.getAll({ factoryId })
 
     // CAM Sheet 데이터 가져오기
-    const camSheets = await serverSupabaseService.camSheet.getAll()
+    const camSheets = await serverSupabaseService.camSheet.getAll({ factoryId })
     logger.log('🔍 CAM Sheet 데이터:', camSheets.length, '개')
 
     // 각 설비에 대해 툴 포지션 정보 추가
@@ -144,7 +145,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 통계 계산
-    const stats = await serverSupabaseService.equipment.getStats()
+    const stats = await serverSupabaseService.equipment.getStats({ factoryId })
     
     return NextResponse.json({
       success: true,
@@ -212,6 +213,7 @@ export async function POST(request: NextRequest) {
 
     const currentModel = validatedData.model_code;
     const process = body.process || 'CNC1';
+    const factoryId = body.factory_id || null;
 
     // equipment_number 변환 (string "C001" → number 1)
     let equipmentNumber: number;
@@ -231,8 +233,9 @@ export async function POST(request: NextRequest) {
       status: (validatedData.status === 'active' || !validatedData.status) ? '가동중' : validatedData.status as '가동중' | '점검중' | '셋업중',
       current_model: currentModel,
       process: process,
-      tool_position_count: 21
-    })
+      tool_position_count: 21,
+      ...(factoryId && { factory_id: factoryId })
+    } as any)
 
     logger.log('✅ 설비 생성 완료:', {
       equipmentId: newEquipment.id,
@@ -242,7 +245,7 @@ export async function POST(request: NextRequest) {
     });
 
     // CAM Sheet 조회
-    const camSheets = await serverSupabaseService.camSheet.getByModelAndProcess(currentModel, process);
+    const camSheets = await serverSupabaseService.camSheet.getByModelAndProcess(currentModel, process, { factoryId });
 
     if (camSheets && camSheets.length > 0) {
       const camSheet = camSheets[0];

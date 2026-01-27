@@ -8,9 +8,9 @@ export const maxDuration = 300 // 최대 5분 (300초)
 export const dynamic = 'force-dynamic'
 
 // 동적 스키마 생성 함수 및 CAM Sheet 데이터 가져오기
-const createEquipmentSchema = async () => {
+const createEquipmentSchema = async (factoryId?: string) => {
   // CAM Sheet에서 사용 가능한 모델과 공정 가져오기
-  const camSheets = await serverSupabaseService.camSheet.getAll()
+  const camSheets = await serverSupabaseService.camSheet.getAll({ factoryId })
   const availableModels = Array.from(new Set(camSheets.map(sheet => sheet.model))).filter(Boolean)
   const availableProcesses = Array.from(new Set(camSheets.map(sheet => sheet.process))).filter(Boolean)
 
@@ -23,8 +23,8 @@ const createEquipmentSchema = async () => {
       equipment_number: z.string().min(1),
       location: z.enum(['A동', 'B동']),
       status: z.enum(['가동중', '점검중', '셋업중']),
-      current_model: z.enum(validModels as [string, ...string[]]),
-      process: z.enum(validProcesses as [string, ...string[]])
+      current_model: z.string().min(1),
+      process: z.string().min(1)
       // tool_position_count는 CAM Sheet에서 자동 계산
     }),
     camSheets,
@@ -34,10 +34,10 @@ const createEquipmentSchema = async () => {
 }
 
 // CAM Sheet에서 모델별 앤드밀 개수 계산
-const getToolPositionCount = async (model: string, process: string) => {
+const getToolPositionCount = async (model: string, process: string, factoryId?: string) => {
   try {
     // CAM Sheet에서 해당 모델/공정의 앤드밀 데이터 가져오기
-    const camSheets = await serverSupabaseService.camSheet.getAll()
+    const camSheets = await serverSupabaseService.camSheet.getAll({ factoryId })
     const sheet = camSheets.find(s => s.model === model && s.process === process)
 
     if (sheet) {
@@ -59,15 +59,17 @@ const getToolPositionCount = async (model: string, process: string) => {
 }
 
 const createBulkUploadSchema = (equipmentSchema: any) => z.object({
-  equipments: z.array(equipmentSchema).min(1).max(1000) // 최대 1000개까지 지원 (800대 설비 대응)
+  equipments: z.array(equipmentSchema).min(1).max(1000),
+  factory_id: z.string().uuid().optional().nullable()
 })
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const factoryId = body.factory_id || null;
 
     // 동적 스키마 생성 및 CAM Sheet 데이터 가져오기
-    const { schema: equipmentSchema } = await createEquipmentSchema()
+    const { schema: equipmentSchema } = await createEquipmentSchema(factoryId || undefined)
     const bulkUploadSchema = createBulkUploadSchema(equipmentSchema)
 
     // 데이터 검증
@@ -83,8 +85,8 @@ export async function POST(request: NextRequest) {
       duplicates: []
     }
 
-    // 기존 설비 번호 조회
-    const existingEquipments = await serverSupabaseService.equipment.getAll()
+    // 기존 설비 번호 조회 (해당 공장 내에서만 중복 체크)
+    const existingEquipments = await serverSupabaseService.equipment.getAll(factoryId ? { factoryId } : undefined)
     const existingNumbers = new Set(
       existingEquipments.map(eq => eq.equipment_number)
     )
@@ -125,7 +127,7 @@ export async function POST(request: NextRequest) {
             const equipmentNumber = parseInt(numberMatch[0])
 
             // CAM Sheet에서 툴 포지션 수 자동 계산
-            const toolPositionCount = await getToolPositionCount(equipment.current_model, equipment.process)
+            const toolPositionCount = await getToolPositionCount(equipment.current_model, equipment.process, factoryId || undefined)
 
             // 설비 생성
             const newEquipment = await serverSupabaseService.equipment.create({
@@ -135,8 +137,9 @@ export async function POST(request: NextRequest) {
               status: equipment.status,
               current_model: equipment.current_model,
               process: equipment.process,
-              tool_position_count: toolPositionCount
-            })
+              tool_position_count: toolPositionCount,
+              ...(factoryId && { factory_id: factoryId })
+            } as any)
 
             results.success.push({
               equipment_number: equipment.equipment_number,
@@ -186,10 +189,13 @@ export async function POST(request: NextRequest) {
 }
 
 // GET: 엑셀 템플릿 다운로드
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const url = new URL(request.url)
+    const factoryId = url.searchParams.get('factoryId') || undefined
+
     // CAM Sheet에서 사용 가능한 모델과 공정 가져오기
-    const camSheets = await serverSupabaseService.camSheet.getAll()
+    const camSheets = await serverSupabaseService.camSheet.getAll({ factoryId })
     const availableModels = Array.from(new Set(camSheets.map(sheet => sheet.model))).filter(Boolean)
     const availableProcesses = Array.from(new Set(camSheets.map(sheet => sheet.process))).filter(Boolean)
 

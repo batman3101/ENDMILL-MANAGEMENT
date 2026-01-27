@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react'
 import { useQueryClient, useQuery } from '@tanstack/react-query'
 import { createBrowserClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/hooks/useAuth'
 import type { Factory, FactoryContextType, UserFactoryAccess } from '@/lib/types/factory'
 
 const FactoryContext = createContext<FactoryContextType | undefined>(undefined)
@@ -20,10 +21,11 @@ export function useFactory() {
 export function useFactoryProvider() {
   const queryClient = useQueryClient()
   const supabase = createBrowserClient()
+  const { isAuthenticated } = useAuth()
   const [currentFactory, setCurrentFactoryState] = useState<Factory | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
 
-  // RPC로 접근 가능한 공장 목록 조회
+  // RPC로 접근 가능한 공장 목록 조회 (인증된 경우에만)
   const { data: accessibleFactories = [], isLoading, error } = useQuery({
     queryKey: ['accessible-factories'],
     queryFn: async () => {
@@ -32,6 +34,7 @@ export function useFactoryProvider() {
       return (data || []) as UserFactoryAccess[]
     },
     staleTime: 5 * 60 * 1000, // 5분
+    enabled: isAuthenticated,
   })
 
   // 초기 공장 설정
@@ -79,7 +82,8 @@ export function useFactoryProvider() {
           'cam-sheets',
           'reports',
           'endmill-disposals',
-          'endmill-types'
+          'endmill-types',
+          'users'
         ].some(key => queryKey.includes(key))
       }
     })

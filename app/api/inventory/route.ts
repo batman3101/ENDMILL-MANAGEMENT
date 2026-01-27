@@ -63,9 +63,10 @@ export async function GET(request: NextRequest) {
     const statusFilter = url.searchParams.get('status')
     const categoryFilter = url.searchParams.get('category')
     const lowStock = url.searchParams.get('lowStock') === 'true'
+    const factoryId = url.searchParams.get('factoryId')
 
     // Supabase에서 재고 데이터 조회 (앤드밀 타입과 카테고리 정보 포함)
-    const inventory = await serverSupabaseService.inventory.getAll()
+    const inventory = await serverSupabaseService.inventory.getAll({ factoryId: factoryId || undefined })
 
     // 필터 적용
     let filteredInventory = inventory
@@ -149,9 +150,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    const { factory_id, ...restBody } = body;
 
     // 입력 데이터 검증
-    const validatedData = createInventorySchema.parse(body);
+    const validatedData = createInventorySchema.parse(restBody);
     
     // 앤드밀 타입 존재 여부 확인
     const endmillType = await serverSupabaseService.endmillType.getByCode(validatedData.endmillCode)
@@ -172,7 +174,8 @@ export async function POST(request: NextRequest) {
       min_stock: validatedData.minStock,
       max_stock: validatedData.maxStock,
       location: validatedData.location || 'A-001',
-    })
+      ...(factory_id && { factory_id: factory_id })
+    } as any)
 
     return NextResponse.json({
       success: true,

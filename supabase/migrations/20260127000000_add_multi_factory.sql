@@ -137,11 +137,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- 4. ADD FACTORY_ID TO EXISTING TABLES
 -- =====================================================
 
--- Add factory_id to equipments table
-ALTER TABLE equipments
+-- Add factory_id to equipment table
+ALTER TABLE equipment
   ADD COLUMN IF NOT EXISTS factory_id UUID REFERENCES factories(id) ON DELETE SET NULL;
 
-CREATE INDEX IF NOT EXISTS idx_equipments_factory_id ON equipments(factory_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_factory_id ON equipment(factory_id);
 
 -- Add factory_id to tool_changes table
 ALTER TABLE tool_changes

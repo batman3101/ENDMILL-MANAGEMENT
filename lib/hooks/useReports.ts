@@ -11,17 +11,21 @@ import {
   PerformanceReportData
 } from '../types/reports'
 import { clientLogger } from '../utils/logger'
+import { useFactory } from '@/lib/hooks/useFactory'
 
 export const useReports = () => {
+  const { currentFactory } = useFactory()
+  const factoryId = currentFactory?.id
   const [generatedReport, setGeneratedReport] = useState<any>(null)
 
   // 월간 리포트 생성
   const generateMonthlyReport = useMutation({
+    mutationKey: ['monthly-report', factoryId],
     mutationFn: async (filter: ReportFilter) => {
       const response = await fetch('/api/reports/monthly', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filter })
+        body: JSON.stringify({ filter: { ...filter, factoryId } })
       })
 
       if (!response.ok) {
@@ -42,11 +46,12 @@ export const useReports = () => {
 
   // 비용 분석 생성
   const generateCostAnalysis = useMutation({
+    mutationKey: ['cost-analysis', factoryId],
     mutationFn: async (filter: ReportFilter) => {
       const response = await fetch('/api/reports/cost', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filter })
+        body: JSON.stringify({ filter: { ...filter, factoryId } })
       })
 
       if (!response.ok) {
@@ -67,11 +72,12 @@ export const useReports = () => {
 
   // Tool Life 분석 생성
   const generateToolLifeAnalysis = useMutation({
+    mutationKey: ['tool-life-analysis', factoryId],
     mutationFn: async (filter: ReportFilter) => {
       const response = await fetch('/api/reports/tool-life', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filter })
+        body: JSON.stringify({ filter: { ...filter, factoryId } })
       })
 
       if (!response.ok) {
@@ -92,11 +98,12 @@ export const useReports = () => {
 
   // 성능 리포트 생성
   const generatePerformanceReport = useMutation({
+    mutationKey: ['performance-report', factoryId],
     mutationFn: async (filter: ReportFilter) => {
       const response = await fetch('/api/reports/performance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filter })
+        body: JSON.stringify({ filter: { ...filter, factoryId } })
       })
 
       if (!response.ok) {

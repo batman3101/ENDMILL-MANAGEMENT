@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const startDate = url.searchParams.get('startDate')
     const endDate = url.searchParams.get('endDate')
     const date = url.searchParams.get('date') // 기존 호환성 유지
+    const factoryId = url.searchParams.get('factoryId')
 
     // 공장 근무시간 기준으로 기간 계산 (베트남 08:00 시작)
     let dateFrom: string
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
     logger.log('출고 내역 조회 기간 (공장 근무시간 기준):', { period, dateFrom, dateTo })
 
     // 출고 트랜잭션 조회
-    const { data: transactions, error } = await supabase
+    let query = supabase
       .from('inventory_transactions')
       .select(`
         *,
@@ -50,7 +51,13 @@ export async function GET(request: NextRequest) {
       .eq('transaction_type', 'outbound')
       .gte('created_at', dateFrom)
       .lte('created_at', dateTo)
-      .order('created_at', { ascending: false })
+
+    // factory_id 필터 적용
+    if (factoryId) {
+      query = query.eq('factory_id', factoryId)
+    }
+
+    const { data: transactions, error } = await query.order('created_at', { ascending: false })
 
     if (error) {
       logger.error('출고 내역 조회 오류:', error)
@@ -92,7 +99,8 @@ export async function POST(request: NextRequest) {
       t_number,
       quantity,
       purpose,
-      notes
+      notes,
+      factory_id
     } = body
 
     // 앤드밀 타입 조회
@@ -109,12 +117,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 재고 조회
-    const { data: inventory, error: inventoryError } = await supabase
+    // 재고 조회 (해당 공장의 재고에서만)
+    let inventoryQuery = supabase
       .from('inventory')
       .select('*')
       .eq('endmill_type_id', endmillType.id)
-      .single()
+
+    if (factory_id) {
+      inventoryQuery = inventoryQuery.eq('factory_id', factory_id)
+    } else {
+      inventoryQuery = inventoryQuery.is('factory_id', null)
+    }
+
+    const { data: inventory, error: inventoryError } = await inventoryQuery.single()
 
     if (inventoryError || !inventory) {
       return NextResponse.json(
@@ -167,7 +182,8 @@ export async function POST(request: NextRequest) {
         processed_by: body.user_id || null,
         unit_price: endmillType.unit_cost || 0,
         total_amount: quantity * (endmillType.unit_cost || 0),
-        processed_at: new Date().toISOString()
+        processed_at: new Date().toISOString(),
+        factory_id: factory_id || null
       })
       .select(`
         *,

@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const supabase = createServerClient()
     const url = new URL(request.url)
     const code = url.searchParams.get('code')
+    const factoryId = url.searchParams.get('factoryId')
 
     // 특정 코드로 검색하는 경우
     let endmillTypes, error;
@@ -46,7 +47,8 @@ export async function GET(request: NextRequest) {
             min_stock,
             max_stock,
             status,
-            location
+            location,
+            factory_id
           )
         `)
         .eq('code', code.toUpperCase())
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest) {
       // 최근 교체 이력 조회 (상세 페이지용)
       if (result.data?.code) {
         // 모든 교체 이력 조회 (평균 수명 계산용)
-        const allChangesResult = await supabase
+        let toolChangesQuery = supabase
           .from('tool_changes')
           .select(`
             id,
@@ -70,7 +72,13 @@ export async function GET(request: NextRequest) {
             user_profiles:changed_by(name)
           `)
           .eq('endmill_code', result.data.code)
-          .order('change_date', { ascending: false })
+
+        // factoryId 필터 적용
+        if (factoryId) {
+          toolChangesQuery = toolChangesQuery.eq('factory_id', factoryId)
+        }
+
+        const allChangesResult = await toolChangesQuery.order('change_date', { ascending: false })
 
         if (allChangesResult.data) {
           // 최근 20개만 recentChanges로 사용
@@ -148,7 +156,8 @@ export async function GET(request: NextRequest) {
             min_stock,
             max_stock,
             status,
-            location
+            location,
+            factory_id
           )
         `)
         .order('created_at', { ascending: false })
@@ -167,7 +176,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 데이터 정리 및 가공 (최적화: 기본 정보만 반환, 상세 정보는 개별 조회 시)
-    const processEndmill = (endmill: any, changes: any[] = []) => {
+    const processEndmill = (endmill: any, changes: any[] = [], filterFactoryId?: string | null) => {
       // CAM Sheet 정보
       const camSheets = endmill.cam_sheet_endmills?.map((cs: any) => ({
         model: cs.cam_sheets?.model || '',
@@ -225,21 +234,26 @@ export async function GET(request: NextRequest) {
         camSheets,
         currentUsage,
         recentChanges: changes,
-        inventory: (endmill.inventory && (Array.isArray(endmill.inventory) ? endmill.inventory[0] : endmill.inventory)) ? {
-          current_stock: (Array.isArray(endmill.inventory) ? endmill.inventory[0]?.current_stock : endmill.inventory.current_stock) || 0,
-          min_stock: (Array.isArray(endmill.inventory) ? endmill.inventory[0]?.min_stock : endmill.inventory.min_stock) || 0,
-          max_stock: (Array.isArray(endmill.inventory) ? endmill.inventory[0]?.max_stock : endmill.inventory.max_stock) || 0,
-          status: (Array.isArray(endmill.inventory) ? endmill.inventory[0]?.status : endmill.inventory.status) || 'unknown',
-          location: (Array.isArray(endmill.inventory) ? endmill.inventory[0]?.location : endmill.inventory.location) || ''
-        } : null,
+        inventory: (() => {
+          const invArr = Array.isArray(endmill.inventory) ? endmill.inventory : (endmill.inventory ? [endmill.inventory] : [])
+          const filtered = filterFactoryId ? invArr.filter((inv: any) => inv.factory_id === filterFactoryId) : invArr
+          const inv = filtered[0]
+          return inv ? {
+            current_stock: inv.current_stock || 0,
+            min_stock: inv.min_stock || 0,
+            max_stock: inv.max_stock || 0,
+            status: inv.status || 'unknown',
+            location: inv.location || ''
+          } : null
+        })(),
         createdAt: endmill.created_at,
         updatedAt: endmill.updated_at
       }
     }
 
     const processedEndmills = code
-      ? (endmillTypes ? [processEndmill(endmillTypes as any, recentChanges)] : [])
-      : (Array.isArray(endmillTypes) ? endmillTypes.map((e) => processEndmill(e, [])) : [])
+      ? (endmillTypes ? [processEndmill(endmillTypes as any, recentChanges, factoryId)] : [])
+      : (Array.isArray(endmillTypes) ? endmillTypes.map((e) => processEndmill(e, [], factoryId)) : [])
 
     return NextResponse.json({
       success: true,

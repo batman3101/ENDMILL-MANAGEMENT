@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/utils/logger'
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
+import { applyFactoryFilter } from '@/lib/utils/factoryFilter'
 
 // 동적 라우트로 명시적 설정 (cookies 사용으로 인해 필요)
 export const dynamic = 'force-dynamic'
@@ -51,11 +52,16 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const start = searchParams.get('start')
     const end = searchParams.get('end')
+    const factoryId = searchParams.get('factoryId') || undefined
 
     let query: any = (supabase as any)
       .from('endmill_disposals')
       .select('*')
-      .order('disposal_date', { ascending: false })
+
+    // factoryId 필터 적용
+    query = applyFactoryFilter(query, factoryId)
+
+    query = query.order('disposal_date', { ascending: false })
 
     if (start) {
       query = query.gte('disposal_date', start)
@@ -136,8 +142,9 @@ export async function POST(request: NextRequest) {
     const reviewer = body.reviewer as string
     const notes = (body.notes as string) || null
     const image_url = (body.image_url as string) || null
+    const factory_id = body.factory_id || null
 
-    // 폐기 기록 저장
+    // 폐기 기록 저장 (공장별)
     const { data, error } = await (supabase as any)
       .from('endmill_disposals')
       .insert({
@@ -147,7 +154,8 @@ export async function POST(request: NextRequest) {
         inspector,
         reviewer,
         image_url,
-        notes
+        notes,
+        factory_id
       })
       .select()
       .single()

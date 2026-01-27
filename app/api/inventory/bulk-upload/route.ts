@@ -30,9 +30,10 @@ const bulkUploadSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { factory_id, ...restBody } = body;
 
     // 입력 데이터 검증
-    const validatedData = bulkUploadSchema.parse(body);
+    const validatedData = bulkUploadSchema.parse(restBody);
 
     const results = {
       created: 0,
@@ -158,7 +159,8 @@ export async function POST(request: NextRequest) {
               endmill_type_id: endmillType.id,
               current_stock: item.currentStock,
               min_stock: item.minStock,
-              max_stock: item.maxStock
+              max_stock: item.maxStock,
+              factory_id: factory_id || null
             });
 
           if (createError) {

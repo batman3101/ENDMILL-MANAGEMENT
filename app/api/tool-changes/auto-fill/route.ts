@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const tNumber = searchParams.get('tNumber')
     const model = searchParams.get('model')
     const process = searchParams.get('process')
+    const factoryId = searchParams.get('factoryId') || undefined
 
     const response: any = {}
 
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     if (equipmentNumber) {
       try {
         // 모든 설비 조회해서 해당 설비번호 찾기
-        const equipments = await serverSupabaseService.equipment.getAll()
+        const equipments = await serverSupabaseService.equipment.getAll({ factoryId })
 
         // 1단계: 정확한 매칭 우선
         let equipmentData = equipments.find(eq =>
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
     if (model && process && tNumber) {
       try {
         // CAM Sheet에서 해당 모델, 공정 찾기
-        const camSheets = await serverSupabaseService.camSheet.getByModelAndProcess(model, process)
+        const camSheets = await serverSupabaseService.camSheet.getByModelAndProcess(model, process, { factoryId })
         if (camSheets && camSheets.length > 0) {
           const camSheet = camSheets[0] // 첫 번째 매칭 항목 사용
 

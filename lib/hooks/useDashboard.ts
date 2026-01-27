@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useCallback } from 'react'
+import { useFactory } from '@/lib/hooks/useFactory'
 
 // 대시보드 데이터 타입 정의
 export interface DashboardData {
@@ -112,10 +113,12 @@ interface UseDashboardReturn {
   lastRefresh: Date | null
 }
 
-const fetchDashboardData = async (): Promise<DashboardData> => {
+const fetchDashboardData = async (factoryId?: string): Promise<DashboardData> => {
   // 타임스탬프를 추가하여 브라우저 캐시 무효화
   const timestamp = Date.now()
-  const response = await fetch(`/api/dashboard?t=${timestamp}`, {
+  const params = new URLSearchParams({ t: String(timestamp) })
+  if (factoryId) params.set('factoryId', factoryId)
+  const response = await fetch(`/api/dashboard?${params.toString()}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -140,10 +143,14 @@ const fetchDashboardData = async (): Promise<DashboardData> => {
 }
 
 export const useDashboard = (refreshInterval: number = 30000): UseDashboardReturn => {
+  const { currentFactory } = useFactory()
+  const factoryId = currentFactory?.id
+
   // React Query로 대시보드 데이터 관리
   const { data, isLoading, error, refetch, dataUpdatedAt } = useQuery<DashboardData>({
-    queryKey: ['dashboard'],
-    queryFn: fetchDashboardData,
+    queryKey: ['dashboard', factoryId],
+    queryFn: () => fetchDashboardData(factoryId || undefined),
+    enabled: !!factoryId,
     refetchInterval: refreshInterval, // 주기적 새로고침
     refetchIntervalInBackground: false, // 백그라운드에서는 새로고침 안 함
     staleTime: 0, // 항상 stale 상태

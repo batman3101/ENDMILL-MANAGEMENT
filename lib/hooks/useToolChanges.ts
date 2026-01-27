@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRealtime } from './useRealtime'
+import { useFactory } from '@/lib/hooks/useFactory'
 import { clientLogger } from '../utils/logger'
 
 export interface ToolChangeFilters {
@@ -70,6 +71,8 @@ export const useToolChanges = (
   filters: ToolChangeFilters = {},
   enableRealtime: boolean = true
 ): UseToolChangesReturn => {
+  const { currentFactory } = useFactory()
+  const factoryId = currentFactory?.id
   const [toolChanges, setToolChanges] = useState<ToolChange[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -84,6 +87,11 @@ export const useToolChanges = (
       }
 
       const params = new URLSearchParams()
+
+      // 공장 필터 추가
+      if (factoryId) {
+        params.append('factoryId', factoryId)
+      }
 
       // 필터 파라미터 추가
       if (filters.equipmentNumber) {
@@ -153,7 +161,7 @@ export const useToolChanges = (
     } finally {
       setIsLoading(false)
     }
-  }, [filters])
+  }, [filters, factoryId])
 
   const refreshData = useCallback(async () => {
     await fetchToolChanges(true)
@@ -169,6 +177,11 @@ export const useToolChanges = (
     try {
       setError(null)
       const params = new URLSearchParams()
+
+      // 공장 필터 추가
+      if (factoryId) {
+        params.append('factoryId', factoryId)
+      }
 
       if (updatedFilters.equipmentNumber) {
         params.append('equipment_number', updatedFilters.equipmentNumber.toString())
@@ -224,13 +237,14 @@ export const useToolChanges = (
       clientLogger.error('Tool changes 추가 로드 오류:', err)
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.')
     }
-  }, [hasMore, isLoading, filters, toolChanges.length])
+  }, [hasMore, isLoading, filters, toolChanges.length, factoryId])
 
   // 초기 데이터 로드 및 필터 변경시 재로드
   useEffect(() => {
     fetchToolChanges(true)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    factoryId,
     filters.equipmentNumber,
     filters.endmillType,
     filters.searchTerm,
@@ -311,6 +325,8 @@ export const useToolChangeStats = (
   date?: string, // YYYY-MM-DD 형식, 기본값은 오늘
   enableRealtime: boolean = true
 ): UseToolChangeStatsReturn => {
+  const { currentFactory } = useFactory()
+  const factoryId = currentFactory?.id
   const [stats, setStats] = useState<ToolChangeStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -321,6 +337,9 @@ export const useToolChangeStats = (
       setIsLoading(true)
 
       const params = new URLSearchParams()
+      if (factoryId) {
+        params.append('factoryId', factoryId)
+      }
       if (date) {
         params.append('date', date)
       }
@@ -350,7 +369,7 @@ export const useToolChangeStats = (
     } finally {
       setIsLoading(false)
     }
-  }, [date])
+  }, [date, factoryId])
 
   const refreshStats = useCallback(async () => {
     await fetchStats()

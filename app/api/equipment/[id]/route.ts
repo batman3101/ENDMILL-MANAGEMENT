@@ -30,9 +30,11 @@ export async function GET(
     logger.log(`📋 설비 정보: ${equipment.equipment_number}, 모델: ${equipment.current_model}, 공정: ${equipment.process}`);
 
     // 2. 해당 모델/공정의 CAM Sheet 조회
+    const factoryId = (equipment as any).factory_id || undefined;
     const camSheets = await serverSupabaseService.camSheet.getByModelAndProcess(
       equipment.current_model || '',
-      equipment.process || ''
+      equipment.process || '',
+      { factoryId }
     );
 
     if (!camSheets || camSheets.length === 0) {
@@ -80,11 +82,15 @@ export async function GET(
     const lastChangeDateMap: Record<string, string> = {}; // T번호별 최근 교체일
 
     if (endmillCodes.length > 0) {
-      const { data: allToolChanges } = await supabase
+      let toolChangesQuery = supabase
         .from('tool_changes')
         .select('endmill_code, tool_life, t_number, change_date, equipment_number')
         .in('endmill_code', endmillCodes)
         .eq('equipment_number', equipment.equipment_number);
+      if (factoryId) {
+        toolChangesQuery = toolChangesQuery.eq('factory_id', factoryId);
+      }
+      const { data: allToolChanges } = await toolChangesQuery;
 
       // 각 앤드밀 코드별로 평균 계산
       if (allToolChanges && allToolChanges.length > 0) {
