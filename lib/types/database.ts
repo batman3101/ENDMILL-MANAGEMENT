@@ -996,6 +996,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_accessible_factories: {
+        Args: Record<string, never>
+        Returns: {
+          factory_id: string
+          code: string
+          name: string
+          name_ko: string
+          name_vi: string
+          country: string
+          timezone: string
+          is_default: boolean
+        }[]
+      }
+      user_has_factory_access: {
+        Args: {
+          p_factory_id: string
+        }
+        Returns: boolean
+      }
+      get_user_default_factory: {
+        Args: Record<string, never>
+        Returns: string
+      }
       upsert_setting: {
         Args: {
           p_category: string

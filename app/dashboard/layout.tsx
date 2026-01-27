@@ -11,6 +11,7 @@ import { usePermissions } from '../../lib/hooks/usePermissions'
 import Breadcrumb from '../../components/shared/Breadcrumb'
 import { MobileBottomNav } from '../../components/mobile'
 import { clientLogger } from '@/lib/utils/logger'
+import { FactorySelector } from '@/components/shared/FactorySelector'
 
 export default function DashboardLayout({
   children,
@@ -225,6 +226,9 @@ export default function DashboardLayout({
                 </button>
               </div>
 
+              {/* 공장 선택 */}
+              <FactorySelector compact showLabel={false} />
+
               {/* 시계 */}
               <div className="bg-blue-700/50 rounded px-2 py-1">
                 <p className="text-xs font-bold">{currentTime || '--:--'}</p>
@@ -314,6 +318,9 @@ export default function DashboardLayout({
                   🇻🇳 Tiếng Việt
                 </button>
               </div>
+
+              {/* 공장 선택 */}
+              <FactorySelector showLabel={true} />
 
               {/* 실시간 시계 */}
               <div className="bg-blue-700 rounded-lg px-4 py-2 border border-blue-600">

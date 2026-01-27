@@ -126,6 +126,21 @@ const resources = {
         endmillDisposal: '폐기 관리',
       },
 
+      // 공장 선택
+      factory: {
+        selector: '공장 선택',
+        currentFactory: '현재 공장',
+        switchFactory: '공장 전환',
+        switchedTo: '{{factory}}(으)로 전환되었습니다',
+        alt: '1공장 (ALT)',
+        alv: '2공장 (ALV)',
+        allFactories: '전체 공장',
+        accessDenied: '이 공장에 대한 접근 권한이 없습니다',
+        noAccess: '접근 가능한 공장이 없습니다',
+        korea: '한국',
+        vietnam: '베트남',
+      },
+
       // Dashboard
       dashboard: {
         title: '대시보드',
@@ -1922,6 +1937,21 @@ const resources = {
         translations: 'Quản lý dịch thuật',
         logout: 'Đăng xuất',
         endmillDisposal: 'Quản lý thanh lý',
+      },
+
+      // 공장 선택
+      factory: {
+        selector: 'Chọn nhà máy',
+        currentFactory: 'Nhà máy hiện tại',
+        switchFactory: 'Chuyển nhà máy',
+        switchedTo: 'Đã chuyển sang {{factory}}',
+        alt: 'Nhà máy 1 (ALT)',
+        alv: 'Nhà máy 2 (ALV)',
+        allFactories: 'Tất cả nhà máy',
+        accessDenied: 'Bạn không có quyền truy cập nhà máy này',
+        noAccess: 'Không có nhà máy nào có thể truy cập',
+        korea: 'Hàn Quốc',
+        vietnam: 'Việt Nam',
       },
 
       // Dashboard
