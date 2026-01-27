@@ -18,6 +18,7 @@ export interface ReportFilter {
   equipmentModel?: string
   endmillCategory?: string
   equipmentNumber?: number
+  factoryId?: string
 }
 
 // 리포트 메타데이터

@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { clientSupabaseService } from '../services/supabaseService'
 import { Database } from '../types/database'
 import { clientLogger } from '../utils/logger'
+import { useFactory } from '@/lib/hooks/useFactory'
 
 // Database 타입에서 가져오기
 type BaseEquipment = Database['public']['Tables']['equipment']['Row']
@@ -31,6 +32,8 @@ export interface EquipmentStats {
 
 export const useEquipment = (filter?: EquipmentFilter) => {
   const queryClient = useQueryClient()
+  const { currentFactory } = useFactory()
+  const factoryId = currentFactory?.id
 
   // 설비 데이터 조회
   const {
@@ -39,40 +42,49 @@ export const useEquipment = (filter?: EquipmentFilter) => {
     error,
     refetch
   } = useQuery({
-    queryKey: ['equipment', filter],
+    queryKey: ['equipment', factoryId, filter],
     queryFn: async () => {
-      const response = await fetch('/api/equipment?' + new URLSearchParams({
+      const params = new URLSearchParams({
         ...(filter?.status && { status: filter.status }),
         ...(filter?.location && { location: filter.location }),
         ...(filter?.model && { model: filter.model })
-      }))
-      
+      })
+
+      if (factoryId) {
+        params.set('factoryId', factoryId)
+      }
+
+      const response = await fetch('/api/equipment?' + params)
+
       if (!response.ok) {
         throw new Error('설비 데이터를 불러오는데 실패했습니다.')
       }
-      
+
       const result = await response.json()
       if (!result.success) {
         throw new Error(result.error || '설비 데이터를 불러오는데 실패했습니다.')
       }
-      
+
       return result.data as Equipment[]
-    }
+    },
+    enabled: !!factoryId
   })
 
   // 실시간 구독 설정
   useEffect(() => {
+    if (!factoryId) return
+
     const subscription = clientSupabaseService.equipment.subscribeToChanges((payload) => {
       clientLogger.log('Equipment 실시간 업데이트:', payload)
 
       // React Query 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ['equipment'] })
+      queryClient.invalidateQueries({ queryKey: ['equipment', factoryId] })
     })
 
     return () => {
       subscription?.unsubscribe()
     }
-  }, [queryClient])
+  }, [queryClient, factoryId])
 
   // 설비 생성 Mutation
   // Realtime 구독이 자동으로 캐시를 무효화하므로 onSuccess는 불필요
@@ -89,7 +101,10 @@ export const useEquipment = (filter?: EquipmentFilter) => {
       const response = await fetch('/api/equipment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          ...data,
+          factory_id: factoryId
+        })
       })
 
       if (!response.ok) {
@@ -120,7 +135,11 @@ export const useEquipment = (filter?: EquipmentFilter) => {
       const response = await fetch('/api/equipment', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...data })
+        body: JSON.stringify({
+          id,
+          ...data,
+          factory_id: factoryId
+        })
       })
 
       if (!response.ok) {

@@ -14,7 +14,7 @@ interface ExcelRowData {
 
 export async function POST(request: NextRequest) {
   try {
-    const { endmills } = await request.json()
+    const { endmills, factory_id } = await request.json()
 
     if (!endmills || !Array.isArray(endmills) || endmills.length === 0) {
       return NextResponse.json(
@@ -62,9 +62,9 @@ export async function POST(request: NextRequest) {
     const processedSupplierPrices = await upsertSupplierPrices(supabase, supplierPrices, processedEndmills, supplierMap)
     logger.log('처리된 공급업체 가격:', processedSupplierPrices.length)
 
-    // 5. 인벤토리 생성 (새로운 엔드밀 타입에 대해서만)
+    // 5. 인벤토리 생성 (새로운 엔드밀 타입에 대해서만, 공장별)
     logger.log('인벤토리 생성 시작...')
-    await createInventoryForNewEndmills(supabase, processedEndmills)
+    await createInventoryForNewEndmills(supabase, processedEndmills, factory_id)
 
     return NextResponse.json({
       success: true,
@@ -293,12 +293,18 @@ async function upsertSupplierPrices(
   return data || []
 }
 
-async function createInventoryForNewEndmills(supabase: any, endmills: any[]) {
-  // 이미 인벤토리에 있는 엔드밀 확인
-  const { data: existingInventory } = await supabase
+async function createInventoryForNewEndmills(supabase: any, endmills: any[], factory_id: string | null) {
+  // 이미 인벤토리에 있는 엔드밀 확인 (공장별)
+  let inventoryQuery = supabase
     .from('inventory')
     .select('endmill_type_id')
     .in('endmill_type_id', endmills.map(e => e.id))
+
+  if (factory_id) {
+    inventoryQuery = inventoryQuery.eq('factory_id', factory_id)
+  }
+
+  const { data: existingInventory } = await inventoryQuery
 
   const existingIds = new Set(existingInventory?.map((inv: any) => inv.endmill_type_id) || [])
 
@@ -310,7 +316,8 @@ async function createInventoryForNewEndmills(supabase: any, endmills: any[]) {
       min_stock: 5,
       max_stock: 50,
       status: 'critical',
-      location: 'A동 공구창고'
+      location: 'A동 공구창고',
+      factory_id: factory_id || null
     }))
 
   if (newInventoryData.length > 0) {

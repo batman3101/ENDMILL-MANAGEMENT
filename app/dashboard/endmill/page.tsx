@@ -9,6 +9,7 @@ import { useConfirmation, createCustomConfirmation } from '../../../lib/hooks/us
 import { useToast } from '../../../components/shared/Toast'
 // import { useCAMSheets } from '../../../lib/hooks/useCAMSheets' // 미사용
 import { useSettings } from '../../../lib/hooks/useSettings'
+import { useFactory } from '@/lib/hooks/useFactory'
 import EndmillExcelUploader from '../../../components/features/EndmillExcelUploader'
 import EndmillForm from '../../../components/features/EndmillForm'
 import EndmillSupplierPrices from '../../../components/features/EndmillSupplierPrices'
@@ -46,6 +47,8 @@ export default function EndmillPage() {
   const router = useRouter()
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const { currentFactory } = useFactory()
+  const factoryId = currentFactory?.id
   const [endmills, setEndmills] = useState<EndmillInstance[]>([])
   const [equipments, setEquipments] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -169,12 +172,12 @@ export default function EndmillPage() {
       supabase.removeChannel(equipmentChannel)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [factoryId])
 
   const loadEndmillData = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/endmill')
+      const response = await fetch('/api/endmill?' + new URLSearchParams({...(factoryId && { factoryId })}))
       if (!response.ok) {
         throw new Error('엔드밀 데이터 로드 실패')
       }
@@ -214,7 +217,7 @@ export default function EndmillPage() {
 
   const loadEquipmentData = async () => {
     try {
-      const response = await fetch('/api/equipment')
+      const response = await fetch('/api/equipment?' + new URLSearchParams({...(factoryId && { factoryId })}))
       if (!response.ok) {
         throw new Error('설비 데이터 로드 실패')
       }

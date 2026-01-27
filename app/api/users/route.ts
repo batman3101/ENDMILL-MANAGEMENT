@@ -52,16 +52,59 @@ export async function GET(request: NextRequest) {
     const roleId = searchParams.get('roleId')
     const isActive = searchParams.get('isActive')
     const search = searchParams.get('search')
+    const factoryId = searchParams.get('factoryId')
 
-    // 사용자 프로필 조회 (user_id 통해 auth.users의 email 조인)
+    // Admin 클라이언트 (RLS 우회용)
+    const adminClient = createAdminClient()
+
+    // 사용자 프로필 조회
     let query = supabase
       .from('user_profiles')
       .select(`
         *,
-        user_roles(*),
-        auth_user:user_id(email)
+        user_roles(*)
       `)
       .order('created_at', { ascending: false })
+
+    // 공장별 사용자 필터링
+    if (factoryId) {
+      // 1) 해당 공장에 등록된 사용자 (adminClient로 RLS 우회)
+      const { data: factoryUsers, error: fuError } = await (adminClient as any)
+        .from('user_factory_access')
+        .select('user_id')
+        .eq('factory_id', factoryId)
+
+      if (fuError) {
+        logger.error('Error fetching factory users:', fuError)
+      }
+
+      // 2) system_admin은 공장과 무관하게 항상 포함
+      const { data: systemAdminRoles } = await (adminClient as any)
+        .from('user_roles')
+        .select('id')
+        .eq('type', 'system_admin')
+
+      let systemAdminIds: string[] = []
+      if (systemAdminRoles && systemAdminRoles.length > 0) {
+        const roleIds = systemAdminRoles.map((r: { id: string }) => r.id)
+        const { data: systemAdmins } = await (adminClient as any)
+          .from('user_profiles')
+          .select('user_id')
+          .in('role_id', roleIds)
+          .not('user_id', 'is', null)
+
+        systemAdminIds = (systemAdmins || []).map((sa: { user_id: string }) => sa.user_id)
+      }
+
+      const factoryUserIds = (factoryUsers || []).map((fu: { user_id: string }) => fu.user_id)
+      const allUserIds = Array.from(new Set([...factoryUserIds, ...systemAdminIds]))
+
+      if (allUserIds.length > 0) {
+        query = query.in('user_id', allUserIds)
+      } else {
+        return NextResponse.json({ success: true, data: [], count: 0 })
+      }
+    }
 
     // 필터 적용
     if (department) query = query.eq('department', department)
@@ -92,7 +135,6 @@ export async function GET(request: NextRequest) {
     }
 
     // auth.users 테이블에서 이메일 정보 가져오기 (Admin API 사용)
-    const adminClient = createAdminClient()
     const usersWithEmail = await Promise.all(
       filteredProfiles.map(async (profile: any) => {
         if (!profile.user_id) {
@@ -178,7 +220,8 @@ export async function POST(request: NextRequest) {
       shift,
       roleId,
       phone,
-      isActive = true
+      isActive = true,
+      factoryId
     } = body
 
     // 필수 필드 검증
@@ -252,7 +295,8 @@ export async function POST(request: NextRequest) {
         shift: shift || 'A',
         role_id: roleId,
         phone: phone || null,
-        is_active: isActive
+        is_active: isActive,
+        default_factory_id: factoryId || null
       })
       .select('*, user_roles(*)')
       .single()
@@ -267,6 +311,21 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to create user profile', details: profileError.message },
         { status: 500 }
       )
+    }
+
+    // 공장 접근 권한 자동 생성
+    if (factoryId) {
+      const { error: factoryAccessError } = await (adminClient as any)
+        .from('user_factory_access')
+        .insert({
+          user_id: authData.user.id,
+          factory_id: factoryId,
+          is_default: true
+        })
+
+      if (factoryAccessError) {
+        logger.warn('Failed to create factory access:', factoryAccessError)
+      }
     }
 
     return NextResponse.json({

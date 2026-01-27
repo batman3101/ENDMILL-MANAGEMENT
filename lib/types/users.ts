@@ -47,6 +47,18 @@ export interface User {
   updatedAt: string | null
   createdBy?: string
   permissions?: Record<string, string[]> // 사용자 개인 권한 (역할 권한 오버라이드)
+  // 공장 관련 필드
+  defaultFactoryId?: string // 기본 공장 ID
+  accessibleFactories?: Array<{
+    factory_id: string
+    code: string
+    name: string
+    name_ko: string
+    name_vi: string
+    country: string
+    timezone: string
+    is_default: boolean
+  }>
 }
 
 // 사용자 통계

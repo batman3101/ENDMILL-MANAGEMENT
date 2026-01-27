@@ -3,17 +3,19 @@ import { unstable_noStore as noStore } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 import { getFactoryToday, getFactoryYesterday, getFactoryDayRange } from '@/lib/utils/dateUtils'
+import { applyFactoryFilter } from '@/lib/utils/factoryFilter'
 
 // 동적 라우트로 명시적 설정 (캐싱 방지)
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const fetchCache = 'force-no-store'
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   // Next.js Data Cache 완전 비활성화
   noStore()
 
-  logger.log('🚀 대시보드 API 호출됨:', new Date().toISOString())
+  const factoryId = request.nextUrl.searchParams.get('factoryId') || undefined
+  logger.log('🚀 대시보드 API 호출됨:', new Date().toISOString(), { factoryId })
   try {
     // Service Role Key를 직접 사용하여 Supabase 클라이언트 생성
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -63,19 +65,19 @@ export async function GET(_request: NextRequest) {
       equipmentLifeConsumption,
       topBrokenEndmills
     ] = await Promise.all([
-      getEquipmentStats(supabase),
-      getEndmillUsageStats(supabase),
-      getInventoryStats(supabase),
-      getToolChangeStats(supabase),
-      getCostAnalysis(supabase),
-      getFrequencyAnalysis(supabase),
-      getLifespanAnalysis(supabase),
-      getModelCostAnalysis(supabase),
-      getRecentAlerts(supabase),
-      getEndmillByEquipmentCount(supabase),
-      getModelEndmillUsage(supabase),
-      getEquipmentLifeConsumption(supabase),
-      getTopBrokenEndmills(supabase)
+      getEquipmentStats(supabase, factoryId),
+      getEndmillUsageStats(supabase, factoryId),
+      getInventoryStats(supabase, factoryId),
+      getToolChangeStats(supabase, factoryId),
+      getCostAnalysis(supabase, factoryId),
+      getFrequencyAnalysis(supabase, factoryId),
+      getLifespanAnalysis(supabase, factoryId),
+      getModelCostAnalysis(supabase, factoryId),
+      getRecentAlerts(supabase, factoryId),
+      getEndmillByEquipmentCount(supabase, factoryId),
+      getModelEndmillUsage(supabase, factoryId),
+      getEquipmentLifeConsumption(supabase, factoryId),
+      getTopBrokenEndmills(supabase, factoryId)
     ])
 
     const dashboardData = {
@@ -131,15 +133,18 @@ export async function GET(_request: NextRequest) {
 }
 
 // 설비 통계
-async function getEquipmentStats(supabase: any) {
+async function getEquipmentStats(supabase: any, factoryId?: string) {
   try {
     // 타임스탬프를 추가하여 캐시 무효화
     const timestamp = Date.now()
 
-    const { data: equipment, error } = await supabase
+    let equipmentQuery = supabase
       .from('equipment')
-      .select('status, model_code, location, id')
+      .select('status, model_code, location, id, factory_id')
       .gte('id', '00000000-0000-0000-0000-000000000000') // 모든 레코드 포함 (캐시 회피)
+    equipmentQuery = applyFactoryFilter(equipmentQuery, factoryId)
+
+    const { data: equipment, error } = await equipmentQuery
 
     if (error) {
       logger.error('equipment 조회 오류:', error)
@@ -160,10 +165,18 @@ async function getEquipmentStats(supabase: any) {
 
     const operatingRate = Math.round((statusCounts['가동중'] || 0) / total * 100)
 
-    // tool_positions에서 실제 공구 수명 효율 계산
-    const { data: allPositions } = await supabase
+    // tool_positions에서 실제 공구 수명 효율 계산 (공장 필터링: JS에서 equipment_id 기준)
+    const equipmentIdSet = new Set(equipment.map((e: any) => e.id))
+    if (factoryId && equipmentIdSet.size === 0) {
+      return { total: 0, active: 0, maintenance: 0, setup: 0, operatingRate: 0, toolLifeEfficiency: 0 }
+    }
+    const { data: allPositionsRaw } = await supabase
       .from('tool_positions')
-      .select('current_life, total_life, status')
+      .select('current_life, total_life, status, equipment_id')
+    // JS에서 공장별 필터링 (.in()은 800개 UUID로 Bad Request 발생)
+    const allPositions = factoryId
+      ? (allPositionsRaw || []).filter((pos: any) => equipmentIdSet.has(pos.equipment_id))
+      : allPositionsRaw
 
     const inUsePositions = (allPositions || []).filter((pos: any) => pos.status === 'in_use' && pos.total_life > 0)
     const toolLifeEfficiency = inUsePositions.length > 0
@@ -191,16 +204,18 @@ async function getEquipmentStats(supabase: any) {
 }
 
 // 교체 사유 분석 (교체 실적 기반)
-async function getEndmillUsageStats(supabase: any) {
+async function getEndmillUsageStats(supabase: any, factoryId?: string) {
   // 최근 30일 교체 실적 조회
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   const startDate = thirtyDaysAgo
 
   logger.log('🔧 교체 사유 분석 시작:', { startDate, period: '최근 30일' })
 
-  const { data: allChanges, error } = await supabase
+  let changesQuery = supabase
     .from('tool_changes')
-    .select('change_reason, change_date')
+    .select('change_reason, change_date, factory_id')
+  changesQuery = applyFactoryFilter(changesQuery, factoryId)
+  const { data: allChanges, error } = await changesQuery
 
   if (error) {
     console.error('tool_changes 조회 오류:', error)
@@ -256,10 +271,12 @@ async function getEndmillUsageStats(supabase: any) {
 }
 
 // 재고 통계
-async function getInventoryStats(supabase: any) {
-  const { data: inventory, error } = await supabase
+async function getInventoryStats(supabase: any, factoryId?: string) {
+  let invQuery = supabase
     .from('inventory')
-    .select('current_stock, min_stock, max_stock')
+    .select('current_stock, min_stock, max_stock, factory_id')
+  invQuery = applyFactoryFilter(invQuery, factoryId)
+  const { data: inventory, error } = await invQuery
 
   logger.log('📦 inventory 조회 결과:', {
     count: inventory?.length || 0,
@@ -310,7 +327,7 @@ async function getInventoryStats(supabase: any) {
 }
 
 // 교체 실적 통계 (공장 근무시간 기준: 베트남 08:00 시작)
-async function getToolChangeStats(supabase: any) {
+async function getToolChangeStats(supabase: any, factoryId?: string) {
   // 공장 근무시간 기준 오늘/어제 날짜 및 범위 계산
   const today = getFactoryToday()
   const yesterday = getFactoryYesterday()
@@ -325,11 +342,13 @@ async function getToolChangeStats(supabase: any) {
   })
 
   // created_at 기준으로 오늘 범위의 데이터 조회
-  const { data: todayChanges, error: todayError } = await supabase
+  let todayQuery = supabase
     .from('tool_changes')
-    .select('id, created_at, equipment_number, t_number')
+    .select('id, created_at, equipment_number, t_number, factory_id')
     .gte('created_at', todayRange.start)
     .lt('created_at', todayRange.end)
+  todayQuery = applyFactoryFilter(todayQuery, factoryId)
+  const { data: todayChanges, error: todayError } = await todayQuery
 
   if (todayError) {
     console.error('tool_changes 오늘 조회 오류:', todayError)
@@ -337,11 +356,13 @@ async function getToolChangeStats(supabase: any) {
   }
 
   // created_at 기준으로 어제 범위의 데이터 조회
-  const { data: yesterdayChanges, error: yesterdayError } = await supabase
+  let yesterdayQuery = supabase
     .from('tool_changes')
-    .select('id, created_at, equipment_number, t_number')
+    .select('id, created_at, equipment_number, t_number, factory_id')
     .gte('created_at', yesterdayRange.start)
     .lt('created_at', yesterdayRange.end)
+  yesterdayQuery = applyFactoryFilter(yesterdayQuery, factoryId)
+  const { data: yesterdayChanges, error: yesterdayError } = await yesterdayQuery
 
   if (yesterdayError) {
     console.error('tool_changes 어제 조회 오류:', yesterdayError)
@@ -383,7 +404,7 @@ async function getToolChangeStats(supabase: any) {
 }
 
 // 공구 사용 비용 분석
-async function getCostAnalysis(supabase: any) {
+async function getCostAnalysis(supabase: any, factoryId?: string) {
   const currentMonth = new Date().getMonth() + 1
   const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1
   const currentYear = new Date().getFullYear()
@@ -394,9 +415,11 @@ async function getCostAnalysis(supabase: any) {
   logger.log('💰 비용 분석 시작:', { currentMonth, lastMonth, currentMonthStart, lastMonthStart })
 
   // .gte()가 작동하지 않을 수 있으므로 전체 데이터를 가져와서 JavaScript로 필터링
-  const { data: allChanges, error } = await supabase
+  let costChangesQuery = supabase
     .from('tool_changes')
-    .select('endmill_code, change_date')
+    .select('endmill_code, change_date, factory_id')
+  costChangesQuery = applyFactoryFilter(costChangesQuery, factoryId)
+  const { data: allChanges, error } = await costChangesQuery
 
   if (error) {
     console.error('tool_changes 조회 오류:', error)
@@ -466,15 +489,17 @@ async function getCostAnalysis(supabase: any) {
 }
 
 // 설비별 교체 빈도 분석
-async function getFrequencyAnalysis(supabase: any) {
+async function getFrequencyAnalysis(supabase: any, factoryId?: string) {
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
   logger.log('📈 frequencyAnalysis 시작:', { oneWeekAgo })
 
   // .gte()가 작동하지 않으므로 전체 데이터를 가져와서 JavaScript로 필터링
-  const { data: allChanges, error: tcError } = await supabase
+  let freqChangesQuery = supabase
     .from('tool_changes')
-    .select('equipment_number, change_date, production_model')
+    .select('equipment_number, change_date, production_model, factory_id')
+  freqChangesQuery = applyFactoryFilter(freqChangesQuery, factoryId)
+  const { data: allChanges, error: tcError } = await freqChangesQuery
 
   if (tcError) {
     console.error('tool_changes 조회 오류:', tcError)
@@ -491,9 +516,11 @@ async function getFrequencyAnalysis(supabase: any) {
   })
 
   // equipment 조회 (current_model 추가)
-  const { data: equipment, error: eqError } = await supabase
+  let freqEqQuery = supabase
     .from('equipment')
-    .select('equipment_number, model_code, current_model')
+    .select('equipment_number, model_code, current_model, factory_id')
+  freqEqQuery = applyFactoryFilter(freqEqQuery, factoryId)
+  const { data: equipment, error: eqError } = await freqEqQuery
 
   if (eqError) {
     console.error('equipment 조회 오류:', eqError)
@@ -531,7 +558,7 @@ async function getFrequencyAnalysis(supabase: any) {
 }
 
 // 엔드밀 평균 사용 수명 분석 (수량 기반)
-async function getLifespanAnalysis(supabase: any) {
+async function getLifespanAnalysis(supabase: any, factoryId?: string) {
   // endmill_types 조회 (id 포함)
   const { data: endmillTypes, error: etError } = await supabase
     .from('endmill_types')
@@ -543,9 +570,11 @@ async function getLifespanAnalysis(supabase: any) {
   }
 
   // tool_changes에서 실제 사용 수량 데이터 조회
-  const { data: toolChanges, error: tcError } = await supabase
+  let lifespanTcQuery = supabase
     .from('tool_changes')
-    .select('endmill_type_id, tool_life')
+    .select('endmill_type_id, tool_life, factory_id')
+  lifespanTcQuery = applyFactoryFilter(lifespanTcQuery, factoryId)
+  const { data: toolChanges, error: tcError } = await lifespanTcQuery
 
   if (tcError) {
     console.error('tool_changes 조회 오류:', tcError)
@@ -611,7 +640,7 @@ async function getLifespanAnalysis(supabase: any) {
 }
 
 // 설비 모델별 비용 분석
-async function getModelCostAnalysis(supabase: any) {
+async function getModelCostAnalysis(supabase: any, factoryId?: string) {
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
   const startDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`
@@ -619,9 +648,11 @@ async function getModelCostAnalysis(supabase: any) {
   logger.log('💰 modelCostAnalysis 시작:', { currentMonth, currentYear, startDate })
 
   // .gte()가 작동하지 않으므로 전체 데이터를 가져와서 JavaScript로 필터링
-  const { data: allChanges, error: tcError } = await supabase
+  let modelCostTcQuery = supabase
     .from('tool_changes')
-    .select('equipment_number, endmill_code, production_model, change_date')
+    .select('equipment_number, endmill_code, production_model, change_date, factory_id')
+  modelCostTcQuery = applyFactoryFilter(modelCostTcQuery, factoryId)
+  const { data: allChanges, error: tcError } = await modelCostTcQuery
 
   if (tcError) {
     console.error('tool_changes 조회 오류:', tcError)
@@ -638,9 +669,11 @@ async function getModelCostAnalysis(supabase: any) {
   })
 
   // equipment 조회 (current_model 추가)
-  const { data: equipment, error: eqError } = await supabase
+  let modelCostEqQuery = supabase
     .from('equipment')
-    .select('equipment_number, model_code, current_model')
+    .select('equipment_number, model_code, current_model, factory_id')
+  modelCostEqQuery = applyFactoryFilter(modelCostEqQuery, factoryId)
+  const { data: equipment, error: eqError } = await modelCostEqQuery
 
   if (eqError) {
     console.error('equipment 조회 오류:', eqError)
@@ -689,16 +722,18 @@ async function getModelCostAnalysis(supabase: any) {
 }
 
 // 최근 경고 및 알림 조회 (각 유형당 최대 3개씩)
-async function getRecentAlerts(supabase: any) {
+async function getRecentAlerts(supabase: any, factoryId?: string) {
   logger.log('🚨 최근 알림 조회 시작')
 
   const alerts: any[] = []
   const MAX_ALERTS_PER_TYPE = 3
 
   // 1. 비정상 파손 감지: 파손 사유로 교체된 최근 이력 (가장 중요하므로 먼저)
-  const { data: allChanges, error: changesError } = await supabase
+  let alertChangesQuery = supabase
     .from('tool_changes')
-    .select('equipment_number, t_number, change_reason, created_at, tool_life, endmill_type_id')
+    .select('equipment_number, t_number, change_reason, created_at, tool_life, endmill_type_id, factory_id')
+  alertChangesQuery = applyFactoryFilter(alertChangesQuery, factoryId)
+  const { data: allChanges, error: changesError } = await alertChangesQuery
 
   if (changesError) {
     console.error('tool_changes 조회 오류:', changesError)
@@ -839,9 +874,11 @@ async function getRecentAlerts(supabase: any) {
   }
 
   // 3. 재고 부족 경보: 최소 재고 이하인 항목
-  const { data: inventory, error: invError } = await supabase
+  let alertInvQuery = supabase
     .from('inventory')
-    .select('endmill_type_id, current_stock, min_stock, last_updated')
+    .select('endmill_type_id, current_stock, min_stock, last_updated, factory_id')
+  alertInvQuery = applyFactoryFilter(alertInvQuery, factoryId)
+  const { data: inventory, error: invError } = await alertInvQuery
 
   if (!invError && inventory) {
     // JavaScript로 필터링: critical (current_stock < min_stock)
@@ -882,11 +919,21 @@ async function getRecentAlerts(supabase: any) {
 }
 
 // Phase 4.1: 앤드밀별 사용 설비 개수
-async function getEndmillByEquipmentCount(supabase: any) {
+async function getEndmillByEquipmentCount(supabase: any, factoryId?: string) {
   logger.log('🔧 앤드밀별 사용 설비 개수 조회 시작')
 
-  // tool_positions에서 사용 중인 앤드밀 조회 (equipment 정보 포함)
-  const { data: toolPositions, error: tpError } = await supabase
+  // 공장 필터링을 위해 해당 공장의 equipment IDs 먼저 조회
+  let eqCountQuery = supabase.from('equipment').select('id, factory_id')
+  eqCountQuery = applyFactoryFilter(eqCountQuery, factoryId)
+  const { data: factoryEquipment } = await eqCountQuery
+  const factoryEquipmentIds = (factoryEquipment || []).map((e: any) => e.id)
+
+  // tool_positions에서 사용 중인 앤드밀 조회 (JS에서 equipment 필터링 - .in() 800개 UUID Bad Request 방지)
+  const factoryEquipmentIdSet = new Set(factoryEquipmentIds)
+  if (factoryId && factoryEquipmentIdSet.size === 0) {
+    return []
+  }
+  const { data: toolPositionsRaw, error: tpError } = await supabase
     .from('tool_positions')
     .select('endmill_type_id, equipment_id, status')
 
@@ -895,7 +942,10 @@ async function getEndmillByEquipmentCount(supabase: any) {
     throw tpError
   }
 
-  // JavaScript로 필터링: in_use만
+  // JavaScript로 필터링: 공장별 + in_use만
+  const toolPositions = factoryId
+    ? (toolPositionsRaw || []).filter((pos: any) => factoryEquipmentIdSet.has(pos.equipment_id))
+    : toolPositionsRaw
   const inUsePositions = (toolPositions || []).filter((pos: any) => pos.status === 'in_use')
 
   logger.log('📊 사용 중인 포지션 조회 완료:', {
@@ -946,7 +996,7 @@ async function getEndmillByEquipmentCount(supabase: any) {
 }
 
 // Phase 4.1: 모델별 앤드밀 사용 현황 (CAM Sheet 기준)
-async function getModelEndmillUsage(supabase: any) {
+async function getModelEndmillUsage(supabase: any, factoryId?: string) {
   logger.log('📊 모델별 앤드밀 사용 현황 조회 시작 (CAM Sheet 기준)')
 
   // CAM Sheet에서 모델/공정별 T번호 개수 조회
@@ -980,9 +1030,11 @@ async function getModelEndmillUsage(supabase: any) {
   })
 
   // equipment 조회
-  const { data: equipment, error: eqError } = await supabase
+  let modelUsageEqQuery = supabase
     .from('equipment')
-    .select('id, equipment_number, current_model, process')
+    .select('id, equipment_number, current_model, process, factory_id')
+  modelUsageEqQuery = applyFactoryFilter(modelUsageEqQuery, factoryId)
+  const { data: equipment, error: eqError } = await modelUsageEqQuery
 
   if (eqError) {
     console.error('equipment 조회 오류:', eqError)
@@ -1037,15 +1089,17 @@ async function getModelEndmillUsage(supabase: any) {
 }
 
 // Phase 4.1: 설비별 교체 실적 통계 (실제 교체 건수 기준)
-async function getEquipmentLifeConsumption(supabase: any) {
+async function getEquipmentLifeConsumption(supabase: any, factoryId?: string) {
   logger.log('⚙️ 설비별 교체 실적 통계 조회 시작')
 
   // 최근 30일간의 교체 실적 조회
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  const { data: allChanges, error: tcError } = await supabase
+  let lifeConTcQuery = supabase
     .from('tool_changes')
-    .select('equipment_number, change_date, endmill_code, endmill_type_id')
+    .select('equipment_number, change_date, endmill_code, endmill_type_id, factory_id')
+  lifeConTcQuery = applyFactoryFilter(lifeConTcQuery, factoryId)
+  const { data: allChanges, error: tcError } = await lifeConTcQuery
 
   if (tcError) {
     console.error('tool_changes 조회 오류:', tcError)
@@ -1067,9 +1121,11 @@ async function getEquipmentLifeConsumption(supabase: any) {
   }
 
   // equipment 조회 (tool_position_count 포함)
-  const { data: equipment, error: eqError } = await supabase
+  let lifeConEqQuery = supabase
     .from('equipment')
-    .select('id, equipment_number, current_model, process, tool_position_count')
+    .select('id, equipment_number, current_model, process, tool_position_count, factory_id')
+  lifeConEqQuery = applyFactoryFilter(lifeConEqQuery, factoryId)
+  const { data: equipment, error: eqError } = await lifeConEqQuery
 
   if (eqError) {
     console.error('equipment 조회 오류:', eqError)
@@ -1127,15 +1183,17 @@ async function getEquipmentLifeConsumption(supabase: any) {
 }
 
 // 최다 파손 교체 엔드밀 Top 3 (최근 30일 기준)
-async function getTopBrokenEndmills(supabase: any) {
+async function getTopBrokenEndmills(supabase: any, factoryId?: string) {
   logger.log('🔨 최다 파손 교체 엔드밀 Top 3 조회 시작')
 
   // 최근 30일간의 파손 교체 실적 조회
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  const { data: allChanges, error: tcError } = await supabase
+  let brokenTcQuery = supabase
     .from('tool_changes')
-    .select('endmill_code, change_reason, change_date')
+    .select('endmill_code, change_reason, change_date, factory_id')
+  brokenTcQuery = applyFactoryFilter(brokenTcQuery, factoryId)
+  const { data: allChanges, error: tcError } = await brokenTcQuery
 
   if (tcError) {
     console.error('tool_changes 조회 오류:', tcError)

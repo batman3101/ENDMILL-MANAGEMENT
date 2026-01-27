@@ -256,3 +256,66 @@ export const RESOURCE_AVAILABLE_ACTIONS: Record<string, Permission['action'][]> 
   users: ['create', 'read', 'update', 'delete', 'manage'],
   ai_insights: ['use', 'manage']
 }
+
+// ===== Factory Permission Functions =====
+
+/**
+ * 사용자가 특정 공장에 접근할 수 있는지 확인 (동기 버전)
+ * @param factoryId - 확인할 공장 ID
+ * @param accessibleFactoryIds - 사용자가 접근 가능한 공장 ID 목록
+ * @returns 접근 가능 여부
+ */
+export function hasFactoryAccessSync(
+  factoryId: string,
+  accessibleFactoryIds: string[]
+): boolean {
+  return accessibleFactoryIds.includes(factoryId)
+}
+
+/**
+ * 공장 ID를 포함한 권한 검증 함수
+ * @param userRole - 사용자 역할
+ * @param resource - 리소스 이름
+ * @param action - 액션
+ * @param factoryId - 공장 ID (선택)
+ * @param accessibleFactoryIds - 접근 가능한 공장 ID 목록 (선택)
+ * @param customPermissions - 커스텀 권한
+ * @returns 권한 여부
+ */
+export function hasPermissionWithFactory(
+  userRole: UserRole,
+  resource: string,
+  action: Permission['action'],
+  factoryId?: string,
+  accessibleFactoryIds?: string[],
+  customPermissions?: Permission[]
+): boolean {
+  // 기본 권한 검증
+  const basePermission = hasPermission(userRole, resource, action, customPermissions)
+  if (!basePermission) {
+    return false
+  }
+
+  // 시스템 관리자는 모든 공장 접근 가능
+  if (userRole === 'system_admin') {
+    return true
+  }
+
+  // 공장 ID가 지정되지 않았으면 기본 권한만 확인
+  if (!factoryId || !accessibleFactoryIds) {
+    return basePermission
+  }
+
+  // 공장 접근 권한 확인
+  return hasFactoryAccessSync(factoryId, accessibleFactoryIds)
+}
+
+// 'factories' 리소스를 AVAILABLE_RESOURCES에 추가해야 하지만,
+// 상수 배열은 수정하지 않고 새로운 상수 추가
+export const FACTORY_RESOURCE = 'factories' as const
+
+// 공장 관련 권한 액션
+export const FACTORY_ACTIONS: Permission['action'][] = [
+  'read',
+  'manage'
+]

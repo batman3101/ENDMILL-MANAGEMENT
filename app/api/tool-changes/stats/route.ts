@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '../../../../lib/utils/logger'
 import { createClient } from '@/lib/supabase/server'
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
+import { applyFactoryFilter } from '@/lib/utils/factoryFilter'
 
 // 동적 라우트로 명시적 설정
 export const dynamic = 'force-dynamic'
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const dateParam = searchParams.get('date') // YYYY-MM-DD 형식
+    const factoryId = searchParams.get('factoryId') || undefined
 
     // 베트남 시간대(UTC+7) 기준, 08시를 기준으로 하루 구분
     const vietnamOffset = 7 * 60 // UTC+7 (분 단위)
@@ -79,15 +81,21 @@ export async function GET(request: NextRequest) {
       targetDate: targetDate.toISOString().split('T')[0],
       startDateTime,
       endDateTime,
-      vietnamTime: vietnamTime.toISOString()
+      vietnamTime: vietnamTime.toISOString(),
+      factoryId
     })
 
     // created_at 기준으로 필터링 (시간 정보 포함)
-    const { data: toolChanges, error } = await supabase
+    let query = supabase
       .from('tool_changes')
       .select('*')
       .gte('created_at', startDateTime)
       .lt('created_at', endDateTime)
+
+    // 공장 필터 적용
+    query = applyFactoryFilter(query, factoryId)
+
+    const { data: toolChanges, error } = await query
 
     if (error) {
       logger.error('Tool changes 조회 오류:', error)

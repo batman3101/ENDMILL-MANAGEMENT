@@ -8,6 +8,7 @@ import ConfirmationModal from '@/components/shared/ConfirmationModal'
 import { useConfirmation, createDeleteConfirmation } from '@/lib/hooks/useConfirmation'
 import { clientLogger } from '@/lib/utils/logger'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { useFactory } from '@/lib/hooks/useFactory'
 
 interface EndmillDisposal {
   id: string
@@ -26,6 +27,8 @@ type SortField = 'disposal_date' | 'quantity' | 'weight_kg' | 'inspector' | 'rev
 export default function EndmillDisposalPage() {
   const { t } = useTranslations()
   const { hasPermission } = useAuth()
+  const { currentFactory } = useFactory()
+  const factoryId = currentFactory?.id
   const [disposals, setDisposals] = useState<EndmillDisposal[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -67,7 +70,7 @@ export default function EndmillDisposalPage() {
   const loadDisposals = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/endmill-disposals?start=${dateRange.start}&end=${dateRange.end}`)
+      const response = await fetch(`/api/endmill-disposals?start=${dateRange.start}&end=${dateRange.end}${factoryId ? `&factoryId=${factoryId}` : ''}`)
       const result = await response.json()
 
       if (!response.ok) throw new Error(result.error)
@@ -83,7 +86,7 @@ export default function EndmillDisposalPage() {
   useEffect(() => {
     loadDisposals()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateRange])
+  }, [dateRange, factoryId])
 
   // dateRange 변경 시 첫 페이지로 이동
   useEffect(() => {
@@ -315,7 +318,8 @@ export default function EndmillDisposalPage() {
         inspector: formData.inspector,
         reviewer: formData.reviewer,
         notes: formData.notes,
-        image_url: imageUrl
+        image_url: imageUrl,
+        factory_id: factoryId
       }
 
       const response = await fetch('/api/endmill-disposals', {
@@ -393,7 +397,8 @@ export default function EndmillDisposalPage() {
         weight_kg: formData.weight_kg,
         inspector: formData.inspector,
         reviewer: formData.reviewer,
-        notes: formData.notes
+        notes: formData.notes,
+        factory_id: factoryId
       }
 
       if (imageUrl !== undefined) {

@@ -6,6 +6,7 @@ import { I18nProvider } from '../lib/providers/I18nProvider';
 import { ToastProvider } from '../components/shared/Toast';
 import { AuthProvider } from '../lib/hooks/useAuth';
 import { SettingsProvider } from '../lib/providers/SettingsProvider';
+import { FactoryProvider } from '../lib/providers/FactoryProvider';
 import { ServiceWorkerRegister, InstallPrompt } from '../components/pwa';
 
 const inter = Inter({ 
@@ -82,11 +83,13 @@ export default function RootLayout({
             <ToastProvider>
               <QueryProvider>
                 <AuthProvider>
-                  <SettingsProvider>
-                    {children}
-                    {/* PWA 설치 프롬프트 */}
-                    <InstallPrompt />
-                  </SettingsProvider>
+                  <FactoryProvider>
+                    <SettingsProvider>
+                      {children}
+                      {/* PWA 설치 프롬프트 */}
+                      <InstallPrompt />
+                    </SettingsProvider>
+                  </FactoryProvider>
                 </AuthProvider>
               </QueryProvider>
             </ToastProvider>

@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { clientSupabaseService } from '../services/supabaseService'
 import { Database } from '../types/database'
 import { clientLogger } from '../utils/logger'
+import { useFactory } from '@/lib/hooks/useFactory'
 
 // Database 타입에서 가져오기
 type EndmillSupplierPrice = Database['public']['Tables']['endmill_supplier_prices']['Row']
@@ -49,6 +50,8 @@ const calculateStockStatus = (current: number, min: number, _max: number): 'suff
 
 export const useInventory = (filter?: InventoryFilter) => {
   const queryClient = useQueryClient()
+  const { currentFactory } = useFactory()
+  const factoryId = currentFactory?.id
 
   // 재고 데이터 조회
   const {
@@ -57,9 +60,10 @@ export const useInventory = (filter?: InventoryFilter) => {
     error,
     refetch
   } = useQuery({
-    queryKey: ['inventory', filter],
+    queryKey: ['inventory', factoryId, filter],
     queryFn: async () => {
       const response = await fetch('/api/inventory?' + new URLSearchParams({
+        ...(factoryId && { factoryId }),
         ...(filter?.status && { status: filter.status }),
         ...(filter?.category && { category: filter.category }),
         ...(filter?.lowStock && { lowStock: 'true' })
@@ -78,7 +82,8 @@ export const useInventory = (filter?: InventoryFilter) => {
       }
 
       return (result.data || result) as Inventory[]
-    }
+    },
+    enabled: !!factoryId
   })
 
   // 앤드밀 타입 데이터 조회
@@ -95,17 +100,19 @@ export const useInventory = (filter?: InventoryFilter) => {
 
   // 실시간 구독 설정
   useEffect(() => {
+    if (!factoryId) return
+
     const subscription = clientSupabaseService.inventory.subscribeToChanges((payload) => {
       clientLogger.log('Inventory 실시간 업데이트:', payload)
 
       // React Query 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      queryClient.invalidateQueries({ queryKey: ['inventory', factoryId] })
     })
 
     return () => {
       subscription?.unsubscribe()
     }
-  }, [queryClient])
+  }, [queryClient, factoryId])
 
   // 재고 생성 Mutation
   const createMutation = useMutation({
@@ -126,7 +133,10 @@ export const useInventory = (filter?: InventoryFilter) => {
       const response = await fetch('/api/inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          ...data,
+          factory_id: factoryId
+        })
       })
 
       if (!response.ok) {
@@ -142,7 +152,7 @@ export const useInventory = (filter?: InventoryFilter) => {
     },
     onSuccess: async () => {
       // 생성 성공 시 즉시 캐시 무효화 및 refetch
-      await queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      await queryClient.invalidateQueries({ queryKey: ['inventory', factoryId] })
     }
   })
 
@@ -164,7 +174,11 @@ export const useInventory = (filter?: InventoryFilter) => {
       const response = await fetch('/api/inventory', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...data })
+        body: JSON.stringify({
+          id,
+          ...data,
+          factory_id: factoryId
+        })
       })
 
       if (!response.ok) {
@@ -180,7 +194,7 @@ export const useInventory = (filter?: InventoryFilter) => {
     },
     onSuccess: async () => {
       // 업데이트 성공 시 즉시 캐시 무효화 및 refetch
-      await queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      await queryClient.invalidateQueries({ queryKey: ['inventory', factoryId] })
     }
   })
 
@@ -204,7 +218,7 @@ export const useInventory = (filter?: InventoryFilter) => {
     },
     onSuccess: async () => {
       // 삭제 성공 시 즉시 캐시 무효화 및 refetch
-      await queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      await queryClient.invalidateQueries({ queryKey: ['inventory', factoryId] })
     }
   })
 

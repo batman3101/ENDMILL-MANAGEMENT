@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
     const offset = searchParams.get('offset')
     const sortField = searchParams.get('sort_field')
     const sortDirection = searchParams.get('sort_direction') as 'asc' | 'desc'
+    const factoryId = searchParams.get('factoryId') || undefined
 
     logger.log('GET /api/tool-changes params:', {
       equipmentNumber,
@@ -75,7 +76,8 @@ export async function GET(request: NextRequest) {
       limit,
       offset,
       sortField,
-      sortDirection
+      sortDirection,
+      factoryId
     })
 
     const result = await serverSupabaseService.toolChange.getFiltered({
@@ -87,7 +89,8 @@ export async function GET(request: NextRequest) {
       limit: limit ? parseInt(limit) : undefined,
       offset: offset ? parseInt(offset) : undefined,
       sortField: sortField || undefined,
-      sortDirection: sortDirection || undefined
+      sortDirection: sortDirection || undefined,
+      factoryId: factoryId
     })
 
     // totalCount를 별도로 가져오기
@@ -96,7 +99,8 @@ export async function GET(request: NextRequest) {
       endmillType: endmillType || undefined,
       searchTerm: searchTerm || undefined,
       startDate: startDate || undefined,
-      endDate: endDate || undefined
+      endDate: endDate || undefined,
+      factoryId: factoryId
     })
 
     return NextResponse.json({
@@ -180,7 +184,8 @@ export async function POST(request: NextRequest) {
       tool_life: validatedData.tool_life,
       change_reason: validatedData.change_reason as "수명완료" | "파손" | "마모" | "예방교체" | "모델변경" | "기타",
       changed_by: validatedData.changed_by,
-      change_date: validatedData.change_date || new Date().toISOString().split('T')[0]
+      change_date: validatedData.change_date || new Date().toISOString().split('T')[0],
+      factory_id: body.factory_id
     }
 
     logger.log('Creating tool change with data:', JSON.stringify(toolChangeData, null, 2))

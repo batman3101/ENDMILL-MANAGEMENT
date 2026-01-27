@@ -69,8 +69,10 @@ export async function POST(request: NextRequest) {
     // 입력 데이터 검증
     const validatedData = bulkUploadSchema.parse(body)
     const toolChangesData = validatedData.data
+    const factoryId = body.factory_id
 
     logger.log('일괄 업로드 데이터 수:', toolChangesData.length)
+    logger.log('공장 ID:', factoryId)
 
     // CAM Sheet 정합성 검증
     const validationErrors: ValidationError[] = []
@@ -221,7 +223,8 @@ export async function POST(request: NextRequest) {
         tool_life: row.tool_life,
         change_reason: normalizedChangeReason,
         changed_by: (user as any).id,
-        change_date: new Date().toISOString().split('T')[0]
+        change_date: new Date().toISOString().split('T')[0],
+        factory_id: factoryId
       })
     }
 
@@ -251,7 +254,8 @@ export async function POST(request: NextRequest) {
           tool_life: record.tool_life,
           change_reason: record.change_reason,
           changed_by: record.changed_by,
-          change_date: record.change_date
+          change_date: record.change_date,
+          factory_id: record.factory_id
         })
         .select()
         .single()

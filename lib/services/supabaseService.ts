@@ -15,12 +15,17 @@ export class EquipmentService {
   }
 
   // 전체 설비 조회
-  async getAll() {
-    const { data, error } = await this.supabase
+  async getAll(options?: { factoryId?: string }) {
+    let query = this.supabase
       .from('equipment')
       .select('*')
       .order('equipment_number')
 
+    if (options?.factoryId) {
+      query = query.eq('factory_id', options.factoryId)
+    }
+
+    const { data, error } = await query
     if (error) throw error
     return data
   }
@@ -77,12 +82,17 @@ export class EquipmentService {
   }
 
   // 설비 상태별 조회
-  async getByStatus(status: '가동중' | '점검중' | '셋업중') {
-    const { data, error } = await this.supabase
+  async getByStatus(status: '가동중' | '점검중' | '셋업중', options?: { factoryId?: string }) {
+    let query = this.supabase
       .from('equipment')
       .select('*')
       .eq('status', status)
 
+    if (options?.factoryId) {
+      query = query.eq('factory_id', options.factoryId)
+    }
+
+    const { data, error } = await query
     if (error) throw error
     return data
   }
@@ -123,11 +133,16 @@ export class EquipmentService {
   }
 
   // 설비 통계
-  async getStats() {
-    const { data, error } = await this.supabase
+  async getStats(options?: { factoryId?: string }) {
+    let query = this.supabase
       .from('equipment')
       .select('status')
 
+    if (options?.factoryId) {
+      query = query.eq('factory_id', options.factoryId)
+    }
+
+    const { data, error } = await query
     if (error) throw error
 
     const stats = data.reduce((acc, equipment) => {
@@ -267,8 +282,8 @@ export class InventoryService {
   }
 
   // 전체 재고 조회 (앤드밀 타입과 조인)
-  async getAll() {
-    const { data, error } = await this.supabase
+  async getAll(options?: { factoryId?: string }) {
+    let query = this.supabase
       .from('inventory')
       .select(`
         *,
@@ -283,13 +298,18 @@ export class InventoryService {
       `)
       .order('current_stock', { ascending: true })
 
+    if (options?.factoryId) {
+      query = query.eq('factory_id', options.factoryId)
+    }
+
+    const { data, error } = await query
     if (error) throw error
     return data
   }
 
   // 재고 상태별 조회
-  async getByStatus(status: 'sufficient' | 'low' | 'critical') {
-    const { data, error } = await this.supabase
+  async getByStatus(status: 'sufficient' | 'low' | 'critical', options?: { factoryId?: string }) {
+    let query = this.supabase
       .from('inventory')
       .select(`
         *,
@@ -300,6 +320,11 @@ export class InventoryService {
       `)
       .eq('status', status)
 
+    if (options?.factoryId) {
+      query = query.eq('factory_id', options.factoryId)
+    }
+
+    const { data, error } = await query
     if (error) throw error
     return data
   }
@@ -382,8 +407,8 @@ export class InventoryService {
   }
 
   // 재고 통계
-  async getStats() {
-    const { data, error } = await this.supabase
+  async getStats(options?: { factoryId?: string }) {
+    let query = this.supabase
       .from('inventory')
       .select(`
         current_stock,
@@ -393,6 +418,11 @@ export class InventoryService {
         endmill_type:endmill_types(unit_cost)
       `)
 
+    if (options?.factoryId) {
+      query = query.eq('factory_id', options.factoryId)
+    }
+
+    const { data, error } = await query
     if (error) throw error
 
     const totalItems = data.length
@@ -443,7 +473,7 @@ export class ToolChangeService {
   }
 
   // 전체 교체 이력 조회
-  async getAll(limit?: number) {
+  async getAll(limit?: number, options?: { factoryId?: string }) {
     let query = this.supabase
       .from('tool_changes')
       .select(`
@@ -456,6 +486,10 @@ export class ToolChangeService {
 
     if (limit) {
       query = query.limit(limit)
+    }
+
+    if (options?.factoryId) {
+      query = query.eq('factory_id', options.factoryId)
     }
 
     const { data, error } = await query
@@ -484,7 +518,7 @@ export class ToolChangeService {
   }
 
   // 설비별 교체 이력 조회 (설비 번호로)
-  async getByEquipment(equipmentNumber: number, limit?: number, offset?: number) {
+  async getByEquipment(equipmentNumber: number, limit?: number, offset?: number, options?: { factoryId?: string }) {
     let query = this.supabase
       .from('tool_changes')
       .select(`
@@ -498,6 +532,10 @@ export class ToolChangeService {
 
     if (limit) query = query.limit(limit)
     if (offset) query = query.range(offset, offset + (limit || 50) - 1)
+
+    if (options?.factoryId) {
+      query = query.eq('factory_id', options.factoryId)
+    }
 
     const { data, error } = await query
     if (error) throw error
@@ -515,6 +553,7 @@ export class ToolChangeService {
     offset?: number
     sortField?: string
     sortDirection?: 'asc' | 'desc'
+    factoryId?: string
   }) {
     let query = this.supabase
       .from('tool_changes')
@@ -524,6 +563,11 @@ export class ToolChangeService {
         endmill_type:endmill_types(*),
         user:user_profiles!changed_by(name, employee_id)
       `)
+
+    // 공장 필터
+    if (filters.factoryId) {
+      query = query.eq('factory_id', filters.factoryId)
+    }
 
     // 설비 번호 필터
     if (filters.equipmentNumber) {
@@ -631,10 +675,16 @@ export class ToolChangeService {
     searchTerm?: string
     startDate?: string
     endDate?: string
+    factoryId?: string
   }) {
     let query = this.supabase
       .from('tool_changes')
       .select('*, user_profiles(name, employee_id)', { count: 'exact', head: true })
+
+    // 공장 필터
+    if (filters.factoryId) {
+      query = query.eq('factory_id', filters.factoryId)
+    }
 
     // 설비 번호 필터
     if (filters.equipmentNumber) {
@@ -697,8 +747,8 @@ export class CAMSheetService {
   }
 
   // 전체 CAM Sheet 조회
-  async getAll() {
-    const { data, error } = await this.supabase
+  async getAll(options?: { factoryId?: string }) {
+    let query = this.supabase
       .from('cam_sheets')
       .select(`
         *,
@@ -709,6 +759,11 @@ export class CAMSheetService {
       `)
       .order('created_at', { ascending: false })
 
+    if (options?.factoryId) {
+      query = query.eq('factory_id', options.factoryId)
+    }
+
+    const { data, error } = await query
     if (error) throw error
     return data
   }
@@ -738,8 +793,8 @@ export class CAMSheetService {
   }
 
   // 모델/공정별 CAM Sheet 조회
-  async getByModelAndProcess(model: string, process: string) {
-    const { data, error } = await this.supabase
+  async getByModelAndProcess(model: string, process: string, options?: { factoryId?: string }) {
+    let query = this.supabase
       .from('cam_sheets')
       .select(`
         *,
@@ -751,6 +806,11 @@ export class CAMSheetService {
       .eq('model', model)
       .eq('process', process)
 
+    if (options?.factoryId) {
+      query = query.eq('factory_id', options.factoryId)
+    }
+
+    const { data, error } = await query
     if (error) throw error
     return data
   }

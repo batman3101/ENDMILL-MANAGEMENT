@@ -10,6 +10,7 @@ import {
   groupBy
 } from '../../../../lib/utils/reportCalculations'
 import { getFactoryDayRange, getFactoryDateFromCreatedAt } from '../../../../lib/utils/dateUtils'
+import { applyFactoryFilter } from '@/lib/utils/factoryFilter'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,6 +21,9 @@ export async function POST(request: NextRequest) {
     if (!filter) {
       return NextResponse.json({ error: 'Filter is required' }, { status: 400 })
     }
+
+    // factory filter 추출
+    const factoryId = filter?.factoryId || undefined
 
     // 날짜 범위 계산 (공장 근무시간 기준)
     const { startDate, endDate } = getDateRangeFromFilter(filter)
@@ -34,6 +38,9 @@ export async function POST(request: NextRequest) {
       .select('id, change_date, created_at, equipment_number, production_model, tool_life, change_reason, endmill_code, process, t_number')
       .gte('created_at', dateFrom)
       .lt('created_at', dateTo)
+
+    // factory filter 적용
+    tcQuery = applyFactoryFilter(tcQuery, factoryId)
 
     if (filter.equipmentModel) {
       tcQuery = tcQuery.eq('production_model', filter.equipmentModel)
@@ -64,9 +71,14 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. equipment 데이터 조회
-    const { data: equipments, error: eqError } = await supabase
+    let eqQuery = supabase
       .from('equipment')
       .select('equipment_number, model_code, location, current_model')
+
+    // factory filter 적용
+    eqQuery = applyFactoryFilter(eqQuery, factoryId)
+
+    const { data: equipments, error: eqError } = await eqQuery
 
     if (eqError) {
       logger.error('equipment 조회 오류:', eqError)

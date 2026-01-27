@@ -5,9 +5,11 @@ import { clientSupabaseService } from '../services/supabaseService'
 import { User, UserRole, UserStats, UserFilter, ModulePermissions } from '../types/users'
 import { useRealtime } from './useRealtime'
 import { logger } from '@/lib/utils/logger'
+import { useFactory } from './useFactory'
 
 export const useUsers = () => {
   const queryClient = useQueryClient()
+  const { currentFactory } = useFactory()
 
   // 사용자 프로필 데이터 조회 (Supabase에서 가져오기)
   const {
@@ -16,12 +18,21 @@ export const useUsers = () => {
     error: usersError,
     refetch: refetchUsers
   } = useQuery({
-    queryKey: ['users'],
+    queryKey: ['users', currentFactory?.id],
     queryFn: async () => {
-      logger.log('🔄 Fetching user profiles from Supabase...')
-      const data = await clientSupabaseService.userProfile.getAll()
-      logger.log('✅ User profiles fetched:', data?.length, 'users')
-      return data || []
+      logger.log('🔄 Fetching user profiles from API...')
+      const params = new URLSearchParams()
+      if (currentFactory?.id) params.set('factoryId', currentFactory.id)
+      const response = await fetch(`/api/users?${params.toString()}`, {
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        logger.error('❌ API fetch failed:', response.status, response.statusText)
+        throw new Error('Failed to fetch users')
+      }
+      const result = await response.json()
+      logger.log('✅ User profiles fetched:', result.data?.length, 'users')
+      return result.data || []
     },
     staleTime: 5 * 60 * 1000, // 5분
     gcTime: 10 * 60 * 1000 // 10분
@@ -79,10 +90,10 @@ export const useUsers = () => {
   })
 
   // 데이터 변환: Supabase 데이터를 User 타입으로 변환
-  const users: User[] = rawUsers.map(profile => ({
+  const users: User[] = rawUsers.map((profile: any) => ({
     id: profile.id,
     name: profile.name,
-    email: '', // user_profiles에 email이 없으면 빈 문자열
+    email: profile.email || '',
     employeeId: profile.employee_id,
     department: profile.department,
     position: profile.position,
@@ -92,7 +103,7 @@ export const useUsers = () => {
     isActive: profile.is_active ?? true,
     createdAt: profile.created_at,
     updatedAt: profile.updated_at,
-    permissions: (profile as any).permissions || {} // 사용자 개인 권한 추가
+    permissions: profile.permissions || {}
   }))
 
   // 역할 데이터 변환
@@ -204,7 +215,8 @@ export const useUsers = () => {
           shift: userData.shift,
           roleId: userData.roleId,
           phone: userData.phone,
-          isActive: userData.isActive ?? true
+          isActive: userData.isActive ?? true,
+          factoryId: currentFactory?.id
         })
       })
 

@@ -8,8 +8,10 @@ import {
   EquipmentExcelData
 } from '../../lib/utils/equipmentExcelTemplate'
 import { useToast } from '../shared/Toast'
-import { useCAMSheets } from '../../lib/hooks/useCAMSheets'
 import { useTranslation } from 'react-i18next'
+import { useSettings } from '../../lib/hooks/useSettings'
+import { useCAMSheets } from '../../lib/hooks/useCAMSheets'
+import { useFactory } from '../../lib/hooks/useFactory'
 
 interface EquipmentExcelUploaderProps {
   onUploadSuccess: () => void
@@ -29,8 +31,15 @@ export default function EquipmentExcelUploader({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { showSuccess, showError } = useToast()
 
-  // CAM Sheet 데이터 가져오기
-  const { getAvailableModels: availableModels, getAvailableProcesses: availableProcesses } = useCAMSheets()
+  // 현재 공장 정보
+  const { currentFactory } = useFactory()
+  const factoryId = currentFactory?.id
+
+  // 설정 + CAM Sheet 모델/공정 병합 (중복 제거)
+  const { settings } = useSettings()
+  const { getAvailableModels: camSheetModels, getAvailableProcesses: camSheetProcesses } = useCAMSheets()
+  const availableModels = Array.from(new Set([...settings.equipment.models, ...camSheetModels]))
+  const availableProcesses = Array.from(new Set([...settings.equipment.processes, ...camSheetProcesses]))
 
   // 템플릿 다운로드 - 서버에서 동적으로 생성된 템플릿 정보 사용
   const handleDownloadTemplate = async () => {
@@ -119,7 +128,7 @@ export default function EquipmentExcelUploader({
       const response = await fetch('/api/equipment/bulk-upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ equipments: parsedData })
+        body: JSON.stringify({ equipments: parsedData, factory_id: factoryId })
       })
 
       const result = await response.json()

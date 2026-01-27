@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '../../../../lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 import { getFactoryPeriodRange } from '@/lib/utils/dateUtils'
+import { applyFactoryFilter } from '@/lib/utils/factoryFilter'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,6 +13,7 @@ export async function GET(request: NextRequest) {
     const period = searchParams.get('period') as 'today' | 'yesterday' | 'thisWeek' | 'lastWeek' | 'thisMonth' | 'custom' | null
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
+    const factoryId = searchParams.get('factoryId') || undefined
 
     // 공장 근무시간 기준으로 기간 계산 (베트남 08:00 시작)
     const { start: dateFrom, end: dateTo } = getFactoryPeriodRange(
@@ -22,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     logger.log('입고 내역 조회 기간 (공장 근무시간 기준):', { period, dateFrom, dateTo })
 
-    const { data: transactions, error } = await supabase
+    let query = supabase
       .from('inventory_transactions')
       .select(`
         *,
@@ -37,7 +39,11 @@ export async function GET(request: NextRequest) {
       .eq('transaction_type', 'inbound')
       .gte('processed_at', dateFrom)
       .lte('processed_at', dateTo)
-      .order('processed_at', { ascending: false })
+
+    // factory_id 필터 적용 (inventory_transactions 테이블에 factory_id 존재)
+    query = applyFactoryFilter(query, factoryId)
+
+    const { data: transactions, error } = await query.order('processed_at', { ascending: false })
 
     if (error) {
       logger.error('입고 내역 조회 오류:', error)
@@ -80,7 +86,7 @@ export async function POST(request: NextRequest) {
     const supabase = createServerClient()
     const body = await request.json()
 
-    const { endmill_code, supplier, quantity, unit_price, total_amount } = body
+    const { endmill_code, supplier, quantity, unit_price, total_amount, factory_id } = body
 
     // 필수 필드 검증
     if (!endmill_code || !quantity || !unit_price || !supplier) {
@@ -105,12 +111,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 재고 정보 조회 또는 생성
-    const { data: inventory, error } = await supabase
+    // 재고 정보 조회 또는 생성 (factory_id 필터 적용)
+    let inventoryQuery = supabase
       .from('inventory')
       .select('id, current_stock')
       .eq('endmill_type_id', endmillType.id)
-      .single()
+
+    if (factory_id) {
+      inventoryQuery = inventoryQuery.eq('factory_id', factory_id)
+    } else {
+      inventoryQuery = inventoryQuery.is('factory_id', null)
+    }
+
+    const { data: inventory, error } = await inventoryQuery.single()
 
     let finalInventory = inventory
 
@@ -124,7 +137,8 @@ export async function POST(request: NextRequest) {
           min_stock: 50,
           max_stock: 500,
           status: 'sufficient',
-          location: '창고A'
+          location: '창고A',
+          factory_id: factory_id || null
         })
         .select('id, current_stock')
         .single()
@@ -164,7 +178,8 @@ export async function POST(request: NextRequest) {
         total_amount: total_amount,
         purpose: supplier, // 공급업체 정보를 purpose에 저장
         notes: '관리자', // 실제로는 로그인된 사용자 정보
-        processed_at: new Date().toISOString()
+        processed_at: new Date().toISOString(),
+        factory_id: factory_id || null
       })
       .select()
       .single()
