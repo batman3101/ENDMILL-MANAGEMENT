@@ -174,7 +174,8 @@ export default function ToolChangesPage() {
     if (!equipmentNumber.trim()) return
 
     try {
-      const response = await fetch(`/api/tool-changes/auto-fill?equipmentNumber=${equipmentNumber}`, {
+      const factoryParam = currentFactory?.id ? `&factoryId=${currentFactory.id}` : ''
+      const response = await fetch(`/api/tool-changes/auto-fill?equipmentNumber=${equipmentNumber}${factoryParam}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache'
@@ -193,14 +194,15 @@ export default function ToolChangesPage() {
     } catch (error) {
       clientLogger.error('설비번호 자동입력 오류:', error)
     }
-  }, [])
+  }, [currentFactory?.id])
 
   // T번호 기반 자동입력 함수
   const autoFillByTNumber = useCallback(async (model: string, process: string, tNumber: number) => {
     if (!model || !process || !tNumber) return
 
     try {
-      const response = await fetch(`/api/tool-changes/auto-fill?model=${model}&process=${process}&tNumber=${tNumber}`, {
+      const factoryParam = currentFactory?.id ? `&factoryId=${currentFactory.id}` : ''
+      const response = await fetch(`/api/tool-changes/auto-fill?model=${model}&process=${process}&tNumber=${tNumber}${factoryParam}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache'
@@ -224,7 +226,7 @@ export default function ToolChangesPage() {
       clientLogger.error('T번호 자동입력 오류:', error)
       setSuggestedToolLife(null)
     }
-  }, [])
+  }, [currentFactory?.id])
 
   // 앤드밀 정보 자동 입력 함수 (기존 CAM Sheet 기반 - 백업용)
   const autoFillEndmillInfo = useCallback((model: string, process: string, tNumber: number) => {

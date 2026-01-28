@@ -59,6 +59,8 @@ export interface ChatHistoryItem {
  * 자연어 쿼리 실행 훅
  */
 export function useNaturalLanguageQuery() {
+  const { currentFactory } = useFactory()
+
   return useMutation<
     NaturalLanguageQueryResponse,
     Error,
@@ -70,7 +72,11 @@ export function useNaturalLanguageQuery() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ question, chatHistory: chatHistory || [] }),
+        body: JSON.stringify({
+          question,
+          chatHistory: chatHistory || [],
+          factoryId: currentFactory?.id,
+        }),
       })
 
       if (!response.ok) {
@@ -88,6 +94,7 @@ export function useNaturalLanguageQuery() {
  */
 export function useSendMessage() {
   const queryClient = useQueryClient()
+  const { currentFactory } = useFactory()
 
   return useMutation<
     { message: string; sessionId: string; responseTimeMs: number },
@@ -100,7 +107,7 @@ export function useSendMessage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sessionId, message }),
+        body: JSON.stringify({ sessionId, message, factoryId: currentFactory?.id }),
       })
 
       if (!response.ok) {
@@ -193,8 +200,11 @@ export function useSavedInsights(options?: {
   search?: string
   tags?: string[]
 }) {
+  const { currentFactory } = useFactory()
+  const factoryId = currentFactory?.id
   const params = new URLSearchParams()
 
+  if (factoryId) params.append('factoryId', factoryId)
   if (options?.filter) params.append('filter', options.filter)
   if (options?.sortBy) params.append('sortBy', options.sortBy)
   if (options?.search) params.append('search', options.search)
@@ -203,7 +213,7 @@ export function useSavedInsights(options?: {
   }
 
   return useQuery({
-    queryKey: ['savedInsights', options],
+    queryKey: ['savedInsights', factoryId, options],
     queryFn: async () => {
       const response = await fetch(`/api/ai/insights/saved?${params.toString()}`)
 
@@ -240,6 +250,7 @@ export function useSavedInsight(id: string) {
  */
 export function useSaveInsight() {
   const queryClient = useQueryClient()
+  const { currentFactory } = useFactory()
 
   return useMutation({
     mutationFn: async (insight: {
@@ -255,7 +266,7 @@ export function useSaveInsight() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(insight),
+        body: JSON.stringify({ ...insight, factoryId: currentFactory?.id }),
       })
 
       if (!response.ok) {
