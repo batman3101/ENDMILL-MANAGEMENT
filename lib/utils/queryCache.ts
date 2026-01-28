@@ -27,12 +27,13 @@ export interface CachedQuery {
  * 질문을 해시로 변환
  * 동일한 질문은 동일한 해시를 생성하여 캐시 키로 사용
  */
-export function hashQuestion(question: string): string {
+export function hashQuestion(question: string, factoryId?: string): string {
   // 대소문자 구분 없이, 공백 정규화
   const normalized = question.trim().toLowerCase().replace(/\s+/g, ' ')
+  const input = factoryId ? `${normalized}::${factoryId}` : normalized
 
   // SHA-256 해시 생성
-  const hash = createHash('sha256').update(normalized, 'utf8').digest('hex')
+  const hash = createHash('sha256').update(input, 'utf8').digest('hex')
 
   return hash
 }
@@ -42,10 +43,11 @@ export function hashQuestion(question: string): string {
  * 만료되지 않은 캐시만 반환
  */
 export async function getCachedQuery(
-  question: string
+  question: string,
+  factoryId?: string
 ): Promise<CachedQuery | null> {
   try {
-    const queryHash = hashQuestion(question)
+    const queryHash = hashQuestion(question, factoryId)
 
     // Supabase RPC 함수 사용 (hit_count 자동 증가)
     // @ts-expect-error - RPC 함수가 아직 데이터베이스에 생성되지 않음
@@ -77,10 +79,11 @@ export async function cacheQuery(
   question: string,
   answer: string,
   sqlQuery: string,
-  resultData: any
+  resultData: any,
+  factoryId?: string
 ): Promise<boolean> {
   try {
-    const queryHash = hashQuestion(question)
+    const queryHash = hashQuestion(question, factoryId)
 
     // 만료 시간 계산
     const expiresAt = new Date(Date.now() + CACHE_TTL_SECONDS * 1000)

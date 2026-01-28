@@ -56,7 +56,8 @@ export class NaturalLanguageQueryError extends Error {
 export async function executeNaturalLanguageQuery(
   question: string,
   _userId?: string,
-  chatHistory: ChatHistoryItem[] = []
+  chatHistory: ChatHistoryItem[] = [],
+  factoryId?: string
 ): Promise<NaturalLanguageQueryResponse> {
   const startTime = Date.now()
 
@@ -77,7 +78,7 @@ export async function executeNaturalLanguageQuery(
     }
 
     // 1단계: 캐시 확인
-    const cachedResult = await getCachedQuery(question)
+    const cachedResult = await getCachedQuery(question, factoryId)
     if (cachedResult) {
       const responseTimeMs = Date.now() - startTime
       return {
@@ -104,7 +105,8 @@ export async function executeNaturalLanguageQuery(
     const sqlGeneration = await geminiService.generateSQLFromNaturalLanguage(
       question,
       schemaContext,
-      geminiHistory
+      geminiHistory,
+      factoryId
     )
 
     const rawSQL = sqlGeneration.sql
@@ -159,7 +161,7 @@ export async function executeNaturalLanguageQuery(
     const answer = await geminiService.explainQueryResult(question, data || [])
 
     // 6단계: 캐싱
-    await cacheQuery(question, answer, sql, data || [])
+    await cacheQuery(question, answer, sql, data || [], factoryId)
 
     const responseTimeMs = Date.now() - startTime
 

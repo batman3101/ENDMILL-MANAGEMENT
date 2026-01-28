@@ -72,7 +72,8 @@ class GeminiService {
   async generateSQLFromNaturalLanguage(
     question: string,
     schemaContext: string,
-    chatHistory: Array<{ role: 'user' | 'assistant'; content: string }> = []
+    chatHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [],
+    factoryId?: string
   ): Promise<SQLGenerationResponse> {
     // 대화 히스토리를 프롬프트에 포함
     let historyContext = ''
@@ -92,6 +93,10 @@ class GeminiService {
 ## 데이터베이스 스키마
 ${schemaContext}
 ${historyContext}
+## 공장 필터링
+${factoryId ? `현재 선택된 공장의 factory_id는 '${factoryId}'입니다.
+factory_id 컬럼이 있는 테이블(equipments, tool_changes, inventory 등)을 조회할 때는 반드시 WHERE factory_id = '${factoryId}' 조건을 추가하세요.` : '공장 필터링이 필요하지 않습니다.'}
+
 ## 규칙
 1. SELECT 쿼리만 생성하세요 (INSERT, UPDATE, DELETE 금지)
 2. 위 스키마에 있는 테이블과 컬럼만 사용하세요

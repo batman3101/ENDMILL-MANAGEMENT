@@ -19,6 +19,7 @@ const requestSchema = z.object({
     .string()
     .min(1, '메시지를 입력하세요.')
     .max(1000, '메시지는 최대 1000자까지 입력 가능합니다.'),
+  factoryId: z.string().uuid().optional(),
 })
 
 // Rate limit (query API와 동일)
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { sessionId, message } = validation.data
+    const { sessionId, message, factoryId } = validation.data
 
     // 6. 대화 히스토리 로드 (최근 5개)
     const { data: historyData } = await supabase
@@ -167,6 +168,7 @@ export async function POST(request: NextRequest) {
       message_type: 'user',
       content: message,
       response_time_ms: 0,
+      ...(factoryId ? { factory_id: factoryId } : {}),
     } as any)
 
     // 9. AI 응답 저장
@@ -176,6 +178,7 @@ export async function POST(request: NextRequest) {
       message_type: 'ai',
       content: aiResponse,
       response_time_ms: responseTimeMs,
+      ...(factoryId ? { factory_id: factoryId } : {}),
     } as any)
 
     // 10. 응답

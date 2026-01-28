@@ -47,11 +47,17 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'newest' // newest, oldest, mostViewed
     const search = searchParams.get('search')
     const tags = searchParams.get('tags')?.split(',').filter(Boolean)
+    const factoryId = searchParams.get('factoryId')
 
     // 3. 쿼리 빌드
     let query = supabase
       .from('saved_insights')
       .select('*', { count: 'exact' })
+
+    // 공장 필터
+    if (factoryId) {
+      query = query.eq('factory_id', factoryId)
+    }
 
     // 필터 적용
     if (filter === 'my') {
@@ -154,6 +160,7 @@ export async function POST(request: NextRequest) {
     // 3. 요청 바디 검증
     const body = await request.json()
     const validatedData = saveInsightSchema.parse(body)
+    const factoryId = body.factoryId
 
     // 4. 인사이트 저장
     const { data: newInsight, error: insertError } = await (supabase as any)
@@ -168,6 +175,7 @@ export async function POST(request: NextRequest) {
         created_by: user.id,
         shared_with: [],
         view_count: 0,
+        ...(factoryId ? { factory_id: factoryId } : {}),
       })
       .select()
       .single()

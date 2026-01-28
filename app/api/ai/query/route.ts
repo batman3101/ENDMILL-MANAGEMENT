@@ -29,6 +29,7 @@ const requestSchema = z.object({
     .min(3, '질문은 최소 3자 이상이어야 합니다.')
     .max(500, '질문은 최대 500자까지 입력 가능합니다.'),
   chatHistory: z.array(chatHistoryItemSchema).optional().default([]),
+  factoryId: z.string().uuid().optional(),
 })
 
 // Rate limit 체크 (간단한 메모리 기반)
@@ -167,10 +168,10 @@ export async function POST(request: NextRequest) {
 
     // console.log('[AI Query API] 검증 성공:', validation.data)
 
-    const { question, chatHistory } = validation.data
+    const { question, chatHistory, factoryId } = validation.data
 
     // 6. 자연어 쿼리 실행 (대화 히스토리 포함)
-    const result = await executeNaturalLanguageQuery(question, user.id, chatHistory)
+    const result = await executeNaturalLanguageQuery(question, user.id, chatHistory, factoryId)
 
     // 7. 사용 로그 기록 (선택사항, 나중에 추가 가능)
     // await logAIUsage(user.id, question, result)
