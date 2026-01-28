@@ -10,6 +10,7 @@ import { useSettings } from '../../../lib/hooks/useSettings'
 import { useToolChanges, useToolChangeStats, type ToolChange, type ToolChangeFilters } from '../../../lib/hooks/useToolChanges'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { clientLogger } from '@/lib/utils/logger'
+import { useFactory } from '@/lib/hooks/useFactory'
 import {
   downloadToolChangesTemplate,
   parseToolChangesExcel,
@@ -22,6 +23,7 @@ export default function ToolChangesPage() {
   const { showSuccess, showError } = useToast()
   const { camSheets, getAvailableModels, getAvailableProcesses } = useCAMSheets()
   const confirmation = useConfirmation()
+  const { currentFactory } = useFactory()
 
   // 필터 상태
   const [filters, setFilters] = useState<ToolChangeFilters>({})
@@ -479,7 +481,8 @@ export default function ToolChangesPage() {
           endmill_name: formData.endmill_name || '',
           tool_life: formData.tool_life,
           change_reason: formData.change_reason,
-          changed_by: formData.changed_by || undefined
+          changed_by: formData.changed_by || undefined,
+          factory_id: currentFactory?.id
         }
 
         // API 호출하여 교체 실적 저장
@@ -773,7 +776,7 @@ export default function ToolChangesPage() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ data: excelData })
+        body: JSON.stringify({ data: excelData, factory_id: currentFactory?.id })
       })
 
       const result = await response.json()

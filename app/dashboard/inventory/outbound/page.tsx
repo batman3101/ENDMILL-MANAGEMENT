@@ -7,6 +7,7 @@ import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
 import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
 import { useSettings } from '../../../../lib/hooks/useSettings'
 import { useTranslations } from '../../../../lib/hooks/useTranslations'
+import { useFactory } from '../../../../lib/hooks/useFactory'
 import { supabase } from '../../../../lib/supabase/client'
 import { clientLogger } from '../../../../lib/utils/logger'
 import { downloadOutboundHistoryExcel } from '../../../../lib/utils/outboundExcelExport'
@@ -40,6 +41,7 @@ export default function OutboundPage() {
   const { t } = useTranslations()
   const { showSuccess, showError, showWarning } = useToast()
   const confirmation = useConfirmation()
+  const { currentFactory } = useFactory()
   const [scannedCode, setScannedCode] = useState('')
   const [outboundItems, setOutboundItems] = useState<OutboundItem[]>([])
   const [endmillData, setEndmillData] = useState<EndmillData | null>(null)
@@ -180,11 +182,12 @@ export default function OutboundPage() {
       supabase.removeChannel(channel)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [currentFactory?.id])
 
   const loadOutboundHistory = async () => {
     try {
-      let url = `/api/inventory/outbound?period=${period}`
+      const factoryId = currentFactory?.id
+      let url = `/api/inventory/outbound?period=${period}${factoryId ? `&factoryId=${factoryId}` : ''}`
 
       if (period === 'custom' && startDate && endDate) {
         url += `&startDate=${startDate}&endDate=${endDate}`
@@ -262,7 +265,8 @@ export default function OutboundPage() {
     if (foundEndmill) {
       // 재고 정보를 별도로 가져오기 (기존 아키텍처 사용)
       try {
-        const inventoryResponse = await fetch('/api/inventory')
+        const factoryId = currentFactory?.id
+        const inventoryResponse = await fetch(`/api/inventory${factoryId ? `?factoryId=${factoryId}` : ''}`)
         let currentStock = 0
 
         if (inventoryResponse.ok) {
@@ -386,7 +390,8 @@ export default function OutboundPage() {
             purpose: purpose.trim() || '미리 준비',
             notes: equipmentNumber.trim()
               ? `${t('inventory.outboundNotePrefix')} ${equipmentNumber} T${tNumber.toString().padStart(2, '0')}`
-              : '미리 출고 (설비 미지정)'
+              : '미리 출고 (설비 미지정)',
+            factory_id: currentFactory?.id
           })
         })
 
@@ -549,7 +554,7 @@ export default function OutboundPage() {
   useEffect(() => {
     loadOutboundHistory()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, startDate, endDate])
+  }, [period, startDate, endDate, currentFactory?.id])
 
   // 검색 및 정렬이 적용된 데이터
   const filteredAndSortedItems = useMemo(() => {

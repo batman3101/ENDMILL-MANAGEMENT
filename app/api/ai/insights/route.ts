@@ -19,7 +19,7 @@ export const maxDuration = 60
  * GET /api/ai/insights
  * 자동 인사이트 생성 (최근 7일 데이터 기반)
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     // 1. 인증 확인
     const supabase = createClient()
@@ -65,7 +65,11 @@ export async function GET(_request: NextRequest) {
       )
     }
 
-    // 4. 최근 7일 데이터 조회 (공장 근무시간 기준)
+    // 4. factoryId 파라미터 추출
+    const { searchParams } = new URL(request.url)
+    const factoryId = searchParams.get('factoryId') || undefined
+
+    // 최근 7일 데이터 조회 (공장 근무시간 기준)
     const factoryToday = getFactoryToday()
     const todayDate = new Date(factoryToday + 'T00:00:00Z')
     const sevenDaysAgo = new Date(todayDate)
@@ -76,18 +80,22 @@ export async function GET(_request: NextRequest) {
     const { end: dateTo } = getFactoryDayRange(factoryToday)
 
     // 4-1. 전체 통계 조회 (정확한 COUNT) - created_at 사용
-    const { count: totalChangesCount } = await supabase
+    let totalChangesQuery = supabase
       .from('tool_changes')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', dateFrom)
       .lt('created_at', dateTo)
+    if (factoryId) totalChangesQuery = totalChangesQuery.eq('factory_id', factoryId)
+    const { count: totalChangesCount } = await totalChangesQuery
 
     // 교체 사유별 통계
-    const { data: reasonStats } = await supabase
+    let reasonQuery = supabase
       .from('tool_changes')
       .select('change_reason')
       .gte('created_at', dateFrom)
       .lt('created_at', dateTo)
+    if (factoryId) reasonQuery = reasonQuery.eq('factory_id', factoryId)
+    const { data: reasonStats } = await reasonQuery
 
     const reasonCounts = (reasonStats || []).reduce((acc: Record<string, number>, item: any) => {
       const reason = item.change_reason || 'Unknown'
@@ -96,13 +104,15 @@ export async function GET(_request: NextRequest) {
     }, {})
 
     // 모델별 파손 통계 (production_model 컬럼 사용)
-    const { data: modelDamageStats } = await supabase
+    let modelDamageQuery = supabase
       .from('tool_changes')
       .select('production_model')
       .gte('created_at', dateFrom)
       .lt('created_at', dateTo)
       .eq('change_reason', '파손')
       .not('production_model', 'is', null)
+    if (factoryId) modelDamageQuery = modelDamageQuery.eq('factory_id', factoryId)
+    const { data: modelDamageStats } = await modelDamageQuery
 
     const damageByModel = (modelDamageStats || []).reduce((acc: Record<string, number>, item: any) => {
       const model = item.production_model || 'Unknown'
@@ -111,12 +121,14 @@ export async function GET(_request: NextRequest) {
     }, {})
 
     // 엔드밀별 파손 통계 (상위 10개)
-    const { data: endmillDamageStats } = await supabase
+    let endmillDamageQuery = supabase
       .from('tool_changes')
       .select('endmill_code, endmill_name')
       .gte('created_at', dateFrom)
       .lt('created_at', dateTo)
       .eq('change_reason', '파손')
+    if (factoryId) endmillDamageQuery = endmillDamageQuery.eq('factory_id', factoryId)
+    const { data: endmillDamageStats } = await endmillDamageQuery
 
     const damageByEndmill = (endmillDamageStats || []).reduce((acc: Record<string, { count: number; name: string }>, item: any) => {
       const code = item.endmill_code || 'Unknown'
@@ -133,21 +145,25 @@ export async function GET(_request: NextRequest) {
       .slice(0, 10)
 
     // 재고 부족 통계
-    const { count: lowStockCount } = await supabase
+    let lowStockQuery = supabase
       .from('inventory')
       .select('*', { count: 'exact', head: true })
       .in('status', ['low', 'critical'])
+    if (factoryId) lowStockQuery = lowStockQuery.eq('factory_id', factoryId)
+    const { count: lowStockCount } = await lowStockQuery
 
-    const { data: inventoryStats } = await supabase
+    let inventoryStatsQuery = supabase
       .from('inventory')
       .select('status')
       .in('status', ['low', 'critical'])
+    if (factoryId) inventoryStatsQuery = inventoryStatsQuery.eq('factory_id', factoryId)
+    const { data: inventoryStats } = await inventoryStatsQuery
 
     const criticalCount = (inventoryStats || []).filter((inv: any) => inv.status === 'critical').length
     const lowCount = (inventoryStats || []).filter((inv: any) => inv.status === 'low').length
 
     // 재고 부족 품목 상세 (상위 20개)
-    const { data: inventoryItems } = await supabase
+    let inventoryItemsQuery = supabase
       .from('inventory')
       .select(`
         id,
@@ -163,6 +179,8 @@ export async function GET(_request: NextRequest) {
       .in('status', ['low', 'critical'])
       .order('current_stock', { ascending: true })
       .limit(20)
+    if (factoryId) inventoryItemsQuery = inventoryItemsQuery.eq('factory_id', factoryId)
+    const { data: inventoryItems } = await inventoryItemsQuery
 
     // 실제 통계 값
     const totalChanges = totalChangesCount || 0

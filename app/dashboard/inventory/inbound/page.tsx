@@ -6,6 +6,7 @@ import { useToast } from '../../../../components/shared/Toast'
 import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
 import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
 import { useTranslations } from '../../../../lib/hooks/useTranslations'
+import { useFactory } from '../../../../lib/hooks/useFactory'
 import { supabase } from '../../../../lib/supabase/client'
 import { clientLogger } from '../../../../lib/utils/logger'
 import { downloadInboundHistoryExcel } from '../../../../lib/utils/inboundExcelExport'
@@ -36,6 +37,7 @@ export default function InboundPage() {
   const { t } = useTranslations()
   const { showSuccess, showError } = useToast()
   const confirmation = useConfirmation()
+  const { currentFactory } = useFactory()
   const [scannedCode, setScannedCode] = useState('')
   const [inboundItems, setInboundItems] = useState<InboundItem[]>([])
   const [endmillData, setEndmillData] = useState<EndmillData | null>(null)
@@ -72,7 +74,8 @@ export default function InboundPage() {
   // 입고 내역 로드 함수
   const loadInboundItems = async () => {
     try {
-      let url = `/api/inventory/inbound?period=${period}`
+      const factoryId = currentFactory?.id
+      let url = `/api/inventory/inbound?period=${period}${factoryId ? `&factoryId=${factoryId}` : ''}`
 
       if (period === 'custom' && startDate && endDate) {
         url += `&startDate=${startDate}&endDate=${endDate}`
@@ -119,7 +122,7 @@ export default function InboundPage() {
       subscription.unsubscribe()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [currentFactory?.id])
 
   const loadAvailableEndmills = async () => {
     try {
@@ -276,7 +279,8 @@ export default function InboundPage() {
             supplier: selectedSupplier,
             quantity: quantity,
             unit_price: unitPrice,
-            total_amount: totalPrice
+            total_amount: totalPrice,
+            factory_id: currentFactory?.id
           })
         })
 
@@ -324,7 +328,7 @@ export default function InboundPage() {
   useEffect(() => {
     loadInboundItems()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, startDate, endDate])
+  }, [period, startDate, endDate, currentFactory?.id])
 
   // 검색 및 정렬이 적용된 데이터
   const filteredAndSortedItems = useMemo(() => {

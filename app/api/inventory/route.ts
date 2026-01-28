@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 재고 통계 계산
-    const stats = await serverSupabaseService.inventory.getStats()
+    const stats = await serverSupabaseService.inventory.getStats({ factoryId: factoryId || undefined })
     
     return NextResponse.json({
       success: true,

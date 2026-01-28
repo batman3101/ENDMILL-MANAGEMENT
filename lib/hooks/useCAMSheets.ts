@@ -5,6 +5,7 @@ import { useEffect, useMemo } from 'react'
 import { clientSupabaseService } from '../services/supabaseService'
 import { Database } from '../types/database'
 import { clientLogger } from '../utils/logger'
+import { useFactory } from './useFactory'
 
 // Database 타입에서 가져오기
 type CAMSheet = Database['public']['Tables']['cam_sheets']['Row'] & {
@@ -44,18 +45,21 @@ export interface EndmillSearchResult {
 
 export const useCAMSheets = (filter?: CAMSheetFilter) => {
   const queryClient = useQueryClient()
-  // CAM Sheet 데이터 조회 (공장 공용)
+  const { currentFactory } = useFactory()
+  const factoryId = currentFactory?.id
+  // CAM Sheet 데이터 조회
   const {
     data: camSheets = [],
     isLoading: loading,
     error,
     refetch
   } = useQuery({
-    queryKey: ['cam-sheets', filter],
+    queryKey: ['cam-sheets', filter, factoryId],
     queryFn: async () => {
       const response = await fetch('/api/cam-sheets?' + new URLSearchParams({
         ...(filter?.model && { model: filter.model }),
-        ...(filter?.process && { process: filter.process })
+        ...(filter?.process && { process: filter.process }),
+        ...(factoryId && { factoryId })
       }))
       
       if (!response.ok) {

@@ -12,6 +12,7 @@ import { useConfirmation, createDeleteConfirmation, createSaveConfirmation } fro
 import { useSettings } from '../../../lib/hooks/useSettings'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { logger, clientLogger } from '@/lib/utils/logger'
+import { useFactory } from '@/lib/hooks/useFactory'
 
 export default function CAMSheetsPage() {
   const router = useRouter()
@@ -27,6 +28,7 @@ export default function CAMSheetsPage() {
   } = useCAMSheets()
   const { showSuccess, showError } = useToast()
   const confirmation = useConfirmation()
+  const { currentFactory } = useFactory()
   const [showAddForm, setShowAddForm] = useState(false)
   const [showExcelUploader, setShowExcelUploader] = useState(false)
   const [selectedSheet, setSelectedSheet] = useState<CAMSheet | null>(null)
@@ -51,7 +53,7 @@ export default function CAMSheetsPage() {
   useEffect(() => {
     const fetchToolChanges = async () => {
       try {
-        const response = await fetch('/api/tool-changes')
+        const response = await fetch(`/api/tool-changes${currentFactory?.id ? `?factoryId=${currentFactory.id}` : ''}`)
         if (response.ok) {
           const result = await response.json()
           logger.log('교체 실적 데이터:', result)
@@ -62,13 +64,13 @@ export default function CAMSheetsPage() {
       }
     }
     fetchToolChanges()
-  }, [])
+  }, [currentFactory?.id])
 
   // 재고 데이터 가져오기
   useEffect(() => {
     const fetchInventory = async () => {
       try {
-        const response = await fetch('/api/inventory')
+        const response = await fetch(`/api/inventory${currentFactory?.id ? `?factoryId=${currentFactory.id}` : ''}`)
         if (response.ok) {
           const result = await response.json()
           logger.log('재고 데이터:', result)
@@ -79,7 +81,7 @@ export default function CAMSheetsPage() {
       }
     }
     fetchInventory()
-  }, [])
+  }, [currentFactory?.id])
 
   // 필터링 및 정렬된 CAM Sheet 목록
   const filteredSheets = camSheets

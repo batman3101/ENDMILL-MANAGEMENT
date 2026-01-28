@@ -4,6 +4,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useFactory } from './useFactory'
 
 // 타입 정의
 export interface NaturalLanguageQueryResponse {
@@ -141,10 +142,12 @@ export function useChatHistory(sessionId: string) {
  * 자동 인사이트 조회 훅
  */
 export function useInsights() {
+  const { currentFactory } = useFactory()
+  const factoryId = currentFactory?.id
   return useQuery<InsightsResponse>({
-    queryKey: ['insights'],
+    queryKey: ['insights', factoryId],
     queryFn: async () => {
-      const response = await fetch('/api/ai/insights')
+      const response = await fetch(`/api/ai/insights${factoryId ? `?factoryId=${factoryId}` : ''}`)
 
       if (!response.ok) {
         throw new Error('인사이트 조회 실패')
