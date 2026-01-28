@@ -112,7 +112,7 @@ export const useCAMSheets = (filter?: CAMSheetFilter) => {
       const response = await fetch('/api/cam-sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ ...data, factory_id: factoryId })
       })
 
       if (!response.ok) {
@@ -146,7 +146,7 @@ export const useCAMSheets = (filter?: CAMSheetFilter) => {
       const response = await fetch('/api/cam-sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ ...data, factory_id: factoryId })
       })
 
       if (!response.ok) {
