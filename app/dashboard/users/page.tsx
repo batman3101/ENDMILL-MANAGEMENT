@@ -10,6 +10,8 @@ import { AdminGuard } from '../../../components/auth/PermissionGuard'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { AVAILABLE_RESOURCES } from '../../../lib/auth/permissions'
 import { useAuth } from '../../../lib/hooks/useAuth'
+import { downloadUserTemplate, parseUserExcel, validateUserData, BulkUploadResult } from '../../../lib/utils/userExcelTemplate'
+import { useFactory } from '../../../lib/hooks/useFactory'
 
 export default function UsersPage() {
   return (
@@ -35,6 +37,7 @@ function UsersPageContent() {
   const confirmation = useConfirmation()
   const { showSuccess, showError } = useToast()
   const { user: currentUser, refreshSession } = useAuth()
+  const { currentFactory } = useFactory()
   
   // 필터 상태
   const [searchTerm, setSearchTerm] = useState('')
@@ -76,6 +79,13 @@ function UsersPageContent() {
     isActive: true
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // 일괄 등록 상태
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false)
+  const [bulkUploadFile, setBulkUploadFile] = useState<File | null>(null)
+  const [isBulkUploading, setIsBulkUploading] = useState(false)
+  const [bulkUploadResult, setBulkUploadResult] = useState<BulkUploadResult | null>(null)
+  const [bulkValidationErrors, setBulkValidationErrors] = useState<string[]>([])
 
   // 정렬 상태
   const [sortField, setSortField] = useState<string>('department')
@@ -335,6 +345,77 @@ function UsersPageContent() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // 일괄 등록 핸들러
+  const handleBulkUpload = async () => {
+    if (!bulkUploadFile) {
+      showError('파일 없음', 'Excel 파일을 선택해주세요.')
+      return
+    }
+
+    setIsBulkUploading(true)
+    setBulkUploadResult(null)
+    setBulkValidationErrors([])
+
+    try {
+      // 파싱
+      const parsedData = await parseUserExcel(bulkUploadFile)
+      if (parsedData.length === 0) {
+        showError('데이터 없음', '업로드할 사용자 데이터가 없습니다.')
+        setIsBulkUploading(false)
+        return
+      }
+
+      // 클라이언트 검증
+      const validation = validateUserData(parsedData)
+      if (!validation.isValid) {
+        setBulkValidationErrors(validation.errors)
+        setIsBulkUploading(false)
+        return
+      }
+
+      // API 호출
+      const response = await fetch('/api/users/bulk-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          users: parsedData,
+          factoryId: currentFactory?.id,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        showError('업로드 실패', result.error || '서버 오류가 발생했습니다.')
+        setIsBulkUploading(false)
+        return
+      }
+
+      setBulkUploadResult(result)
+
+      if (result.successCount > 0) {
+        showSuccess('일괄 등록 완료', `${result.successCount}명 등록 성공`)
+        loadUsers()
+      }
+
+      if (result.failedCount > 0 || result.duplicateCount > 0) {
+        showError('일부 실패', `실패: ${result.failedCount}건, 중복: ${result.duplicateCount}건`)
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '일괄 등록 중 오류가 발생했습니다.'
+      showError('업로드 실패', errorMessage)
+    } finally {
+      setIsBulkUploading(false)
+    }
+  }
+
+  const handleCloseBulkUploadModal = () => {
+    setShowBulkUploadModal(false)
+    setBulkUploadFile(null)
+    setBulkUploadResult(null)
+    setBulkValidationErrors([])
   }
 
   // 사용자 상태 토글
@@ -727,6 +808,12 @@ function UsersPageContent() {
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             + 사용자 추가
+          </button>
+          <button
+            onClick={() => setShowBulkUploadModal(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
+            Excel 일괄 등록
           </button>
         </div>
       </div>
@@ -2502,6 +2589,122 @@ function UsersPageContent() {
           onCancel={confirmation.handleCancel}
           loading={confirmation.loading}
         />
+      )}
+
+      {/* 일괄 등록 모달 */}
+      {showBulkUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h3 className="text-lg font-medium text-gray-900">사용자 Excel 일괄 등록</h3>
+              <button
+                onClick={handleCloseBulkUploadModal}
+                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="px-6 py-4 space-y-4">
+              {/* 템플릿 다운로드 */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800 mb-2">
+                  먼저 템플릿을 다운로드하여 사용자 정보를 입력해주세요.
+                </p>
+                <button
+                  onClick={() => downloadUserTemplate()}
+                  className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                >
+                  템플릿 다운로드
+                </button>
+              </div>
+
+              {/* 파일 업로드 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Excel 파일 선택
+                </label>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => {
+                    setBulkUploadFile(e.target.files?.[0] || null)
+                    setBulkUploadResult(null)
+                    setBulkValidationErrors([])
+                  }}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+              </div>
+
+              {/* 검증 에러 표시 */}
+              {bulkValidationErrors.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-h-48 overflow-y-auto">
+                  <p className="text-sm font-medium text-red-800 mb-2">검증 오류:</p>
+                  <ul className="text-sm text-red-700 space-y-1">
+                    {bulkValidationErrors.map((error, i) => (
+                      <li key={i}>• {error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 업로드 결과 표시 */}
+              {bulkUploadResult && (
+                <div className="space-y-3">
+                  {bulkUploadResult.success.length > 0 && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-sm font-medium text-green-800">
+                        성공: {bulkUploadResult.success.length}명
+                      </p>
+                    </div>
+                  )}
+                  {bulkUploadResult.duplicates.length > 0 && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 max-h-32 overflow-y-auto">
+                      <p className="text-sm font-medium text-yellow-800 mb-1">
+                        중복: {bulkUploadResult.duplicates.length}건
+                      </p>
+                      <ul className="text-xs text-yellow-700">
+                        {bulkUploadResult.duplicates.map((d, i) => (
+                          <li key={i}>행 {d.row}: {d.name} ({d.field}: {d.value})</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {bulkUploadResult.failed.length > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 max-h-32 overflow-y-auto">
+                      <p className="text-sm font-medium text-red-800 mb-1">
+                        실패: {bulkUploadResult.failed.length}건
+                      </p>
+                      <ul className="text-xs text-red-700">
+                        {bulkUploadResult.failed.map((f, i) => (
+                          <li key={i}>행 {f.row}: {f.name} - {f.reason}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 px-6 py-4 border-t">
+              <button
+                onClick={handleCloseBulkUploadModal}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                닫기
+              </button>
+              {!bulkUploadResult && (
+                <button
+                  onClick={handleBulkUpload}
+                  disabled={!bulkUploadFile || isBulkUploading}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isBulkUploading ? '업로드 중...' : '일괄 등록'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

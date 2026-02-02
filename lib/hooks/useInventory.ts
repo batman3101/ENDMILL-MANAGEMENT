@@ -342,7 +342,7 @@ export const useInventory = (filter?: InventoryFilter) => {
     return endmillTypes.map(type => ({
       code: type.code,
       name: type.name || '',
-      category: type.endmill_categories?.code || '',
+      category: (type as any).category?.code || type.endmill_categories?.code || '',
       specifications: '', // specifications 필드는 더 이상 database에 저장되지 않음
       unitPrice: type.unit_cost || 0
     }))
