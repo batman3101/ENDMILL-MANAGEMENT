@@ -1,0 +1,201 @@
+{
+  "version": "2.0",
+  "lastUpdated": "2026-02-09T03:29:31.008Z",
+  "activeFeatures": [
+    "ENDMILL MANAGEMENT",
+    "bulk-upload",
+    "users",
+    "tool-changes",
+    "outbound",
+    "[id]"
+  ],
+  "primaryFeature": "ENDMILL MANAGEMENT",
+  "features": {
+    "ENDMILL MANAGEMENT": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-02T04:22:13.685Z",
+        "lastUpdated": "2026-02-09T03:29:31.008Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\lib\\services\\supabaseService.ts"
+    },
+    "bulk-upload": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-02T04:22:39.337Z",
+        "lastUpdated": "2026-02-09T03:23:39.645Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\api\\tool-changes\\bulk-upload\\route.ts"
+    },
+    "users": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-02T04:22:51.050Z",
+        "lastUpdated": "2026-02-02T04:24:31.105Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\dashboard\\users\\page.tsx"
+    },
+    "tool-changes": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-09T03:29:02.935Z",
+        "lastUpdated": "2026-02-09T03:29:02.935Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\api\\tool-changes\\route.ts"
+    },
+    "outbound": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-09T03:29:05.893Z",
+        "lastUpdated": "2026-02-09T03:29:05.893Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\api\\inventory\\outbound\\route.ts"
+    },
+    "[id]": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-09T03:29:07.375Z",
+        "lastUpdated": "2026-02-09T03:29:15.075Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\api\\inventory\\outbound\\[id]\\route.ts"
+    }
+  },
+  "pipeline": {
+    "currentPhase": 1,
+    "level": "Dynamic",
+    "phaseHistory": []
+  },
+  "session": {
+    "startedAt": "2026-02-02T04:13:17.758Z",
+    "onboardingCompleted": false,
+    "lastActivity": "2026-02-09T03:29:31.008Z"
+  },
+  "history": [
+    {
+      "timestamp": "2026-02-02T04:22:13.685Z",
+      "feature": "ENDMILL MANAGEMENT",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-02T04:22:39.337Z",
+      "feature": "bulk-upload",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-02T04:22:51.050Z",
+      "feature": "users",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-02T04:22:58.492Z",
+      "feature": "users",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-02T04:23:29.334Z",
+      "feature": "users",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-02T04:23:36.422Z",
+      "feature": "users",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-02T04:23:50.158Z",
+      "feature": "users",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-02T04:23:57.307Z",
+      "feature": "users",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-02T04:24:31.105Z",
+      "feature": "users",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-02T04:29:43.118Z",
+      "feature": "ENDMILL MANAGEMENT",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-09T03:23:39.645Z",
+      "feature": "bulk-upload",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-09T03:29:02.935Z",
+      "feature": "tool-changes",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-09T03:29:05.893Z",
+      "feature": "outbound",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-09T03:29:07.375Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-09T03:29:15.075Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-09T03:29:31.008Z",
+      "feature": "ENDMILL MANAGEMENT",
+      "phase": "do",
+      "action": "updated"
+    }
+  ]
+}

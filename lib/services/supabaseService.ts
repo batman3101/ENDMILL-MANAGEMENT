@@ -31,7 +31,7 @@ export class EquipmentService {
   }
 
   // ID로 설비 상세 조회 (장착된 앤드밀 포함)
-  async getById(id: string) {
+  async getById(id: string, factoryId?: string) {
     // UUID 형식인지 확인 (36자리, 하이픈 포함)
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
@@ -71,6 +71,9 @@ export class EquipmentService {
       query = query.eq('id', id)
     } else if (isEquipmentNumber) {
       query = query.eq('equipment_number', equipmentNumber)
+      if (factoryId) {
+        query = query.eq('factory_id', factoryId)
+      }
     } else {
       throw new Error('Invalid equipment identifier')
     }

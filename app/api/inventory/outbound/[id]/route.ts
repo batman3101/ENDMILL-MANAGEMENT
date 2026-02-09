@@ -11,7 +11,7 @@ export async function PUT(
     const transactionId = params.id
     const body = await request.json()
 
-    const { quantity, equipmentNumber, tNumber, purpose } = body
+    const { quantity, equipmentNumber, tNumber, purpose, factory_id } = body
 
     // 필수 필드 검증
     if (!quantity) {
@@ -66,16 +66,20 @@ export async function PUT(
       transactionNotes = '미리 출고 (설비 미지정)'
     }
 
-    // 설비 정보 조회
+    // 설비 정보 조회 (factory_id 필터 포함)
     let equipmentId = null
     if (equipmentNumber) {
       const equipmentNum = equipmentNumber.replace(/^C/i, '')
-      const { data: equipment } = await supabase
+      let equipmentQuery = supabase
         .from('equipment')
         .select('id')
         .eq('equipment_number', equipmentNum)
-        .single()
 
+      if (factory_id) {
+        equipmentQuery = equipmentQuery.eq('factory_id', factory_id)
+      }
+
+      const { data: equipment } = await equipmentQuery.single()
       equipmentId = equipment?.id
     }
 

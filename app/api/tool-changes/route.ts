@@ -208,12 +208,17 @@ export async function POST(request: NextRequest) {
         throw endmillError
       }
 
-      // 2.2 equipment_number로 equipment ID 조회
-      const { data: equipment, error: equipmentError } = await supabase
+      // 2.2 equipment_number로 equipment ID 조회 (factory_id 필터 포함)
+      let equipmentQuery = supabase
         .from('equipment')
         .select('id')
         .eq('equipment_number', equipmentNumber)
-        .single()
+
+      if (body.factory_id) {
+        equipmentQuery = equipmentQuery.eq('factory_id', body.factory_id)
+      }
+
+      const { data: equipment, error: equipmentError } = await equipmentQuery.single()
 
       if (equipmentError) {
         logger.error('설비 조회 오류:', equipmentError)

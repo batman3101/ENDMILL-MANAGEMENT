@@ -147,16 +147,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 설비 정보 조회 (있는 경우)
+    // 설비 정보 조회 (있는 경우, factory_id 필터 포함)
     let equipmentId = null
     if (equipment_number) {
       const equipmentNum = equipment_number.replace(/^C/i, '')
-      const { data: equipment } = await supabase
+      let equipmentQuery = supabase
         .from('equipment')
         .select('id')
         .eq('equipment_number', equipmentNum)
-        .single()
 
+      if (factory_id) {
+        equipmentQuery = equipmentQuery.eq('factory_id', factory_id)
+      }
+
+      const { data: equipment } = await equipmentQuery.single()
       equipmentId = equipment?.id
     }
 

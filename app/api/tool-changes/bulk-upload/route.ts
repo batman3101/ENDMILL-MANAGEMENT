@@ -193,11 +193,16 @@ export async function POST(request: NextRequest) {
 
       // 6. 설비 번호 확인
       const equipmentNumber = parseInt(row.equipment_number.replace(/^C/, ''))
-      const { data: equipment, error: equipmentError } = await supabase
+      let equipmentQuery = supabase
         .from('equipment')
         .select('id')
         .eq('equipment_number', equipmentNumber)
-        .single()
+
+      if (factoryId) {
+        equipmentQuery = equipmentQuery.eq('factory_id', factoryId)
+      }
+
+      const { data: equipment, error: equipmentError } = await equipmentQuery.single()
 
       if (equipmentError || !equipment) {
         validationErrors.push({
