@@ -125,7 +125,7 @@ export function AuthProvider(props: { children: ReactNode }) {
       }
     }
     
-    const interval = setInterval(checkSessionExpiry, 60000) // 1분마다 확인
+    const interval = setInterval(checkSessionExpiry, 5 * 60 * 1000) // 5분마다 확인
     checkSessionExpiry() // 즉시 확인
     
     return () => clearInterval(interval)
@@ -137,15 +137,15 @@ export function AuthProvider(props: { children: ReactNode }) {
       setLastActivity(new Date())
     }
     
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
-    
+    const events = ['mousedown', 'keypress', 'touchstart'] as const
+
     events.forEach(event => {
-      document.addEventListener(event, updateActivity, true)
+      document.addEventListener(event, updateActivity)
     })
-    
+
     return () => {
       events.forEach(event => {
-        document.removeEventListener(event, updateActivity, true)
+        document.removeEventListener(event, updateActivity)
       })
     }
   }, [])

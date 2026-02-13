@@ -10,9 +10,8 @@ import { useSettings } from '../../../lib/hooks/useSettings'
 import SupplierPriceInfo from '../../../components/inventory/SupplierPriceInfo'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { useTranslations } from '../../../lib/hooks/useTranslations'
-import ExcelJS from 'exceljs'
 import { clientLogger } from '../../../lib/utils/logger'
-import { downloadInventoryTemplate, validateInventoryData, convertExcelToInventoryData, downloadInventorySurveyTemplate } from '../../../lib/utils/inventoryExcelTemplate'
+// ExcelJS and inventory templates are dynamically imported when needed
 
 export default function InventoryPage() {
   const { t } = useTranslations()
@@ -455,6 +454,7 @@ export default function InventoryPage() {
       const endmillData = getEndmillMasterData()
 
       // 워크북 및 워크시트 생성
+      const ExcelJS = (await import('exceljs')).default
       const workbook = new ExcelJS.Workbook()
       const worksheet = workbook.addWorksheet('앤드밀마스터')
 
@@ -501,6 +501,7 @@ export default function InventoryPage() {
 
   const handleDownloadInventoryTemplate = async () => {
     try {
+      const { downloadInventoryTemplate } = await import('../../../lib/utils/inventoryExcelTemplate')
       await downloadInventoryTemplate()
       showSuccess('템플릿 다운로드 완료', '기초 재고 등록 템플릿이 다운로드되었습니다.')
     } catch (error) {
@@ -512,6 +513,7 @@ export default function InventoryPage() {
   const handleDownloadInventorySurvey = async () => {
     try {
       // 현재 필터링된 재고 데이터 사용
+      const { downloadInventorySurveyTemplate } = await import('../../../lib/utils/inventoryExcelTemplate')
       await downloadInventorySurveyTemplate(flattenedData)
       showSuccess(t('inventory.surveyDownloadSuccess'), t('inventory.surveyDownloadSuccessMessage'))
     } catch (error) {
@@ -545,6 +547,7 @@ export default function InventoryPage() {
       reader.onload = async (e) => {
         try {
           const data = e.target?.result as ArrayBuffer
+          const ExcelJS = (await import('exceljs')).default
           const workbook = new ExcelJS.Workbook()
           await workbook.xlsx.load(data)
 
@@ -585,6 +588,7 @@ export default function InventoryPage() {
             validSuppliers: availableSuppliers
           }
 
+          const { validateInventoryData } = await import('../../../lib/utils/inventoryExcelTemplate')
           const validation = await validateInventoryData(jsonData, validationOptions)
 
           if (!validation.isValid) {
@@ -606,6 +610,7 @@ export default function InventoryPage() {
           }
 
           // 데이터 변환
+          const { convertExcelToInventoryData } = await import('../../../lib/utils/inventoryExcelTemplate')
           const inventoryData = convertExcelToInventoryData(validation.validData)
 
           // API로 데이터 전송

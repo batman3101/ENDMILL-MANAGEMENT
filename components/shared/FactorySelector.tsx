@@ -1,7 +1,7 @@
 'use client'
 
 import { useFactory } from '@/lib/hooks/useFactory'
-import { Factory, FACTORY_COLORS, FACTORY_CODES } from '@/lib/types/factory'
+import { Factory, FACTORY_COLORS } from '@/lib/types/factory'
 import { cn } from '@/lib/utils'
 import { Building2 } from 'lucide-react'
 
@@ -36,9 +36,9 @@ export function FactorySelector({ compact = false, showLabel = true, className }
     )
   }
 
-  const handleSwitch = async (factory: Factory) => {
+  const handleSwitch = (factory: Factory) => {
     if (factory.id !== currentFactory.id) {
-      await setCurrentFactory(factory)
+      setCurrentFactory(factory)
     }
   }
 

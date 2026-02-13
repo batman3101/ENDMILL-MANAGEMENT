@@ -17,8 +17,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Download, FileText, Table2, AlertCircle, Loader2 } from 'lucide-react'
-import { exportInsightToPDF, InsightData } from '@/lib/utils/exportToPDF'
-import { exportInsightToExcel } from '@/lib/utils/exportInsightToExcel'
+import type { InsightData } from '@/lib/utils/exportToPDF'
 
 interface ExportMenuProps {
   insight: InsightData
@@ -44,6 +43,7 @@ export function ExportMenu({
     setExportError(null)
 
     try {
+      const { exportInsightToPDF } = await import('@/lib/utils/exportToPDF')
       await exportInsightToPDF(insight)
     } catch (error: any) {
       console.error('PDF 내보내기 오류:', error)
@@ -59,6 +59,7 @@ export function ExportMenu({
     setExportError(null)
 
     try {
+      const { exportInsightToExcel } = await import('@/lib/utils/exportInsightToExcel')
       await exportInsightToExcel(insight, data)
     } catch (error: any) {
       console.error('Excel 내보내기 오류:', error)

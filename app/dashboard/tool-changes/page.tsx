@@ -11,12 +11,8 @@ import { useToolChanges, useToolChangeStats, type ToolChange, type ToolChangeFil
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { clientLogger } from '@/lib/utils/logger'
 import { useFactory } from '@/lib/hooks/useFactory'
-import {
-  downloadToolChangesTemplate,
-  parseToolChangesExcel,
-  validateToolChangesData,
-  type ToolChangeExcelData
-} from '@/lib/utils/toolChangesExcelTemplate'
+import type { ToolChangeExcelData } from '@/lib/utils/toolChangesExcelTemplate'
+// toolChangesExcelTemplate functions are dynamically imported when needed
 
 export default function ToolChangesPage() {
   const { t } = useTranslation()
@@ -705,6 +701,7 @@ export default function ToolChangesPage() {
   // Excel 템플릿 다운로드
   const handleDownloadTemplate = async () => {
     try {
+      const { downloadToolChangesTemplate } = await import('@/lib/utils/toolChangesExcelTemplate')
       await downloadToolChangesTemplate(
         availableModels,
         availableProcessesFromSettings,
@@ -729,6 +726,7 @@ export default function ToolChangesPage() {
 
     try {
       // 파일 파싱
+      const { parseToolChangesExcel, validateToolChangesData } = await import('@/lib/utils/toolChangesExcelTemplate')
       const parsedData = await parseToolChangesExcel(file)
       setExcelData(parsedData)
 

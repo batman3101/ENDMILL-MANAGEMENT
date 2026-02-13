@@ -40,8 +40,9 @@ import {
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import ReactMarkdown from 'react-markdown'
-import { InsightEditor } from './InsightEditor'
-import { ChartPreview } from './ChartPreview'
+import dynamic from 'next/dynamic'
+const InsightEditor = dynamic(() => import('./InsightEditor').then(mod => ({ default: mod.InsightEditor })), { ssr: false })
+const ChartPreview = dynamic(() => import('./ChartPreview').then(mod => ({ default: mod.ChartPreview })), { ssr: false })
 
 interface SavedInsightDetailProps {
   insightId: string

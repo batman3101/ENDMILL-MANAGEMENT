@@ -4,7 +4,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useMemo } from 'react'
 import { useToast } from '../../../../components/shared/Toast'
 import { useTranslations } from '../../../../lib/hooks/useTranslations'
-import EndmillMasterUploader from '../../../../components/features/EndmillMasterUploader'
+import dynamic from 'next/dynamic'
+const EndmillMasterUploader = dynamic(() => import('../../../../components/features/EndmillMasterUploader'), { ssr: false })
 import EndmillSupplierPrices from '../../../../components/features/EndmillSupplierPrices'
 
 export default function EndmillDetailPage() {

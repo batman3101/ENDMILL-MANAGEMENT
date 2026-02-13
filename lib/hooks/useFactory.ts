@@ -66,12 +66,12 @@ export function useFactoryProvider() {
   }, [accessibleFactories, isInitialized])
 
   // 공장 전환 함수 (캐시 무효화 포함)
-  const setCurrentFactory = useCallback(async (factory: Factory) => {
+  const setCurrentFactory = useCallback((factory: Factory) => {
     setCurrentFactoryState(factory)
     localStorage.setItem(STORAGE_KEY, factory.id)
 
-    // TanStack Query 캐시 무효화
-    await queryClient.invalidateQueries({
+    // TanStack Query 캐시 무효화 (비동기 - UI 블로킹 방지)
+    queryClient.invalidateQueries({
       predicate: (query) => {
         const queryKey = query.queryKey as string[]
         return [
@@ -86,12 +86,6 @@ export function useFactoryProvider() {
           'users'
         ].some(key => queryKey.includes(key))
       }
-    })
-
-    // 활성 쿼리 refetch
-    await queryClient.refetchQueries({
-      queryKey: ['dashboard'],
-      type: 'active'
     })
   }, [queryClient])
 

@@ -10,7 +10,8 @@ import { AdminGuard } from '../../../components/auth/PermissionGuard'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { AVAILABLE_RESOURCES } from '../../../lib/auth/permissions'
 import { useAuth } from '../../../lib/hooks/useAuth'
-import { downloadUserTemplate, parseUserExcel, validateUserData, BulkUploadResult } from '../../../lib/utils/userExcelTemplate'
+import type { BulkUploadResult } from '../../../lib/utils/userExcelTemplate'
+// userExcelTemplate functions are dynamically imported when needed
 import { useFactory } from '../../../lib/hooks/useFactory'
 
 export default function UsersPage() {
@@ -360,6 +361,7 @@ function UsersPageContent() {
 
     try {
       // 파싱
+      const { parseUserExcel, validateUserData } = await import('../../../lib/utils/userExcelTemplate')
       const parsedData = await parseUserExcel(bulkUploadFile)
       if (parsedData.length === 0) {
         showError('데이터 없음', '업로드할 사용자 데이터가 없습니다.')
@@ -2612,7 +2614,7 @@ function UsersPageContent() {
                   먼저 템플릿을 다운로드하여 사용자 정보를 입력해주세요.
                 </p>
                 <button
-                  onClick={() => downloadUserTemplate()}
+                  onClick={async () => { const { downloadUserTemplate } = await import('../../../lib/utils/userExcelTemplate'); downloadUserTemplate() }}
                   className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
                 >
                   템플릿 다운로드

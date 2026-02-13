@@ -60,20 +60,69 @@ export default function DashboardLayout({
     }
   }, [user, loading, router, pathname])
 
-  // 인증 확인 중 로딩 표시
-  if (loading) {
+  // 인증 확인 중: 레이아웃 골격 유지 (깜빡임 방지)
+  if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{t('common.verifyingAuth')}</p>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        {/* 헤더 스켈레톤 */}
+        <header className="bg-blue-800 text-white shadow-lg">
+          <div className="hidden md:block px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-blue-700 rounded-lg animate-pulse"></div>
+                <div>
+                  <div className="h-5 w-40 bg-blue-700 rounded animate-pulse"></div>
+                  <div className="h-3 w-28 bg-blue-700 rounded animate-pulse mt-2"></div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="h-8 w-32 bg-blue-700 rounded animate-pulse"></div>
+                <div className="h-8 w-24 bg-blue-700 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+          <div className="md:hidden px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-blue-700 rounded-lg animate-pulse"></div>
+                <div className="h-4 w-24 bg-blue-700 rounded animate-pulse"></div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-6 w-16 bg-blue-700 rounded animate-pulse"></div>
+                <div className="h-6 w-8 bg-blue-700 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+          {/* 네비게이션 스켈레톤 */}
+          <nav className="hidden md:block border-t border-blue-700">
+            <div className="px-6">
+              <div className="flex space-x-1 py-3">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-8 w-24 bg-blue-700 rounded animate-pulse"></div>
+                ))}
+              </div>
+            </div>
+          </nav>
+        </header>
+        {/* 콘텐츠 스켈레톤 */}
+        <main className="p-4 md:p-6">
+          <div className="h-6 w-48 bg-gray-200 rounded animate-pulse mb-6"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 animate-pulse">
+                <div className="h-4 w-24 bg-gray-200 rounded mb-4"></div>
+                <div className="h-32 w-32 bg-gray-200 rounded-full mx-auto mb-4"></div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[...Array(3)].map((_, j) => (
+                    <div key={j} className="h-3 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
       </div>
     )
-  }
-
-  if (!user) {
-    return null
   }
 
   const allMenuItems = [
@@ -187,10 +236,11 @@ export default function DashboardLayout({
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center p-0.5">
                 <Image
-                  src="/icons/endmill.png"
+                  src="/icons/endmill-sm.webp"
                   alt={t('auth.loginTitle')}
                   width={32}
                   height={32}
+                  priority
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -280,10 +330,11 @@ export default function DashboardLayout({
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center p-1">
                 <Image
-                  src="/icons/endmill.png"
+                  src="/icons/endmill-sm.webp"
                   alt={t('auth.loginTitle')}
                   width={48}
                   height={48}
+                  priority
                   className="w-full h-full object-contain"
                 />
               </div>

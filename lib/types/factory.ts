@@ -28,7 +28,7 @@ export interface UserFactoryAccess {
 export interface FactoryContextType {
   currentFactory: Factory | null
   accessibleFactories: Factory[]
-  setCurrentFactory: (factory: Factory) => Promise<void>
+  setCurrentFactory: (factory: Factory) => void
   isLoading: boolean
   error: Error | null
 }

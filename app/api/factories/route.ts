@@ -4,7 +4,7 @@ import { createServerClient } from '@/lib/supabase/client'
 export const dynamic = 'force-dynamic'
 
 // GET: 사용자가 접근 가능한 공장 목록 조회
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = createServerClient()
 

@@ -8,7 +8,7 @@ interface DonutChartProps {
   children?: React.ReactNode
 }
 
-export default function DonutChart({ value, max, color = '#f97316', size = 64, children }: DonutChartProps) {
+const DonutChart = React.memo(function DonutChart({ value, max, color = '#f97316', size = 64, children }: DonutChartProps) {
   const radius = (size / 2) - 6
   const circumference = 2 * Math.PI * radius
   const percent = Math.max(0, Math.min(1, value / max))
@@ -49,4 +49,6 @@ export default function DonutChart({ value, max, color = '#f97316', size = 64, c
       </g>
     </svg>
   )
-} 
+})
+
+export default DonutChart

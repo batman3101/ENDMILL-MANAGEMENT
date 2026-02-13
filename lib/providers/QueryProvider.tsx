@@ -10,14 +10,14 @@ export default function QueryProvider({ children }: { children: React.ReactNode 
       new QueryClient({
         defaultOptions: {
           queries: {
-            // 실시간 데이터 우선: 항상 최신 데이터 fetch
-            staleTime: 0,
-            // 캐시 유지 시간: 5분 (메모리 효율성)
-            gcTime: 5 * 60 * 1000,
-            // 윈도우 포커스 시 자동 새로고침 활성화
-            refetchOnWindowFocus: true,
-            // 컴포넌트 마운트 시 자동 새로고침 활성화
-            refetchOnMount: true,
+            // 캐시된 데이터를 1분간 fresh로 유지 (불필요한 refetch 방지)
+            staleTime: 60 * 1000,
+            // 캐시 유지 시간: 10분 (메모리 효율성)
+            gcTime: 10 * 60 * 1000,
+            // 윈도우 포커스 시 자동 새로고침 비활성화 (Supabase Realtime이 처리)
+            refetchOnWindowFocus: false,
+            // 컴포넌트 마운트 시 stale 데이터만 새로고침
+            refetchOnMount: 'always',
             // 재연결 시 자동 새로고침 활성화
             refetchOnReconnect: true,
             // 에러 재시도 설정

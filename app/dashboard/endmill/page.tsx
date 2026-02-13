@@ -10,10 +10,11 @@ import { useToast } from '../../../components/shared/Toast'
 // import { useCAMSheets } from '../../../lib/hooks/useCAMSheets' // 미사용
 import { useSettings } from '../../../lib/hooks/useSettings'
 import { useFactory } from '@/lib/hooks/useFactory'
-import EndmillExcelUploader from '../../../components/features/EndmillExcelUploader'
+import dynamic from 'next/dynamic'
+const EndmillExcelUploader = dynamic(() => import('../../../components/features/EndmillExcelUploader'), { ssr: false })
 import EndmillForm from '../../../components/features/EndmillForm'
 import EndmillSupplierPrices from '../../../components/features/EndmillSupplierPrices'
-import { downloadEndmillTemplate } from '../../../lib/utils/endmillExcelTemplate'
+// downloadEndmillTemplate is dynamically imported when needed
 import { supabase } from '../../../lib/supabase/client'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { logger, clientLogger } from '@/lib/utils/logger'
@@ -462,6 +463,7 @@ export default function EndmillPage() {
 
   // 템플릿 다운로드 핸들러
   const handleDownloadTemplate = async () => {
+    const { downloadEndmillTemplate } = await import('../../../lib/utils/endmillExcelTemplate')
     const result = await downloadEndmillTemplate()
     if (result.success) {
       showSuccess('템플릿 다운로드', `${result.fileName} 파일이 다운로드되었습니다.`)

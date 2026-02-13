@@ -1,13 +1,24 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-02-09T03:29:31.008Z",
+  "lastUpdated": "2026-02-13T05:44:32.179Z",
   "activeFeatures": [
     "ENDMILL MANAGEMENT",
     "bulk-upload",
     "users",
     "tool-changes",
     "outbound",
-    "[id]"
+    "[id]",
+    "providers",
+    "cam-sheets",
+    "endmill",
+    "equipment",
+    "[code]",
+    "ai",
+    "inventory",
+    "dashboard",
+    "features",
+    "inbound",
+    "factories"
   ],
   "primaryFeature": "ENDMILL MANAGEMENT",
   "features": {
@@ -20,9 +31,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-02-02T04:22:13.685Z",
-        "lastUpdated": "2026-02-09T03:29:31.008Z"
+        "lastUpdated": "2026-02-13T05:44:32.179Z"
       },
-      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\lib\\services\\supabaseService.ts"
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\layout.tsx"
     },
     "bulk-upload": {
       "phase": "do",
@@ -46,7 +57,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-02-02T04:22:51.050Z",
-        "lastUpdated": "2026-02-02T04:24:31.105Z"
+        "lastUpdated": "2026-02-13T05:33:35.590Z"
       },
       "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\dashboard\\users\\page.tsx"
     },
@@ -59,9 +70,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-02-09T03:29:02.935Z",
-        "lastUpdated": "2026-02-09T03:29:02.935Z"
+        "lastUpdated": "2026-02-13T05:34:59.606Z"
       },
-      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\api\\tool-changes\\route.ts"
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\dashboard\\tool-changes\\page.tsx"
     },
     "outbound": {
       "phase": "do",
@@ -72,9 +83,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-02-09T03:29:05.893Z",
-        "lastUpdated": "2026-02-09T03:29:05.893Z"
+        "lastUpdated": "2026-02-13T05:33:13.635Z"
       },
-      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\api\\inventory\\outbound\\route.ts"
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\dashboard\\inventory\\outbound\\page.tsx"
     },
     "[id]": {
       "phase": "do",
@@ -88,6 +99,149 @@
         "lastUpdated": "2026-02-09T03:29:15.075Z"
       },
       "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\api\\inventory\\outbound\\[id]\\route.ts"
+    },
+    "providers": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-13T05:24:43.539Z",
+        "lastUpdated": "2026-02-13T05:24:43.539Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\lib\\providers\\QueryProvider.tsx"
+    },
+    "cam-sheets": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-13T05:25:51.356Z",
+        "lastUpdated": "2026-02-13T05:25:51.356Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\dashboard\\cam-sheets\\page.tsx"
+    },
+    "endmill": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-13T05:25:56.837Z",
+        "lastUpdated": "2026-02-13T05:26:36.659Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\dashboard\\endmill\\page.tsx"
+    },
+    "equipment": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-13T05:25:57.494Z",
+        "lastUpdated": "2026-02-13T05:28:36.322Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\dashboard\\equipment\\loading.tsx"
+    },
+    "[code]": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-13T05:25:58.705Z",
+        "lastUpdated": "2026-02-13T05:25:58.705Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\dashboard\\endmill-detail\\[code]\\page.tsx"
+    },
+    "ai": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-13T05:26:00.711Z",
+        "lastUpdated": "2026-02-13T05:26:08.678Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\components\\features\\ai\\ExportMenu.tsx"
+    },
+    "inventory": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-13T05:27:01.446Z",
+        "lastUpdated": "2026-02-13T05:28:40.776Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\dashboard\\inventory\\loading.tsx"
+    },
+    "dashboard": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-13T05:28:01.506Z",
+        "lastUpdated": "2026-02-13T05:41:37.019Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\dashboard\\layout.tsx"
+    },
+    "features": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-13T05:29:04.256Z",
+        "lastUpdated": "2026-02-13T05:29:05.434Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\components\\features\\DonutChart.tsx"
+    },
+    "inbound": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-13T05:32:58.684Z",
+        "lastUpdated": "2026-02-13T05:33:12.375Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\dashboard\\inventory\\inbound\\page.tsx"
+    },
+    "factories": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-13T05:37:44.788Z",
+        "lastUpdated": "2026-02-13T05:37:44.788Z"
+      },
+      "lastFile": "C:\\Work Drive\\APP\\ENDMILL MANAGEMENT\\app\\api\\factories\\route.ts"
     }
   },
   "pipeline": {
@@ -98,7 +252,7 @@
   "session": {
     "startedAt": "2026-02-02T04:13:17.758Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-02-09T03:29:31.008Z"
+    "lastActivity": "2026-02-13T05:44:32.179Z"
   },
   "history": [
     {
@@ -193,6 +347,282 @@
     },
     {
       "timestamp": "2026-02-09T03:29:31.008Z",
+      "feature": "ENDMILL MANAGEMENT",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:24:43.539Z",
+      "feature": "providers",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:25:51.356Z",
+      "feature": "cam-sheets",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:25:56.837Z",
+      "feature": "endmill",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:25:57.494Z",
+      "feature": "equipment",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:25:58.705Z",
+      "feature": "[code]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:26:00.711Z",
+      "feature": "ai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:26:01.561Z",
+      "feature": "ai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:26:07.237Z",
+      "feature": "ai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:26:08.678Z",
+      "feature": "ai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:26:21.197Z",
+      "feature": "endmill",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:26:36.659Z",
+      "feature": "endmill",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:27:01.446Z",
+      "feature": "inventory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:27:06.654Z",
+      "feature": "inventory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:27:07.995Z",
+      "feature": "inventory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:27:09.218Z",
+      "feature": "inventory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:27:10.859Z",
+      "feature": "inventory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:27:26.223Z",
+      "feature": "inventory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:27:34.516Z",
+      "feature": "inventory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:28:01.506Z",
+      "feature": "dashboard",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:28:28.288Z",
+      "feature": "dashboard",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:28:31.302Z",
+      "feature": "dashboard",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:28:36.322Z",
+      "feature": "equipment",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:28:40.776Z",
+      "feature": "inventory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:28:45.277Z",
+      "feature": "tool-changes",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:29:04.256Z",
+      "feature": "features",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:29:05.434Z",
+      "feature": "features",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:29:23.064Z",
+      "feature": "ENDMILL MANAGEMENT",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:29:28.959Z",
+      "feature": "ENDMILL MANAGEMENT",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:29:48.325Z",
+      "feature": "ENDMILL MANAGEMENT",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:30:04.071Z",
+      "feature": "ENDMILL MANAGEMENT",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:30:19.221Z",
+      "feature": "ENDMILL MANAGEMENT",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:32:58.684Z",
+      "feature": "inbound",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:32:59.862Z",
+      "feature": "outbound",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:33:01.424Z",
+      "feature": "users",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:33:12.375Z",
+      "feature": "inbound",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:33:13.635Z",
+      "feature": "outbound",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:33:24.836Z",
+      "feature": "users",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:33:35.590Z",
+      "feature": "users",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:34:56.280Z",
+      "feature": "tool-changes",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:34:57.397Z",
+      "feature": "tool-changes",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:34:59.606Z",
+      "feature": "tool-changes",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:37:44.788Z",
+      "feature": "factories",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:37:45.929Z",
+      "feature": "ENDMILL MANAGEMENT",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:41:34.526Z",
+      "feature": "dashboard",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:41:37.019Z",
+      "feature": "dashboard",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-13T05:44:32.179Z",
       "feature": "ENDMILL MANAGEMENT",
       "phase": "do",
       "action": "updated"

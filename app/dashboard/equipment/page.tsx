@@ -12,7 +12,8 @@ import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
 import { useSettings } from '../../../lib/hooks/useSettings'
 import { useEquipment, useEquipmentStatus, Equipment } from '../../../lib/hooks/useEquipment'
 import PageLoadingIndicator, { SkeletonCard, SkeletonTableRow } from '../../../components/shared/PageLoadingIndicator'
-import EquipmentExcelUploader from '../../../components/features/EquipmentExcelUploader'
+import dynamic from 'next/dynamic'
+const EquipmentExcelUploader = dynamic(() => import('../../../components/features/EquipmentExcelUploader'), { ssr: false })
 import { supabase } from '../../../lib/supabase/client'
 
 export default function EquipmentPage() {

@@ -9,7 +9,7 @@ import { useTranslations } from '../../../../lib/hooks/useTranslations'
 import { useFactory } from '../../../../lib/hooks/useFactory'
 import { supabase } from '../../../../lib/supabase/client'
 import { clientLogger } from '../../../../lib/utils/logger'
-import { downloadInboundHistoryExcel } from '../../../../lib/utils/inboundExcelExport'
+// inboundExcelExport is dynamically imported when needed
 
 // 앤드밀 데이터 타입 정의
 interface EndmillData {
@@ -392,6 +392,7 @@ export default function InboundPage() {
         custom: `${startDate}_${endDate}`
       }
 
+      const { downloadInboundHistoryExcel } = await import('../../../../lib/utils/inboundExcelExport')
       const filename = await downloadInboundHistoryExcel(
         filteredAndSortedItems,
         periodLabels[period]
