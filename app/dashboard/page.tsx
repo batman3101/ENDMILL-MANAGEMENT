@@ -19,7 +19,7 @@ export default function DashboardPage() {
   // 권한 확인
   const { canAccessPage } = usePermissions()
   const { getSetting } = useSettings()
-  const { data, isLoading, error, refreshData, lastRefresh } = useDashboard(60000) // 60초마다 업데이트
+  const { data, isLoading, error, refreshData, lastRefresh } = useDashboard(300000) // 5분마다 업데이트
 
   // 실시간 연동 설정 (throttled refresh)
   // const [realtimeData, setRealtimeData] = useState<any>(null) // 미사용 (향후 사용 예정)

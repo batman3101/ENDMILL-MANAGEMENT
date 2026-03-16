@@ -234,6 +234,7 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
       cam_version: sheet.camVersion,
       version_date: new Date().toISOString().split('T')[0],
       created_by: null,
+      factory_id: null,
       cam_sheet_endmills: sheet.endmills.map((endmill: EndmillInfo) => ({
         id: Date.now().toString() + Math.random(),
         cam_sheet_id: '', // 나중에 서버에서 설정

@@ -144,7 +144,6 @@ export async function executeNaturalLanguageQuery(
 
     // 4단계: Supabase 실행
     // RPC 함수 사용하여 안전하게 실행
-    // @ts-expect-error - RPC 함수가 아직 데이터베이스에 생성되지 않음
     const { data, error } = await supabase.rpc('execute_safe_query', {
       query: sql,
     }) as { data: any[] | null; error: any }
