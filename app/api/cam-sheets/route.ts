@@ -159,36 +159,37 @@ async function createCAMSheetWithEndmills(data: any) {
   const newCAMSheet = await serverSupabaseService.camSheet.create(camSheetData)
   logger.log('생성된 CAM Sheet:', newCAMSheet)
 
-  // 엔드밀 데이터 처리
+  // 엔드밀 데이터 처리 (N+1 제거: 배치 조회 후 매핑)
   if (data.endmills && Array.isArray(data.endmills) && data.endmills.length > 0) {
     logger.log('엔드밀 데이터 처리 시작:', data.endmills)
 
+    // 모든 엔드밀 코드를 수집하여 한 번에 조회
+    const endmillCodes = data.endmills
+      .map((e: any) => (e.endmillCode || e.endmill_code || '').toUpperCase())
+      .filter((code: string) => code)
+
+    let endmillTypeMap = new Map<string, string>()
+    if (endmillCodes.length > 0) {
+      const supabase = createServerClient()
+      const { data: foundEndmills } = await supabase
+        .from('endmill_types')
+        .select('id, code')
+        .in('code', endmillCodes)
+
+      endmillTypeMap = new Map(
+        (foundEndmills || []).map((et: any) => [et.code, et.id])
+      )
+    }
+
     for (const endmill of data.endmills) {
       try {
-        // 엔드밀 타입 찾기 (코드로 검색)
-        const endmillCode = endmill.endmillCode || endmill.endmill_code
-        let endmillType = null
-
-        if (endmillCode) {
-          const supabase = createServerClient()
-          const { data: foundEndmill, error: findError } = await supabase
-            .from('endmill_types')
-            .select('id')
-            .eq('code', endmillCode)
-            .single()
-
-          if (!findError) {
-            endmillType = foundEndmill
-          } else if (findError.code !== 'PGRST116') {
-            logger.warn('엔드밀 타입 검색 오류:', findError)
-          }
-        }
-
+        const endmillCode = (endmill.endmillCode || endmill.endmill_code || '').toUpperCase()
+        const endmillTypeId = endmillTypeMap.get(endmillCode) || null
 
         const camSheetEndmillData = {
           cam_sheet_id: newCAMSheet.id,
           t_number: endmill.tNumber || endmill.t_number,
-          endmill_type_id: endmillType?.id || null,
+          endmill_type_id: endmillTypeId,
           tool_life: endmill.toolLife || endmill.tool_life || 0,
           endmill_code: endmill.endmillCode || endmill.endmill_code,
           endmill_name: endmill.endmillName || endmill.endmill_name,
@@ -293,32 +294,33 @@ export async function PUT(request: NextRequest) {
         logger.warn('기존 엔드밀 삭제 오류:', deleteError)
       }
 
-      // 새로운 엔드밀 데이터 추가
+      // 새로운 엔드밀 데이터 추가 (N+1 제거: 배치 조회 후 매핑)
+      const endmillCodes = endmills
+        .map((e: any) => (e.endmillCode || e.endmill_code || '').toUpperCase())
+        .filter((code: string) => code)
+
+      let endmillTypeMap = new Map<string, string>()
+      if (endmillCodes.length > 0) {
+        const supabaseFind = createServerClient()
+        const { data: foundEndmills } = await supabaseFind
+          .from('endmill_types')
+          .select('id, code')
+          .in('code', endmillCodes)
+
+        endmillTypeMap = new Map(
+          (foundEndmills || []).map((et: any) => [et.code, et.id])
+        )
+      }
+
       for (const endmill of endmills) {
         try {
-          // 엔드밀 타입 찾기 (코드로 검색)
-          const endmillCode = endmill.endmillCode || endmill.endmill_code
-          let endmillType = null
-
-          if (endmillCode) {
-            const supabaseFind = createServerClient()
-            const { data: foundEndmill, error: findError } = await supabaseFind
-              .from('endmill_types')
-              .select('id')
-              .eq('code', endmillCode)
-              .single()
-
-            if (!findError) {
-              endmillType = foundEndmill
-            } else if (findError.code !== 'PGRST116') {
-              logger.warn('엔드밀 타입 검색 오류:', findError)
-            }
-          }
+          const endmillCode = (endmill.endmillCode || endmill.endmill_code || '').toUpperCase()
+          const endmillTypeId = endmillTypeMap.get(endmillCode) || null
 
           const camSheetEndmillData = {
             cam_sheet_id: id,
             t_number: endmill.tNumber || endmill.t_number,
-            endmill_type_id: endmillType?.id || null,
+            endmill_type_id: endmillTypeId,
             tool_life: endmill.toolLife || endmill.tool_life || 0,
             endmill_code: endmill.endmillCode || endmill.endmill_code,
             endmill_name: endmill.endmillName || endmill.endmill_name,

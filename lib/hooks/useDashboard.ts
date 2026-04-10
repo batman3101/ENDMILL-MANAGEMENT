@@ -142,7 +142,7 @@ const fetchDashboardData = async (factoryId?: string): Promise<DashboardData> =>
   return result
 }
 
-export const useDashboard = (refreshInterval: number = 30000): UseDashboardReturn => {
+export const useDashboard = (refreshInterval: number = 300000): UseDashboardReturn => {
   const { currentFactory } = useFactory()
   const factoryId = currentFactory?.id
 
@@ -153,7 +153,7 @@ export const useDashboard = (refreshInterval: number = 30000): UseDashboardRetur
     enabled: !!factoryId,
     refetchInterval: refreshInterval, // 주기적 새로고침
     refetchIntervalInBackground: false, // 백그라운드에서는 새로고침 안 함
-    staleTime: 0, // 항상 stale 상태
+    staleTime: 60 * 1000, // 1분간 fresh 유지 (Disk IO 절감)
     gcTime: 1000 * 60, // 1분 동안 캐시 유지
     retry: 1
   })

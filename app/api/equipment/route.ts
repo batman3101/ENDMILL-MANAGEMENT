@@ -78,58 +78,47 @@ export async function GET(request: NextRequest) {
     const camSheets = await serverSupabaseService.camSheet.getAll({ factoryId })
     logger.log('🔍 CAM Sheet 데이터:', camSheets.length, '개')
 
-    // 각 설비에 대해 툴 포지션 정보 추가
-    const equipmentsWithToolUsage = await Promise.all(
-      equipments.map(async (equipment) => {
-        try {
-          logger.log(`🔧 설비 처리 중: ${equipment.equipment_number} (모델: ${equipment.current_model}, 공정: ${equipment.process})`)
+    // 각 설비에 대해 툴 포지션 정보 추가 (N+1 제거: camSheets.getAll()이 이미 endmills 포함)
+    const equipmentsWithToolUsage = equipments.map((equipment) => {
+      try {
+        // 해당 설비의 모델과 공정에 맞는 CAM Sheet 찾기
+        const camSheet = camSheets.find(sheet =>
+          sheet.model === equipment.current_model &&
+          sheet.process === equipment.process
+        )
 
-          // 해당 설비의 모델과 공정에 맞는 CAM Sheet 찾기
-          const camSheet = camSheets.find(sheet =>
-            sheet.model === equipment.current_model &&
-            sheet.process === equipment.process
-          )
+        let usedPositions = 0
+        let totalPositions = equipment.tool_position_count || 21
 
-          let usedPositions = 0
-          let totalPositions = equipment.tool_position_count || 21
+        if (camSheet) {
+          // camSheets.getAll()이 이미 endmills를 포함하므로 추가 DB 쿼리 불필요
+          const endmills = camSheet.endmills || []
 
-          if (camSheet) {
-            logger.log(`✅ CAM Sheet 발견: ${camSheet.id} (모델: ${camSheet.model}, 공정: ${camSheet.process})`)
-            // CAM Sheet에서 엔드밀 데이터 가져오기
-            const endmills = await serverSupabaseService.camSheet.getEndmills(camSheet.id)
-            logger.log(`🔧 엔드밀 데이터:`, endmills?.length, '개')
-
-            if (endmills && endmills.length > 0) {
-              // 등록된 엔드밀 수 = 사용중인 포지션 수
-              usedPositions = endmills.length
-              // 최대 T 번호를 툴 포지션 수로 사용
-              const maxTNumber = Math.max(...endmills.map(e => e.t_number || 0))
-              if (maxTNumber > 0) {
-                totalPositions = maxTNumber
-              }
-              logger.log(`📊 사용량 계산: ${usedPositions}/${totalPositions}`)
+          if (endmills.length > 0) {
+            usedPositions = endmills.length
+            const maxTNumber = Math.max(...endmills.map((e: any) => e.t_number || 0))
+            if (maxTNumber > 0) {
+              totalPositions = maxTNumber
             }
-          } else {
-            logger.log('❌ 매칭되는 CAM Sheet 없음')
-          }
-
-          return {
-            ...equipment,
-            used_tool_positions: usedPositions,
-            total_tool_positions: totalPositions,
-            tool_usage_percentage: totalPositions > 0 ? Math.round((usedPositions / totalPositions) * 100) : 0
-          }
-        } catch (error) {
-          logger.error(`설비 ${equipment.id} 툴 포지션 정보 조회 실패:`, error)
-          return {
-            ...equipment,
-            used_tool_positions: 0,
-            total_tool_positions: equipment.tool_position_count || 21,
-            tool_usage_percentage: 0
           }
         }
-      })
-    )
+
+        return {
+          ...equipment,
+          used_tool_positions: usedPositions,
+          total_tool_positions: totalPositions,
+          tool_usage_percentage: totalPositions > 0 ? Math.round((usedPositions / totalPositions) * 100) : 0
+        }
+      } catch (error) {
+        logger.error(`설비 ${equipment.id} 툴 포지션 정보 조회 실패:`, error)
+        return {
+          ...equipment,
+          used_tool_positions: 0,
+          total_tool_positions: equipment.tool_position_count || 21,
+          tool_usage_percentage: 0
+        }
+      }
+    })
 
     equipments = equipmentsWithToolUsage
 

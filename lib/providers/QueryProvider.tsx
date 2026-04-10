@@ -17,7 +17,7 @@ export default function QueryProvider({ children }: { children: React.ReactNode 
             // 윈도우 포커스 시 자동 새로고침 비활성화 (Supabase Realtime이 처리)
             refetchOnWindowFocus: false,
             // 컴포넌트 마운트 시 stale 데이터만 새로고침
-            refetchOnMount: 'always',
+            refetchOnMount: true,
             // 재연결 시 자동 새로고침 활성화
             refetchOnReconnect: true,
             // 에러 재시도 설정

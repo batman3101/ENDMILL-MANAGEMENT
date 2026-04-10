@@ -134,23 +134,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // auth.users 테이블에서 이메일 정보 가져오기 (Admin API 사용)
-    const usersWithEmail = await Promise.all(
-      filteredProfiles.map(async (profile: any) => {
-        if (!profile.user_id) {
-          return {
-            ...profile,
-            email: ''
-          }
-        }
-
-        const { data: authUser } = await adminClient.auth.admin.getUserById(profile.user_id)
-        return {
-          ...profile,
-          email: authUser?.user?.email || ''
-        }
-      })
+    // auth.users 테이블에서 이메일 정보 가져오기 (N+1 제거: listUsers 1회 호출)
+    const { data: { users: authUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
+    const emailMap = new Map(
+      (authUsers || []).map((u: any) => [u.id, u.email || ''])
     )
+
+    const usersWithEmail = filteredProfiles.map((profile: any) => ({
+      ...profile,
+      email: profile.user_id ? (emailMap.get(profile.user_id) || '') : ''
+    }))
 
     return NextResponse.json({
       success: true,

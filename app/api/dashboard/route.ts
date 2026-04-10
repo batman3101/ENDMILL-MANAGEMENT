@@ -12,9 +12,15 @@ export const fetchCache = 'force-no-store'
 
 // ─── 공통 데이터 조회 헬퍼 (각 테이블 1회씩만 조회) ────────
 async function fetchAllToolChanges(supabase: any, factoryId?: string) {
+  // 90일 이내 데이터만 조회 (Disk IO 절감 - 가장 큰 효과)
+  const ninetyDaysAgo = new Date()
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+  const dateFilter = ninetyDaysAgo.toISOString().split('T')[0]
+
   let query = supabase
     .from('tool_changes')
     .select('id, equipment_number, t_number, endmill_type_id, endmill_code, change_date, change_reason, created_at, tool_life, production_model')
+    .gte('change_date', dateFilter)
   query = applyFactoryFilter(query, factoryId)
   const { data, error } = await query
   if (error) {
@@ -49,11 +55,26 @@ async function fetchAllEndmillTypes(supabase: any) {
 }
 
 async function fetchAllToolPositions(supabase: any) {
+  // tool_positions에는 직접 factory_id가 없으므로 factory 필터링은 JS에서 equipment 기반으로 처리
+  // (getEquipmentStats, getEndmillByEquipmentCount 등에서 equipmentIdSet으로 필터링)
   const { data, error } = await supabase
     .from('tool_positions')
     .select('equipment_id, endmill_type_id, current_life, total_life, status')
   if (error) {
     logger.error('tool_positions 공통 조회 오류:', error)
+    throw error
+  }
+  return data || []
+}
+
+async function fetchAllInventory(supabase: any, factoryId?: string) {
+  let query = supabase
+    .from('inventory')
+    .select('endmill_type_id, current_stock, min_stock, max_stock, last_updated, factory_id')
+  query = applyFactoryFilter(query, factoryId)
+  const { data, error } = await query
+  if (error) {
+    logger.error('inventory 공통 조회 오류:', error)
     throw error
   }
   return data || []
@@ -69,12 +90,13 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient()
 
-    // 1단계: 공통 데이터 병렬 조회 (4개 테이블, 각 1회씩)
-    const [allToolChanges, allEquipment, allEndmillTypes, allToolPositions] = await Promise.all([
+    // 1단계: 공통 데이터 병렬 조회 (5개 테이블, 각 1회씩 - inventory 추가로 이중 조회 제거)
+    const [allToolChanges, allEquipment, allEndmillTypes, allToolPositions, allInventory] = await Promise.all([
       fetchAllToolChanges(supabase, factoryId),
       fetchAllEquipment(supabase, factoryId),
       fetchAllEndmillTypes(supabase),
       fetchAllToolPositions(supabase),
+      fetchAllInventory(supabase, factoryId),
     ])
 
     logger.log('📊 공통 데이터 조회 완료:', {
@@ -82,6 +104,7 @@ export async function GET(request: NextRequest) {
       equipment: allEquipment.length,
       endmillTypes: allEndmillTypes.length,
       toolPositions: allToolPositions.length,
+      inventory: allInventory.length,
     })
 
     // 2단계: 분석 함수 병렬 실행 (공통 데이터 재사용)
@@ -102,13 +125,13 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       getEquipmentStats(allEquipment, allToolPositions, factoryId),
       getEndmillUsageStats(allToolChanges),
-      getInventoryStats(supabase, factoryId),
-      getToolChangeStats(supabase, factoryId),
+      getInventoryStats(allInventory),
+      getToolChangeStats(supabase, allToolChanges),
       getCostAnalysis(allToolChanges, allEndmillTypes),
       getFrequencyAnalysis(allToolChanges, allEquipment),
       getLifespanAnalysis(allToolChanges, allEndmillTypes),
       getModelCostAnalysis(allToolChanges, allEquipment, allEndmillTypes),
-      getRecentAlerts(allToolChanges, allEndmillTypes, supabase, factoryId),
+      getRecentAlerts(allToolChanges, allEndmillTypes, supabase, factoryId, allInventory),
       getEndmillByEquipmentCount(allEquipment, allToolPositions, allEndmillTypes, factoryId),
       getModelEndmillUsage(supabase, allEquipment, factoryId),
       getEquipmentLifeConsumption(allToolChanges, allEquipment),
@@ -240,17 +263,9 @@ function getEndmillUsageStats(allToolChanges: any[]) {
   return { total, normalLife: stats.normalLife, broken: stats.broken, premature: stats.premature, brokenRate }
 }
 
-// 재고 통계 (자체 쿼리 유지 - inventory 테이블)
-async function getInventoryStats(supabase: any, factoryId?: string) {
-  let invQuery = supabase
-    .from('inventory')
-    .select('current_stock, min_stock, max_stock, factory_id')
-  invQuery = applyFactoryFilter(invQuery, factoryId)
-  const { data: inventory, error } = await invQuery
-
-  if (error) throw error
-
-  const items = inventory || []
+// 재고 통계 (공통 inventory 데이터 재사용 - DB 쿼리 제거)
+function getInventoryStats(allInventory: any[]) {
+  const items = allInventory || []
 
   // status 필드를 신뢰하지 않고, 실제 재고 수량으로 직접 계산
   const stats = items.reduce((acc: { sufficient: number; low: number; critical: number }, item: any) => {
@@ -263,47 +278,32 @@ async function getInventoryStats(supabase: any, factoryId?: string) {
   return { total: items.length, sufficient: stats.sufficient, low: stats.low, critical: stats.critical }
 }
 
-// 교체 실적 통계 (자체 쿼리 유지 - created_at 범위 조회 + system_settings)
-async function getToolChangeStats(supabase: any, factoryId?: string) {
+// 교체 실적 통계 (allToolChanges 재사용 - tool_changes DB 쿼리 2회 제거, system_settings만 유지)
+async function getToolChangeStats(supabase: any, allToolChanges: any[]) {
   const today = getFactoryToday()
   const yesterday = getFactoryYesterday()
   const todayRange = getFactoryDayRange(today)
   const yesterdayRange = getFactoryDayRange(yesterday)
 
-  // created_at 기준으로 오늘/어제 범위의 데이터 조회 (날짜 범위 필터 사용)
-  let todayQuery = supabase
-    .from('tool_changes')
-    .select('id, created_at, equipment_number, t_number, factory_id')
-    .gte('created_at', todayRange.start)
-    .lt('created_at', todayRange.end)
-  todayQuery = applyFactoryFilter(todayQuery, factoryId)
+  // allToolChanges에서 created_at 기준으로 오늘/어제 필터링 (Date 객체 비교로 안전성 확보)
+  const todayStart = new Date(todayRange.start).getTime()
+  const todayEnd = new Date(todayRange.end).getTime()
+  const yesterdayStart = new Date(yesterdayRange.start).getTime()
+  const yesterdayEnd = new Date(yesterdayRange.end).getTime()
 
-  let yesterdayQuery = supabase
-    .from('tool_changes')
-    .select('id, created_at, equipment_number, t_number, factory_id')
-    .gte('created_at', yesterdayRange.start)
-    .lt('created_at', yesterdayRange.end)
-  yesterdayQuery = applyFactoryFilter(yesterdayQuery, factoryId)
+  const todayCount = allToolChanges.filter((change) => {
+    const t = new Date(change.created_at).getTime()
+    return t >= todayStart && t < todayEnd
+  }).length
 
-  const [
-    { data: todayChanges, error: todayError },
-    { data: yesterdayChanges, error: yesterdayError }
-  ] = await Promise.all([todayQuery, yesterdayQuery])
+  const yesterdayCount = allToolChanges.filter((change) => {
+    const t = new Date(change.created_at).getTime()
+    return t >= yesterdayStart && t < yesterdayEnd
+  }).length
 
-  if (todayError) {
-    logger.error('tool_changes 오늘 조회 오류:', todayError)
-    throw todayError
-  }
-  if (yesterdayError) {
-    logger.error('tool_changes 어제 조회 오류:', yesterdayError)
-    throw yesterdayError
-  }
-
-  const todayCount = todayChanges?.length || 0
-  const yesterdayCount = yesterdayChanges?.length || 0
   const difference = todayCount - yesterdayCount
 
-  // 일일 교체 실적 목표를 system_settings에서 조회
+  // 일일 교체 실적 목표를 system_settings에서 조회 (이 쿼리만 유지)
   const { data: targetSetting } = await supabase
     .from('system_settings')
     .select('value')
@@ -473,7 +473,8 @@ async function getRecentAlerts(
   allToolChanges: any[],
   allEndmillTypes: any[],
   supabase: any,
-  factoryId?: string
+  factoryId?: string,
+  inventoryData?: any[]
 ) {
   const alerts: any[] = []
   const MAX_ALERTS_PER_TYPE = 3
@@ -573,14 +574,10 @@ async function getRecentAlerts(
       })
     })
 
-  // 4. 재고 부족 경보 (자체 쿼리 - inventory 테이블)
-  let alertInvQuery = supabase
-    .from('inventory')
-    .select('endmill_type_id, current_stock, min_stock, last_updated, factory_id')
-  alertInvQuery = applyFactoryFilter(alertInvQuery, factoryId)
-  const { data: inventory, error: invError } = await alertInvQuery
+  // 4. 재고 부족 경보 (inventoryData 파라미터 재사용 - Disk IO 절감)
+  const inventory = inventoryData || []
 
-  if (!invError && inventory) {
+  if (inventory.length > 0) {
     const criticalItems = inventory
       .filter((item: any) => item.current_stock < item.min_stock)
       .sort((a: any, b: any) => new Date(b.last_updated).getTime() - new Date(a.last_updated).getTime())
