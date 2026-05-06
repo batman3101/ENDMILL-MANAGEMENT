@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
+import { Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../../../components/shared/Toast'
 import { useCAMSheets } from '../../../lib/hooks/useCAMSheets'
@@ -980,280 +982,6 @@ export default function ToolChangesPage() {
         </div>
       </div>
 
-      {/* 교체 실적 입력 폼 */}
-      {showAddForm && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('toolChanges.newChangeRecordInput')}</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.changeDate')}</label>
-                <input
-                  type="text"
-                  value={formData.change_date}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
-                  readOnly
-                />
-                <p className="text-xs text-gray-500 mt-1">{t('toolChanges.autoFilledDateTime')}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.equipmentNumber')}</label>
-                <input
-                  type="text"
-                  placeholder="C001"
-                  value={formData.equipment_number}
-                  onChange={(e) => {
-                    const value = e.target.value.toUpperCase()
-                    setFormData({...formData, equipment_number: value})
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  pattern="C[0-9]{3}"
-                  title={t('toolChanges.equipmentNumberFormat')}
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">{t('toolChanges.autoFilledModelProcess')}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.productionModel')}</label>
-                <select
-                  value={formData.production_model}
-                  onChange={(e) => setFormData({...formData, production_model: e.target.value})}
-                  className={`w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    formData.equipment_number ? 'bg-blue-50' : ''
-                  }`}
-                  required
-                >
-                  <option value="">{t('toolChanges.selectModel')}</option>
-                  {availableModels.map(model => (
-                    <option key={model} value={model}>{model}</option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  {formData.equipment_number ? t('toolChanges.autoFilledByEquipment') : t('toolChanges.registeredCAMSheetModels')}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.process')}</label>
-                <select
-                  value={formData.process}
-                  onChange={(e) => setFormData({...formData, process: e.target.value})}
-                  className={`w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    formData.equipment_number ? 'bg-blue-50' : ''
-                  }`}
-                  required
-                >
-                  <option value="">{t('toolChanges.selectProcess')}</option>
-                  {availableProcessesFromSettings.map(process => (
-                    <option key={process} value={process}>{process}</option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  {formData.equipment_number ? t('toolChanges.autoFilledByEquipment') : t('toolChanges.selectProcessPrompt')}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.tNumber')}</label>
-                <select
-                  value={formData.t_number}
-                  onChange={(e) => setFormData({...formData, t_number: parseInt(e.target.value)})}
-                  className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                  disabled={availableTNumbers.length === 0}
-                >
-                  {availableTNumbers.length > 0 ? (
-                    availableTNumbers.map(num => (
-                      <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
-                    ))
-                  ) : (
-                    <option value={formData.t_number}>
-                      {formData.production_model && formData.process
-                        ? t('toolChanges.noCamSheetTNumber')
-                        : t('toolChanges.autoFilledEndmillCode')}
-                    </option>
-                  )}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  {availableTNumbers.length > 0
-                    ? t('toolChanges.registeredCAMSheetModels')
-                    : t('toolChanges.autoFilledOnTNumber')}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.endmillCode')}</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder={isManualEndmillInput ? t('toolChanges.enterEndmillCode') : t('toolChanges.autoFilledEndmillCode')}
-                    value={formData.endmill_code || ''}
-                    onChange={(e) => isManualEndmillInput && setFormData({...formData, endmill_code: e.target.value})}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
-                      isManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
-                    }`}
-                    readOnly={!isManualEndmillInput}
-                    required
-                  />
-                  {formData.production_model && formData.process && formData.t_number && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (isManualEndmillInput) {
-                          // 자동입력 모드로 전환하고 CAM SHEET 데이터로 자동 채우기
-                          setIsManualEndmillInput(false)
-                          const endmillInfo = autoFillEndmillInfo(formData.production_model, formData.process, formData.t_number)
-                          if (endmillInfo) {
-                            setFormData(prev => ({
-                              ...prev,
-                              endmill_code: endmillInfo.endmillCode,
-                              endmill_name: endmillInfo.endmillName
-                            }))
-                          }
-                        } else {
-                          // 수동입력 모드로 전환
-                          setIsManualEndmillInput(true)
-                        }
-                      }}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800"
-                    >
-                      {isManualEndmillInput ? t('toolChanges.autoInput') : t('toolChanges.manualInput')}
-                    </button>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {isManualEndmillInput ? t('toolChanges.pleaseEnterManually') : t('toolChanges.autoFilledOnTNumber')}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.endmillName')}</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder={isManualEndmillInput ? t('toolChanges.enterEndmillName') : t('toolChanges.autoFilledEndmillName')}
-                    value={formData.endmill_name || ''}
-                    onChange={(e) => isManualEndmillInput && setFormData({...formData, endmill_name: e.target.value})}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
-                      isManualEndmillInput ? 'focus:ring-2 focus:ring-blue-500' : 'bg-gray-50'
-                    }`}
-                    readOnly={!isManualEndmillInput}
-                    required
-                  />
-                  {formData.production_model && formData.process && formData.t_number && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (isManualEndmillInput) {
-                          // 자동입력 모드로 전환하고 CAM SHEET 데이터로 자동 채우기
-                          setIsManualEndmillInput(false)
-                          const endmillInfo = autoFillEndmillInfo(formData.production_model, formData.process, formData.t_number)
-                          if (endmillInfo) {
-                            setFormData(prev => ({
-                              ...prev,
-                              endmill_code: endmillInfo.endmillCode,
-                              endmill_name: endmillInfo.endmillName
-                            }))
-                          }
-                        } else {
-                          // 수동입력 모드로 전환
-                          setIsManualEndmillInput(true)
-                        }
-                      }}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800"
-                    >
-                      {isManualEndmillInput ? t('toolChanges.autoInput') : t('toolChanges.manualInput')}
-                    </button>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {isManualEndmillInput ? t('toolChanges.pleaseEnterManually') : t('toolChanges.autoFilledOnTNumber')}
-                </p>
-              </div>
-
-              {/* 적용중인 Tool life (CAM Sheet 기준, 읽기 전용) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.appliedToolLife')}</label>
-                <input
-                  type="text"
-                  value={suggestedToolLife ? `${suggestedToolLife.toLocaleString()}회` : '-'}
-                  readOnly
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
-                />
-                <p className="text-xs text-gray-500 mt-1">{t('toolChanges.appliedToolLifeDesc')}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.actualToolLife')}</label>
-                <input
-                  type="number"
-                  placeholder="2500"
-                  value={formData.tool_life}
-                  onChange={(e) => setFormData({...formData, tool_life: parseInt(e.target.value) || 0})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  min="0"
-                  max="10000"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">{t('toolChanges.actualToolLifeDescription')}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.changeReason')}</label>
-                <select
-                  value={formData.change_reason}
-                  onChange={(e) => setFormData({...formData, change_reason: e.target.value})}
-                  className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">{t('toolChanges.selectReason')}</option>
-                  {toolChangesReasons.map(reason => (
-                    <option key={reason} value={reason}>{getReasonTranslation(reason)}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('toolChanges.replacedBy')}</label>
-                <select
-                  value={formData.changed_by}
-                  onChange={(e) => setFormData({...formData, changed_by: e.target.value})}
-                  className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">{t('toolChanges.selectReplacer')}</option>
-                  {availableUsers.map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} ({user.employee_id})
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">{t('toolChanges.selectReplacerDescription')}</p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex space-x-3">
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                {t('toolChanges.save')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-              >
-                {t('toolChanges.cancel')}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
       {/* 버튼 및 필터 */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
         <div className="flex flex-col gap-4">
@@ -1284,12 +1012,12 @@ export default function ToolChangesPage() {
                 </svg>
                 {t('toolChanges.bulkUpload')}
               </button>
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              <Link
+                href="/dashboard/tool-changes/new"
+                className="hidden md:inline-flex items-center justify-center px-4 py-2 bg-gauge-cobalt text-paper rounded-sm hover:bg-gauge-cobalt-strong transition-colors text-label font-medium"
               >
                 {t('toolChanges.addChangeRecord')}
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -1962,6 +1690,15 @@ export default function ToolChangesPage() {
           loading={confirmation.loading}
         />
       )}
+
+      {/* 모바일 FAB: /new 라우트로 진입 (1차 액션, 엄지 영역) */}
+      <Link
+        href="/dashboard/tool-changes/new"
+        aria-label={t('toolChanges.addChangeRecord')}
+        className="md:hidden fixed bottom-6 right-4 z-30 inline-flex items-center justify-center min-h-action min-w-action rounded-md bg-gauge-cobalt text-paper shadow-modal hover:bg-gauge-cobalt-strong transition-colors"
+      >
+        <Plus className="h-6 w-6" />
+      </Link>
     </div>
   )
 } 
