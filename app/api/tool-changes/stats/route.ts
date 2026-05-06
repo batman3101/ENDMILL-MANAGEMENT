@@ -104,17 +104,27 @@ export async function GET(request: NextRequest) {
 
     const result = toolChanges || []
 
-    // 통계 계산
+    // DB enum: 수명완료 / 파손 / 마모 / 예방교체 / 모델변경 / 기타
+    // UI 표기는 레거시 라벨 유지하되, enum 값을 기반으로 카운트
     const stats = {
       todayTotal: result.length,
-      regularReplacement: result.filter((tc: any) => tc.change_reason === '정기교체').length,
+      // "정기교체"는 enum에 없음 — 수명완료 + 예방교체로 매핑 (정기적으로 발생하는 교체)
+      regularReplacement: result.filter(
+        (tc: any) => tc.change_reason === '수명완료' || tc.change_reason === '예방교체'
+      ).length,
       broken: result.filter((tc: any) => tc.change_reason === '파손').length,
       wear: result.filter((tc: any) => tc.change_reason === '마모').length,
       modelChange: result.filter((tc: any) => tc.change_reason === '모델변경').length,
-      qualityDefect: result.filter((tc: any) => tc.change_reason === '품질불량').length,
+      // "품질불량"은 enum에 없음 — 기타로 매핑 (별도 사유 없는 케이스)
+      qualityDefect: result.filter((tc: any) => tc.change_reason === '기타').length,
       topModelToday: getTopModel(result),
       topProcessToday: getTopProcess(result)
     }
+
+    logger.log('GET /api/tool-changes/stats - 결과:', {
+      totalRecords: result.length,
+      stats
+    })
 
     return NextResponse.json({
       success: true,

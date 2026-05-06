@@ -47,7 +47,7 @@ export default function ToolChangesPage() {
   const {
     stats,
     isLoading: isStatsLoading,
-    error: _statsError
+    error: statsError
   } = useToolChangeStats(undefined, true)
 
   // 폼 상태
@@ -1037,31 +1037,33 @@ export default function ToolChangesPage() {
           </div>
 
           {/* 두 번째 줄: 날짜 필터 */}
-          <div className="flex gap-4 items-center">
-            <label className="text-sm font-medium text-gray-700">{t('toolChanges.period')}:</label>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <label className="text-label font-medium text-ink-soft no-break shrink-0">
+              {t('toolChanges.period')}:
+            </label>
             <input
               type="date"
               value={dateRange.start}
               onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 min-w-0 sm:flex-none sm:w-auto h-11 px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-gauge-cobalt transition-colors"
             />
-            <span className="text-gray-500">~</span>
+            <span className="text-ink-soft shrink-0">~</span>
             <input
               type="date"
               value={dateRange.end}
               onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 min-w-0 sm:flex-none sm:w-auto h-11 px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-gauge-cobalt transition-colors"
             />
 
             {/* 에러 및 로딩 상태 표시 */}
             {toolChangesError && (
-              <div className="text-red-600 text-sm">
+              <div className="text-signal-stop-strong text-caption w-full sm:w-auto">
                 {t('toolChanges.error')}: {toolChangesError}
               </div>
             )}
             {isLoading && (
-              <div className="flex items-center text-blue-600 text-sm">
-                <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mr-2"></div>
+              <div className="flex items-center text-gauge-cobalt-strong text-caption w-full sm:w-auto">
+                <div className="w-4 h-4 border-2 border-divider border-t-gauge-cobalt rounded-full animate-spin mr-2"></div>
                 {t('toolChanges.loading')}
               </div>
             )}
@@ -1070,6 +1072,40 @@ export default function ToolChangesPage() {
       </div>
 
       {/* 교체 실적 목록 */}
+      {/* 통계 에러 배너 — 통계 fetch 실패 시 사용자가 직접 볼 수 있도록 */}
+      {statsError && (
+        <div
+          role="alert"
+          className="rounded-md border border-signal-stop bg-signal-stop-soft px-4 py-3"
+        >
+          <div className="flex items-start gap-3">
+            <svg
+              className="h-5 w-5 flex-shrink-0 text-signal-stop-strong mt-0.5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <div className="min-w-0 flex-1">
+              <p className="text-label font-semibold text-signal-stop-strong">
+                통계 불러오기 실패
+              </p>
+              <p className="mt-1 text-caption text-signal-stop-strong/80 break-all">
+                {statsError}
+              </p>
+              <p className="mt-2 text-caption text-ink-soft">
+                URL에 <code className="font-mono">?debug=1</code> 추가 후 우하단 ⚙️ 버튼으로 콘솔/네트워크 확인 가능
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 모바일 카드 리스트 (md 미만) */}
       <div className="md:hidden">
         <h2 className="text-title font-semibold text-ink mb-3">{t('toolChanges.changeHistoryList')}</h2>
@@ -1737,11 +1773,13 @@ export default function ToolChangesPage() {
         />
       )}
 
-      {/* 모바일 FAB: /new 라우트로 진입 (1차 액션, 엄지 영역) */}
+      {/* 모바일 FAB: /new 라우트로 진입 (1차 액션, 엄지 영역).
+          하단 네비게이션 바(64px) 위에 위치하도록 bottom-20 + safe-area */}
       <Link
         href="/dashboard/tool-changes/new"
         aria-label={t('toolChanges.addChangeRecord')}
-        className="md:hidden fixed bottom-6 right-4 z-30 inline-flex items-center justify-center min-h-action min-w-action rounded-md bg-gauge-cobalt text-paper shadow-modal hover:bg-gauge-cobalt-strong transition-colors"
+        className="md:hidden fixed right-4 z-40 inline-flex items-center justify-center min-h-action min-w-action rounded-md bg-gauge-cobalt text-paper shadow-modal hover:bg-gauge-cobalt-strong transition-colors"
+        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
       >
         <Plus className="h-6 w-6" />
       </Link>

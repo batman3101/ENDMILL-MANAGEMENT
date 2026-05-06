@@ -8,6 +8,7 @@ import { AuthProvider } from '../lib/hooks/useAuth';
 import { SettingsProvider } from '../lib/providers/SettingsProvider';
 import { FactoryProvider } from '../lib/providers/FactoryProvider';
 import { ServiceWorkerRegister, InstallPrompt } from '../components/pwa';
+import { MobileDebugConsole } from '../components/debug/MobileDebugConsole';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -77,6 +78,9 @@ export default function RootLayout({
         
         {/* PWA Service Worker 등록 */}
         <ServiceWorkerRegister />
+
+        {/* 모바일 디버그 콘솔 (?debug=1 또는 localStorage debug=1) */}
+        <MobileDebugConsole />
 
         <main id="main-content" className="min-h-screen">
           <I18nProvider>

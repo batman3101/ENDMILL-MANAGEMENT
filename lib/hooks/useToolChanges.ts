@@ -344,7 +344,10 @@ export const useToolChangeStats = (
         params.append('date', date)
       }
 
-      const response = await fetch(`/api/tool-changes/stats?${params.toString()}`, {
+      const url = `/api/tool-changes/stats?${params.toString()}`
+      clientLogger.log('[useToolChangeStats] fetching:', url, { factoryId, date })
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -353,10 +356,13 @@ export const useToolChangeStats = (
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const text = await response.text().catch(() => '')
+        clientLogger.error('[useToolChangeStats] HTTP error:', response.status, text)
+        throw new Error(`HTTP ${response.status}: ${text || response.statusText}`)
       }
 
       const result = await response.json()
+      clientLogger.log('[useToolChangeStats] response:', result)
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch tool change stats')
