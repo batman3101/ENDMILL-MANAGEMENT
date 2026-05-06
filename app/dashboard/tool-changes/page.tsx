@@ -11,6 +11,7 @@ import { useConfirmation, createDeleteConfirmation, createUpdateConfirmation, cr
 import { useSettings } from '../../../lib/hooks/useSettings'
 import { useToolChanges, useToolChangeStats, type ToolChange, type ToolChangeFilters } from '../../../lib/hooks/useToolChanges'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
+import { ToolChangeListCard } from '@/components/features/tool-changes/tool-change-list-card'
 import { clientLogger } from '@/lib/utils/logger'
 import { useFactory } from '@/lib/hooks/useFactory'
 import type { ToolChangeExcelData } from '@/lib/utils/toolChangesExcelTemplate'
@@ -1055,7 +1056,38 @@ export default function ToolChangesPage() {
       </div>
 
       {/* 교체 실적 목록 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200">
+      {/* 모바일 카드 리스트 (md 미만) */}
+      <div className="md:hidden">
+        <h2 className="text-title font-semibold text-ink mb-3">{t('toolChanges.changeHistoryList')}</h2>
+        {toolChanges.length > 0 ? (
+          <div className="space-y-3">
+            {toolChanges.map((change) => (
+              <ToolChangeListCard
+                key={change.id}
+                change={change}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                isDeleting={deletingItemId === change.id}
+                reasonLabel={getReasonTranslation}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-md border border-divider bg-paper-warm px-4 py-8 text-center text-ink-soft">
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-divider border-t-gauge-cobalt"></div>
+                <span>{t('toolChanges.loadingData')}</span>
+              </div>
+            ) : (
+              <span>{t('toolChanges.noData')}</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 데스크톱 테이블 (md 이상) */}
+      <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">{t('toolChanges.changeHistoryList')}</h2>
         </div>
