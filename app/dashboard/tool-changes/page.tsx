@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../../../components/shared/Toast'
@@ -19,6 +20,7 @@ import type { ToolChangeExcelData } from '@/lib/utils/toolChangesExcelTemplate'
 
 export default function ToolChangesPage() {
   const { t } = useTranslation()
+  const router = useRouter()
   const { showSuccess, showError } = useToast()
   const { camSheets, getAvailableModels, getAvailableProcesses } = useCAMSheets()
   const confirmation = useConfirmation()
@@ -573,11 +575,22 @@ export default function ToolChangesPage() {
 
   // 수정 모달 열기
   const handleEdit = (item: ToolChange) => {
-    setEditingItem(item)
-    setIsEditManualEndmillInput(false) // 수동 입력 모드 초기화
-    setShowEditModal(true)
+    // 풀스크린 라우트로 이동. sessionStorage로 데이터 핸드오프
+    try {
+      window.sessionStorage.setItem(
+        `tool-change-edit::${item.id}`,
+        JSON.stringify(item)
+      )
+    } catch {
+      // sessionStorage 사용 불가 — [id] 페이지의 fallback 메시지가 처리
+    }
+    router.push(`/dashboard/tool-changes/${item.id}`)
+    return
 
-    // CAM Sheet에서 적용 Tool life 조회
+    // 아래는 dead code (impeccable/4 이후 다음 PR에서 제거)
+    setEditingItem(item)
+    setIsEditManualEndmillInput(false)
+    setShowEditModal(true)
     if (item.production_model && item.process && item.t_number) {
       autoFillEditByTNumber(item.production_model, item.process, item.t_number)
     } else {
