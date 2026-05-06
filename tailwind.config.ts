@@ -12,16 +12,57 @@ const config: Config = {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: {
+        DEFAULT: "1rem",
+        sm: "1.5rem",
+        lg: "2rem",
+      },
       screens: {
         "2xl": "1400px",
       },
     },
     extend: {
       colors: {
-        // PRD에서 정의한 색상 팔레트
+        // ====================================================================
+        // The Quiet Instrument — semantic tokens (DESIGN.md canonical)
+        // ====================================================================
+        "gauge-cobalt": {
+          DEFAULT: "#1e3a8a",
+          strong: "#1e40af",
+          soft: "#dbeafe",
+        },
+        paper: {
+          DEFAULT: "#fdfdfe",
+          warm: "#f8f9fb",
+        },
+        divider: "#e6e8ee",
+        ink: {
+          DEFAULT: "#1a2236",
+          soft: "#475569",
+          mute: "#94a3b8",
+        },
+        "signal-go": {
+          DEFAULT: "#10b981",
+          soft: "#d1fae5",
+          strong: "#047857",
+        },
+        "signal-watch": {
+          DEFAULT: "#f59e0b",
+          soft: "#fef3c7",
+          strong: "#b45309",
+        },
+        "signal-stop": {
+          DEFAULT: "#ef4444",
+          soft: "#fee2e2",
+          strong: "#b91c1c",
+        },
+
+        // ====================================================================
+        // Backward compat aliases (existing components reference these)
+        // ====================================================================
         primary: {
-          DEFAULT: "#1e3a8a", // 진청색 - 회사 대표 색상
+          DEFAULT: "#1e3a8a",
+          foreground: "#fdfdfe",
           50: "#eff6ff",
           100: "#dbeafe",
           200: "#bfdbfe",
@@ -35,7 +76,8 @@ const config: Config = {
           950: "#172554",
         },
         secondary: {
-          DEFAULT: "#64748b", // 회색 계열
+          DEFAULT: "#64748b",
+          foreground: "#fdfdfe",
           50: "#f8fafc",
           100: "#f1f5f9",
           200: "#e2e8f0",
@@ -47,56 +89,80 @@ const config: Config = {
           800: "#1e293b",
           900: "#0f172a",
         },
-        success: "#10b981", // 녹색
-        warning: "#f59e0b", // 주황색
-        danger: "#ef4444",  // 빨간색
-        border: "#e2e8f0",
-        input: "#e2e8f0",
+        success: "#10b981",
+        warning: "#f59e0b",
+        danger: "#ef4444",
+        destructive: {
+          DEFAULT: "#ef4444",
+          foreground: "#fdfdfe",
+        },
+        border: "#e6e8ee",
+        input: "#e6e8ee",
         ring: "#1e3a8a",
-        background: "#ffffff",
-        foreground: "#0f172a",
+        background: "#fdfdfe",
+        foreground: "#1a2236",
         muted: {
-          DEFAULT: "#f1f5f9",
-          foreground: "#64748b",
+          DEFAULT: "#f8f9fb",
+          foreground: "#475569",
         },
         accent: {
-          DEFAULT: "#f1f5f9",
-          foreground: "#0f172a",
+          DEFAULT: "#dbeafe",
+          foreground: "#1e40af",
         },
         popover: {
-          DEFAULT: "#ffffff",
-          foreground: "#0f172a",
+          DEFAULT: "#fdfdfe",
+          foreground: "#1a2236",
         },
         card: {
-          DEFAULT: "#ffffff",
-          foreground: "#0f172a",
+          DEFAULT: "#f8f9fb",
+          foreground: "#1a2236",
         },
       },
       borderRadius: {
-        lg: "0.5rem",
-        md: "0.375rem",
-        sm: "0.25rem",
+        xs: "2px",
+        sm: "4px",
+        md: "6px",
+        lg: "8px",
       },
       fontFamily: {
         sans: [
-          "system-ui",
+          "Pretendard Variable",
+          "Pretendard",
           "-apple-system",
           "BlinkMacSystemFont",
+          "system-ui",
           "Segoe UI",
           "Roboto",
-          "Oxygen",
-          "Ubuntu",
-          "Cantarell",
+          "Helvetica Neue",
+          "Apple SD Gothic Neo",
+          "Noto Sans CJK KR",
           "sans-serif",
         ],
+        mono: [
+          "JetBrains Mono",
+          "Menlo",
+          "Consolas",
+          "Liberation Mono",
+          "Courier New",
+          "monospace",
+        ],
         korean: [
-          "Malgun Gothic",
+          "Pretendard Variable",
+          "Pretendard",
           "Apple SD Gothic Neo",
           "Noto Sans CJK KR",
           "Noto Sans KR",
           "system-ui",
           "sans-serif",
         ],
+      },
+      fontSize: {
+        caption: ["0.75rem", { lineHeight: "1.5", letterSpacing: "0.01em" }],
+        label: ["0.875rem", { lineHeight: "1.5", fontWeight: "500" }],
+        body: ["1rem", { lineHeight: "1.6" }],
+        title: ["1.125rem", { lineHeight: "1.4", fontWeight: "600" }],
+        headline: ["1.5rem", { lineHeight: "1.3", letterSpacing: "-0.005em", fontWeight: "600" }],
+        display: ["1.875rem", { lineHeight: "1.2", letterSpacing: "-0.01em", fontWeight: "600" }],
       },
       keyframes: {
         "accordion-down": {
@@ -117,24 +183,37 @@ const config: Config = {
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.5s ease-out",
-        "slide-in": "slide-in 0.3s ease-out",
+        "accordion-down": "accordion-down 0.2s cubic-bezier(0.25, 1, 0.5, 1)",
+        "accordion-up": "accordion-up 0.2s cubic-bezier(0.25, 1, 0.5, 1)",
+        "fade-in": "fade-in 0.25s cubic-bezier(0.25, 1, 0.5, 1)",
+        "slide-in": "slide-in 0.2s cubic-bezier(0.25, 1, 0.5, 1)",
       },
-      // 태블릿 및 모바일 최적화
+      transitionTimingFunction: {
+        "out-quart": "cubic-bezier(0.25, 1, 0.5, 1)",
+      },
+      transitionDuration: {
+        fast: "150ms",
+        base: "200ms",
+        slow: "250ms",
+      },
+      boxShadow: {
+        popover: "0 4px 12px rgba(26, 34, 54, 0.10), 0 0 0 1px #e6e8ee",
+        modal: "0 16px 48px rgba(26, 34, 54, 0.18)",
+        "hover-lift": "0 1px 3px rgba(26, 34, 54, 0.08)",
+      },
       spacing: {
         "safe-top": "env(safe-area-inset-top)",
         "safe-bottom": "env(safe-area-inset-bottom)",
         "safe-left": "env(safe-area-inset-left)",
         "safe-right": "env(safe-area-inset-right)",
       },
-      // 터치 친화적 크기
       minHeight: {
-        "touch": "44px", // iOS 최소 터치 크기
+        touch: "48px",
+        action: "56px",
       },
       minWidth: {
-        "touch": "44px",
+        touch: "48px",
+        action: "56px",
       },
     },
   },
@@ -145,4 +224,4 @@ const config: Config = {
   ],
 } satisfies Config;
 
-export default config; 
+export default config;
