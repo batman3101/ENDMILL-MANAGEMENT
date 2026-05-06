@@ -997,29 +997,30 @@ export default function ToolChangesPage() {
       </div>
 
       {/* 버튼 및 필터 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+      <div className="bg-paper-warm rounded-md border border-divider p-4">
         <div className="flex flex-col gap-4">
-          {/* 첫 번째 줄: 검색, 설비, 사유 필터 */}
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex gap-4 flex-1">
+          {/* 첫 번째 줄: 검색, 액션 버튼 */}
+          <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+            <div className="flex flex-1 min-w-0">
               <input
                 type="text"
                 placeholder={t('toolChanges.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 h-11 px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-gauge-cobalt transition-colors"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={resetFilters}
-                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                className="h-11 px-4 py-2 text-label font-medium text-ink bg-paper border border-divider rounded-sm hover:bg-paper-warm transition-colors"
               >
                 {t('toolChanges.resetFilters')}
               </button>
               <button
                 onClick={() => setShowBulkUploadModal(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
+                title="Excel 일괄 입력은 데스크톱 전용입니다"
+                className="hidden md:flex px-4 py-2 bg-signal-go-strong text-paper rounded-sm hover:bg-signal-go transition-colors items-center gap-2 text-label font-medium"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
