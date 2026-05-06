@@ -47,7 +47,7 @@ export default function ToolChangesPage() {
   const {
     stats,
     isLoading: isStatsLoading,
-    error: _statsError
+    error: statsError
   } = useToolChangeStats(undefined, true)
 
   // 폼 상태
@@ -1072,6 +1072,40 @@ export default function ToolChangesPage() {
       </div>
 
       {/* 교체 실적 목록 */}
+      {/* 통계 에러 배너 — 통계 fetch 실패 시 사용자가 직접 볼 수 있도록 */}
+      {statsError && (
+        <div
+          role="alert"
+          className="rounded-md border border-signal-stop bg-signal-stop-soft px-4 py-3"
+        >
+          <div className="flex items-start gap-3">
+            <svg
+              className="h-5 w-5 flex-shrink-0 text-signal-stop-strong mt-0.5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <div className="min-w-0 flex-1">
+              <p className="text-label font-semibold text-signal-stop-strong">
+                통계 불러오기 실패
+              </p>
+              <p className="mt-1 text-caption text-signal-stop-strong/80 break-all">
+                {statsError}
+              </p>
+              <p className="mt-2 text-caption text-ink-soft">
+                URL에 <code className="font-mono">?debug=1</code> 추가 후 우하단 ⚙️ 버튼으로 콘솔/네트워크 확인 가능
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 모바일 카드 리스트 (md 미만) */}
       <div className="md:hidden">
         <h2 className="text-title font-semibold text-ink mb-3">{t('toolChanges.changeHistoryList')}</h2>
