@@ -1,0 +1,264 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-06T00:00:00Z",
+  "title": "Design System: CNC Endmill Management",
+  "extensions": {
+    "colorMeta": {
+      "gauge-cobalt": {
+        "role": "primary",
+        "displayName": "Gauge Cobalt",
+        "canonical": "oklch(0.36 0.15 264)",
+        "tonalRamp": [
+          "oklch(0.18 0.08 264)",
+          "oklch(0.24 0.11 264)",
+          "oklch(0.30 0.13 264)",
+          "oklch(0.36 0.15 264)",
+          "oklch(0.46 0.16 264)",
+          "oklch(0.58 0.16 264)",
+          "oklch(0.74 0.10 264)",
+          "oklch(0.92 0.04 264)"
+        ]
+      },
+      "gauge-cobalt-strong": {
+        "role": "primary-state",
+        "displayName": "Gauge Cobalt Strong",
+        "canonical": "oklch(0.42 0.17 264)"
+      },
+      "gauge-cobalt-soft": {
+        "role": "primary-tint",
+        "displayName": "Gauge Cobalt Soft",
+        "canonical": "oklch(0.92 0.04 264)"
+      },
+      "paper": {
+        "role": "neutral-bg",
+        "displayName": "Paper",
+        "canonical": "oklch(0.99 0.003 264)"
+      },
+      "paper-warm": {
+        "role": "neutral-surface",
+        "displayName": "Paper Warm",
+        "canonical": "oklch(0.98 0.005 264)"
+      },
+      "divider": {
+        "role": "neutral-border",
+        "displayName": "Divider",
+        "canonical": "oklch(0.92 0.005 260)"
+      },
+      "ink": {
+        "role": "neutral-fg",
+        "displayName": "Ink",
+        "canonical": "oklch(0.22 0.02 260)"
+      },
+      "ink-soft": {
+        "role": "neutral-fg-soft",
+        "displayName": "Ink Soft",
+        "canonical": "oklch(0.45 0.015 260)"
+      },
+      "ink-mute": {
+        "role": "neutral-fg-mute",
+        "displayName": "Ink Mute",
+        "canonical": "oklch(0.65 0.01 260)"
+      },
+      "signal-go": {
+        "role": "status-success",
+        "displayName": "Signal Go",
+        "canonical": "oklch(0.62 0.16 152)"
+      },
+      "signal-go-soft": {
+        "role": "status-success-bg",
+        "displayName": "Signal Go Soft",
+        "canonical": "oklch(0.93 0.05 152)"
+      },
+      "signal-go-strong": {
+        "role": "status-success-fg",
+        "displayName": "Signal Go Strong",
+        "canonical": "oklch(0.42 0.13 152)"
+      },
+      "signal-watch": {
+        "role": "status-warning",
+        "displayName": "Signal Watch",
+        "canonical": "oklch(0.74 0.16 71)"
+      },
+      "signal-watch-soft": {
+        "role": "status-warning-bg",
+        "displayName": "Signal Watch Soft",
+        "canonical": "oklch(0.94 0.07 85)"
+      },
+      "signal-watch-strong": {
+        "role": "status-warning-fg",
+        "displayName": "Signal Watch Strong",
+        "canonical": "oklch(0.50 0.14 60)"
+      },
+      "signal-stop": {
+        "role": "status-danger",
+        "displayName": "Signal Stop",
+        "canonical": "oklch(0.62 0.20 25)"
+      },
+      "signal-stop-soft": {
+        "role": "status-danger-bg",
+        "displayName": "Signal Stop Soft",
+        "canonical": "oklch(0.93 0.05 25)"
+      },
+      "signal-stop-strong": {
+        "role": "status-danger-fg",
+        "displayName": "Signal Stop Strong",
+        "canonical": "oklch(0.45 0.16 25)"
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "보고서 표지 단일 등장 헤딩. 일반 페이지 부재." },
+      "headline": { "displayName": "Headline", "purpose": "페이지 H1. 페이지당 1회." },
+      "title": { "displayName": "Title", "purpose": "섹션 헤더, 카드 타이틀, 다이얼로그 제목." },
+      "body": { "displayName": "Body", "purpose": "본문, 폼 입력, 카드 콘텐츠. 16px 하한." },
+      "label": { "displayName": "Label", "purpose": "폼 라벨, 버튼 텍스트, 표 헤더." },
+      "caption": { "displayName": "Caption", "purpose": "타임스탬프, 헬퍼, 배지." },
+      "mono": { "displayName": "Mono", "purpose": "식별자(C001, T-24, PA1), 코드, 시스템 로그." }
+    },
+    "shadows": [
+      { "name": "popover", "value": "0 4px 12px rgba(26, 34, 54, 0.10), 0 0 0 1px #e6e8ee", "purpose": "드롭다운, 툴팁, 콤보박스. 그림자보다 1px ring이 윤곽 결정." },
+      { "name": "modal", "value": "0 16px 48px rgba(26, 34, 54, 0.18)", "purpose": "다이얼로그, 풀스크린 모달. 진정한 z 레이어 진입 신호." },
+      { "name": "hover-lift", "value": "0 1px 3px rgba(26, 34, 54, 0.08)", "purpose": "카드, 버튼 호버 응답. 매우 미묘하게." }
+    ],
+    "motion": [
+      { "name": "ease-out-quart", "value": "cubic-bezier(0.25, 1, 0.5, 1)", "purpose": "디폴트 easing. 상태 전환." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "버튼 호버, 포커스 링." },
+      { "name": "duration-base", "value": "200ms", "purpose": "다이얼로그 등장, 드롭다운 펼침." },
+      { "name": "duration-slow", "value": "250ms", "purpose": "페이지 페이드 인, 큰 영역 변화." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "1차 액션 버튼. 한 화면에 1-2개로 한정.",
+      "html": "<button class=\"ds-btn-primary\">기록</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 12px 24px; background: #1e3a8a; color: #fdfdfe; border: none; border-radius: 4px; font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, sans-serif; font-size: 14px; font-weight: 500; line-height: 1.5; letter-spacing: 0; white-space: nowrap; cursor: pointer; transition: background-color 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-btn-primary:hover { background: #1e40af; } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px #fdfdfe, 0 0 0 4px #dbeafe; } .ds-btn-primary:active { transform: scale(0.99); }"
+    },
+    {
+      "name": "Primary Action Button (Mobile Sticky)",
+      "kind": "button",
+      "refersTo": "button-primary-action",
+      "description": "모바일 화면 하단 고정 1차 액션. 56px 높이로 엄지 영역 보장.",
+      "html": "<button class=\"ds-btn-action\">교체 기록</button>",
+      "css": ".ds-btn-action { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 56px; padding: 16px 32px; background: #1e3a8a; color: #fdfdfe; border: none; border-radius: 4px; font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, sans-serif; font-size: 14px; font-weight: 600; line-height: 1.5; white-space: nowrap; cursor: pointer; transition: background-color 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-btn-action:hover { background: #1e40af; } .ds-btn-action:focus-visible { outline: none; box-shadow: 0 0 0 2px #fdfdfe, 0 0 0 4px #dbeafe; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "2차 액션. 보더만 있고 채움 없음.",
+      "html": "<button class=\"ds-btn-secondary\">취소</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 12px 20px; background: #fdfdfe; color: #1a2236; border: 1px solid #e6e8ee; border-radius: 4px; font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, sans-serif; font-size: 14px; font-weight: 500; line-height: 1.5; white-space: nowrap; cursor: pointer; transition: background-color 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-btn-secondary:hover { background: #f8f9fb; } .ds-btn-secondary:focus-visible { outline: none; box-shadow: 0 0 0 2px #fdfdfe, 0 0 0 4px #dbeafe; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "텍스트 입력. 라벨은 위에 별도 줄. 16px 본문 자동 줌 방지.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\" for=\"f1\">설비번호</label><input id=\"f1\" class=\"ds-input\" type=\"text\" placeholder=\"C001\"></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 8px; } .ds-field-label { font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, sans-serif; font-size: 14px; font-weight: 500; line-height: 1.5; color: #1a2236; } .ds-input { height: 44px; padding: 12px 14px; background: #fdfdfe; color: #1a2236; border: 1px solid #e6e8ee; border-radius: 4px; font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, sans-serif; font-size: 16px; font-weight: 400; line-height: 1.6; word-break: keep-all; transition: border-color 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-input::placeholder { color: #94a3b8; } .ds-input:focus-visible { outline: none; border-color: #1e3a8a; border-width: 2px; padding: 11px 13px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "그룹된 데이터 컨테이너. 그림자 없이 1px 보더와 paper-warm 배경으로 분리.",
+      "html": "<article class=\"ds-card\"><h3 class=\"ds-card-title\">PA1 모델</h3><p class=\"ds-card-meta\">장비 12대, 평균 공구 수명 4,820분</p></article>",
+      "css": ".ds-card { background: #f8f9fb; border: 1px solid #e6e8ee; border-radius: 6px; padding: 24px; transition: box-shadow 150ms cubic-bezier(0.25, 1, 0.5, 1); } @media (max-width: 767px) { .ds-card { padding: 16px; } } .ds-card:hover { box-shadow: 0 1px 3px rgba(26, 34, 54, 0.08); } .ds-card-title { margin: 0 0 8px 0; font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, sans-serif; font-size: 18px; font-weight: 600; line-height: 1.4; color: #1a2236; word-break: keep-all; } .ds-card-meta { margin: 0; font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, sans-serif; font-size: 14px; font-weight: 400; line-height: 1.5; color: #475569; word-break: keep-all; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Status Badge — Go",
+      "kind": "chip",
+      "refersTo": "badge-go",
+      "description": "정상 상태 배지. 색 + 점(•) 아이콘 + 라벨 삼중 인코딩.",
+      "html": "<span class=\"ds-badge ds-badge-go\"><svg class=\"ds-badge-icon\" viewBox=\"0 0 8 8\" aria-hidden=\"true\"><circle cx=\"4\" cy=\"4\" r=\"3\" fill=\"currentColor\"/></svg><span>정상</span></span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; line-height: 1.5; letter-spacing: 0.01em; word-break: keep-all; } .ds-badge-icon { width: 8px; height: 8px; flex-shrink: 0; } .ds-badge-go { background: #d1fae5; color: #047857; }"
+    },
+    {
+      "name": "Status Badge — Watch",
+      "kind": "chip",
+      "refersTo": "badge-watch",
+      "description": "경고 상태 배지. 색 + 삼각형(▲) 아이콘 + 라벨.",
+      "html": "<span class=\"ds-badge ds-badge-watch\"><svg class=\"ds-badge-icon\" viewBox=\"0 0 8 8\" aria-hidden=\"true\"><polygon points=\"4,1 7,7 1,7\" fill=\"currentColor\"/></svg><span>경고</span></span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; line-height: 1.5; letter-spacing: 0.01em; word-break: keep-all; } .ds-badge-icon { width: 8px; height: 8px; flex-shrink: 0; } .ds-badge-watch { background: #fef3c7; color: #b45309; }"
+    },
+    {
+      "name": "Status Badge — Stop",
+      "kind": "chip",
+      "refersTo": "badge-stop",
+      "description": "위험 상태 배지. 색 + 사각형(■) 아이콘 + 라벨.",
+      "html": "<span class=\"ds-badge ds-badge-stop\"><svg class=\"ds-badge-icon\" viewBox=\"0 0 8 8\" aria-hidden=\"true\"><rect x=\"1\" y=\"1\" width=\"6\" height=\"6\" fill=\"currentColor\"/></svg><span>위험</span></span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; line-height: 1.5; letter-spacing: 0.01em; word-break: keep-all; } .ds-badge-icon { width: 8px; height: 8px; flex-shrink: 0; } .ds-badge-stop { background: #fee2e2; color: #b91c1c; }"
+    },
+    {
+      "name": "Bottom Tab Nav Item (Mobile)",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "모바일 하단 탭 바의 단일 탭. 활성/비활성 상태.",
+      "html": "<a class=\"ds-tab ds-tab-active\" href=\"#\"><svg class=\"ds-tab-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M3 12 12 3l9 9M5 10v10h14V10\"/></svg><span>대시보드</span></a>",
+      "css": ".ds-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 56px; min-height: 56px; padding: 8px 12px; border-radius: 4px; font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; line-height: 1; color: #475569; text-decoration: none; transition: background-color 150ms cubic-bezier(0.25, 1, 0.5, 1), color 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-tab-icon { width: 24px; height: 24px; } .ds-tab-active { background: #dbeafe; color: #1e40af; } .ds-tab:hover { background: #f8f9fb; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Instrument",
+    "overview": "이 시스템은 도구가 자신을 드러내지 않는다는 한 문장에 종속됩니다. 측정자가 마이크로미터를 다룰 때 마이크로미터를 인식하지 않듯, 작업자는 이 인터페이스를 인식하지 않고 데이터를 다뤄야 합니다. Bloomberg Terminal의 정보 밀도, Linear의 절제된 인터랙션, 1970년대 Mazak 공작기계 매뉴얼의 정확성이 교차하는 지점입니다. 이 시스템은 명시적으로 거부합니다: AI가 생성한 SaaS 템플릿 대시보드, Bootstrap admin, Material Design 3, 그리고 1990년대 ERP UI. 화려함이 제거되고 정확성만 남는 자리.",
+    "keyCharacteristics": [
+      "단일 산세리프(Pretendard)가 헤딩·본문·라벨·데이터 모두 담당",
+      "색은 ≤10% 표면에만 — 80%+가 paper/divider/ink",
+      "그림자 거의 없음. 깊이는 1px divider와 미묘한 surface 차이",
+      "모든 숫자 tabular. 자릿수 흔들림은 디자인 실패",
+      "스마트폰 360px 폭에서 먼저 작동. 데스크톱은 그리드 확장",
+      "한국어 어절은 절대 중간에서 끊지 않음. word-break: keep-all 전역"
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "Gauge Cobalt는 한 화면의 10%를 넘지 않는다. 그 희소성이 신뢰의 근거다. 카드 헤더, 표 헤더, body 텍스트는 모두 ink/ink-soft. cobalt는 1차 액션·활성 nav·선택 상태에만.", "section": "colors" },
+      { "name": "The Tinted Neutral Rule", "body": "시스템에 #000과 #fff은 존재하지 않는다. 모든 neutral은 cobalt 계열로 미세하게 tint되어 있다. 이걸 어기면 시스템 정합이 무너진다.", "section": "colors" },
+      { "name": "The Triple-Encoding Rule", "body": "상태 정보(정상/경고/위험)는 절대 색만으로 전달하지 않는다. 색 + 형태(점/삼각형/사각형) + 라벨 삼중 인코딩이 의무.", "section": "colors" },
+      { "name": "The Single Family Rule", "body": "디스플레이/본문 페어링은 brand register의 사치다. The Quiet Instrument는 단일 Pretendard로 모든 역할을 처리한다.", "section": "typography" },
+      { "name": "The Tabular Numbers Rule", "body": "모든 수치는 font-variant-numeric: tabular-nums 적용. 표·카드·다이얼로그 어디서든 자릿수 흔들림 0.", "section": "typography" },
+      { "name": "The Korean Word-Break Rule", "body": "전역 word-break: keep-all. 한국어는 어절(공백 단위)에서만 끊는다. 어절 중간에서 끊기면 디자인 실패다.", "section": "typography" },
+      { "name": "The 16px Floor Rule", "body": "본문 폰트는 16px 아래로 내려가지 않는다. 모바일 자동 줌 방지 + 가독성. 14px은 라벨·캡션 전용.", "section": "typography" },
+      { "name": "The Mixed Token Wrap Rule", "body": "PA1 모델, T-24 위치, C001 장비 같은 한글+영숫자 합성은 white-space: nowrap으로 한 토큰 보호.", "section": "typography" },
+      { "name": "The Vietnamese Diacritic Protection Rule", "body": "베트남어 본문은 line-height 1.7 이상. 1.5는 đ, ầ, ề 마커가 잘리는 위험.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "표면은 정지 상태에서 평면이다. 그림자는 상태 변화나 진정한 오버레이의 물리적 응답으로만 등장한다.", "section": "elevation" },
+      { "name": "The 1px Structure Rule", "body": "깊이는 1px divider로 표현한다. 그림자는 평면 위 부유물에만, divider는 평면 안 구획에. 두 개를 섞지 않는다.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do Gauge Cobalt를 화면 표면 ≤10%에만 사용한다.",
+      "Do 모든 neutral을 cobalt 계열로 미세하게 tint된 paper/divider/ink로 사용한다.",
+      "Do 한국어 텍스트에 word-break: keep-all 전역 적용. <NoBreak> 컴포넌트로 혼합 토큰 보호.",
+      "Do 모든 수치에 font-variant-numeric: tabular-nums.",
+      "Do 본문 16px 하한 유지.",
+      "Do 상태(정상/경고/위험)는 색 + 아이콘 + 라벨 삼중 인코딩.",
+      "Do 모바일 폼에서 라벨 위·입력 아래 1열 배치, 1차 액션은 화면 하단 고정.",
+      "Do 모바일 표는 카드 리스트로 변환. 가로 스크롤 0.",
+      "Do 모든 인터랙티브 요소에 default/hover/focus/active/disabled/loading 6 상태를 정의."
+    ],
+    "donts": [
+      "Don't AI가 생성한 SaaS 템플릿 대시보드를 만든다.",
+      "Don't Bootstrap admin 템플릿 스타일.",
+      "Don't Material Design 3 그림자 종속 카드와 FAB 버튼.",
+      "Don't 사이드 스트라이프 보더(1px 초과의 border-left/right 액센트).",
+      "Don't 그라데이션 텍스트.",
+      "Don't 글래스모피즘 디폴트 사용.",
+      "Don't 동일한 카드의 반복 격자.",
+      "Don't 모달이 첫 번째 생각이 되는 패턴.",
+      "Don't em dash를 UI 카피에 사용.",
+      "Don't 카드 타이틀에 24px 사용. 18px Title 토큰을 사용.",
+      "Don't 본문이나 핵심 데이터에 14px 사용.",
+      "Don't 한국어 텍스트의 어절 중간이 줄바꿈된다.",
+      "Don't Shadcn Dialog와 mobile-modal-* 두 시스템을 혼용.",
+      "Don't 표를 모바일에서 가로 스크롤로 처리.",
+      "Don't 1차 액션을 화면 우상단에 두는 데스크톱 패턴을 모바일에 그대로 가져온다.",
+      "Don't 모션을 장식으로 사용.",
+      "Don't 원시 hex를 컴포넌트에 직접 박는다."
+    ]
+  }
+}
