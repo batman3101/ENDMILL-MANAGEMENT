@@ -323,7 +323,7 @@ export default function EditToolChangePage() {
 
       <form
         onSubmit={handleSubmit}
-        className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4 pb-32 sm:px-6 lg:px-8"
+        className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4 pb-48 sm:px-6 lg:px-8 md:pb-32"
       >
         <Field label="설비번호" htmlFor="equipment_number" hint="C001 형식">
           <Input
@@ -466,8 +466,11 @@ export default function EditToolChangePage() {
         </Field>
       </form>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-divider bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/85">
-        <div className="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3 pb-safe sm:px-6 lg:px-8">
+      <div
+        className="fixed inset-x-0 z-40 border-t border-divider bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/85 md:bottom-0"
+        style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
+      >
+        <div className="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <Button
             type="button"
             variant="outline"
