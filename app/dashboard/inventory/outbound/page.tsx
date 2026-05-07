@@ -10,6 +10,7 @@ import { useTranslations } from '../../../../lib/hooks/useTranslations'
 import { useFactory } from '../../../../lib/hooks/useFactory'
 import { supabase } from '../../../../lib/supabase/client'
 import { clientLogger } from '../../../../lib/utils/logger'
+import { OutboundHistoryCard } from '../../../../components/features/inventory/outbound-history-card'
 // outboundExcelExport is dynamically imported when needed
 
 // 앤드밀 데이터 타입 정의
@@ -603,6 +604,13 @@ export default function OutboundPage() {
 
   const totalPages = Math.ceil(filteredAndSortedItems.length / itemsPerPage)
 
+  // currentPage clamp — 필터/항목 삭제로 totalPages가 줄어든 경우 마지막 유효 페이지로 이동
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [totalPages, currentPage])
+
   // Excel 다운로드 핸들러
   const handleExcelDownload = async () => {
     try {
@@ -635,27 +643,27 @@ export default function OutboundPage() {
   return (
     <div className="space-y-6">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
-        <p className="text-gray-600">{t('inventory.outboundScanDescription')}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-base text-ink-soft">{t('inventory.outboundScanDescription')}</p>
         <Link
           href="/dashboard/inventory"
-          className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+          className="inline-flex min-h-touch items-center justify-center px-4 py-2 bg-paper text-ink text-label font-medium border border-divider rounded-sm transition-colors hover:bg-paper-warm hover:border-gauge-cobalt"
         >
           ← {t('inventory.backToInventory')}
         </Link>
       </div>
 
       {/* QR 스캔 섹션 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">🔍 {t('inventory.qrScanner')}</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-paper-warm p-4 sm:p-6 rounded-md border border-divider">
+          <h2 className="text-title font-semibold text-ink mb-4">🔍 {t('inventory.qrScanner')}</h2>
 
-          <div className="border-2 border-dashed border-green-300 rounded-lg p-8 text-center bg-green-50">
-            <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-lg flex items-center justify-center text-3xl">
+          <div className="border-2 border-dashed border-signal-go rounded-md p-6 sm:p-8 text-center bg-paper">
+            <div className="w-16 h-16 mx-auto mb-4 bg-signal-go-soft rounded-md flex items-center justify-center text-3xl">
               📦
             </div>
-            <p className="text-green-800 font-medium mb-2">{t('inventory.usbScannerReady')}</p>
-            <p className="text-sm text-green-600 mb-6">{t('inventory.usbScannerGuide')}</p>
+            <p className="text-base font-medium text-signal-go-strong mb-2">{t('inventory.usbScannerReady')}</p>
+            <p className="text-caption text-ink-soft mb-6">{t('inventory.usbScannerGuide')}</p>
 
             <div className="space-y-4">
               <div className="flex gap-2">
@@ -693,7 +701,7 @@ export default function OutboundPage() {
                       setScannedCode('') // 검색 후 input 초기화
                     }
                   }}
-                  className="flex-1 px-4 py-3 border-2 border-green-400 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-lg font-mono"
+                  className="flex-1 min-h-touch px-4 py-3 text-base font-mono bg-paper border-2 border-signal-go rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-signal-go-strong transition-colors"
                   autoFocus
                 />
                 <button
@@ -703,7 +711,7 @@ export default function OutboundPage() {
                       setScannedCode('')
                     }
                   }}
-                  className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium"
+                  className="inline-flex min-h-touch items-center justify-center px-6 py-3 bg-signal-go-strong text-paper text-label font-medium rounded-sm transition-colors hover:bg-signal-go disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!scannedCode.trim()}
                 >
                   {t('common.search')}
@@ -711,14 +719,14 @@ export default function OutboundPage() {
               </div>
 
               {errorMessage && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                  <p className="text-red-600 text-sm">{errorMessage}</p>
+                <div className="bg-signal-stop-soft border border-signal-stop rounded-sm p-3" role="alert">
+                  <p className="text-base text-signal-stop-strong">{errorMessage}</p>
                 </div>
               )}
 
-              <div className="bg-white border border-green-200 rounded-md p-4 text-left">
-                <p className="text-xs font-medium text-green-800 mb-2">💡 {t('inventory.scannerUsageGuide')}</p>
-                <ul className="text-xs text-green-700 space-y-1 ml-4 list-disc">
+              <div className="bg-paper-warm border border-divider rounded-sm p-4 text-left">
+                <p className="text-caption font-semibold text-ink mb-2">💡 {t('inventory.scannerUsageGuide')}</p>
+                <ul className="text-caption text-ink-soft space-y-1 ml-4 list-disc">
                   <li>{t('inventory.scannerStep1')}</li>
                   <li>{t('inventory.scannerStep2')}</li>
                   <li>{t('inventory.scannerStep3')}</li>
@@ -729,35 +737,35 @@ export default function OutboundPage() {
         </div>
 
         {/* 출고 정보 입력 */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">📋 {t('inventory.outboundInfo')}</h2>
+        <div className="bg-paper-warm p-4 sm:p-6 rounded-md border border-divider">
+          <h2 className="text-title font-semibold text-ink mb-4">📋 {t('inventory.outboundInfo')}</h2>
 
           {endmillData ? (
             <div className="space-y-4">
               {/* 자동 입력된 앤드밀 정보 */}
-              <div className="bg-gray-50 p-4 rounded-lg border">
+              <div className="bg-paper p-4 rounded-md border border-divider">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('inventory.endmillCodeLabel')}</label>
-                    <div className="text-lg font-bold text-green-600">{endmillData.code}</div>
+                    <label className="block text-caption font-medium text-ink-soft mb-1">{t('inventory.endmillCodeLabel')}</label>
+                    <div className="text-title font-semibold text-signal-go-strong tabular">{endmillData.code}</div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('inventory.category')}</label>
-                    <div className="text-sm text-gray-900">{endmillData.category}</div>
+                    <label className="block text-caption font-medium text-ink-soft mb-1">{t('inventory.category')}</label>
+                    <div className="text-base text-ink">{endmillData.category}</div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('inventory.endmillNameLabel')}</label>
-                    <div className="text-sm font-medium text-gray-900">{endmillData.name}</div>
+                    <label className="block text-caption font-medium text-ink-soft mb-1">{t('inventory.endmillNameLabel')}</label>
+                    <div className="text-base font-medium text-ink">{endmillData.name}</div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('inventory.currentStock')}</label>
-                    <div className={`text-sm font-bold ${endmillData.currentStock < quantity ? 'text-red-600' : 'text-gray-900'}`}>
+                    <label className="block text-caption font-medium text-ink-soft mb-1">{t('inventory.currentStock')}</label>
+                    <div className={`text-base font-semibold tabular ${endmillData.currentStock < quantity ? 'text-signal-stop-strong' : 'text-ink'}`}>
                       {endmillData.currentStock}{t('inventory.pieces')}
                     </div>
-                    <div className="text-xs text-gray-600 mt-1">
+                    <div className="text-caption text-ink-soft mt-1 tabular">
                       {t('inventory.currentStockValue')}: {getCurrentStockValue().toLocaleString()} VND
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-caption text-ink-mute tabular">
                       ({endmillData.unitPrice.toLocaleString()} VND/{t('inventory.pieces')}, {t('common.avgCount')})
                     </div>
                   </div>
@@ -767,40 +775,40 @@ export default function OutboundPage() {
               {/* 출고 관련 입력 필드들 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('inventory.equipmentNumber')} <span className="text-xs text-gray-500">({t('common.optional')})</span>
+                  <label className="block text-label font-medium text-ink-soft mb-2">
+                    {t('inventory.equipmentNumber')} <span className="text-caption text-ink-mute">({t('common.optional')})</span>
                   </label>
                   <input
                     type="text"
                     value={equipmentNumber}
                     onChange={(e) => handleEquipmentNumberChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full min-h-touch px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-signal-go-strong transition-colors"
                     placeholder={t('inventory.equipmentNumberPlaceholder')}
                     pattern="C[0-9]{3}"
                     title={t('inventory.equipmentNumberFormatError')}
                   />
-                  <p className="text-xs text-gray-500 mt-1">{t('inventory.equipmentNumberOptionalHint')}</p>
+                  <p className="text-caption text-ink-mute mt-1">{t('inventory.equipmentNumberOptionalHint')}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('inventory.tNumber')} <span className="text-xs text-gray-500">({t('common.optional')})</span>
+                  <label className="block text-label font-medium text-ink-soft mb-2">
+                    {t('inventory.tNumber')} <span className="text-caption text-ink-mute">({t('common.optional')})</span>
                   </label>
                   <select
                     value={tNumber}
                     onChange={(e) => setTNumber(parseInt(e.target.value) || 1)}
-                    className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full min-h-touch px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-signal-go-strong transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!equipmentNumber.trim()}
                   >
                     {Array.from({length: tNumberRange.max - tNumberRange.min + 1}, (_, i) => i + tNumberRange.min).map(num => (
                       <option key={num} value={num}>T{num.toString().padStart(2, '0')}</option>
                     ))}
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">{t('inventory.tNumberOptionalHint')}</p>
+                  <p className="text-caption text-ink-mute mt-1">{t('inventory.tNumberOptionalHint')}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('inventory.outboundQuantity')} {t('inventory.required')}</label>
+                  <label className="block text-label font-medium text-ink-soft mb-2">{t('inventory.outboundQuantity')} {t('inventory.required')}</label>
                   <input
                     type="number"
                     min="1"
@@ -810,44 +818,46 @@ export default function OutboundPage() {
                       const value = parseInt(e.target.value)
                       setQuantity(isNaN(value) ? 1 : value)
                     }}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-lg ${
-                      quantity > endmillData.currentStock ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    className={`w-full min-h-touch px-3 py-2 text-base bg-paper border rounded-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors tabular ${
+                      quantity > endmillData.currentStock
+                        ? 'border-signal-stop bg-signal-stop-soft focus:border-signal-stop-strong'
+                        : 'border-divider focus:border-signal-go-strong'
                     }`}
                     placeholder={t('inventory.enterQuantity')}
                     required
                   />
                   {quantity > endmillData.currentStock && (
-                    <p className="text-red-600 text-xs mt-1">{t('inventory.insufficientStock')}! {t('inventory.currentStock')}: {endmillData.currentStock}{t('inventory.pieces')}</p>
+                    <p className="text-signal-stop-strong text-caption mt-1" role="alert">{t('inventory.insufficientStock')}! {t('inventory.currentStock')}: {endmillData.currentStock}{t('inventory.pieces')}</p>
                   )}
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('inventory.purpose')} <span className="text-xs text-gray-500">({t('common.optional')})</span>
+                  <label className="block text-label font-medium text-ink-soft mb-2">
+                    {t('inventory.purpose')} <span className="text-caption text-ink-mute">({t('common.optional')})</span>
                   </label>
                   <select
                     value={purpose}
                     onChange={(e) => setPurpose(e.target.value)}
-                    className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full min-h-touch px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-signal-go-strong transition-colors"
                   >
                     <option value="">{t('inventory.selectPurpose')}</option>
                     {toolChangesReasons.map(reason => (
                       <option key={reason} value={reason}>{reasonTranslations[reason] || reason}</option>
                     ))}
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">{t('inventory.purposeOptionalHint')}</p>
+                  <p className="text-caption text-ink-mute mt-1">{t('inventory.purposeOptionalHint')}</p>
                 </div>
               </div>
 
               {/* 총액 표시 */}
-              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">{t('inventory.totalOutboundAmount')}:</span>
-                  <span className="text-2xl font-bold text-green-600">
+              <div className="bg-signal-go-soft p-4 rounded-md border border-signal-go">
+                <div className="flex justify-between items-center gap-3">
+                  <span className="text-label font-medium text-ink-soft">{t('inventory.totalOutboundAmount')}:</span>
+                  <span className="text-headline font-semibold text-signal-go-strong tabular">
                     {getTotalValue().toLocaleString()} VND
                   </span>
                 </div>
-                <div className="text-xs text-gray-600 mt-1">
+                <div className="text-caption text-ink-soft mt-1 tabular">
                   {endmillData.unitPrice.toLocaleString()} VND × {quantity}{t('inventory.pieces')} = {getTotalValue().toLocaleString()} VND
                 </div>
               </div>
@@ -856,7 +866,7 @@ export default function OutboundPage() {
               <div className="flex gap-3">
                 <button
                   onClick={handleProcessOutbound}
-                  className="flex-1 px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium disabled:bg-gray-400"
+                  className="flex-1 inline-flex min-h-touch items-center justify-center px-4 py-3 bg-signal-go-strong text-paper text-label font-medium rounded-sm transition-colors hover:bg-signal-go disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={quantity <= 0 || quantity > endmillData.currentStock || loading}
                 >
                   {loading ? t('common.loading') : `📤 ${t('inventory.processOutbound')}`}
@@ -871,45 +881,45 @@ export default function OutboundPage() {
                     setScannedCode('')
                     setErrorMessage('')
                   }}
-                  className="px-4 py-3 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                  className="inline-flex min-h-touch items-center justify-center px-4 py-3 bg-paper text-ink text-label font-medium border border-divider rounded-sm transition-colors hover:bg-paper-warm hover:border-gauge-cobalt"
                 >
                   {t('common.reset')}
                 </button>
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
+            <div className="text-center py-8 text-ink-soft">
+              <div className="w-16 h-16 mx-auto mb-4 bg-paper rounded-md border border-divider flex items-center justify-center">
                 📦
               </div>
-              <p className="text-lg font-medium mb-2">{t('inventory.scanEndmillOutbound')}</p>
-              <p className="text-sm">{t('inventory.scanOrEnterOutbound')}</p>
-              <p className="text-sm">{t('inventory.autoLoadOutbound')}</p>
-              <p className="text-xs text-blue-600 mt-3 font-medium">💡 {t('inventory.outboundOptionalNote')}</p>
+              <p className="text-title font-semibold text-ink mb-2">{t('inventory.scanEndmillOutbound')}</p>
+              <p className="text-base">{t('inventory.scanOrEnterOutbound')}</p>
+              <p className="text-base">{t('inventory.autoLoadOutbound')}</p>
+              <p className="text-caption text-gauge-cobalt-strong mt-3 font-medium">💡 {t('inventory.outboundOptionalNote')}</p>
             </div>
           )}
         </div>
       </div>
 
       {/* 출고 처리 내역 */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-200">
+      <div className="space-y-3">
         {/* 헤더와 필터 */}
-        <div className="px-6 py-4 border-b space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">{t('inventory.outboundHistory')}</h2>
+        <div className="bg-paper-warm p-4 rounded-md border border-divider space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-title font-semibold text-ink">{t('inventory.outboundHistory')}</h2>
             <button
               onClick={handleExcelDownload}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
+              className="inline-flex min-h-touch items-center justify-center gap-2 px-4 py-2 bg-paper text-ink text-label font-medium border border-divider rounded-sm transition-colors hover:bg-paper-warm hover:border-signal-go disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={filteredAndSortedItems.length === 0}
             >
-              📥 {t('inventory.downloadExcel')}
+              📥 <span className="hidden sm:inline">{t('inventory.downloadExcel')}</span>
             </button>
           </div>
 
           {/* 기간 필터 */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-label font-medium text-ink-soft mb-2">
                 {t('inventory.periodFilter')}
               </label>
               <select
@@ -918,7 +928,7 @@ export default function OutboundPage() {
                   setPeriod(e.target.value as any)
                   setCurrentPage(1)
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full min-h-touch px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-signal-go-strong transition-colors"
               >
                 <option value="today">{t('inventory.periodFilter')} - {t('common.date')}</option>
                 <option value="lastWeek">{t('inventory.lastWeek')}</option>
@@ -931,25 +941,25 @@ export default function OutboundPage() {
             {period === 'custom' && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-label font-medium text-ink-soft mb-2">
                     {t('inventory.startDate')}
                   </label>
                   <input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full min-h-touch px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-signal-go-strong transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-label font-medium text-ink-soft mb-2">
                     {t('inventory.endDate')}
                   </label>
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full min-h-touch px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-signal-go-strong transition-colors"
                   />
                 </div>
                 <div className="flex items-end">
@@ -958,7 +968,7 @@ export default function OutboundPage() {
                       loadOutboundHistory()
                       setCurrentPage(1)
                     }}
-                    className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                    className="w-full inline-flex min-h-touch items-center justify-center px-4 py-2 bg-signal-go-strong text-paper text-label font-medium rounded-sm transition-colors hover:bg-signal-go"
                   >
                     {t('inventory.apply')}
                   </button>
@@ -968,7 +978,7 @@ export default function OutboundPage() {
           </div>
 
           {/* 검색 및 정렬 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
             <div className="md:col-span-1">
               <input
                 type="text"
@@ -978,14 +988,14 @@ export default function OutboundPage() {
                   setCurrentPage(1)
                 }}
                 placeholder={t('inventory.searchPlaceholderOutbound')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full min-h-touch px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-signal-go-strong transition-colors"
               />
             </div>
             <div>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full min-h-touch px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-signal-go-strong transition-colors"
               >
                 <option value="date">{t('inventory.sortByDate')}</option>
                 <option value="code">{t('inventory.sortByCode')}</option>
@@ -996,7 +1006,7 @@ export default function OutboundPage() {
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full min-h-touch px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-signal-go-strong transition-colors"
               >
                 <option value="desc">{t('inventory.sortDescending')}</option>
                 <option value="asc">{t('inventory.sortAscending')}</option>
@@ -1006,84 +1016,104 @@ export default function OutboundPage() {
         </div>
 
         {filteredAndSortedItems.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="rounded-md border border-divider bg-paper-warm px-4 py-8 text-center text-base text-ink-soft">
             {searchTerm ? t('common.noResults') : t('inventory.noOutboundHistory')}
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.processedTime')}</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.endmillCode')}</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.endmillName')}</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('common.quantity')}</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.purpose')}</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.currentStockValue')} (VND)</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.processor')}</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('inventory.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.processedAt}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.endmillCode}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.endmillName}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{reasonTranslations[item.purpose] || item.purpose}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-green-600">{item.totalValue.toLocaleString()}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.processedBy}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEditOutbound(item)}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            {t('common.edit')}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteOutbound(item.id)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            {t('common.delete')}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* 모바일 카드 리스트 (lg 미만) */}
+            <div className="lg:hidden space-y-3">
+              {paginatedItems.map((item) => (
+                <OutboundHistoryCard
+                  key={item.id}
+                  item={item}
+                  onEdit={handleEditOutbound}
+                  onDelete={handleDeleteOutbound}
+                  purposeLabel={(p) => reasonTranslations[p] || p}
+                  editLabel={t('common.edit')}
+                  deleteLabel={t('common.delete')}
+                />
+              ))}
             </div>
 
-            {/* 페이지네이션 */}
+            {/* 데스크톱 테이블 (lg 이상) */}
+            <div className="hidden lg:block bg-paper-warm rounded-md border border-divider overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-divider">
+                  <thead className="bg-paper">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-caption font-medium text-ink-soft uppercase tracking-wider">{t('inventory.processedTime')}</th>
+                      <th className="px-4 py-3 text-left text-caption font-medium text-ink-soft uppercase tracking-wider">{t('inventory.endmillCode')}</th>
+                      <th className="px-4 py-3 text-left text-caption font-medium text-ink-soft uppercase tracking-wider">{t('inventory.endmillName')}</th>
+                      <th className="px-4 py-3 text-left text-caption font-medium text-ink-soft uppercase tracking-wider">{t('common.quantity')}</th>
+                      <th className="px-4 py-3 text-left text-caption font-medium text-ink-soft uppercase tracking-wider">{t('inventory.purpose')}</th>
+                      <th className="px-4 py-3 text-left text-caption font-medium text-ink-soft uppercase tracking-wider">{t('inventory.currentStockValue')} (VND)</th>
+                      <th className="px-4 py-3 text-left text-caption font-medium text-ink-soft uppercase tracking-wider">{t('inventory.processor')}</th>
+                      <th className="px-4 py-3 text-left text-caption font-medium text-ink-soft uppercase tracking-wider">{t('inventory.actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-paper-warm divide-y divide-divider">
+                    {paginatedItems.map((item) => (
+                      <tr key={item.id} className="hover:bg-paper transition-colors">
+                        <td className="px-4 py-4 whitespace-nowrap text-base text-ink-soft tabular">{item.processedAt}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-base font-medium text-ink tabular">{item.endmillCode}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-base text-ink">{item.endmillName}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-base text-ink tabular">{item.quantity}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-base text-ink-soft">{reasonTranslations[item.purpose] || item.purpose || '—'}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-base font-semibold text-signal-go-strong tabular">{item.totalValue.toLocaleString()}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-base text-ink-soft">{item.processedBy}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-label">
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => handleEditOutbound(item)}
+                              className="text-gauge-cobalt-strong font-medium hover:text-gauge-cobalt transition-colors"
+                            >
+                              {t('common.edit')}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteOutbound(item.id)}
+                              className="text-signal-stop-strong font-medium hover:text-signal-stop transition-colors"
+                            >
+                              {t('common.delete')}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* 페이지네이션 — 모바일/데스크톱 공통 */}
             {totalPages > 1 && (
-              <div className="px-6 py-4 border-t flex items-center justify-between">
-                <div className="text-sm text-gray-700">
+              <div className="bg-paper-warm border border-divider rounded-md px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-caption text-ink-soft tabular">
                   {t('inventory.showingEntries', {
                     from: (currentPage - 1) * itemsPerPage + 1,
                     to: Math.min(currentPage * itemsPerPage, filteredAndSortedItems.length),
                     total: filteredAndSortedItems.length
                   })}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2 self-end sm:self-auto">
                   <button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex min-h-touch min-w-touch items-center justify-center px-3 text-label font-medium text-ink-soft bg-paper border border-divider rounded-sm transition-colors hover:bg-paper-warm hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-paper disabled:hover:text-ink-soft"
+                    aria-label={t('toolChanges.previous')}
                   >
-                    {t('toolChanges.previous')}
+                    ‹
                   </button>
-                  <span className="px-4 py-2 text-sm text-gray-700">
+                  <span className="text-caption text-ink-soft tabular px-2">
                     {currentPage} / {totalPages}
                   </span>
                   <button
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex min-h-touch min-w-touch items-center justify-center px-3 text-label font-medium text-ink-soft bg-paper border border-divider rounded-sm transition-colors hover:bg-paper-warm hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-paper disabled:hover:text-ink-soft"
+                    aria-label={t('toolChanges.next')}
                   >
-                    {t('toolChanges.next')}
+                    ›
                   </button>
                 </div>
               </div>
@@ -1108,10 +1138,11 @@ export default function OutboundPage() {
         <div className="mobile-modal-container" onClick={() => { setIsEditModalOpen(false); setEditingItem(null); }}>
           <div className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-modal-header">
-              <h3 className="text-lg font-medium">{t('inventory.editOutbound')}</h3>
+              <h3 className="text-title font-semibold text-ink">{t('inventory.editOutbound')}</h3>
               <button
                 onClick={() => { setIsEditModalOpen(false); setEditingItem(null); }}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                className="p-2 text-ink-mute hover:text-ink hover:bg-paper-warm rounded-full transition-colors"
+                aria-label={t('common.cancel')}
               >
                 ✕
               </button>
@@ -1119,19 +1150,19 @@ export default function OutboundPage() {
 
             <div className="mobile-modal-body space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-label font-medium text-ink-soft mb-1">
                   {t('inventory.endmillCode')}
                 </label>
                 <input
                   type="text"
                   value={editingItem.endmillCode}
                   disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                  className="w-full min-h-touch px-3 py-2 text-base bg-paper-warm border border-divider rounded-sm text-ink-soft tabular cursor-not-allowed"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-label font-medium text-ink-soft mb-1">
                   {t('common.quantity')}
                 </label>
                 <input
@@ -1139,18 +1170,18 @@ export default function OutboundPage() {
                   min="1"
                   value={editingItem.quantity}
                   onChange={(e) => setEditingItem({ ...editingItem, quantity: parseInt(e.target.value) || 1 })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full min-h-touch px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-signal-go-strong transition-colors tabular"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-label font-medium text-ink-soft mb-1">
                   {t('inventory.purpose')}
                 </label>
                 <select
                   value={editingItem.purpose}
                   onChange={(e) => setEditingItem({ ...editingItem, purpose: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full min-h-touch px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-signal-go-strong transition-colors"
                 >
                   <option value="">{t('inventory.selectPurpose')}</option>
                   {toolChangesReasons.map(reason => (
@@ -1166,13 +1197,13 @@ export default function OutboundPage() {
                   setIsEditModalOpen(false)
                   setEditingItem(null)
                 }}
-                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                className="w-full sm:w-auto inline-flex min-h-touch items-center justify-center px-4 py-2 bg-paper text-ink text-label font-medium border border-divider rounded-sm transition-colors hover:bg-paper-warm hover:border-gauge-cobalt"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={handleSaveEditOutbound}
-                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="w-full sm:w-auto inline-flex min-h-touch items-center justify-center px-4 py-2 bg-signal-go-strong text-paper text-label font-medium rounded-sm transition-colors hover:bg-signal-go"
               >
                 {t('common.save')}
               </button>
