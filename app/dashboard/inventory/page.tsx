@@ -327,7 +327,13 @@ export default function InventoryPage() {
 
   // 통계 계산
   const stats = getInventoryStats(searchFilteredInventory)
-  
+
+  // id → inventory item Map — currentData/desktop 핸들러의 N+1 lookup 제거용
+  const inventoryByItemId = useMemo(
+    () => new Map(searchFilteredInventory.map(it => [it.id, it])),
+    [searchFilteredInventory]
+  )
+
   // 페이지네이션
   const totalPages = Math.ceil(flattenedData.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -907,21 +913,20 @@ export default function InventoryPage() {
                     category: row.category,
                     totalCurrentStock: row.totalCurrentStock,
                     minStock: row.minStock,
-                    maxStock: row.maxStock,
                     overallStatus: row.overallStatus,
                     unitPrice: row.unitPrice ?? 0,
                   }}
                   statusText={getStatusText}
                   onDetail={(itemId) => {
-                    const item = searchFilteredInventory.find(it => it.id === itemId)
+                    const item = inventoryByItemId.get(itemId)
                     if (item) handleViewDetail(item)
                   }}
                   onEdit={(itemId) => {
-                    const item = searchFilteredInventory.find(it => it.id === itemId)
+                    const item = inventoryByItemId.get(itemId)
                     if (item) handleEdit(item)
                   }}
                   onDelete={(itemId) => {
-                    const item = searchFilteredInventory.find(it => it.id === itemId)
+                    const item = inventoryByItemId.get(itemId)
                     if (item) handleDelete(item)
                   }}
                 />
@@ -1033,34 +1038,39 @@ export default function InventoryPage() {
                       />
                     </td>
 
-                    {/* 단가 */}
+                    {/* 단가 — 헤더에 (VND) 표기되어 있으므로 셀에서는 제거.
+                        모바일 카드와 동일하게 0 또는 미입력은 '—'로 통일 */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-base font-medium text-ink tabular">
-                        {row.unitPrice?.toLocaleString() || '0'} VND
+                        {row.unitPrice && row.unitPrice > 0 ? row.unitPrice.toLocaleString() : '—'}
                       </div>
                     </td>
 
                     {/* 작업 */}
                     <td className="px-6 py-4 whitespace-nowrap text-label">
                       <button
-                        onClick={() => handleViewDetail(searchFilteredInventory.find(item => item.id === row.itemId)!)}
+                        onClick={() => {
+                          const item = inventoryByItemId.get(row.itemId)
+                          if (item) handleViewDetail(item)
+                        }}
                         className="text-gauge-cobalt-strong font-medium hover:text-gauge-cobalt mr-3 transition-colors"
                       >
                         {t('inventory.detail')}
                       </button>
                       <button
                         onClick={() => {
-                          const inventoryItem = searchFilteredInventory.find(item => item.id === row.itemId)
-                          if (inventoryItem) {
-                            handleEdit(inventoryItem)
-                          }
+                          const item = inventoryByItemId.get(row.itemId)
+                          if (item) handleEdit(item)
                         }}
                         className="text-signal-go-strong font-medium hover:text-signal-go mr-3 transition-colors"
                       >
                         {t('inventory.edit')}
                       </button>
                       <button
-                        onClick={() => handleDelete(searchFilteredInventory.find(item => item.id === row.itemId)!)}
+                        onClick={() => {
+                          const item = inventoryByItemId.get(row.itemId)
+                          if (item) handleDelete(item)
+                        }}
                         className="text-signal-stop-strong font-medium hover:text-signal-stop transition-colors"
                       >
                         {t('inventory.delete')}
