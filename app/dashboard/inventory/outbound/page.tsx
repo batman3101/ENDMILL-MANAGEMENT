@@ -1027,11 +1027,18 @@ export default function OutboundPage() {
                 <OutboundHistoryCard
                   key={item.id}
                   item={item}
+                  labels={{
+                    totalValue: t('inventory.currentStockValue'),
+                    quantity: t('common.quantity'),
+                    equipment: `${t('inventory.equipmentNumber')} / T`,
+                    purpose: t('inventory.purpose'),
+                    processor: t('inventory.processor'),
+                    edit: t('common.edit'),
+                    delete: t('common.delete'),
+                  }}
+                  translatePurpose={(p) => reasonTranslations[p] || p}
                   onEdit={handleEditOutbound}
                   onDelete={handleDeleteOutbound}
-                  purposeLabel={(p) => reasonTranslations[p] || p}
-                  editLabel={t('common.edit')}
-                  deleteLabel={t('common.delete')}
                 />
               ))}
             </div>

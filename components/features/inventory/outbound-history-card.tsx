@@ -18,22 +18,30 @@ interface OutboundHistoryCardItem {
   purpose: string
 }
 
+interface OutboundHistoryCardLabels {
+  totalValue: string
+  quantity: string
+  equipment: string
+  purpose: string
+  processor: string
+  edit: string
+  delete: string
+}
+
 interface OutboundHistoryCardProps {
   item: OutboundHistoryCardItem
+  labels: OutboundHistoryCardLabels
+  translatePurpose: (purpose: string) => string
   onEdit: (item: OutboundHistoryCardItem) => void
   onDelete: (id: string) => void
-  purposeLabel: (purpose: string) => string
-  editLabel: string
-  deleteLabel: string
 }
 
 export function OutboundHistoryCard({
   item,
+  labels,
+  translatePurpose,
   onEdit,
   onDelete,
-  purposeLabel,
-  editLabel,
-  deleteLabel,
 }: OutboundHistoryCardProps) {
   const equipmentDisplay = item.equipmentNumber
     ? `${item.equipmentNumber}${item.tNumber ? ` · T${String(item.tNumber).padStart(2, '0')}` : ''}`
@@ -49,7 +57,7 @@ export function OutboundHistoryCard({
           <p className="mt-0.5 text-caption text-ink-soft truncate">{item.endmillName}</p>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-caption text-ink-mute">총 가치</p>
+          <p className="text-caption text-ink-mute">{labels.totalValue}</p>
           <p className="text-title font-semibold text-signal-go-strong tabular">
             {item.totalValue.toLocaleString()}
             <span className="ml-1 text-caption font-normal text-ink-soft">VND</span>
@@ -58,16 +66,16 @@ export function OutboundHistoryCard({
       </header>
 
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-base">
-        <MetaRow label="수량">
+        <MetaRow label={labels.quantity}>
           <span className="font-medium tabular text-ink">{item.quantity}</span>
         </MetaRow>
-        <MetaRow label="설비 / T">
+        <MetaRow label={labels.equipment}>
           <span className="tabular text-ink">{equipmentDisplay}</span>
         </MetaRow>
-        <MetaRow label="목적" span={2}>
-          <span className="text-ink">{purposeLabel(item.purpose) || '—'}</span>
+        <MetaRow label={labels.purpose} span={2}>
+          <span className="text-ink">{translatePurpose(item.purpose) || '—'}</span>
         </MetaRow>
-        <MetaRow label="처리자" span={2}>
+        <MetaRow label={labels.processor} span={2}>
           <span className="text-ink">{item.processedBy || '—'}</span>
           <span className="text-ink-mute"> · </span>
           <span className="text-ink-soft tabular">{item.processedAt}</span>
@@ -81,7 +89,7 @@ export function OutboundHistoryCard({
           className="inline-flex min-h-touch items-center gap-1 rounded-sm px-3 text-label font-medium text-ink-soft transition-colors hover:bg-paper hover:text-ink"
         >
           <Pencil className="h-4 w-4" />
-          {editLabel}
+          {labels.edit}
         </button>
         <button
           type="button"
@@ -89,7 +97,7 @@ export function OutboundHistoryCard({
           className="inline-flex min-h-touch items-center gap-1 rounded-sm px-3 text-label font-medium text-signal-stop transition-colors hover:bg-signal-stop-soft"
         >
           <Trash2 className="h-4 w-4" />
-          {deleteLabel}
+          {labels.delete}
         </button>
       </footer>
     </article>
