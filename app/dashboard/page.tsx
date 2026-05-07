@@ -202,15 +202,14 @@ export default function DashboardPage() {
               color="#3b82f6"
               size={120}
             >
-              <div className="text-center">
+              {/* 도넛 내부: 핵심 지표(가동률 %)만 표시 — 활성/전체 카운트는 도넛 아래 grid에 별도 표시.
+                  3줄 → 2줄로 축소하여 foreignObject(60×60) 안에 안전하게 fit. 교체 사유 분석 카드와 동일 패턴. */}
+              <div className="text-center leading-tight">
                 <div className="text-headline font-semibold text-ink tabular-nums">
-                  {data?.equipment?.active || 0}
+                  {data?.equipment?.operatingRate || 0}%
                 </div>
                 <div className="text-caption text-ink-mute">
-                  / {data?.equipment?.total || 0}{t('dashboard.equipmentCount')}
-                </div>
-                <div className="text-caption text-gauge-cobalt-strong mt-0.5 tabular-nums">
-                  {data?.equipment?.operatingRate || 0}% {t('dashboard.operatingRate')}
+                  {t('dashboard.operatingRate')}
                 </div>
               </div>
             </DonutChart>
