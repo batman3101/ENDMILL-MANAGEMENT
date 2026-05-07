@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Home,
   Factory,
@@ -56,6 +56,71 @@ export default function DashboardLayout({
   const [currentTime, setCurrentTime] = useState<string>('')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+
+  // 사이드바 폭 (데스크톱 전용, localStorage 영구 저장)
+  const SIDEBAR_DEFAULT = 256
+  const SIDEBAR_MIN = 200
+  const SIDEBAR_MAX = 420
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT)
+  const isResizing = useRef(false)
+
+  // 저장된 폭 복원
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const saved = window.localStorage.getItem('sidebar-width')
+    if (saved) {
+      const n = parseInt(saved, 10)
+      if (!Number.isNaN(n) && n >= SIDEBAR_MIN && n <= SIDEBAR_MAX) {
+        setSidebarWidth(n)
+      }
+    }
+  }, [])
+
+  // 마우스 드래그 핸들러
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    isResizing.current = true
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const onMove = (ev: MouseEvent) => {
+      if (!isResizing.current) return
+      const newWidth = Math.max(
+        SIDEBAR_MIN,
+        Math.min(SIDEBAR_MAX, ev.clientX)
+      )
+      setSidebarWidth(newWidth)
+    }
+    const onUp = () => {
+      if (!isResizing.current) return
+      isResizing.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      // 최종 폭 저장
+      setSidebarWidth(prev => {
+        try {
+          window.localStorage.setItem('sidebar-width', String(prev))
+        } catch {
+          // localStorage 사용 불가 환경 (private mode 등) — 무시
+        }
+        return prev
+      })
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+
+  // 더블클릭 시 기본 폭으로 리셋
+  const handleResizeDoubleClick = () => {
+    setSidebarWidth(SIDEBAR_DEFAULT)
+    try {
+      window.localStorage.setItem('sidebar-width', String(SIDEBAR_DEFAULT))
+    } catch {
+      // 무시
+    }
+  }
 
   // 실시간 시계
   useEffect(() => {
@@ -241,9 +306,10 @@ export default function DashboardLayout({
 
         {/* === 사이드바 === */}
         <aside
+          style={{ width: `${sidebarWidth}px` }}
           className={`
             fixed lg:sticky top-0 left-0 z-50 lg:z-auto
-            h-screen w-64 flex-shrink-0
+            h-screen flex-shrink-0 max-lg:!w-64
             bg-ink text-paper
             flex flex-col
             transition-transform duration-200 ease-out
@@ -251,6 +317,17 @@ export default function DashboardLayout({
           `}
           aria-label={t('navigation.dashboard')}
         >
+          {/* Resize 핸들 — 데스크톱 전용 */}
+          <div
+            onMouseDown={handleResizeStart}
+            onDoubleClick={handleResizeDoubleClick}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize sidebar"
+            className="hidden lg:block absolute top-0 right-0 z-10 h-full w-1.5 cursor-col-resize group"
+          >
+            <div className="absolute inset-y-0 right-0 w-px bg-paper/10 group-hover:bg-gauge-cobalt group-hover:w-0.5 transition-all" />
+          </div>
           {/* 로고 영역 */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-paper/10 flex-shrink-0">
             <Link
