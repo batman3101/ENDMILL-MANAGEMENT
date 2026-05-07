@@ -916,6 +916,14 @@ export default function InventoryPage() {
                     overallStatus: row.overallStatus,
                     unitPrice: row.unitPrice ?? 0,
                   }}
+                  labels={{
+                    category: t('inventory.category'),
+                    currentStockMin: t('inventory.currentStockShort'),
+                    unitPriceVND: t('inventory.unitPriceVND'),
+                    detail: t('inventory.detail'),
+                    edit: t('inventory.edit'),
+                    delete: t('inventory.delete'),
+                  }}
                   statusText={getStatusText}
                   onDetail={(itemId) => {
                     const item = inventoryByItemId.get(itemId)
