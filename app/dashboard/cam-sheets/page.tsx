@@ -1,23 +1,60 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import { useCAMSheets, type CAMSheet, type EndmillInfo } from '../../../lib/hooks/useCAMSheets'
-import CAMSheetForm from '../../../components/features/CAMSheetForm'
 import dynamic from 'next/dynamic'
-const ExcelUploader = dynamic(() => import('../../../components/features/ExcelUploader'), { ssr: false })
-import { useToast } from '../../../components/shared/Toast'
-import ConfirmationModal from '../../../components/shared/ConfirmationModal'
-import { useConfirmation, createDeleteConfirmation, createSaveConfirmation } from '../../../lib/hooks/useConfirmation'
-import { useSettings } from '../../../lib/hooks/useSettings'
-import SortableTableHeader from '../../../components/shared/SortableTableHeader'
+import { Plus, Upload, X, ChevronUp, ChevronDown } from 'lucide-react'
+import { useCAMSheets, type CAMSheet, type EndmillInfo } from '@/lib/hooks/useCAMSheets'
+import CAMSheetForm from '@/components/features/CAMSheetForm'
+import { useToast } from '@/components/shared/Toast'
+import ConfirmationModal from '@/components/shared/ConfirmationModal'
+import {
+  useConfirmation,
+  createDeleteConfirmation,
+  createSaveConfirmation,
+} from '@/lib/hooks/useConfirmation'
+import { useSettings } from '@/lib/hooks/useSettings'
 import { logger, clientLogger } from '@/lib/utils/logger'
 import { useFactory } from '@/lib/hooks/useFactory'
+import { StatusBadge } from '@/components/ui/status-badge'
+import { NoBreak } from '@/components/ui/no-break'
+import {
+  CAMSheetListCard,
+  type CAMSheetListCardItem,
+} from '@/components/features/cam-sheets/cam-sheet-list-card'
+
+const ExcelUploader = dynamic(
+  () => import('@/components/features/ExcelUploader'),
+  { ssr: false }
+)
+
+type SortField = 'model' | 'process' | 'cam_version' | 'endmillCount' | 'updated_at'
+type SortOrder = 'asc' | 'desc'
+
+function resolveDateLocale(language: string | undefined): string {
+  if (!language) return 'ko-KR'
+  if (language.toLowerCase().startsWith('vi')) return 'vi-VN'
+  return 'ko-KR'
+}
+
+function formatDateForLocale(value: string | null | undefined, locale: string): string {
+  if (!value) return '—'
+  try {
+    return new Date(value).toLocaleDateString(locale, {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+    })
+  } catch {
+    return value
+  }
+}
 
 export default function CAMSheetsPage() {
   const router = useRouter()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const dateLocale = resolveDateLocale(i18n.language)
   const {
     camSheets,
     loading,
@@ -25,11 +62,12 @@ export default function CAMSheetsPage() {
     createCAMSheet,
     createCAMSheetsBatch,
     updateCAMSheet,
-    deleteCAMSheet
+    deleteCAMSheet,
   } = useCAMSheets()
   const { showSuccess, showError } = useToast()
   const confirmation = useConfirmation()
   const { currentFactory } = useFactory()
+
   const [showAddForm, setShowAddForm] = useState(false)
   const [showExcelUploader, setShowExcelUploader] = useState(false)
   const [selectedSheet, setSelectedSheet] = useState<CAMSheet | null>(null)
@@ -37,16 +75,13 @@ export default function CAMSheetsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [modelFilter, setModelFilter] = useState('')
   const [processFilter, setProcessFilter] = useState('')
-  const [sortField, setSortField] = useState<'model' | 'process' | 'cam_version' | 'endmillCount' | 'updated_at'>('updated_at')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [sortField, setSortField] = useState<SortField>('updated_at')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [toolChanges, setToolChanges] = useState<any[]>([])
   const [inventoryData, setInventoryData] = useState<any[]>([])
-
-  // 페이지네이션 state
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
-  // 설정에서 값 가져오기
   const { settings } = useSettings()
   const availableProcesses = settings.equipment.processes
 
@@ -54,14 +89,16 @@ export default function CAMSheetsPage() {
   useEffect(() => {
     const fetchToolChanges = async () => {
       try {
-        const response = await fetch(`/api/tool-changes${currentFactory?.id ? `?factoryId=${currentFactory.id}` : ''}`)
+        const response = await fetch(
+          `/api/tool-changes${currentFactory?.id ? `?factoryId=${currentFactory.id}` : ''}`
+        )
         if (response.ok) {
           const result = await response.json()
           logger.log('교체 실적 데이터:', result)
           setToolChanges(result.data || [])
         }
-      } catch (error) {
-        clientLogger.error('교체 실적 데이터 로드 실패:', error)
+      } catch (err) {
+        clientLogger.error('교체 실적 데이터 로드 실패:', err)
       }
     }
     fetchToolChanges()
@@ -71,87 +108,114 @@ export default function CAMSheetsPage() {
   useEffect(() => {
     const fetchInventory = async () => {
       try {
-        const response = await fetch(`/api/inventory${currentFactory?.id ? `?factoryId=${currentFactory.id}` : ''}`)
+        const response = await fetch(
+          `/api/inventory${currentFactory?.id ? `?factoryId=${currentFactory.id}` : ''}`
+        )
         if (response.ok) {
           const result = await response.json()
           logger.log('재고 데이터:', result)
           setInventoryData(result.data || result.inventory || [])
         }
-      } catch (error) {
-        clientLogger.error('재고 데이터 로드 실패:', error)
+      } catch (err) {
+        clientLogger.error('재고 데이터 로드 실패:', err)
       }
     }
     fetchInventory()
   }, [currentFactory?.id])
 
-  // 필터링 및 정렬된 CAM Sheet 목록
-  const filteredSheets = camSheets
-    .filter(sheet => {
-      const matchesSearch = searchTerm === '' ||
-        sheet.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sheet.cam_version.toLowerCase().includes(searchTerm.toLowerCase())
-
-      const matchesModel = modelFilter === '' || sheet.model === modelFilter
-      const matchesProcess = processFilter === '' || sheet.process === processFilter
-
-      return matchesSearch && matchesModel && matchesProcess
-    })
-    .sort((a, b) => {
-      let aVal: any
-      let bVal: any
-
-      switch(sortField) {
-        case 'model':
-          aVal = a.model
-          bVal = b.model
-          break
-        case 'process':
-          aVal = a.process
-          bVal = b.process
-          break
-        case 'cam_version':
-          aVal = a.cam_version
-          bVal = b.cam_version
-          break
-        case 'endmillCount':
-          aVal = (a.cam_sheet_endmills || a.endmills || []).length
-          bVal = (b.cam_sheet_endmills || b.endmills || []).length
-          break
-        case 'updated_at':
-          aVal = a.updated_at ? new Date(a.updated_at).getTime() : 0
-          bVal = b.updated_at ? new Date(b.updated_at).getTime() : 0
-          break
-        default:
-          return 0
-      }
-
-      if (sortOrder === 'asc') {
-        return aVal > bVal ? 1 : -1
-      } else {
+  // 필터링 및 정렬
+  const filteredSheets = useMemo(() => {
+    return camSheets
+      .filter(sheet => {
+        const term = searchTerm.toLowerCase()
+        const matchesSearch =
+          term === '' ||
+          sheet.model.toLowerCase().includes(term) ||
+          sheet.cam_version.toLowerCase().includes(term)
+        const matchesModel = modelFilter === '' || sheet.model === modelFilter
+        const matchesProcess = processFilter === '' || sheet.process === processFilter
+        return matchesSearch && matchesModel && matchesProcess
+      })
+      .sort((a, b) => {
+        let aVal: any
+        let bVal: any
+        switch (sortField) {
+          case 'model':
+            aVal = a.model
+            bVal = b.model
+            break
+          case 'process':
+            aVal = a.process
+            bVal = b.process
+            break
+          case 'cam_version':
+            aVal = a.cam_version
+            bVal = b.cam_version
+            break
+          case 'endmillCount':
+            aVal = (a.cam_sheet_endmills || a.endmills || []).length
+            bVal = (b.cam_sheet_endmills || b.endmills || []).length
+            break
+          case 'updated_at':
+            aVal = a.updated_at ? new Date(a.updated_at).getTime() : 0
+            bVal = b.updated_at ? new Date(b.updated_at).getTime() : 0
+            break
+          default:
+            return 0
+        }
+        if (sortOrder === 'asc') return aVal > bVal ? 1 : -1
         return aVal < bVal ? 1 : -1
-      }
-    })
+      })
+  }, [camSheets, searchTerm, modelFilter, processFilter, sortField, sortOrder])
 
-  // 페이지네이션 계산
+  // 페이지네이션
   const totalPages = Math.ceil(filteredSheets.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
   const paginatedSheets = filteredSheets.slice(startIndex, endIndex)
 
-  // 페이지 변경 시 첫 페이지로 리셋 (필터나 검색어 변경 시)
+  // 필터 변경 시 첫 페이지로
   useEffect(() => {
     setCurrentPage(1)
   }, [searchTerm, modelFilter, processFilter])
 
-  // 인사이트 데이터 계산
-  const calculateInsights = () => {
-    logger.log('=== 인사이트 계산 시작 ===')
-    logger.log('CAM Sheets 개수:', camSheets.length)
-    logger.log('교체 실적 개수:', toolChanges.length)
-    logger.log('재고 데이터 개수:', inventoryData.length)
+  // Page guard — totalPages 변경 시 currentPage clamp
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [totalPages, currentPage])
 
-    // 설정에서 가져온 공정 목록으로 동적 초기화
-    const initialProcessAccuracy: { [key: string]: number } = {}
+  // 기본 통계
+  const stats = useMemo(() => {
+    const totalSheets = camSheets.length
+    const models = new Set(camSheets.map(s => s.model)).size
+    const totalEndmills = camSheets.reduce(
+      (acc, s) => acc + (s.cam_sheet_endmills?.length ?? 0),
+      0
+    )
+
+    let efficiency = 0
+    if (toolChanges.length > 0 && camSheets.length > 0) {
+      const allEndmills = camSheets.flatMap(s => s.cam_sheet_endmills || [])
+      const expectedAvg =
+        allEndmills.length > 0
+          ? allEndmills.reduce((sum, e) => sum + (e.tool_life || 0), 0) / allEndmills.length
+          : 0
+      const actuals = toolChanges
+        .filter(c => c.tool_life && c.tool_life > 0)
+        .map(c => c.tool_life)
+      const actualAvg =
+        actuals.length > 0 ? actuals.reduce((sum, l) => sum + l, 0) / actuals.length : 0
+      efficiency = expectedAvg > 0 ? Math.round((actualAvg / expectedAvg) * 100) : 0
+    }
+
+    return { totalSheets, models, totalEndmills, efficiency }
+  }, [camSheets, toolChanges])
+
+  // 인사이트 (Tool Life 정확도, 교체 주기, 재고 연동, 표준화)
+  const insights = useMemo(() => {
+    const initialProcessAccuracy: Record<string, number> = {}
     availableProcesses.forEach(process => {
       initialProcessAccuracy[process] = 0
     })
@@ -163,76 +227,50 @@ export default function CAMSheetsPage() {
         inventoryLinkage: 0,
         standardization: 0,
         processAccuracy: initialProcessAccuracy,
-        endmillTypeIntervals: {
-          FLAT: 0,
-          BALL: 0,
-          'T-CUT': 0
-        },
+        endmillTypeIntervals: {} as Record<string, number>,
         inventoryStatus: { secured: 0, shortage: 0 },
-        standardizationDetails: { standard: 0, duplicate: 0 }
+        standardizationDetails: { standard: 0, duplicate: 0 },
       }
     }
 
-    const allEndmills = camSheets.flatMap(sheet => sheet.cam_sheet_endmills || [])
-    logger.log('=== CAM Sheet 앤드밀 정보 ===')
-    logger.log('CAM Sheet 등록 앤드밀 개수:', allEndmills.length)
-    logger.log('CAM Sheet 앤드밀 샘플:', allEndmills.slice(0, 3).map(e => ({
-      code: e.endmill_code,
-      name: e.endmill_name,
-      toolLife: e.tool_life
-    })))
+    const allEndmills = camSheets.flatMap(s => s.cam_sheet_endmills || [])
 
-    // 1. Tool Life 예측 정확도 (실제 교체 실적 데이터 기반)
+    // 1. Tool Life 예측 정확도
     let toolLifeAccuracy = 0
-    const processAccuracy: { [key: string]: number } = { ...initialProcessAccuracy }
-
-    logger.log('=== Tool Life 예측 정확도 계산 ===')
-    logger.log('교체 실적 데이터 개수:', toolChanges.length)
-    logger.log('CAM Sheet 앤드밀 개수:', allEndmills.length)
+    const processAccuracy: Record<string, number> = { ...initialProcessAccuracy }
 
     if (toolChanges.length > 0 && allEndmills.length > 0) {
-      // 전체 정확도 계산
-      const validChanges = toolChanges.filter(change => change.tool_life && change.tool_life > 0)
-      logger.log('유효한 교체 실적 개수:', validChanges.length)
-      logger.log('교체 실적 샘플:', validChanges.slice(0, 3).map(c => ({
-        code: c.endmill_code,
-        name: c.endmill_name,
-        toolLife: c.tool_life,
-        process: c.process
-      })))
-
+      const validChanges = toolChanges.filter(c => c.tool_life && c.tool_life > 0)
       if (validChanges.length > 0) {
         let matchCount = 0
-        let notMatchedCount = 0
         const totalAccuracy = validChanges.reduce((sum, change) => {
-          // 해당 앤드밀의 CAM Sheet 설정 Tool Life 찾기
           const camEndmill = allEndmills.find(e => e.endmill_code === change.endmill_code)
-          if (camEndmill && camEndmill.tool_life && camEndmill.tool_life > 0 && change.tool_life) {
+          if (
+            camEndmill &&
+            camEndmill.tool_life &&
+            camEndmill.tool_life > 0 &&
+            change.tool_life
+          ) {
             matchCount++
-            const accuracy = Math.min((change.tool_life / camEndmill.tool_life) * 100, 100)
-            logger.log(`✓ 매칭: ${change.endmill_code}, 실제: ${change.tool_life}회, 설정: ${camEndmill.tool_life}회, 정확도: ${accuracy.toFixed(1)}%`)
-            return sum + accuracy
-          } else {
-            notMatchedCount++
-            logger.log(`✗ 매칭 실패: ${change.endmill_code} (CAM Sheet에 없음)`)
+            return sum + Math.min((change.tool_life / camEndmill.tool_life) * 100, 100)
           }
           return sum
         }, 0)
-        logger.log('매칭 성공:', matchCount, '/ 매칭 실패:', notMatchedCount)
-        logger.log('총 정확도:', totalAccuracy)
         toolLifeAccuracy = matchCount > 0 ? Math.round(totalAccuracy / matchCount) : 0
-        logger.log('최종 Tool Life 정확도:', toolLifeAccuracy + '%')
       }
 
-      // 공정별 정확도 계산
       availableProcesses.forEach(process => {
-        const processChanges = validChanges.filter(change => change.process === process)
+        const processChanges = validChanges.filter(c => c.process === process)
         if (processChanges.length > 0) {
           const processTotal = processChanges.reduce((sum, change) => {
             const camEndmill = allEndmills.find(e => e.endmill_code === change.endmill_code)
-            if (camEndmill && camEndmill.tool_life && camEndmill.tool_life > 0 && change.tool_life) {
-              const accuracy = Math.min((change.tool_life / camEndmill.tool_life) * 100, 100)
-              return sum + accuracy
+            if (
+              camEndmill &&
+              camEndmill.tool_life &&
+              camEndmill.tool_life > 0 &&
+              change.tool_life
+            ) {
+              return sum + Math.min((change.tool_life / camEndmill.tool_life) * 100, 100)
             }
             return sum
           }, 0)
@@ -241,119 +279,77 @@ export default function CAMSheetsPage() {
       })
     }
 
-    // 2. 교체 주기 분석 (수량 단위)
+    // 2. 교체 주기 (타입별)
     let averageChangeInterval = 0
-    const endmillTypeIntervals: { [key: string]: number } = {}
+    const endmillTypeIntervals: Record<string, number> = {}
 
-    logger.log('=== 교체 주기 분석 ===')
     if (toolChanges.length > 0) {
-      // 전체 평균 교체 주기 (수량 기준)
       const validLifes = toolChanges
-        .filter(change => change.tool_life && change.tool_life > 0)
-        .map(change => change.tool_life)
-
-      logger.log('유효한 Tool Life 개수:', validLifes.length)
+        .filter(c => c.tool_life && c.tool_life > 0)
+        .map(c => c.tool_life)
       if (validLifes.length > 0) {
-        const total = validLifes.reduce((sum, life) => sum + life, 0)
-        averageChangeInterval = Math.round(total / validLifes.length)
-        logger.log('전체 평균 교체 주기:', averageChangeInterval + '회')
+        averageChangeInterval = Math.round(
+          validLifes.reduce((sum, life) => sum + life, 0) / validLifes.length
+        )
       }
 
-      // 앤드밀 타입별 평균 교체 주기 (실제 데이터에서 동적으로 추출)
-      const typeGroups: { [key: string]: number[] } = {}
-
+      const typeKeywords = ['FLAT', 'BALL', 'T-CUT', 'RADIUS', 'CORNER', 'TAPER', 'DRILL', 'CHAMFER']
+      const typeGroups: Record<string, number[]> = {}
       toolChanges.forEach(change => {
         if (change.endmill_name && change.tool_life > 0) {
-          // 앤드밀 이름에서 타입 추출 (예: "D8×18R FLAT EM" -> "FLAT")
           let detectedType = 'OTHER'
-
-          // 주요 타입 키워드 검사
-          const typeKeywords = ['FLAT', 'BALL', 'T-CUT', 'RADIUS', 'CORNER', 'TAPER', 'DRILL', 'CHAMFER']
           for (const keyword of typeKeywords) {
             if (change.endmill_name.toUpperCase().includes(keyword)) {
               detectedType = keyword
               break
             }
           }
-
-          if (!typeGroups[detectedType]) {
-            typeGroups[detectedType] = []
-          }
+          if (!typeGroups[detectedType]) typeGroups[detectedType] = []
           typeGroups[detectedType].push(change.tool_life)
         }
       })
 
-      // 각 타입별 평균 계산
       Object.entries(typeGroups).forEach(([type, lifes]) => {
         if (lifes.length > 0) {
           const typeAvg = lifes.reduce((sum, life) => sum + life, 0) / lifes.length
           endmillTypeIntervals[type] = Math.round(typeAvg)
-          logger.log(`${type} 평균 교체 주기: ${endmillTypeIntervals[type]}회 (데이터: ${lifes.length}건)`)
         }
       })
-    } else {
-      logger.log('교체 실적 데이터가 없습니다.')
     }
 
-    // 3. 재고 연동률 (실제 Supabase 재고 데이터 기반)
-    const totalRegisteredEndmills = allEndmills.length
+    // 3. 재고 연동률
     let securedEndmills = 0
     let shortageEndmills = 0
     let inventoryLinkage = 0
-
-    logger.log('=== 재고 연동률 계산 ===')
-    logger.log('재고 데이터 개수:', inventoryData.length)
-    logger.log('재고 데이터 샘플:', inventoryData.slice(0, 2).map(i => ({
-      code: i.endmill_type?.code,
-      name: i.endmill_type?.name_ko,
-      currentStock: i.current_stock,
-      minStock: i.min_stock
-    })))
+    const totalRegisteredEndmills = allEndmills.length
 
     if (totalRegisteredEndmills > 0 && inventoryData.length > 0) {
-      // CAM Sheet에 등록된 각 앤드밀 코드별로 재고 확인
       const uniqueEndmillCodes = new Set(allEndmills.map(e => e.endmill_code))
-      logger.log('고유 앤드밀 코드 개수:', uniqueEndmillCodes.size)
-      logger.log('앤드밀 코드 목록:', Array.from(uniqueEndmillCodes))
-
       uniqueEndmillCodes.forEach(code => {
-        // 재고에서 해당 앤드밀 코드 찾기 (endmill_type.code로 접근)
-        const inventoryItem = inventoryData.find(item =>
-          item.endmill_type && item.endmill_type.code === code
+        const inventoryItem = inventoryData.find(
+          item => item.endmill_type && item.endmill_type.code === code
         )
-
         if (inventoryItem) {
           const currentStock = inventoryItem.current_stock || 0
           const minStock = inventoryItem.min_stock || 0
-          const status = currentStock >= minStock ? '✓ 확보' : '✗ 부족'
-          logger.log(`${status}: ${code}, 현재: ${currentStock}개, 최소: ${minStock}개`)
-
-          // 재고가 최소 재고 이상이면 확보된 것으로 간주
-          if (currentStock >= minStock) {
-            securedEndmills++
-          } else {
-            shortageEndmills++
-          }
+          if (currentStock >= minStock) securedEndmills++
+          else shortageEndmills++
         } else {
-          logger.log(`✗ 재고 데이터 없음: ${code}`)
-          // 재고 데이터가 없으면 부족으로 간주
           shortageEndmills++
         }
       })
-
-      logger.log('재고 확보:', securedEndmills, '/ 재고 부족:', shortageEndmills)
       inventoryLinkage = Math.round((securedEndmills / uniqueEndmillCodes.size) * 100)
-      logger.log('최종 재고 연동률:', inventoryLinkage + '%')
     }
 
     // 4. 표준화 지수
     const endmillCodes = new Set(allEndmills.map(e => e.endmill_code))
     const totalUniqueEndmills = endmillCodes.size
-    const estimatedStandardEndmills = Math.floor(totalUniqueEndmills * 0.75)
-    const duplicateEndmills = totalUniqueEndmills - estimatedStandardEndmills
-    const standardization = totalUniqueEndmills > 0
-      ? Math.round((estimatedStandardEndmills / totalUniqueEndmills) * 100)
-      : 0
+    const standardEndmills = Math.floor(totalUniqueEndmills * 0.75)
+    const duplicateEndmills = totalUniqueEndmills - standardEndmills
+    const standardization =
+      totalUniqueEndmills > 0
+        ? Math.round((standardEndmills / totalUniqueEndmills) * 100)
+        : 0
 
     return {
       toolLifeAccuracy,
@@ -363,22 +359,28 @@ export default function CAMSheetsPage() {
       processAccuracy,
       endmillTypeIntervals,
       inventoryStatus: { secured: securedEndmills, shortage: shortageEndmills },
-      standardizationDetails: { standard: estimatedStandardEndmills, duplicate: duplicateEndmills }
+      standardizationDetails: { standard: standardEndmills, duplicate: duplicateEndmills },
     }
-  }
+  }, [camSheets, toolChanges, inventoryData, availableProcesses])
 
-  const insights = calculateInsights()
-  const processKeys = Object.keys(insights.processAccuracy) as (keyof typeof insights.processAccuracy)[]
-  const bestProcessKey = processKeys.length > 0
-    ? processKeys.reduce((a, b) =>
-        insights.processAccuracy[a] > insights.processAccuracy[b] ? a : b
-      )
-    : availableProcesses[0] || ''
-  const bestProcess = [bestProcessKey, insights.processAccuracy[bestProcessKey] || 0]
+  const bestProcess = useMemo(() => {
+    const keys = Object.keys(insights.processAccuracy)
+    if (keys.length === 0) return { name: availableProcesses[0] || '—', value: 0 }
+    const best = keys.reduce((a, b) =>
+      insights.processAccuracy[a] >= insights.processAccuracy[b] ? a : b
+    )
+    return { name: best, value: insights.processAccuracy[best] || 0 }
+  }, [insights.processAccuracy, availableProcesses])
 
-  // 정렬 처리
+  const sortedTypeIntervals = useMemo(() => {
+    return Object.entries(insights.endmillTypeIntervals)
+      .filter(([_, interval]) => interval > 0)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3)
+  }, [insights.endmillTypeIntervals])
+
   const handleSort = (field: string) => {
-    const validField = field as 'model' | 'process' | 'cam_version' | 'endmillCount' | 'updated_at'
+    const validField = field as SortField
     if (sortField === validField) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
@@ -387,64 +389,56 @@ export default function CAMSheetsPage() {
     }
   }
 
-  // CAM Sheet 생성 처리
   const handleCreateCAMSheet = async (data: any) => {
     const confirmed = await confirmation.showConfirmation(
       createSaveConfirmation(`${data.model} - ${data.process} CAM Sheet`)
     )
-    
     if (confirmed) {
       createCAMSheet(data)
       setShowAddForm(false)
-      showSuccess('CAM Sheet 생성 완료', '새로운 CAM Sheet가 성공적으로 생성되었습니다.')
+      showSuccess(t('camSheets.createComplete'), t('camSheets.createSuccess'))
     }
   }
 
-  // 엑셀 데이터 일괄 등록 처리
-  const handleBulkImport = async (camSheets: Omit<CAMSheet, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+  const handleBulkImport = async (sheets: Omit<CAMSheet, 'id' | 'createdAt' | 'updatedAt'>[]) => {
     const confirmed = await confirmation.showConfirmation({
       type: 'create',
-      title: '엑셀 일괄 등록 확인',
-      message: `${camSheets.length}개의 CAM Sheet를 일괄 등록하시겠습니까?`,
-      confirmText: '일괄 등록',
-      cancelText: '취소'
+      title: t('camSheets.bulkImportConfirm'),
+      message: `${sheets.length}${t('camSheets.bulkImportMessage')}`,
+      confirmText: t('camSheets.bulkImport'),
+      cancelText: t('camSheets.cancel'),
     })
-    
     if (confirmed) {
       confirmation.setLoading(true)
       try {
-        // 일괄 생성 API 호출
         createCAMSheetsBatch({
           batch: true,
-          data: camSheets.map(sheet => ({
+          data: sheets.map(sheet => ({
             model: sheet.model,
             process: sheet.process,
             cam_version: sheet.cam_version,
             version_date: sheet.version_date,
-            endmills: sheet.cam_sheet_endmills || []
-          }))
+            endmills: sheet.cam_sheet_endmills || [],
+          })),
         })
         setShowExcelUploader(false)
         showSuccess(
-          '엑셀 일괄 등록 완료',
-          `${camSheets.length}개의 CAM Sheet가 성공적으로 등록되었습니다.`
+          t('camSheets.bulkImportComplete'),
+          `${sheets.length}${t('camSheets.bulkImportSuccess')}`
         )
       } catch (_error) {
-        showError('일괄 등록 실패', '일괄 등록 중 오류가 발생했습니다.')
+        showError(t('camSheets.bulkImportError'), t('common.error'))
       } finally {
         confirmation.setLoading(false)
       }
     }
   }
 
-  // CAM Sheet 수정 처리
   const handleUpdateCAMSheet = async (data: any) => {
     if (!editingSheet) return
-
     const confirmed = await confirmation.showConfirmation(
-      createSaveConfirmation(`${data.model} - ${data.process} CAM Sheet 수정`)
+      createSaveConfirmation(`${data.model} - ${data.process} CAM Sheet`)
     )
-
     if (confirmed) {
       updateCAMSheet({
         id: editingSheet.id,
@@ -452,594 +446,658 @@ export default function CAMSheetsPage() {
         process: data.process,
         cam_version: data.camVersion || data.cam_version,
         version_date: data.versionDate || data.version_date,
-        endmills: data.endmills
+        endmills: data.endmills,
       })
       setEditingSheet(null)
-      showSuccess('수정 완료', 'CAM Sheet가 성공적으로 수정되었습니다.')
+      showSuccess(t('camSheets.updateComplete'), t('camSheets.editSuccess'))
     }
   }
 
-  // CAM Sheet 삭제
   const handleDelete = async (id: string) => {
-    const targetSheet = camSheets.find(sheet => sheet.id === id)
-    if (!targetSheet) return
-
+    const target = camSheets.find(s => s.id === id)
+    if (!target) return
     const confirmed = await confirmation.showConfirmation(
-      createDeleteConfirmation(`${targetSheet.model} - ${targetSheet.process} CAM Sheet`)
+      createDeleteConfirmation(`${target.model} - ${target.process} CAM Sheet`)
     )
-
     if (confirmed) {
       deleteCAMSheet(id)
-      showSuccess('삭제 완료', 'CAM Sheet가 성공적으로 삭제되었습니다.')
+      showSuccess(t('camSheets.deleteComplete'), t('camSheets.deleteSuccess'))
     }
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">{t('camSheets.loading')}</div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gauge-cobalt" />
+        <span className="ml-4 text-ink-soft">{t('camSheets.loading')}</span>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-red-600">{error}</div>
+      <div className="rounded-md border border-divider bg-signal-stop-soft p-4 sm:p-6">
+        <p className="text-title font-semibold text-signal-stop-strong">
+          {t('common.error')}
+        </p>
+        <p className="mt-1 text-ink">{error}</p>
       </div>
     )
   }
 
+  const cardLabels = {
+    process: t('camSheets.process'),
+    endmillCount: t('camSheets.endmillCount'),
+    tNumberRange: t('camSheets.tNumberRange'),
+    lastModified: t('camSheets.lastModified'),
+    detail: t('camSheets.detail'),
+    edit: t('camSheets.edit'),
+    delete: t('camSheets.delete'),
+    itemsUnit: t('camSheets.items'),
+  }
+
+  const toCardItem = (sheet: CAMSheet): CAMSheetListCardItem => {
+    const endmills = sheet.cam_sheet_endmills || sheet.endmills || []
+    const tNumbers = endmills.map(e => e.t_number)
+    return {
+      id: sheet.id,
+      model: sheet.model,
+      process: sheet.process,
+      camVersion: sheet.cam_version,
+      versionDate: sheet.version_date,
+      endmillCount: endmills.length,
+      tNumberMin: tNumbers.length > 0 ? Math.min(...tNumbers) : null,
+      tNumberMax: tNumbers.length > 0 ? Math.max(...tNumbers) : null,
+      updatedAt: sheet.updated_at,
+    }
+  }
+
   return (
     <div className="space-y-6">
-
-      {/* 기본 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-              📋
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">{t('camSheets.totalSheets')}</p>
-              <p className="text-2xl font-bold text-gray-900">{camSheets.length}</p>
-            </div>
-          </div>
+      {/* === Stat Strip — 단일 행 측정기 미감 === */}
+      <section className="rounded-md border border-divider bg-paper-warm">
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-y divide-divider lg:divide-y-0 lg:divide-x lg:divide-divider">
+          <StatCell
+            label={t('camSheets.totalSheets')}
+            value={stats.totalSheets.toLocaleString()}
+            unit={t('camSheets.items')}
+          />
+          <StatCell
+            label={t('camSheets.registeredModel')}
+            value={stats.models.toLocaleString()}
+            unit={t('dashboard.equipmentCount')}
+          />
+          <StatCell
+            label={t('camSheets.registeredEndmills')}
+            value={stats.totalEndmills.toLocaleString()}
+            unit={t('camSheets.items')}
+          />
+          <StatCell
+            label={t('camSheets.efficiencyIndex')}
+            value={`${stats.efficiency}`}
+            unit="%"
+            tone={
+              stats.efficiency >= 80
+                ? 'go'
+                : stats.efficiency >= 50
+                  ? 'watch'
+                  : stats.efficiency > 0
+                    ? 'stop'
+                    : 'mute'
+            }
+          />
         </div>
+      </section>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-              🏭
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">{t('camSheets.registeredModel')}</p>
-              <p className="text-2xl font-bold text-green-600">
-                {new Set(camSheets.map(s => s.model)).size}
+      {/* === Insight Grid — 4개 메트릭, 4개 다른 시각 형태 === */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* 1. Tool Life 정확도 — 도넛 링 */}
+        <article className="rounded-md border border-divider bg-paper-warm p-5">
+          <h3 className="text-caption text-ink-soft no-break">
+            {t('camSheets.toolLifeAccuracy')}
+          </h3>
+          <div className="mt-3 flex items-center gap-4">
+            <DonutGauge value={insights.toolLifeAccuracy} />
+            <div className="min-w-0 flex-1">
+              <p className="text-caption text-ink-mute">{t('camSheets.bestProcessLabel')}</p>
+              <p className="mt-0.5 text-body font-medium text-ink no-break">
+                <NoBreak>{bestProcess.name}</NoBreak>
+              </p>
+              <p className="mt-0.5 text-caption text-ink-soft tabular">
+                {bestProcess.value}%
               </p>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-              🔧
+        {/* 2. 교체 주기 — Top-3 순위 막대 */}
+        <article className="rounded-md border border-divider bg-paper-warm p-5">
+          <h3 className="text-caption text-ink-soft no-break">
+            {t('camSheets.replacementCycle')}
+          </h3>
+          <div className="mt-3 flex items-baseline gap-1">
+            <p className="text-headline font-semibold text-ink tabular">
+              {insights.averageChangeInterval.toLocaleString()}
+            </p>
+            <p className="text-caption text-ink-soft">{t('camSheets.times')}</p>
+          </div>
+          <p className="text-caption text-ink-mute">{t('camSheets.averageCycle')}</p>
+          <div className="mt-3 space-y-2">
+            {sortedTypeIntervals.length === 0 ? (
+              <p className="text-caption text-ink-mute py-2">{t('common.noData')}</p>
+            ) : (
+              <>
+                <p className="text-caption text-ink-mute no-break">
+                  {t('camSheets.cycleByType')}
+                </p>
+                {sortedTypeIntervals.map(([type, value], idx) => {
+                  const max = sortedTypeIntervals[0][1] || 1
+                  const width = Math.round((value / max) * 100)
+                  return (
+                    <div key={type}>
+                      <div className="flex items-baseline justify-between text-caption">
+                        <span className="text-ink-soft no-break">
+                          <NoBreak>{type}</NoBreak>
+                        </span>
+                        <span className="font-medium text-ink tabular">
+                          {value.toLocaleString()}
+                          <span className="ml-0.5 text-ink-soft">{t('camSheets.times')}</span>
+                        </span>
+                      </div>
+                      <div className="mt-1 h-1 rounded-full bg-paper">
+                        <div
+                          className={
+                            idx === 0
+                              ? 'h-1 rounded-full bg-gauge-cobalt'
+                              : 'h-1 rounded-full bg-gauge-cobalt-soft'
+                          }
+                          style={{ width: `${width}%` }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </>
+            )}
+          </div>
+        </article>
+
+        {/* 3. 재고 연동률 — 분할 스택 게이지 */}
+        <article className="rounded-md border border-divider bg-paper-warm p-5">
+          <h3 className="text-caption text-ink-soft no-break">
+            {t('camSheets.inventoryLink')}
+          </h3>
+          <div className="mt-3 flex items-baseline gap-1">
+            <p className="text-headline font-semibold text-ink tabular">
+              {insights.inventoryLinkage}
+            </p>
+            <p className="text-caption text-ink-soft">%</p>
+          </div>
+          <p className="text-caption text-ink-mute">{t('camSheets.registeredEndmill')}</p>
+          <SplitGauge
+            secured={insights.inventoryStatus.secured}
+            shortage={insights.inventoryStatus.shortage}
+          />
+          <dl className="mt-3 space-y-1">
+            <div className="flex items-baseline justify-between text-caption">
+              <dt className="text-ink-soft no-break">
+                <NoBreak>{t('camSheets.secured')}</NoBreak>
+              </dt>
+              <dd className="font-medium text-signal-go-strong tabular">
+                {insights.inventoryStatus.secured.toLocaleString()}
+                <span className="ml-0.5 text-ink-soft">{t('camSheets.items')}</span>
+              </dd>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">{t('camSheets.registeredEndmills')}</p>
-              <p className="text-2xl font-bold text-purple-600">
-                {camSheets.reduce((total, sheet) => total + (sheet.cam_sheet_endmills?.length || 0), 0)}
-              </p>
+            <div className="flex items-baseline justify-between text-caption">
+              <dt className="text-ink-soft no-break">
+                <NoBreak>{t('camSheets.shortage')}</NoBreak>
+              </dt>
+              <dd className="font-medium text-signal-stop-strong tabular">
+                {insights.inventoryStatus.shortage.toLocaleString()}
+                <span className="ml-0.5 text-ink-soft">{t('camSheets.items')}</span>
+              </dd>
             </div>
+          </dl>
+          <div className="mt-3 pt-3 border-t border-divider">
+            <RiskBadge linkage={insights.inventoryLinkage} t={t} />
           </div>
-        </div>
+        </article>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
-              ⚡
+        {/* 4. 표준화 지수 — 반원호 게이지 */}
+        <article className="rounded-md border border-divider bg-paper-warm p-5">
+          <h3 className="text-caption text-ink-soft no-break">
+            {t('camSheets.standardization')}
+          </h3>
+          <div className="mt-3 flex justify-center">
+            <SemicircleGauge value={insights.standardization} />
+          </div>
+          <p className="text-caption text-ink-mute text-center -mt-1">
+            {t('camSheets.endmillStandardization')}
+          </p>
+          <dl className="mt-3 space-y-1">
+            <div className="flex items-baseline justify-between text-caption">
+              <dt className="text-ink-soft no-break">
+                <NoBreak>{t('camSheets.standardType')}</NoBreak>
+              </dt>
+              <dd className="font-medium text-ink tabular">
+                {insights.standardizationDetails.standard.toLocaleString()}
+                <span className="ml-0.5 text-ink-soft">{t('camSheets.items')}</span>
+              </dd>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">{t('camSheets.efficiencyIndex')}</p>
-              <p className={`text-2xl font-bold ${(() => {
-                // 효율성 지수 계산: (실제 평균 사용 횟수 / CAM Sheet 설정 Tool Life) × 100
-                if (toolChanges.length === 0 || camSheets.length === 0) return 'text-gray-400'
-
-                // CAM Sheet에 등록된 모든 앤드밀의 평균 Tool Life
-                const allEndmills = camSheets.flatMap(sheet => sheet.cam_sheet_endmills || [])
-                const avgExpectedToolLife = allEndmills.length > 0
-                  ? allEndmills.reduce((sum, e) => sum + (e.tool_life || 0), 0) / allEndmills.length
-                  : 0
-
-                // 실제 교체 실적의 평균 Tool Life
-                const actualToolLifes = toolChanges
-                  .filter(change => change.tool_life && change.tool_life > 0)
-                  .map(change => change.tool_life)
-                const avgActualToolLife = actualToolLifes.length > 0
-                  ? actualToolLifes.reduce((sum, life) => sum + life, 0) / actualToolLifes.length
-                  : 0
-
-                const efficiency = avgExpectedToolLife > 0
-                  ? Math.round((avgActualToolLife / avgExpectedToolLife) * 100)
-                  : 0
-
-                if (efficiency >= 80) return 'text-green-600'
-                if (efficiency >= 50) return 'text-yellow-600'
-                return 'text-red-600'
-              })()}`}>
-                {(() => {
-                  if (toolChanges.length === 0 || camSheets.length === 0) return '0%'
-
-                  const allEndmills = camSheets.flatMap(sheet => sheet.cam_sheet_endmills || [])
-                  const avgExpectedToolLife = allEndmills.length > 0
-                    ? allEndmills.reduce((sum, e) => sum + (e.tool_life || 0), 0) / allEndmills.length
-                    : 0
-
-                  const actualToolLifes = toolChanges
-                    .filter(change => change.tool_life && change.tool_life > 0)
-                    .map(change => change.tool_life)
-                  const avgActualToolLife = actualToolLifes.length > 0
-                    ? actualToolLifes.reduce((sum, life) => sum + life, 0) / actualToolLifes.length
-                    : 0
-
-                  const efficiency = avgExpectedToolLife > 0
-                    ? Math.round((avgActualToolLife / avgExpectedToolLife) * 100)
-                    : 0
-
-                  return `${efficiency}%`
-                })()}
-              </p>
+            <div className="flex items-baseline justify-between text-caption">
+              <dt className="text-ink-soft no-break">
+                <NoBreak>{t('camSheets.duplicateType')}</NoBreak>
+              </dt>
+              <dd className="font-medium text-signal-watch-strong tabular">
+                {insights.standardizationDetails.duplicate.toLocaleString()}
+                <span className="ml-0.5 text-ink-soft">{t('camSheets.items')}</span>
+              </dd>
             </div>
-          </div>
-        </div>
-      </div>
+          </dl>
+        </article>
+      </section>
 
-      {/* 인사이트 분석 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* 1. Tool Life 예측 정확도 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
-                🎯
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">{t('camSheets.toolLifeAccuracy')}</p>
-                <p className="text-2xl font-bold text-emerald-600">{insights.toolLifeAccuracy}%</p>
-              </div>
-            </div>
-          </div>
-          <div className="text-xs text-gray-500 mb-2">{t('camSheets.camVsActual')}</div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-emerald-600 h-2 rounded-full" style={{width: `${insights.toolLifeAccuracy}%`}}></div>
-          </div>
-          <div className="mt-2 text-xs text-gray-600">
-            {t('camSheets.mostAccurate')}: {bestProcess[0]} ({bestProcess[1]}%)
-          </div>
-        </div>
-
-        {/* 2. 교체 주기 분석 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                📊
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">{t('camSheets.replacementCycle')}</p>
-                <p className="text-2xl font-bold text-blue-600">{insights.averageChangeInterval.toLocaleString()}{t('camSheets.times')}</p>
-              </div>
-            </div>
-          </div>
-          <div className="text-xs text-gray-500 mb-2">{t('camSheets.averageCycle')}</div>
-          <div className="space-y-1">
-            {(() => {
-              // 앤드밀 타입별 교체 주기를 내림차순 정렬 (많은 순서대로)
-              const sortedTypes = Object.entries(insights.endmillTypeIntervals)
-                .filter(([_, interval]) => interval > 0) // 0인 항목 제외
-                .sort(([_, a], [__, b]) => b - a) // 교체 주기 내림차순
-
-              // 데이터가 없으면 기본 메시지
-              if (sortedTypes.length === 0) {
-                return (
-                  <div className="text-xs text-gray-400 text-center py-2">
-                    {t('common.noData')}
-                  </div>
-                )
-              }
-
-              // 상위 3개만 표시
-              return sortedTypes.slice(0, 3).map(([type, interval]) => (
-                <div key={type} className="flex justify-between text-xs">
-                  <span className="text-gray-600">{type}</span>
-                  <span className="font-medium">{interval.toLocaleString()}{t('camSheets.times')}</span>
-                </div>
-              ))
-            })()}
-          </div>
-        </div>
-
-        {/* 3. 재고 연동률 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-                🔗
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">{t('camSheets.inventoryLink')}</p>
-                <p className="text-2xl font-bold text-orange-600">{insights.inventoryLinkage}%</p>
-              </div>
-            </div>
-          </div>
-          <div className="text-xs text-gray-500 mb-2">{t('camSheets.registeredEndmill')}</div>
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-600">{t('camSheets.secured')}</span>
-              <span className="font-medium text-green-600">{insights.inventoryStatus.secured}{t('camSheets.items')}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-600">{t('camSheets.shortage')}</span>
-              <span className="font-medium text-red-600">{insights.inventoryStatus.shortage}{t('camSheets.items')}</span>
-            </div>
-          </div>
-          <div className="mt-2 text-xs text-amber-600">
-            ⚠️ {t('camSheets.riskLevel')}: {insights.inventoryLinkage >= 90 ? t('camSheets.low') : insights.inventoryLinkage >= 80 ? t('camSheets.medium') : t('camSheets.high')}
-          </div>
-        </div>
-
-        {/* 4. 표준화 지수 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
-                📐
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">{t('camSheets.standardization')}</p>
-                <p className="text-2xl font-bold text-indigo-600">{insights.standardization}%</p>
-              </div>
-            </div>
-          </div>
-          <div className="text-xs text-gray-500 mb-2">{t('camSheets.endmillStandardization')}</div>
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-            <div className="bg-indigo-600 h-2 rounded-full" style={{width: `${insights.standardization}%`}}></div>
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-600">{t('camSheets.standardType')}</span>
-              <span className="font-medium">{insights.standardizationDetails.standard}{t('camSheets.items')}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-600">{t('camSheets.duplicateType')}</span>
-              <span className="font-medium text-yellow-600">{insights.standardizationDetails.duplicate}{t('camSheets.items')}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 필터 및 검색 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="flex gap-4 flex-1">
+      {/* === Filter + Action Bar === */}
+      <section className="rounded-md border border-divider bg-paper-warm p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-1 sm:gap-2">
             <input
               type="text"
               placeholder={t('camSheets.searchPlaceholder')}
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={e => setSearchTerm(e.target.value)}
+              className="min-h-touch flex-1 rounded-sm border border-divider bg-paper px-3 text-base text-ink placeholder-ink-mute transition-colors focus:border-gauge-cobalt focus:outline-none"
             />
             <select
               value={modelFilter}
-              onChange={(e) => setModelFilter(e.target.value)}
-              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={e => setModelFilter(e.target.value)}
+              className="min-h-touch rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none"
             >
               <option value="">{t('camSheets.allModel')}</option>
               {Array.from(new Set(camSheets.map(s => s.model))).map(model => (
-                <option key={model} value={model}>{model}</option>
+                <option key={model} value={model}>
+                  {model}
+                </option>
               ))}
             </select>
             <select
               value={processFilter}
-              onChange={(e) => setProcessFilter(e.target.value)}
-              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={e => setProcessFilter(e.target.value)}
+              className="min-h-touch rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none"
             >
               <option value="">{t('camSheets.allProcess')}</option>
               {availableProcesses.map(process => (
-                <option key={process} value={process}>{process}</option>
+                <option key={process} value={process}>
+                  {process}
+                </option>
               ))}
             </select>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:gap-2">
             <button
+              type="button"
               onClick={() => setShowExcelUploader(true)}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              className="inline-flex min-h-touch items-center justify-center gap-1.5 rounded-sm border border-divider bg-paper px-4 text-label font-medium text-ink transition-colors hover:bg-paper-warm"
             >
-              📁 {t('camSheets.bulkRegister')}
+              <Upload className="h-4 w-4" />
+              {t('camSheets.bulkRegister')}
             </button>
             <button
+              type="button"
               onClick={() => setShowAddForm(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="inline-flex min-h-touch items-center justify-center gap-1.5 rounded-sm bg-gauge-cobalt px-4 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong"
             >
-              + {t('camSheets.individualRegister')}
+              <Plus className="h-4 w-4" />
+              {t('camSheets.individualRegister')}
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* CAM Sheet 목록 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200">
-        <div className="px-6 py-4 border-b flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">{t('camSheets.sheetList')}</h2>
-          <div className="text-sm text-gray-500">
-            {t('camSheets.totalCount')} {filteredSheets.length}{t('camSheets.items')}
-            {sortField && (
-              <span className="ml-2 text-blue-600">
-                ({
-                  sortField === 'model' ? t('camSheets.model') :
-                  sortField === 'process' ? t('camSheets.process') :
-                  sortField === 'cam_version' ? t('camSheets.version') :
-                  sortField === 'endmillCount' ? t('camSheets.endmillCount') :
-                  t('camSheets.lastModified')
-                } {sortOrder === 'asc' ? t('camSheets.sortAscending') : t('camSheets.sortDescending')})
-              </span>
-            )}
+      {/* === List section (header + dual rendering) === */}
+      <section className="space-y-3">
+        <header className="flex items-center justify-between gap-3">
+          <h2 className="text-title font-semibold text-ink no-break">
+            {t('camSheets.sheetList')}
+          </h2>
+          <p className="text-caption text-ink-soft tabular">
+            {t('camSheets.totalCount')}{' '}
+            <span className="font-medium text-ink">{filteredSheets.length}</span>
+            {t('camSheets.items')}
+          </p>
+        </header>
+
+        {/* 모바일 카드 리스트 */}
+        <div className="lg:hidden space-y-3">
+          {paginatedSheets.length === 0 ? (
+            <EmptyState message={t('camSheets.noMatching')} />
+          ) : (
+            paginatedSheets.map(sheet => (
+              <CAMSheetListCard
+                key={sheet.id}
+                item={toCardItem(sheet)}
+                labels={cardLabels}
+                onDetail={() => setSelectedSheet(sheet)}
+                onEdit={() => setEditingSheet(sheet)}
+                onDelete={handleDelete}
+              />
+            ))
+          )}
+        </div>
+
+        {/* 데스크톱 표 */}
+        <div className="hidden lg:block rounded-md border border-divider bg-paper-warm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-paper border-b border-divider">
+                <tr>
+                  <SortHeader
+                    label={t('camSheets.model')}
+                    field="model"
+                    sortField={sortField}
+                    sortOrder={sortOrder}
+                    onSort={handleSort}
+                  />
+                  <SortHeader
+                    label={t('camSheets.process')}
+                    field="process"
+                    sortField={sortField}
+                    sortOrder={sortOrder}
+                    onSort={handleSort}
+                  />
+                  <SortHeader
+                    label={t('camSheets.version')}
+                    field="cam_version"
+                    sortField={sortField}
+                    sortOrder={sortOrder}
+                    onSort={handleSort}
+                  />
+                  <SortHeader
+                    label={t('camSheets.endmillCount')}
+                    field="endmillCount"
+                    sortField={sortField}
+                    sortOrder={sortOrder}
+                    onSort={handleSort}
+                  />
+                  <SortHeader
+                    label={t('camSheets.lastModified')}
+                    field="updated_at"
+                    sortField={sortField}
+                    sortOrder={sortOrder}
+                    onSort={handleSort}
+                  />
+                  <th className="px-4 py-3 text-right text-label font-medium text-ink-soft no-break">
+                    {t('camSheets.actions')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-divider">
+                {paginatedSheets.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-12 text-center text-base text-ink-soft">
+                      {t('camSheets.noMatching')}
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedSheets.map(sheet => {
+                    const endmills = sheet.cam_sheet_endmills || sheet.endmills || []
+                    const tNumbers = endmills.map(e => e.t_number)
+                    const tRange =
+                      tNumbers.length > 0
+                        ? `T${String(Math.min(...tNumbers)).padStart(2, '0')}–T${String(
+                            Math.max(...tNumbers)
+                          ).padStart(2, '0')}`
+                        : '—'
+                    return (
+                      <tr key={sheet.id} className="transition-colors hover:bg-paper">
+                        <td className="px-4 py-3 text-base font-medium text-ink no-break">
+                          <NoBreak>{sheet.model}</NoBreak>
+                        </td>
+                        <td className="px-4 py-3 text-base text-ink-soft no-break">
+                          <NoBreak>{sheet.process}</NoBreak>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-base font-medium text-ink no-break">
+                            <NoBreak>{sheet.cam_version}</NoBreak>
+                          </p>
+                          {sheet.version_date && (
+                            <p className="text-caption text-ink-soft tabular">
+                              {sheet.version_date}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-base font-medium text-ink tabular">
+                            {endmills.length}
+                            <span className="ml-1 text-caption font-normal text-ink-soft">
+                              {t('camSheets.items')}
+                            </span>
+                          </p>
+                          <p className="text-caption text-ink-soft tabular no-break">
+                            <NoBreak>{tRange}</NoBreak>
+                          </p>
+                        </td>
+                        <td className="px-4 py-3 text-base text-ink-soft tabular">
+                          {formatDateForLocale(sheet.updated_at, dateLocale)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedSheet(sheet)}
+                              className="text-label font-medium text-ink-soft transition-colors hover:text-ink"
+                            >
+                              {t('camSheets.detail')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingSheet(sheet)}
+                              className="text-label font-medium text-ink-soft transition-colors hover:text-ink"
+                            >
+                              {t('camSheets.edit')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(sheet.id)}
+                              className="text-label font-medium text-signal-stop transition-colors hover:text-signal-stop-strong"
+                            >
+                              {t('camSheets.delete')}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <SortableTableHeader
-                  label={t('camSheets.model')}
-                  field="model"
-                  currentSortField={sortField}
-                  currentSortOrder={sortOrder}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label={t('camSheets.process')}
-                  field="process"
-                  currentSortField={sortField}
-                  currentSortOrder={sortOrder}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label={t('camSheets.version')}
-                  field="cam_version"
-                  currentSortField={sortField}
-                  currentSortOrder={sortOrder}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label={t('camSheets.endmillCount')}
-                  field="endmillCount"
-                  currentSortField={sortField}
-                  currentSortOrder={sortOrder}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label={t('camSheets.lastModified')}
-                  field="updated_at"
-                  currentSortField={sortField}
-                  currentSortOrder={sortOrder}
-                  onSort={handleSort}
-                />
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {t('camSheets.actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedSheets.map((sheet) => (
-                <tr key={sheet.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{sheet.model}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{sheet.process}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{sheet.cam_version}</div>
-                      <div className="text-sm text-gray-500">{sheet.version_date}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{(sheet.cam_sheet_endmills || []).length}{t('camSheets.items')}</div>
-                    <div className="text-sm text-gray-500">
-                      {(sheet.cam_sheet_endmills || []).length > 0 ?
-                        `T${Math.min(...(sheet.cam_sheet_endmills || []).map((e: EndmillInfo) => e.t_number))}-T${Math.max(...(sheet.cam_sheet_endmills || []).map((e: EndmillInfo) => e.t_number))}` :
-                        '-'
-                      }
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {sheet.updated_at ? new Date(sheet.updated_at).toLocaleDateString('ko-KR') : '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <button
-                      onClick={() => setSelectedSheet(sheet)}
-                      className="text-blue-600 hover:text-blue-800 mr-3"
-                    >
-                      {t('camSheets.detail')}
-                    </button>
-                    <button
-                      onClick={() => setEditingSheet(sheet)}
-                      className="text-green-600 hover:text-green-800 mr-3"
-                    >
-                      {t('camSheets.edit')}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(sheet.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      {t('camSheets.delete')}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
 
-        {/* 페이지네이션 */}
+        {/* === 페이지네이션 (모바일/데스크톱 공통) === */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              전체 {filteredSheets.length}개 중 {startIndex + 1}-{Math.min(endIndex, filteredSheets.length)}개 표시
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className={`px-3 py-1 rounded-md ${
-                  currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
+          <div className="rounded-md border border-divider bg-paper-warm px-4 py-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-caption text-ink-soft tabular">
+                {t('camSheets.showing')}{' '}
+                <span className="font-medium text-ink">{filteredSheets.length}</span>
+                {t('camSheets.of')}{' '}
+                <span className="font-medium text-ink">{startIndex + 1}</span>
+                –
+                <span className="font-medium text-ink">
+                  {Math.min(endIndex, filteredSheets.length)}
+                </span>
+                {t('camSheets.displayed')}
+              </p>
+              <nav
+                className="inline-flex items-center gap-1 self-end sm:self-auto"
+                aria-label={t('camSheets.page')}
               >
-                이전
-              </button>
-
-              <div className="flex items-center space-x-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                  // 현재 페이지 주변만 표시 (첫 페이지, 마지막 페이지, 현재 페이지 ±2)
-                  const showPage =
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 2 && page <= currentPage + 2)
-
-                  if (!showPage) {
-                    // "..." 표시
-                    if (page === currentPage - 3 || page === currentPage + 3) {
-                      return <span key={page} className="px-2 text-gray-500">...</span>
-                    }
-                    return null
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  aria-label={t('camSheets.previous')}
+                  className="inline-flex min-h-touch min-w-touch items-center justify-center rounded-sm border border-divider bg-paper px-3 text-label font-medium text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-paper disabled:hover:text-ink-soft"
+                >
+                  ‹
+                </button>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number
+                  if (totalPages <= 5) {
+                    pageNum = i + 1
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i
+                  } else {
+                    pageNum = currentPage - 2 + i
                   }
-
+                  const isActive = currentPage === pageNum
                   return (
                     <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 rounded-md ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={
+                        isActive
+                          ? 'inline-flex min-h-touch min-w-touch items-center justify-center rounded-sm border border-gauge-cobalt bg-gauge-cobalt px-3 text-label font-medium text-paper tabular'
+                          : 'inline-flex min-h-touch min-w-touch items-center justify-center rounded-sm border border-divider bg-paper px-3 text-label font-medium text-ink-soft tabular transition-colors hover:bg-paper-warm hover:text-ink'
+                      }
                     >
-                      {page}
+                      {pageNum}
                     </button>
                   )
                 })}
-              </div>
-
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded-md ${
-                  currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
-              >
-                다음
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  aria-label={t('camSheets.next')}
+                  className="inline-flex min-h-touch min-w-touch items-center justify-center rounded-sm border border-divider bg-paper px-3 text-label font-medium text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-paper disabled:hover:text-ink-soft"
+                >
+                  ›
+                </button>
+              </nav>
             </div>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* CAM Sheet 상세 모달 */}
+      {/* === CAM Sheet 상세 모달 === */}
       {selectedSheet && (
         <div className="mobile-modal-container" onClick={() => setSelectedSheet(null)}>
-          <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="mobile-modal-content md:max-w-4xl"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="mobile-modal-header">
-              <h3 className="text-lg font-medium">{t('camSheets.camSheetDetail')} - {selectedSheet.model}</h3>
+              <h3 className="text-title font-semibold text-ink no-break">
+                {t('camSheets.camSheetDetail')}
+                <span className="mx-2 text-ink-mute">·</span>
+                <NoBreak>{selectedSheet.model}</NoBreak>
+              </h3>
               <button
+                type="button"
                 onClick={() => setSelectedSheet(null)}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                aria-label={t('common.close')}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-sm text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
             <div className="mobile-modal-body">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">{t('camSheets.model')}</label>
-                  <p className="text-lg font-semibold">{selectedSheet.model}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">{t('camSheets.process')}</label>
-                  <p className="text-lg font-semibold">{selectedSheet.process}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">{t('camSheets.version')}</label>
-                  <p className="text-lg font-semibold">{selectedSheet.cam_version}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">{t('camSheets.versionDate')}</label>
-                  <p className="text-lg font-semibold">{selectedSheet.version_date}</p>
-                </div>
-              </div>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <DetailField label={t('camSheets.model')} value={selectedSheet.model} />
+                <DetailField label={t('camSheets.process')} value={selectedSheet.process} />
+                <DetailField label={t('camSheets.version')} value={selectedSheet.cam_version} />
+                <DetailField
+                  label={t('camSheets.versionDate')}
+                  value={selectedSheet.version_date || '—'}
+                />
+              </dl>
 
-              <h4 className="text-lg font-semibold mb-4">{t('camSheets.registered')}</h4>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.tNumber')}</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.endmillCode')}</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.endmillName')}</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.usageStatus')}</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.toolLife')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {(selectedSheet.cam_sheet_endmills || [])
-                      .sort((a, b) => a.t_number - b.t_number)
-                      .map((endmill: EndmillInfo) => (
-                      <tr key={endmill.t_number} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 text-sm font-medium">T{endmill.t_number.toString().padStart(2, '0')}</td>
-                        <td className="px-4 py-2 text-sm">
-                          <button
-                            onClick={() => {
-                              // 엔드밀 관리 페이지로 이동하면서 해당 엔드밀 검색
-                              const url = `/dashboard/endmill?search=${encodeURIComponent(endmill.endmill_code || '')}`
-                              router.push(url)
-                            }}
-                            className="text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            {endmill.endmill_code}
-                          </button>
-                        </td>
-                        <td className="px-4 py-2 text-sm">{endmill.endmill_name}</td>
-                        <td className="px-4 py-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              {t('camSheets.active')}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {t('camSheets.currentModel')}: {selectedSheet.model}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-2 text-sm">
-                          <span className="font-medium text-green-600">
-                            {endmill.tool_life ? endmill.tool_life.toLocaleString() : '0'}{t('camSheets.times')}
-                          </span>
-                        </td>
+              <h4 className="text-title font-semibold text-ink mb-3 no-break">
+                {t('camSheets.registered')}
+              </h4>
+              <div className="rounded-md border border-divider bg-paper overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead className="bg-paper-warm border-b border-divider">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-label font-medium text-ink-soft no-break">
+                          {t('camSheets.tNumber')}
+                        </th>
+                        <th className="px-4 py-2 text-left text-label font-medium text-ink-soft no-break">
+                          {t('camSheets.endmillCode')}
+                        </th>
+                        <th className="px-4 py-2 text-left text-label font-medium text-ink-soft no-break">
+                          {t('camSheets.endmillName')}
+                        </th>
+                        <th className="px-4 py-2 text-left text-label font-medium text-ink-soft no-break">
+                          {t('camSheets.usageStatus')}
+                        </th>
+                        <th className="px-4 py-2 text-left text-label font-medium text-ink-soft no-break">
+                          {t('camSheets.toolLife')}
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-divider">
+                      {(selectedSheet.cam_sheet_endmills || [])
+                        .sort((a, b) => a.t_number - b.t_number)
+                        .map((endmill: EndmillInfo) => (
+                          <tr key={endmill.t_number} className="hover:bg-paper-warm">
+                            <td className="px-4 py-2 text-base font-medium text-ink tabular no-break">
+                              <NoBreak>
+                                T{endmill.t_number.toString().padStart(2, '0')}
+                              </NoBreak>
+                            </td>
+                            <td className="px-4 py-2 text-base">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const url = `/dashboard/endmill?search=${encodeURIComponent(
+                                    endmill.endmill_code || ''
+                                  )}`
+                                  router.push(url)
+                                }}
+                                className="text-gauge-cobalt-strong transition-colors hover:underline no-break"
+                              >
+                                <NoBreak>{endmill.endmill_code}</NoBreak>
+                              </button>
+                            </td>
+                            <td className="px-4 py-2 text-base text-ink">
+                              {endmill.endmill_name}
+                            </td>
+                            <td className="px-4 py-2">
+                              <div className="flex items-center gap-2">
+                                <StatusBadge variant="go" label={t('camSheets.active')} />
+                                <span className="text-caption text-ink-mute no-break">
+                                  <NoBreak>{selectedSheet.model}</NoBreak>
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-2">
+                              <span className="text-base font-medium text-ink tabular">
+                                {endmill.tool_life ? endmill.tool_life.toLocaleString() : '0'}
+                                <span className="ml-1 text-caption font-normal text-ink-soft">
+                                  {t('camSheets.times')}
+                                </span>
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
             <div className="mobile-modal-footer">
               <button
+                type="button"
                 onClick={() => setSelectedSheet(null)}
-                className="w-full px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                className="w-full inline-flex min-h-touch items-center justify-center rounded-sm border border-divider bg-paper px-4 text-label font-medium text-ink transition-colors hover:bg-paper-warm"
               >
                 {t('common.close')}
               </button>
@@ -1074,13 +1132,17 @@ export default function CAMSheetsPage() {
             process: editingSheet.process,
             camVersion: editingSheet.cam_version,
             versionDate: editingSheet.version_date,
-            endmills: (editingSheet.cam_sheet_endmills || editingSheet.endmills || []).map((endmill: any) => ({
+            endmills: (
+              editingSheet.cam_sheet_endmills ||
+              editingSheet.endmills ||
+              []
+            ).map((endmill: any) => ({
               tNumber: endmill.t_number,
               endmillCode: endmill.endmill_code,
               endmillName: endmill.endmill_name,
               specifications: endmill.specifications || '',
-              toolLife: endmill.tool_life
-            }))
+              toolLife: endmill.tool_life,
+            })),
           }}
         />
       )}
@@ -1095,6 +1157,255 @@ export default function CAMSheetsPage() {
           loading={confirmation.loading}
         />
       )}
+    </div>
+  )
+}
+
+// ===== Sub components =====
+
+interface StatCellProps {
+  label: string
+  value: string
+  unit?: string
+  tone?: 'go' | 'watch' | 'stop' | 'mute' | 'default'
+}
+
+function StatCell({ label, value, unit, tone = 'default' }: StatCellProps) {
+  const valueColor =
+    tone === 'go'
+      ? 'text-signal-go-strong'
+      : tone === 'watch'
+        ? 'text-signal-watch-strong'
+        : tone === 'stop'
+          ? 'text-signal-stop-strong'
+          : tone === 'mute'
+            ? 'text-ink-mute'
+            : 'text-ink'
+
+  return (
+    <div className="px-4 py-4 sm:px-5 sm:py-5">
+      <p className="text-caption text-ink-soft no-break">{label}</p>
+      <div className="mt-1 flex items-baseline gap-1">
+        <p className={`text-headline font-semibold tabular ${valueColor}`}>{value}</p>
+        {unit && <p className="text-caption text-ink-soft no-break">{unit}</p>}
+      </div>
+    </div>
+  )
+}
+
+interface DonutGaugeProps {
+  value: number
+}
+
+function DonutGauge({ value }: DonutGaugeProps) {
+  const radius = 32
+  const stroke = 6
+  const normalizedRadius = radius - stroke / 2
+  const circumference = normalizedRadius * 2 * Math.PI
+  const dashOffset = circumference - (Math.max(0, Math.min(100, value)) / 100) * circumference
+
+  return (
+    <div className="relative h-20 w-20 flex-shrink-0">
+      <svg viewBox="0 0 64 64" className="h-20 w-20 -rotate-90" aria-hidden="true">
+        <circle
+          cx="32"
+          cy="32"
+          r={normalizedRadius}
+          fill="none"
+          stroke="currentColor"
+          className="text-paper"
+          strokeWidth={stroke}
+        />
+        <circle
+          cx="32"
+          cy="32"
+          r={normalizedRadius}
+          fill="none"
+          stroke="currentColor"
+          className="text-gauge-cobalt"
+          strokeWidth={stroke}
+          strokeDasharray={circumference}
+          strokeDashoffset={dashOffset}
+          strokeLinecap="round"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <p className="text-title font-semibold text-ink tabular">
+          {value}
+          <span className="ml-0.5 text-caption font-normal text-ink-soft">%</span>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+interface SplitGaugeProps {
+  secured: number
+  shortage: number
+}
+
+function SplitGauge({ secured, shortage }: SplitGaugeProps) {
+  const total = secured + shortage
+  const securedPct = total > 0 ? (secured / total) * 100 : 0
+  const shortagePct = total > 0 ? (shortage / total) * 100 : 0
+
+  return (
+    <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-paper">
+      {securedPct > 0 && (
+        <div
+          className="h-2 bg-signal-go"
+          style={{ width: `${securedPct}%` }}
+          aria-hidden="true"
+        />
+      )}
+      {shortagePct > 0 && (
+        <div
+          className="h-2 bg-signal-stop"
+          style={{ width: `${shortagePct}%` }}
+          aria-hidden="true"
+        />
+      )}
+    </div>
+  )
+}
+
+interface SemicircleGaugeProps {
+  value: number
+}
+
+function SemicircleGauge({ value }: SemicircleGaugeProps) {
+  const clamped = Math.max(0, Math.min(100, value))
+  // 반원 호: 180도 시작 → 0도 끝 (좌→우)
+  // SVG: arc from (10, 50) to (90, 50) via top
+  const radius = 40
+  const cx = 50
+  const cy = 50
+  const startAngle = 180
+  const endAngle = 180 - (clamped / 100) * 180
+
+  const polarToCartesian = (angle: number) => {
+    const rad = (angle * Math.PI) / 180
+    return {
+      x: cx + radius * Math.cos(rad),
+      y: cy - radius * Math.sin(rad),
+    }
+  }
+
+  const start = polarToCartesian(startAngle)
+  const end = polarToCartesian(endAngle)
+  const largeArc = startAngle - endAngle > 180 ? 1 : 0
+  const fullEnd = polarToCartesian(0)
+
+  return (
+    <div className="relative h-16 w-32">
+      <svg viewBox="0 0 100 60" className="h-16 w-32" aria-hidden="true">
+        {/* 배경 호 */}
+        <path
+          d={`M ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${fullEnd.x} ${fullEnd.y}`}
+          fill="none"
+          stroke="currentColor"
+          className="text-paper"
+          strokeWidth="6"
+          strokeLinecap="round"
+        />
+        {/* 진행 호 */}
+        {clamped > 0 && (
+          <path
+            d={`M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y}`}
+            fill="none"
+            stroke="currentColor"
+            className="text-gauge-cobalt"
+            strokeWidth="6"
+            strokeLinecap="round"
+          />
+        )}
+      </svg>
+      <div className="absolute inset-x-0 bottom-0 flex justify-center">
+        <p className="text-title font-semibold text-ink tabular">
+          {clamped}
+          <span className="ml-0.5 text-caption font-normal text-ink-soft">%</span>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+interface RiskBadgeProps {
+  linkage: number
+  t: (key: string) => string
+}
+
+function RiskBadge({ linkage, t }: RiskBadgeProps) {
+  const variant: 'go' | 'watch' | 'stop' =
+    linkage >= 90 ? 'go' : linkage >= 80 ? 'watch' : 'stop'
+  const level =
+    linkage >= 90
+      ? t('camSheets.low')
+      : linkage >= 80
+        ? t('camSheets.medium')
+        : t('camSheets.high')
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-caption text-ink-soft no-break">
+        <NoBreak>{t('camSheets.riskLevel')}</NoBreak>
+      </span>
+      <StatusBadge variant={variant} label={level} />
+    </div>
+  )
+}
+
+interface SortHeaderProps {
+  label: string
+  field: SortField
+  sortField: SortField
+  sortOrder: SortOrder
+  onSort: (field: string) => void
+}
+
+function SortHeader({ label, field, sortField, sortOrder, onSort }: SortHeaderProps) {
+  const isActive = sortField === field
+  return (
+    <th
+      className="px-4 py-3 text-left text-label font-medium text-ink-soft cursor-pointer transition-colors hover:bg-paper-warm hover:text-ink no-break"
+      onClick={() => onSort(field)}
+    >
+      <div className="inline-flex items-center gap-1">
+        <NoBreak>{label}</NoBreak>
+        {isActive &&
+          (sortOrder === 'asc' ? (
+            <ChevronUp className="h-3.5 w-3.5 text-ink" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5 text-ink" aria-hidden="true" />
+          ))}
+      </div>
+    </th>
+  )
+}
+
+interface DetailFieldProps {
+  label: string
+  value: string
+}
+
+function DetailField({ label, value }: DetailFieldProps) {
+  return (
+    <div>
+      <dt className="text-caption text-ink-soft no-break">{label}</dt>
+      <dd className="mt-0.5 text-title font-semibold text-ink no-break">
+        <NoBreak>{value}</NoBreak>
+      </dd>
+    </div>
+  )
+}
+
+interface EmptyStateProps {
+  message: string
+}
+
+function EmptyState({ message }: EmptyStateProps) {
+  return (
+    <div className="rounded-md border border-divider bg-paper-warm px-4 py-12 text-center">
+      <p className="text-base text-ink-soft">{message}</p>
     </div>
   )
 }

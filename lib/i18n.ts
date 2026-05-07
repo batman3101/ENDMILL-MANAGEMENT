@@ -1520,6 +1520,21 @@ const resources = {
         autoLoaded: '수동 입력 가능',
         saved: 'CAM Sheet 저장',
         updated: 'CAM Sheet 수정 완료',
+
+        // 페이지네이션
+        previous: '이전',
+        next: '다음',
+        page: '페이지',
+        showing: '총',
+        of: '개 중',
+        displayed: '개 표시',
+
+        // 빈 상태 / 필터 / 보조 라벨
+        noMatching: '검색 조건에 맞는 CAM Sheet가 없습니다',
+        clearFilters: '필터 초기화',
+        tNumberRange: 'T 범위',
+        cycleByType: '타입별',
+        bestProcessLabel: '최고 정확도 공정',
       },
 
       // 교체 실적 (추가 키)
@@ -3100,6 +3115,21 @@ const resources = {
         autoLoaded: 'Có thể nhập thủ công',
         saved: 'Lưu CAM Sheet',
         updated: 'Hoàn tất sửa CAM Sheet',
+
+        // 페이지네이션
+        previous: 'Trước',
+        next: 'Sau',
+        page: 'Trang',
+        showing: 'Tổng',
+        of: 'mục trong số',
+        displayed: 'mục hiển thị',
+
+        // 빈 상태 / 필터 / 보조 라벨
+        noMatching: 'Không tìm thấy CAM Sheet nào phù hợp với điều kiện',
+        clearFilters: 'Đặt lại bộ lọc',
+        tNumberRange: 'Phạm vi T',
+        cycleByType: 'Theo loại',
+        bestProcessLabel: 'Quy trình chính xác nhất',
       },
 
       // 교체 실적
