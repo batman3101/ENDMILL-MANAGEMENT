@@ -96,49 +96,49 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border p-4">
-          <div className="text-sm text-gray-600 mb-1">총 교체 건수</div>
-          <div className="text-2xl font-bold text-gray-900">
+        <div className="rounded-md border border-divider bg-paper-warm p-4">
+          <div className="text-sm text-ink-soft mb-1">총 교체 건수</div>
+          <div className="text-2xl font-bold text-ink">
             {formatNumber(data.summary.totalChanges)}건
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border p-4">
-          <div className="text-sm text-gray-600 mb-1">총 비용</div>
-          <div className="text-2xl font-bold text-blue-600">
+        <div className="rounded-md border border-divider bg-paper-warm p-4">
+          <div className="text-sm text-ink-soft mb-1">총 비용</div>
+          <div className="text-2xl font-bold text-gauge-cobalt-strong">
             {formatCurrency(data.summary.totalCost)}
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border p-4">
-          <div className="text-sm text-gray-600 mb-1">평균 공구 수명</div>
-          <div className="text-2xl font-bold text-green-600">
+        <div className="rounded-md border border-divider bg-paper-warm p-4">
+          <div className="text-sm text-ink-soft mb-1">평균 공구 수명</div>
+          <div className="text-2xl font-bold text-signal-go-strong">
             {formatNumber(data.summary.averageToolLife)}
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border p-4">
-          <div className="text-sm text-gray-600 mb-1">최다 교체 공구</div>
-          <div className="text-sm font-semibold text-gray-900 truncate">
+        <div className="rounded-md border border-divider bg-paper-warm p-4">
+          <div className="text-sm text-ink-soft mb-1">최다 교체 공구</div>
+          <div className="text-sm font-semibold text-ink truncate">
             {data.summary.mostChangedTool}
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border p-4">
-          <div className="text-sm text-gray-600 mb-1">최고 비용 공구</div>
-          <div className="text-sm font-semibold text-gray-900 truncate">
+        <div className="rounded-md border border-divider bg-paper-warm p-4">
+          <div className="text-sm text-ink-soft mb-1">최고 비용 공구</div>
+          <div className="text-sm font-semibold text-ink truncate">
             {data.summary.mostExpensiveTool}
           </div>
         </div>
       </div>
 
       {/* 모델별 교체 현황 */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b">
-          <h3 className="text-lg font-semibold text-gray-900">모델별 교체 현황</h3>
+          <h3 className="text-lg font-semibold text-ink">모델별 교체 현황</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-divider">
+            <thead className="bg-paper">
               <tr>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('model', modelSortField, modelSortOrder, setModelSortField, setModelSortOrder)}
                 >
                   <div className="flex items-center">
@@ -147,7 +147,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('count', modelSortField, modelSortOrder, setModelSortField, setModelSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -156,7 +156,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('cost', modelSortField, modelSortOrder, setModelSortField, setModelSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -165,7 +165,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('percentage', modelSortField, modelSortOrder, setModelSortField, setModelSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -175,20 +175,20 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-divider">
               {sortedModelData.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr key={index} className="hover:bg-paper">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                     {item.model}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                     {formatNumber(item.count)}건
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                     {formatCurrency(item.cost)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gauge-cobalt-soft text-gauge-cobalt-strong">
                       {item.percentage.toFixed(1)}%
                     </span>
                   </td>
@@ -200,16 +200,16 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
       </div>
 
       {/* 카테고리별 교체 현황 */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b">
-          <h3 className="text-lg font-semibold text-gray-900">카테고리별 교체 현황</h3>
+          <h3 className="text-lg font-semibold text-ink">카테고리별 교체 현황</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-divider">
+            <thead className="bg-paper">
               <tr>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('category', categorySortField, categorySortOrder, setCategorySortField, setCategorySortOrder)}
                 >
                   <div className="flex items-center">
@@ -218,7 +218,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('count', categorySortField, categorySortOrder, setCategorySortField, setCategorySortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -227,7 +227,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('cost', categorySortField, categorySortOrder, setCategorySortField, setCategorySortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -236,7 +236,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('percentage', categorySortField, categorySortOrder, setCategorySortField, setCategorySortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -246,20 +246,20 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-divider">
               {sortedCategoryData.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr key={index} className="hover:bg-paper">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                     {item.category}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                     {formatNumber(item.count)}건
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                     {formatCurrency(item.cost)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-signal-go-soft text-signal-go-strong">
                       {item.percentage.toFixed(1)}%
                     </span>
                   </td>
@@ -271,16 +271,16 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
       </div>
 
       {/* 교체 사유별 현황 */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b">
-          <h3 className="text-lg font-semibold text-gray-900">교체 사유별 현황</h3>
+          <h3 className="text-lg font-semibold text-ink">교체 사유별 현황</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-divider">
+            <thead className="bg-paper">
               <tr>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('reason', reasonSortField, reasonSortOrder, setReasonSortField, setReasonSortOrder)}
                 >
                   <div className="flex items-center">
@@ -289,7 +289,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('count', reasonSortField, reasonSortOrder, setReasonSortField, setReasonSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -298,7 +298,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('percentage', reasonSortField, reasonSortOrder, setReasonSortField, setReasonSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -308,17 +308,17 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-divider">
               {sortedReasonData.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr key={index} className="hover:bg-paper">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                     {item.reason}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                     {formatNumber(item.count)}건
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-paper-warm text-ink">
                       {item.percentage.toFixed(1)}%
                     </span>
                   </td>
@@ -330,16 +330,16 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
       </div>
 
       {/* 상위 공구 목록 */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b">
-          <h3 className="text-lg font-semibold text-gray-900">상위 10개 공구</h3>
+          <h3 className="text-lg font-semibold text-ink">상위 10개 공구</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-divider">
+            <thead className="bg-paper">
               <tr>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('code', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
@@ -348,7 +348,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('name', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
@@ -357,7 +357,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('changeCount', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -366,7 +366,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('totalCost', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -375,7 +375,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('averageLife', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -385,22 +385,22 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-divider">
               {sortedToolData.map((tool, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr key={index} className="hover:bg-paper">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                     {tool.code}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  <td className="px-6 py-4 text-sm text-ink">
                     {tool.name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                     {formatNumber(tool.changeCount)}건
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                     {formatCurrency(tool.totalCost)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                     {formatNumber(tool.averageLife)}
                   </td>
                 </tr>

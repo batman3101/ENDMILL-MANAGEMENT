@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Loader2, BarChart3, DollarSign, Clock, TrendingUp, X, FileBarChart } from 'lucide-react'
 import { useSettings } from '../../../lib/hooks/useSettings'
 import { useReports } from '../../../lib/hooks/useReports'
 import { ReportType, ReportFilter, ReportPeriod } from '../../../lib/types/reports'
@@ -11,252 +13,282 @@ import PerformanceReportView from '../../../components/reports/PerformanceReport
 import { useToast } from '../../../components/shared/Toast'
 import { clientLogger } from '@/lib/utils/logger'
 
+function resolveDateLocale(language: string | undefined): string {
+  if (!language) return 'ko-KR'
+  if (language.toLowerCase().startsWith('vi')) return 'vi-VN'
+  return 'ko-KR'
+}
+
+interface ReportTypeOption {
+  type: ReportType
+  titleKey: string
+  descriptionKey: string
+  Icon: React.ComponentType<{ className?: string }>
+}
+
+const REPORT_TYPES: ReportTypeOption[] = [
+  {
+    type: 'monthly',
+    titleKey: 'reports.monthlyReport',
+    descriptionKey: 'reports.monthlyDescription',
+    Icon: BarChart3,
+  },
+  {
+    type: 'cost',
+    titleKey: 'reports.costAnalysis',
+    descriptionKey: 'reports.costDescription',
+    Icon: DollarSign,
+  },
+  {
+    type: 'tool-life',
+    titleKey: 'reports.toolLifeAnalysis',
+    descriptionKey: 'reports.toolLifeDescription',
+    Icon: Clock,
+  },
+  {
+    type: 'performance',
+    titleKey: 'reports.performanceReport',
+    descriptionKey: 'reports.performanceDescription',
+    Icon: TrendingUp,
+  },
+]
+
 export default function ReportsPage() {
+  const { t, i18n } = useTranslation()
+  const dateLocale = resolveDateLocale(i18n.language)
   const { settings } = useSettings()
-  const { generateReport, generatedReport, setGeneratedReport, isGenerating, error: _error } = useReports()
+  const {
+    generateReport,
+    generatedReport,
+    setGeneratedReport,
+    isGenerating,
+    error: _error,
+  } = useReports()
   const { showSuccess, showError } = useToast()
 
   const equipmentModels = settings.equipment.models
   const endmillCategories = settings.inventory.categories
 
-  // 선택된 리포트 타입
   const [selectedReportType, setSelectedReportType] = useState<ReportType | null>(null)
-
-  // 필터 상태
   const [filter, setFilter] = useState<ReportFilter>({
     period: 'month',
     equipmentModel: '',
-    endmillCategory: ''
+    endmillCategory: '',
   })
 
-  // 리포트 타입 카드 클릭 핸들러
   const handleReportTypeClick = (type: ReportType) => {
     setSelectedReportType(type)
     setGeneratedReport(null)
   }
 
-  // 리포트 생성 핸들러
   const handleGenerateReport = async () => {
     if (!selectedReportType) {
-      showError('리포트 타입을 선택하세요')
+      showError(t('reports.selectType'))
       return
     }
-
     try {
       await generateReport(selectedReportType, filter)
-      showSuccess('리포트가 생성되었습니다')
+      showSuccess(t('reports.generateSuccess'))
     } catch (err) {
-      showError('리포트 생성에 실패했습니다')
+      showError(t('reports.generateError'))
       clientLogger.error('리포트 생성 오류:', err)
     }
   }
 
-  // 리포트 타입에 따른 제목 반환
-  const getReportTypeTitle = (type: ReportType) => {
-    switch (type) {
-      case 'monthly': return '월간 리포트'
-      case 'cost': return '비용 분석'
-      case 'tool-life': return 'Tool Life 분석'
-      case 'performance': return '성능 리포트'
-      default: return ''
+  const getReportTypeTitleKey = (type: ReportType): string => {
+    const opt = REPORT_TYPES.find(r => r.type === type)
+    return opt ? opt.titleKey : ''
+  }
+
+  const formatGeneratedAt = (value: string): string => {
+    try {
+      return new Date(value).toLocaleString(dateLocale)
+    } catch {
+      return value
     }
   }
 
   return (
     <div className="space-y-6">
-      {/* 보고서 타입 선택 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div
-          onClick={() => handleReportTypeClick('monthly')}
-          className={`bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200 ${
-            selectedReportType === 'monthly' ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-100'
-          }`}
-        >
-          <div className="text-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <span className="text-2xl">📊</span>
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-2">월간 리포트</h3>
-            <p className="text-sm text-gray-600">월별 교체 현황 및 비용 분석</p>
-          </div>
-        </div>
+      {/* === 4-카드 리포트 타입 선택기 (cobalt 통일, 선택 카드만 강조) === */}
+      <section
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        role="tablist"
+        aria-label={t('reports.selectType')}
+      >
+        {REPORT_TYPES.map(({ type, titleKey, descriptionKey, Icon }) => {
+          const isSelected = selectedReportType === type
+          return (
+            <button
+              key={type}
+              type="button"
+              role="tab"
+              aria-selected={isSelected}
+              onClick={() => handleReportTypeClick(type)}
+              className={
+                isSelected
+                  ? 'rounded-md border border-gauge-cobalt bg-gauge-cobalt-soft p-5 text-left ring-2 ring-gauge-cobalt-soft transition-colors'
+                  : 'rounded-md border border-divider bg-paper-warm p-5 text-left transition-colors hover:border-gauge-cobalt-soft hover:bg-paper'
+              }
+            >
+              <div className="flex items-start gap-3">
+                <Icon
+                  className={
+                    isSelected
+                      ? 'h-5 w-5 flex-shrink-0 text-gauge-cobalt-strong'
+                      : 'h-5 w-5 flex-shrink-0 text-ink-soft'
+                  }
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <h3
+                    className={
+                      isSelected
+                        ? 'text-title font-semibold text-gauge-cobalt-strong no-break'
+                        : 'text-title font-semibold text-ink no-break'
+                    }
+                  >
+                    {t(titleKey)}
+                  </h3>
+                  <p className="mt-1 text-base text-ink-soft">{t(descriptionKey)}</p>
+                </div>
+              </div>
+            </button>
+          )
+        })}
+      </section>
 
-        <div
-          onClick={() => handleReportTypeClick('cost')}
-          className={`bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200 ${
-            selectedReportType === 'cost' ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-100'
-          }`}
-        >
-          <div className="text-center">
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <span className="text-2xl">💰</span>
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-2">비용 분석</h3>
-            <p className="text-sm text-gray-600">공구별 비용 효율성 분석</p>
-          </div>
-        </div>
-
-        <div
-          onClick={() => handleReportTypeClick('tool-life')}
-          className={`bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200 ${
-            selectedReportType === 'tool-life' ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-100'
-          }`}
-        >
-          <div className="text-center">
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <span className="text-2xl">⏱️</span>
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Tool Life 분석</h3>
-            <p className="text-sm text-gray-600">공구 수명 패턴 분석</p>
-          </div>
-        </div>
-
-        <div
-          onClick={() => handleReportTypeClick('performance')}
-          className={`bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200 ${
-            selectedReportType === 'performance' ? 'border-orange-500 ring-2 ring-orange-200' : 'border-gray-100'
-          }`}
-        >
-          <div className="text-center">
-            <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <span className="text-2xl">📈</span>
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-2">성능 리포트</h3>
-            <p className="text-sm text-gray-600">설비별 성능 효율성</p>
-          </div>
-        </div>
-      </div>
-
-      {/* 필터 및 설정 */}
+      {/* === 필터 / 설정 === */}
       {selectedReportType && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            리포트 설정 - {getReportTypeTitle(selectedReportType)}
+        <section className="rounded-md border border-divider bg-paper-warm p-5">
+          <h2 className="text-title font-semibold text-ink no-break">
+            {t('reports.reportSettings')}
+            <span className="mx-2 text-ink-mute">·</span>
+            {t(getReportTypeTitleKey(selectedReportType))}
           </h2>
-          <div className="space-y-4">
-            {/* 첫 번째 줄: 기간 선택 */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">기간</label>
-                <select
-                  value={filter.period}
-                  onChange={(e) => {
-                    const newPeriod = e.target.value as ReportPeriod
-                    setFilter({
-                      ...filter,
-                      period: newPeriod,
-                      startDate: newPeriod === 'custom' ? filter.startDate : undefined,
-                      endDate: newPeriod === 'custom' ? filter.endDate : undefined
-                    })
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="today">오늘</option>
-                  <option value="week">이번 주</option>
-                  <option value="month">이번 달</option>
-                  <option value="quarter">분기</option>
-                  <option value="year">올해</option>
-                  <option value="custom">사용자 지정</option>
-                </select>
-              </div>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <FilterField label={t('reports.period')}>
+              <select
+                value={filter.period}
+                onChange={e => {
+                  const newPeriod = e.target.value as ReportPeriod
+                  setFilter({
+                    ...filter,
+                    period: newPeriod,
+                    startDate: newPeriod === 'custom' ? filter.startDate : undefined,
+                    endDate: newPeriod === 'custom' ? filter.endDate : undefined,
+                  })
+                }}
+                className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none"
+              >
+                <option value="today">{t('reports.today')}</option>
+                <option value="week">{t('reports.thisWeek')}</option>
+                <option value="month">{t('reports.thisMonth')}</option>
+                <option value="quarter">{t('reports.quarter')}</option>
+                <option value="year">{t('reports.thisYear')}</option>
+                <option value="custom">{t('reports.custom')}</option>
+              </select>
+            </FilterField>
 
-              {/* 사용자 지정 날짜 선택 */}
-              {filter.period === 'custom' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">시작일</label>
-                    <input
-                      type="date"
-                      value={filter.startDate || ''}
-                      onChange={(e) => setFilter({ ...filter, startDate: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">종료일</label>
-                    <input
-                      type="date"
-                      value={filter.endDate || ''}
-                      onChange={(e) => setFilter({ ...filter, endDate: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </>
-              )}
-            </div>
+            {filter.period === 'custom' && (
+              <>
+                <FilterField label={t('reports.startDate')}>
+                  <input
+                    type="date"
+                    value={filter.startDate || ''}
+                    onChange={e => setFilter({ ...filter, startDate: e.target.value })}
+                    className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none"
+                  />
+                </FilterField>
+                <FilterField label={t('reports.endDate')}>
+                  <input
+                    type="date"
+                    value={filter.endDate || ''}
+                    onChange={e => setFilter({ ...filter, endDate: e.target.value })}
+                    className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none"
+                  />
+                </FilterField>
+              </>
+            )}
 
-            {/* 두 번째 줄: 필터 및 생성 버튼 */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">생산 모델</label>
-                <select
-                  value={filter.equipmentModel}
-                  onChange={(e) => setFilter({ ...filter, equipmentModel: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">전체</option>
-                  {equipmentModels.map(model => (
-                    <option key={model} value={model}>{model}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">앤드밀 타입</label>
-                <select
-                  value={filter.endmillCategory}
-                  onChange={(e) => setFilter({ ...filter, endmillCategory: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">전체</option>
-                  {endmillCategories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="md:col-span-2 flex items-end">
-                <button
-                  onClick={handleGenerateReport}
-                  disabled={isGenerating || (filter.period === 'custom' && (!filter.startDate || !filter.endDate))}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {isGenerating ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      생성 중...
-                    </>
-                  ) : (
-                    '리포트 생성'
-                  )}
-                </button>
-              </div>
+            <FilterField label={t('reports.equipmentModel')}>
+              <select
+                value={filter.equipmentModel}
+                onChange={e => setFilter({ ...filter, equipmentModel: e.target.value })}
+                className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none"
+              >
+                <option value="">{t('reports.all')}</option>
+                {equipmentModels.map(model => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </select>
+            </FilterField>
+
+            <FilterField label={t('reports.endmillType')}>
+              <select
+                value={filter.endmillCategory}
+                onChange={e => setFilter({ ...filter, endmillCategory: e.target.value })}
+                className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none"
+              >
+                <option value="">{t('reports.all')}</option>
+                {endmillCategories.map(category => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </FilterField>
+
+            <div className="md:col-span-2 lg:col-span-4 flex justify-end">
+              <button
+                type="button"
+                onClick={handleGenerateReport}
+                disabled={
+                  isGenerating ||
+                  (filter.period === 'custom' && (!filter.startDate || !filter.endDate))
+                }
+                className="inline-flex min-h-touch items-center justify-center gap-2 rounded-sm bg-gauge-cobalt px-6 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    {t('reports.generating')}
+                  </>
+                ) : (
+                  t('reports.generateReport')
+                )}
+              </button>
             </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* 생성된 리포트 표시 */}
+      {/* === 생성된 리포트 / 빈 상태 === */}
       {generatedReport ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200">
-          <div className="px-6 py-4 border-b flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                {getReportTypeTitle(generatedReport.metadata.type)}
+        <section className="rounded-md border border-divider bg-paper-warm overflow-hidden">
+          <header className="flex items-start justify-between gap-3 border-b border-divider px-5 py-4">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-title font-semibold text-ink no-break">
+                {t(getReportTypeTitleKey(generatedReport.metadata.type))}
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                생성 시간: {new Date(generatedReport.metadata.generatedAt).toLocaleString('ko-KR')}
+              <p className="mt-1 text-caption text-ink-soft tabular">
+                {t('reports.generatedAt')}{' '}
+                {formatGeneratedAt(generatedReport.metadata.generatedAt)}
               </p>
             </div>
             <button
+              type="button"
               onClick={() => setGeneratedReport(null)}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
+              aria-label={t('common.close')}
+              className="inline-flex min-h-touch items-center gap-1 rounded-sm border border-divider bg-paper px-3 text-label font-medium text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink"
             >
-              닫기
+              <X className="h-4 w-4" />
+              {t('common.close')}
             </button>
-          </div>
-          <div className="p-6">
+          </header>
+          <div className="p-5">
             {generatedReport.metadata.type === 'monthly' && (
               <MonthlyReportView data={generatedReport} />
             )}
@@ -270,23 +302,40 @@ export default function ReportsPage() {
               <PerformanceReportView data={generatedReport} />
             )}
           </div>
-        </div>
+        </section>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200">
-          <div className="px-6 py-4 border-b">
-            <h2 className="text-lg font-semibold text-gray-900">생성된 리포트</h2>
+        <section className="rounded-md border border-divider bg-paper-warm overflow-hidden">
+          <header className="border-b border-divider px-5 py-4">
+            <h2 className="text-title font-semibold text-ink no-break">
+              {t('reports.generatedReport')}
+            </h2>
+          </header>
+          <div className="px-5 py-12 text-center">
+            <FileBarChart
+              className="h-10 w-10 text-ink-mute mx-auto mb-3"
+              aria-hidden="true"
+            />
+            <p className="text-base text-ink-soft">{t('reports.noReport')}</p>
+            <p className="mt-1 text-caption text-ink-mute">{t('reports.noReportMessage')}</p>
           </div>
-          <div className="p-8 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">📊</span>
-            </div>
-            <p className="text-lg text-gray-600 mb-2">생성된 리포트가 없습니다</p>
-            <p className="text-sm text-gray-500">
-              위에서 리포트 타입을 선택하고 설정 후 &apos;리포트 생성&apos; 버튼을 클릭하여 새 리포트를 생성하세요.
-            </p>
-          </div>
-        </div>
+        </section>
       )}
     </div>
   )
-} 
+}
+
+interface FilterFieldProps {
+  label: string
+  children: React.ReactNode
+}
+
+function FilterField({ label, children }: FilterFieldProps) {
+  return (
+    <div>
+      <label className="block text-label font-medium text-ink mb-1.5 no-break">
+        {label}
+      </label>
+      {children}
+    </div>
+  )
+}
