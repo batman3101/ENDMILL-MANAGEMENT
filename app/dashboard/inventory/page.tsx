@@ -11,6 +11,8 @@ import SupplierPriceInfo from '../../../components/inventory/SupplierPriceInfo'
 import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { useTranslations } from '../../../lib/hooks/useTranslations'
 import { clientLogger } from '../../../lib/utils/logger'
+import { InventoryListCard } from '../../../components/features/inventory/inventory-list-card'
+import { StatusBadge, type StatusBadgeVariant } from '../../../components/ui/status-badge'
 // ExcelJS and inventory templates are dynamically imported when needed
 
 export default function InventoryPage() {
@@ -331,20 +333,6 @@ export default function InventoryPage() {
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
   const currentData = flattenedData.slice(startIndex, endIndex)
-
-  const getStatusBadge = (status: 'sufficient' | 'low' | 'critical') => {
-    const baseClasses = "px-2 py-1 rounded-full text-xs font-medium"
-    switch (status) {
-      case 'sufficient':
-        return `${baseClasses} bg-green-100 text-green-800`
-      case 'low':
-        return `${baseClasses} bg-yellow-100 text-yellow-800`
-      case 'critical':
-        return `${baseClasses} bg-red-100 text-red-800`
-      default:
-        return `${baseClasses} bg-gray-100 text-gray-800`
-    }
-  }
 
   const getStatusText = (status: 'sufficient' | 'low' | 'critical') => {
     switch (status) {
@@ -669,8 +657,8 @@ export default function InventoryPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <span className="ml-4 text-gray-600">{t('inventory.loadingData')}</span>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gauge-cobalt"></div>
+          <span className="ml-4 text-ink-soft">{t('inventory.loadingData')}</span>
         </div>
       </div>
     )
@@ -680,12 +668,12 @@ export default function InventoryPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+        <div className="bg-signal-stop-soft border border-divider rounded-md p-4 sm:p-6">
           <div className="flex items-center">
-            <div className="text-red-600 text-xl mr-3">⚠️</div>
+            <div className="text-signal-stop-strong text-xl mr-3">⚠️</div>
             <div>
-              <h3 className="text-lg font-medium text-red-800">{t('inventory.dataLoadingError')}</h3>
-              <p className="text-red-600 mt-1">{error}</p>
+              <h3 className="text-title font-semibold text-signal-stop-strong">{t('inventory.dataLoadingError')}</h3>
+              <p className="text-signal-stop-strong mt-1">{error}</p>
             </div>
           </div>
         </div>
@@ -696,59 +684,59 @@ export default function InventoryPage() {
   return (
     <div className="space-y-6">
       {/* 재고 현황 요약 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="bg-paper-warm p-4 sm:p-6 rounded-md border border-divider">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-paper rounded-md flex items-center justify-center">
                 📦
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">{t('inventory.totalStockQuantity')}</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalItems.toLocaleString()}</p>
+              <p className="text-base font-medium text-ink-soft">{t('inventory.totalStockQuantity')}</p>
+              <p className="text-2xl font-bold text-ink tabular">{stats.totalItems.toLocaleString()}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm p-4 sm:p-6 rounded-md border border-divider">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-signal-stop-soft rounded-md flex items-center justify-center">
                 ⚠️
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">{t('inventory.criticalCode')}</p>
-              <p className="text-2xl font-bold text-red-600">{stats.criticalItems}</p>
+              <p className="text-base font-medium text-ink-soft">{t('inventory.criticalCode')}</p>
+              <p className="text-2xl font-bold text-signal-stop-strong tabular">{stats.criticalItems}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm p-4 sm:p-6 rounded-md border border-divider">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-signal-watch-soft rounded-md flex items-center justify-center">
                 📋
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">{t('inventory.lowStockCode')}</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.lowStockItems}</p>
+              <p className="text-base font-medium text-ink-soft">{t('inventory.lowStockCode')}</p>
+              <p className="text-2xl font-bold text-signal-watch-strong tabular">{stats.lowStockItems}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm p-4 sm:p-6 rounded-md border border-divider">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-signal-go-soft rounded-md flex items-center justify-center">
                 💰
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">{t('inventory.totalHoldingValue')}</p>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-base font-medium text-ink-soft">{t('inventory.totalHoldingValue')}</p>
+              <p className="text-2xl font-bold text-signal-go-strong tabular">
                 {stats.totalValue.toLocaleString()} VND
               </p>
             </div>
@@ -757,28 +745,34 @@ export default function InventoryPage() {
       </div>
 
       {/* 입고/출고 버튼 섹션 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Link href="/dashboard/inventory/inbound" className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <Link
+          href="/dashboard/inventory/inbound"
+          className="group bg-paper-warm p-4 sm:p-6 rounded-md border border-divider transition-colors hover:border-gauge-cobalt"
+        >
           <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-paper rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl">📥</span>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('inventory.inboundManagement')}</h3>
-            <p className="text-gray-600 mb-4">{t('inventory.inboundDescription')}</p>
-            <div className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-block">
+            <h3 className="text-title font-semibold text-ink mb-2">{t('inventory.inboundManagement')}</h3>
+            <p className="text-base text-ink-soft mb-4">{t('inventory.inboundDescription')}</p>
+            <div className="inline-flex min-h-touch items-center justify-center px-6 py-3 bg-gauge-cobalt text-paper text-label font-medium rounded-sm transition-colors group-hover:bg-gauge-cobalt-strong">
               📱 {t('inventory.inboundProcess')}
             </div>
           </div>
         </Link>
 
-        <Link href="/dashboard/inventory/outbound" className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer">
+        <Link
+          href="/dashboard/inventory/outbound"
+          className="group bg-paper-warm p-4 sm:p-6 rounded-md border border-divider transition-colors hover:border-signal-go"
+        >
           <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-paper rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl">📤</span>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('inventory.outboundManagement')}</h3>
-            <p className="text-gray-600 mb-4">{t('inventory.outboundDescription')}</p>
-            <div className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors inline-block">
+            <h3 className="text-title font-semibold text-ink mb-2">{t('inventory.outboundManagement')}</h3>
+            <p className="text-base text-ink-soft mb-4">{t('inventory.outboundDescription')}</p>
+            <div className="inline-flex min-h-touch items-center justify-center px-6 py-3 bg-signal-go-strong text-paper text-label font-medium rounded-sm transition-colors group-hover:bg-signal-go">
               📱 {t('inventory.outboundProcess')}
             </div>
           </div>
@@ -786,9 +780,9 @@ export default function InventoryPage() {
       </div>
 
       {/* 필터 및 검색 */}
-      <div className="bg-white p-3 md:p-4 rounded-lg shadow-sm border hover:shadow-xl transition-all duration-200">
+      <div className="bg-paper-warm p-4 rounded-md border border-divider">
         {/* 검색 및 필터 */}
-        <div className="space-y-3 md:space-y-0 md:flex md:gap-4 md:items-center md:justify-between">
+        <div className="space-y-3 md:space-y-0 md:flex md:gap-3 md:items-center md:justify-between">
           {/* 검색 입력 */}
           <div className="w-full md:flex-1">
             <input
@@ -796,7 +790,7 @@ export default function InventoryPage() {
               placeholder={t('inventory.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-11 px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-gauge-cobalt transition-colors"
             />
           </div>
 
@@ -805,7 +799,7 @@ export default function InventoryPage() {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-11 px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-gauge-cobalt transition-colors"
             >
               <option value="">{t('inventory.allCategories')}</option>
               {availableCategories.map(category => (
@@ -815,7 +809,7 @@ export default function InventoryPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-11 px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-gauge-cobalt transition-colors"
             >
               <option value="">{t('inventory.stockStatusFilter')}</option>
               <option value="sufficient">{t('inventory.sufficient')}</option>
@@ -825,64 +819,114 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {/* 액션 버튼 - 모바일에서 그리드 레이아웃 */}
-        <div className="mt-3 grid grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-2">
+        {/* 액션 버튼 - 단일 시각 위계: 1차(추가) + 2차(나머지)
+            모바일 2열 그리드, sm 이상 가로 정렬 */}
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2">
+          {/* 1차 액션: 신규 추가 — gauge-cobalt */}
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+            className="inline-flex min-h-touch items-center justify-center gap-1.5 px-4 py-2 bg-gauge-cobalt text-paper text-label font-medium rounded-sm transition-colors hover:bg-gauge-cobalt-strong"
           >
-            <span>➕</span>
+            <span aria-hidden="true">➕</span>
             <span className="hidden sm:inline">{t('inventory.addNewEndmill')}</span>
             <span className="sm:hidden">{t('common.add')}</span>
           </button>
+
+          {/* 2차 액션들: 모두 동일 시각 위계(border + ink) */}
           <button
             onClick={handleExcelUpload}
-            className="flex items-center justify-center gap-1 px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
+            className="inline-flex min-h-touch items-center justify-center gap-1.5 px-4 py-2 bg-paper text-ink text-label font-medium border border-divider rounded-sm transition-colors hover:bg-paper-warm hover:border-gauge-cobalt"
           >
-            <span>📤</span>
+            <span aria-hidden="true">📤</span>
             <span className="hidden sm:inline">{t('inventory.excelUpload')}</span>
             <span className="sm:hidden">{t('common.upload')}</span>
           </button>
           <button
             onClick={handleExcelDownload}
-            className="flex items-center justify-center gap-1 px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700"
+            className="inline-flex min-h-touch items-center justify-center gap-1.5 px-4 py-2 bg-paper text-ink text-label font-medium border border-divider rounded-sm transition-colors hover:bg-paper-warm hover:border-gauge-cobalt"
           >
-            <span>📥</span>
+            <span aria-hidden="true">📥</span>
             <span className="hidden sm:inline">{t('inventory.excelDownload')}</span>
             <span className="sm:hidden">{t('common.download')}</span>
           </button>
           <button
             onClick={handleDownloadInventoryTemplate}
-            className="flex items-center justify-center gap-1 px-3 py-2 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700"
+            className="inline-flex min-h-touch items-center justify-center gap-1.5 px-4 py-2 bg-paper text-ink text-label font-medium border border-divider rounded-sm transition-colors hover:bg-paper-warm hover:border-gauge-cobalt"
           >
-            <span>📋</span>
+            <span aria-hidden="true">📋</span>
             <span className="hidden sm:inline">{t('inventory.inventoryTemplate')}</span>
             <span className="sm:hidden">{t('common.template')}</span>
           </button>
           <button
             onClick={handleDownloadInventorySurvey}
-            className="col-span-2 md:col-span-1 flex items-center justify-center gap-1 px-3 py-2 bg-cyan-600 text-white text-sm rounded-md hover:bg-cyan-700"
+            className="col-span-2 sm:col-span-1 inline-flex min-h-touch items-center justify-center gap-1.5 px-4 py-2 bg-paper text-ink text-label font-medium border border-divider rounded-sm transition-colors hover:bg-paper-warm hover:border-gauge-cobalt"
             title={t('inventory.inventorySurveyTooltip')}
           >
-            <span>📊</span>
+            <span aria-hidden="true">📊</span>
             <span>{t('inventory.inventorySurvey')}</span>
           </button>
         </div>
       </div>
 
       {/* 재고 목록 */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-200">
-        <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {t('inventory.stockStatusList')} ({flattenedData.length}{t('inventory.items')} {t('inventory.supplierInfo')})
+      <div className="space-y-3">
+        {/* 헤더: 카운트 + 페이지 정보 */}
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-3">
+          <h2 className="text-title font-semibold text-ink">
+            {t('inventory.stockStatusList')}{' '}
+            <span className="text-base font-normal text-ink-soft tabular">
+              ({flattenedData.length}{t('inventory.items')})
+            </span>
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
-            {t('inventory.page')} {currentPage} / {totalPages} ({t('inventory.itemsPerPage')} {itemsPerPage}{t('inventory.items')})
-          </p>
+          {totalPages > 0 && (
+            <p className="text-caption text-ink-mute tabular shrink-0">
+              {t('inventory.page')} {currentPage} / {totalPages} ({t('inventory.itemsPerPage')} {itemsPerPage}{t('inventory.items')})
+            </p>
+          )}
         </div>
+
+        {/* 모바일 카드 리스트 (lg 미만) */}
+        <div className="lg:hidden">
+          {currentData.length > 0 ? (
+            <div className="space-y-3">
+              {currentData.map((row) => (
+                <InventoryListCard
+                  key={row.itemId}
+                  item={{
+                    itemId: row.itemId,
+                    code: row.code,
+                    name: row.name,
+                    category: row.category,
+                    totalCurrentStock: row.totalCurrentStock,
+                    minStock: row.minStock,
+                    maxStock: row.maxStock,
+                    overallStatus: row.overallStatus,
+                    unitPrice: row.unitPrice ?? 0,
+                  }}
+                  statusText={getStatusText}
+                  onDetail={(itemId) => {
+                    const item = searchFilteredInventory.find(it => it.id === itemId)
+                    if (item) handleViewDetail(item)
+                  }}
+                  onEdit={(itemId) => {
+                    const item = searchFilteredInventory.find(it => it.id === itemId)
+                    if (item) handleEdit(item)
+                  }}
+                  onDelete={(itemId) => {
+                    const item = searchFilteredInventory.find(it => it.id === itemId)
+                    if (item) handleDelete(item)
+                  }}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        {/* 데스크톱 테이블 (lg 이상) */}
+        <div className="hidden lg:block bg-paper-warm rounded-md border border-divider overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-divider">
+            <thead className="bg-paper">
               <tr>
                 <SortableTableHeader
                   label={t('inventory.endmillCode')}
@@ -926,66 +970,73 @@ export default function InventoryPage() {
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-caption font-medium text-ink-soft uppercase tracking-wider">
                   {t('inventory.actions')}
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-paper-warm divide-y divide-divider">
               {currentData.map((row) => {
-                const stockPercentage = Math.min((row.totalCurrentStock / row.minStock) * 100, 100)
-                const progressColor = row.overallStatus === 'critical' ? 'bg-red-600' :
-                                    row.overallStatus === 'low' ? 'bg-yellow-600' : 'bg-green-600'
+                const stockPercentage = row.minStock > 0
+                  ? Math.min((row.totalCurrentStock / row.minStock) * 100, 100)
+                  : 100
+                const progressColor =
+                  row.overallStatus === 'critical' ? 'bg-signal-stop' :
+                  row.overallStatus === 'low' ? 'bg-signal-watch' : 'bg-signal-go'
+                const statusVariant: StatusBadgeVariant =
+                  row.overallStatus === 'critical' ? 'stop' :
+                  row.overallStatus === 'low' ? 'watch' : 'go'
 
                 return (
-                  <tr key={row.itemId} className="hover:bg-gray-50">
+                  <tr key={row.itemId} className="hover:bg-paper transition-colors">
                     {/* 앤드밀 코드 */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{row.code}</div>
+                      <div className="text-base font-medium text-ink tabular">{row.code}</div>
                     </td>
 
                     {/* 앤드밀 이름 */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{row.name}</div>
+                      <div className="text-base text-ink">{row.name}</div>
                     </td>
 
                     {/* 카테고리 */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{row.category}</div>
+                      <div className="text-base text-ink-soft">{row.category}</div>
                     </td>
 
                     {/* 현재고 */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-base text-ink tabular">
                         {row.totalCurrentStock} / {row.minStock}
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="w-full bg-paper rounded-full h-1.5 mt-1.5">
                         <div
-                          className={`h-2 rounded-full ${progressColor}`}
-                          style={{width: `${Math.min(stockPercentage, 100)}%`}}
+                          className={`h-1.5 rounded-full ${progressColor}`}
+                          style={{width: `${stockPercentage}%`}}
                         ></div>
                       </div>
                     </td>
 
-                    {/* 상태 */}
+                    {/* 상태 — StatusBadge (Triple-Encoding: 색+형태+라벨) */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(row.overallStatus)}`}>
-                        {getStatusText(row.overallStatus)}
-                      </span>
+                      <StatusBadge
+                        variant={statusVariant}
+                        label={getStatusText(row.overallStatus)}
+                      />
                     </td>
 
                     {/* 단가 */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-base font-medium text-ink tabular">
                         {row.unitPrice?.toLocaleString() || '0'} VND
                       </div>
                     </td>
 
                     {/* 작업 */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-6 py-4 whitespace-nowrap text-label">
                       <button
                         onClick={() => handleViewDetail(searchFilteredInventory.find(item => item.id === row.itemId)!)}
-                        className="text-blue-600 hover:text-blue-800 mr-3"
+                        className="text-gauge-cobalt-strong font-medium hover:text-gauge-cobalt mr-3 transition-colors"
                       >
                         {t('inventory.detail')}
                       </button>
@@ -996,13 +1047,13 @@ export default function InventoryPage() {
                             handleEdit(inventoryItem)
                           }
                         }}
-                        className="text-green-600 hover:text-green-800 mr-3"
+                        className="text-signal-go-strong font-medium hover:text-signal-go mr-3 transition-colors"
                       >
                         {t('inventory.edit')}
                       </button>
                       <button
                         onClick={() => handleDelete(searchFilteredInventory.find(item => item.id === row.itemId)!)}
-                        className="text-red-600 hover:text-red-800"
+                        className="text-signal-stop-strong font-medium hover:text-signal-stop transition-colors"
                       >
                         {t('inventory.delete')}
                       </button>
@@ -1011,105 +1062,86 @@ export default function InventoryPage() {
                 )
               })}
             </tbody>
-                      </table>
-          </div>
-          
-          {/* 페이지네이션 */}
-          {totalPages > 1 && (
-            <div className="bg-white px-6 py-3 flex items-center justify-between border-t">
-              <div className="flex-1 flex justify-between sm:hidden">
+          </table>
+        </div>
+        </div>
+
+        {/* 페이지네이션 — 모바일/데스크톱 공통 */}
+        {totalPages > 1 && (
+          <div className="bg-paper-warm border border-divider rounded-md px-4 py-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-caption text-ink-soft tabular">
+                {t('inventory.showing')} <span className="font-medium text-ink">{flattenedData.length}</span>{t('inventory.of')}{' '}
+                <span className="font-medium text-ink">{startIndex + 1}</span>-
+                <span className="font-medium text-ink">{Math.min(endIndex, flattenedData.length)}</span>{t('inventory.displayed')}
+              </p>
+              <nav className="inline-flex items-center gap-1 self-end sm:self-auto" aria-label={t('inventory.page')}>
                 <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex min-h-touch min-w-touch items-center justify-center px-3 text-label font-medium text-ink-soft bg-paper border border-divider rounded-sm transition-colors hover:bg-paper-warm hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-paper disabled:hover:text-ink-soft"
+                  aria-label={t('inventory.previous')}
                 >
-                  {t('inventory.previous')}
+                  ‹
                 </button>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  const isActive = currentPage === pageNum
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={`inline-flex min-h-touch min-w-touch items-center justify-center px-3 text-label font-medium tabular border rounded-sm transition-colors ${
+                        isActive
+                          ? 'bg-gauge-cobalt text-paper border-gauge-cobalt'
+                          : 'bg-paper text-ink-soft border-divider hover:bg-paper-warm hover:text-ink'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
                 <button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex min-h-touch min-w-touch items-center justify-center px-3 text-label font-medium text-ink-soft bg-paper border border-divider rounded-sm transition-colors hover:bg-paper-warm hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-paper disabled:hover:text-ink-soft"
+                  aria-label={t('inventory.next')}
                 >
-                  {t('inventory.next')}
+                  ›
                 </button>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    {t('inventory.showing')} <span className="font-medium">{flattenedData.length}</span>{t('inventory.of')}{' '}
-                    <span className="font-medium">{startIndex + 1}</span>-
-                    <span className="font-medium">{Math.min(endIndex, flattenedData.length)}</span>{t('inventory.displayed')}
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ‹
-                    </button>
-                    
-                    {/* 페이지 번호들 */}
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-                      
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === pageNum
-                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-                    
-                    <button
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ›
-                    </button>
-                  </nav>
-                </div>
-              </div>
+              </nav>
             </div>
-          )}
-        </div>
-
-        {/* 검색 결과가 없을 때 */}
-        {flattenedData.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">{t('inventory.noMatchingInventory')}</p>
-            <button
-              onClick={() => {
-                setSearchTerm('')
-                setCategoryFilter('')
-                setStatusFilter('')
-                setCurrentPage(1)
-              }}
-              className="mt-2 text-blue-600 hover:text-blue-800"
-            >
-              {t('inventory.resetFilters')}
-            </button>
           </div>
         )}
+      </div>
+
+      {/* 검색 결과가 없을 때 — 필터 초기화 CTA */}
+      {flattenedData.length === 0 && (
+        <div className="rounded-md border border-divider bg-paper-warm px-4 py-8 text-center">
+          <p className="text-base text-ink-soft">{t('inventory.noMatchingInventory')}</p>
+          <button
+            onClick={() => {
+              setSearchTerm('')
+              setCategoryFilter('')
+              setStatusFilter('')
+              setCurrentPage(1)
+            }}
+            className="mt-3 inline-flex min-h-touch items-center justify-center px-4 py-2 bg-paper text-gauge-cobalt-strong text-label font-medium border border-divider rounded-sm transition-colors hover:bg-paper-warm hover:border-gauge-cobalt"
+          >
+            {t('inventory.resetFilters')}
+          </button>
+        </div>
+      )}
 
       {/* 신규 앤드밀 추가 모달 */}
       {showAddModal && (
