@@ -13,7 +13,6 @@ interface InventoryListCardItem {
   category: string
   totalCurrentStock: number
   minStock: number
-  maxStock: number
   overallStatus: 'sufficient' | 'low' | 'critical'
   unitPrice: number
 }
