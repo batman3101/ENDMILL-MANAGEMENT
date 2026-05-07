@@ -860,10 +860,16 @@ export default function InboundPage() {
                 <InboundHistoryCard
                   key={item.id}
                   item={item}
+                  labels={{
+                    totalAmount: t('inventory.totalAmount'),
+                    supplier: t('inventory.supplier'),
+                    quantityUnitPrice: `${t('common.quantity')} × ${t('inventory.unitPriceVND')}`,
+                    processor: t('inventory.processor'),
+                    edit: t('common.edit'),
+                    delete: t('common.delete'),
+                  }}
                   onEdit={handleEditInbound}
                   onDelete={handleDeleteInbound}
-                  editLabel={t('common.edit')}
-                  deleteLabel={t('common.delete')}
                 />
               ))}
             </div>

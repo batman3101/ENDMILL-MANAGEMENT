@@ -16,20 +16,27 @@ interface InboundHistoryCardItem {
   processedBy: string
 }
 
+interface InboundHistoryCardLabels {
+  totalAmount: string
+  supplier: string
+  quantityUnitPrice: string
+  processor: string
+  edit: string
+  delete: string
+}
+
 interface InboundHistoryCardProps {
   item: InboundHistoryCardItem
+  labels: InboundHistoryCardLabels
   onEdit: (item: InboundHistoryCardItem) => void
   onDelete: (id: string) => void
-  editLabel: string
-  deleteLabel: string
 }
 
 export function InboundHistoryCard({
   item,
+  labels,
   onEdit,
   onDelete,
-  editLabel,
-  deleteLabel,
 }: InboundHistoryCardProps) {
   return (
     <article className="rounded-md border border-divider bg-paper-warm p-4 transition-shadow hover:shadow-hover-lift">
@@ -41,7 +48,7 @@ export function InboundHistoryCard({
           <p className="mt-0.5 text-caption text-ink-soft truncate">{item.endmillName}</p>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-caption text-ink-mute">총액</p>
+          <p className="text-caption text-ink-mute">{labels.totalAmount}</p>
           <p className="text-title font-semibold text-gauge-cobalt-strong tabular">
             {item.totalPrice.toLocaleString()}
             <span className="ml-1 text-caption font-normal text-ink-soft">VND</span>
@@ -50,15 +57,15 @@ export function InboundHistoryCard({
       </header>
 
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-base">
-        <MetaRow label="공급업체">
+        <MetaRow label={labels.supplier}>
           <span className="truncate text-ink">{item.supplier || '—'}</span>
         </MetaRow>
-        <MetaRow label="수량 × 단가">
+        <MetaRow label={labels.quantityUnitPrice}>
           <span className="tabular text-ink">
             {item.quantity} × {item.unitPrice.toLocaleString()}
           </span>
         </MetaRow>
-        <MetaRow label="처리자" span={2}>
+        <MetaRow label={labels.processor} span={2}>
           <span className="text-ink">{item.processedBy || '—'}</span>
           <span className="text-ink-mute"> · </span>
           <span className="text-ink-soft tabular">{item.processedAt}</span>
@@ -72,7 +79,7 @@ export function InboundHistoryCard({
           className="inline-flex min-h-touch items-center gap-1 rounded-sm px-3 text-label font-medium text-ink-soft transition-colors hover:bg-paper hover:text-ink"
         >
           <Pencil className="h-4 w-4" />
-          {editLabel}
+          {labels.edit}
         </button>
         <button
           type="button"
@@ -80,7 +87,7 @@ export function InboundHistoryCard({
           className="inline-flex min-h-touch items-center gap-1 rounded-sm px-3 text-label font-medium text-signal-stop transition-colors hover:bg-signal-stop-soft"
         >
           <Trash2 className="h-4 w-4" />
-          {deleteLabel}
+          {labels.delete}
         </button>
       </footer>
     </article>
