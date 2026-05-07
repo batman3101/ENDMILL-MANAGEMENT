@@ -973,7 +973,6 @@ const resources = {
         endmillsAutoInstalled: '개 앤드밀이 자동 장착되었습니다',
         saving: '저장 중...',
         totalCount: '총',
-        edit: '수정',
       },
 
       // 앤드밀 관리
@@ -2254,7 +2253,6 @@ const resources = {
         endmillsAutoInstalled: 'dao phay được lắp đặt tự động',
         saving: 'Đang lưu...',
         totalCount: 'Tổng',
-        edit: 'Sửa',
       },
 
       // 앤드밀 관리
