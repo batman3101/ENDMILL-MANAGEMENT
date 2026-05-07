@@ -658,6 +658,18 @@ export default function ToolChangesPage() {
               <ToolChangeListCard
                 key={change.id}
                 change={change}
+                labels={{
+                  model: t('toolChanges.productionModel'),
+                  process: t('toolChanges.process'),
+                  tNumber: t('toolChanges.tNumber'),
+                  operator: t('toolChanges.replacedBy'),
+                  endmill: t('toolChanges.endmillCode'),
+                  toolLife: t('toolChanges.toolLife'),
+                  toolLifeUnit: t('toolChanges.times'),
+                  edit: t('toolChanges.edit'),
+                  delete: t('toolChanges.delete'),
+                  deleteConfirm: t('toolChanges.confirmDelete'),
+                }}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 isDeleting={deletingItemId === change.id}

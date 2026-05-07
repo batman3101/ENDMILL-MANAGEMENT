@@ -9,8 +9,22 @@ import {
 } from '@/components/ui/status-badge'
 import type { ToolChange } from '@/lib/hooks/useToolChanges'
 
+interface ToolChangeListCardLabels {
+  model: string
+  process: string
+  tNumber: string
+  operator: string
+  endmill: string
+  toolLife: string
+  toolLifeUnit: string
+  edit: string
+  delete: string
+  deleteConfirm: string
+}
+
 interface ToolChangeListCardProps {
   change: ToolChange
+  labels: ToolChangeListCardLabels
   onEdit: (change: ToolChange) => void
   onDelete: (change: ToolChange) => void
   isDeleting: boolean
@@ -47,6 +61,7 @@ function formatTNumber(t: number | null | undefined): string {
 
 export function ToolChangeListCard({
   change,
+  labels,
   onEdit,
   onDelete,
   isDeleting,
@@ -78,19 +93,19 @@ export function ToolChangeListCard({
       </header>
 
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-body">
-        <MetaRow label="모델">
+        <MetaRow label={labels.model}>
           <NoBreak>{change.production_model || '—'}</NoBreak>
         </MetaRow>
-        <MetaRow label="공정">
+        <MetaRow label={labels.process}>
           <NoBreak>{change.process || '—'}</NoBreak>
         </MetaRow>
-        <MetaRow label="T번호">
+        <MetaRow label={labels.tNumber}>
           <NoBreak>{formatTNumber(change.t_number)}</NoBreak>
         </MetaRow>
-        <MetaRow label="작업자">
+        <MetaRow label={labels.operator}>
           <span className="truncate">{change.user?.name || '—'}</span>
         </MetaRow>
-        <MetaRow label="엔드밀" span={2}>
+        <MetaRow label={labels.endmill} span={2}>
           <span className="truncate">
             <NoBreak>{change.endmill_code || '—'}</NoBreak>
             {endmillName !== '—' && (
@@ -101,9 +116,9 @@ export function ToolChangeListCard({
             )}
           </span>
         </MetaRow>
-        <MetaRow label="Tool Life" span={2}>
+        <MetaRow label={labels.toolLife} span={2}>
           <span className="font-medium tabular">{toolLife.toLocaleString()}</span>
-          <span className="ml-1 text-caption text-ink-soft">회</span>
+          <span className="ml-1 text-caption text-ink-soft">{labels.toolLifeUnit}</span>
         </MetaRow>
       </dl>
 
@@ -114,7 +129,7 @@ export function ToolChangeListCard({
           className="inline-flex min-h-touch items-center gap-1 rounded-sm px-3 text-label font-medium text-ink-soft transition-colors hover:bg-paper hover:text-ink"
         >
           <Pencil className="h-4 w-4" />
-          수정
+          {labels.edit}
         </button>
         <button
           type="button"
@@ -126,7 +141,7 @@ export function ToolChangeListCard({
           }
         >
           <Trash2 className="h-4 w-4" />
-          {isDeleting ? '삭제 확인' : '삭제'}
+          {isDeleting ? labels.deleteConfirm : labels.delete}
         </button>
       </footer>
     </article>

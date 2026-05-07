@@ -17,8 +17,18 @@ interface InventoryListCardItem {
   unitPrice: number
 }
 
+interface InventoryListCardLabels {
+  category: string
+  currentStockMin: string
+  unitPriceVND: string
+  detail: string
+  edit: string
+  delete: string
+}
+
 interface InventoryListCardProps {
   item: InventoryListCardItem
+  labels: InventoryListCardLabels
   onDetail: (itemId: string) => void
   onEdit: (itemId: string) => void
   onDelete: (itemId: string) => void
@@ -33,6 +43,7 @@ function statusVariant(status: 'sufficient' | 'low' | 'critical'): StatusBadgeVa
 
 export function InventoryListCard({
   item,
+  labels,
   onDetail,
   onEdit,
   onDelete,
@@ -61,15 +72,15 @@ export function InventoryListCard({
       </header>
 
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-body">
-        <MetaRow label="카테고리">
+        <MetaRow label={labels.category}>
           <span className="truncate">{item.category || '—'}</span>
         </MetaRow>
-        <MetaRow label="현재고 / 최소">
+        <MetaRow label={labels.currentStockMin}>
           <span className="font-medium tabular text-ink">
             {item.totalCurrentStock} / {item.minStock}
           </span>
         </MetaRow>
-        <MetaRow label="단가 (VND)" span={2}>
+        <MetaRow label={labels.unitPriceVND} span={2}>
           <span className="font-medium tabular">
             {item.unitPrice > 0 ? item.unitPrice.toLocaleString() : '—'}
           </span>
@@ -91,7 +102,7 @@ export function InventoryListCard({
           className="inline-flex min-h-touch items-center gap-1 rounded-sm px-3 text-label font-medium text-ink-soft transition-colors hover:bg-paper hover:text-ink"
         >
           <Eye className="h-4 w-4" />
-          상세
+          {labels.detail}
         </button>
         <button
           type="button"
@@ -99,7 +110,7 @@ export function InventoryListCard({
           className="inline-flex min-h-touch items-center gap-1 rounded-sm px-3 text-label font-medium text-ink-soft transition-colors hover:bg-paper hover:text-ink"
         >
           <Pencil className="h-4 w-4" />
-          수정
+          {labels.edit}
         </button>
         <button
           type="button"
@@ -107,7 +118,7 @@ export function InventoryListCard({
           className="inline-flex min-h-touch items-center gap-1 rounded-sm px-3 text-label font-medium text-signal-stop transition-colors hover:bg-signal-stop-soft"
         >
           <Trash2 className="h-4 w-4" />
-          삭제
+          {labels.delete}
         </button>
       </footer>
     </article>
