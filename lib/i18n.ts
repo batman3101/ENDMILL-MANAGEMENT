@@ -963,6 +963,16 @@ const resources = {
         count: '개',
         backButton: '뒤로 가기',
         noDeployedEquipment: '배치된 설비가 없습니다',
+
+        // impeccable/19 추가
+        equipmentAddedTitle: '설비 추가 완료',
+        addFailedTitle: '설비 추가 실패',
+        editComplete: '수정 완료',
+        editFailed: '설비 수정 실패',
+        assignError: '설비 배정 변경에 실패했습니다.',
+        endmillsAutoInstalled: '개 앤드밀이 자동 장착되었습니다',
+        saving: '저장 중...',
+        totalCount: '총',
       },
 
       // 앤드밀 관리
@@ -2233,6 +2243,16 @@ const resources = {
         count: 'cái',
         backButton: 'Quay lại',
         noDeployedEquipment: 'Không có thiết bị được triển khai',
+
+        // impeccable/19 추가
+        equipmentAddedTitle: 'Thêm thiết bị thành công',
+        addFailedTitle: 'Thêm thiết bị thất bại',
+        editComplete: 'Hoàn thành chỉnh sửa',
+        editFailed: 'Chỉnh sửa thiết bị thất bại',
+        assignError: 'Thay đổi phân công thiết bị thất bại.',
+        endmillsAutoInstalled: 'dao phay được lắp đặt tự động',
+        saving: 'Đang lưu...',
+        totalCount: 'Tổng',
       },
 
       // 앤드밀 관리
