@@ -2,12 +2,21 @@
 
 import * as React from 'react'
 import { Pencil, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { NoBreak } from '@/components/ui/no-break'
 import {
   StatusBadge,
   statusVariantForReason,
 } from '@/components/ui/status-badge'
 import type { ToolChange } from '@/lib/hooks/useToolChanges'
+
+// i18n.language(예: 'ko', 'vi') → BCP-47 로케일 변환.
+// toLocaleString이 베트남어 사용자에게 'ko-KR' 포맷("오전/오후" 등)을 강제하지 않도록.
+function resolveDateLocale(language: string | undefined): string {
+  if (!language) return 'ko-KR'
+  if (language.toLowerCase().startsWith('vi')) return 'vi-VN'
+  return 'ko-KR'
+}
 
 interface ToolChangeListCardLabels {
   model: string
@@ -31,11 +40,11 @@ interface ToolChangeListCardProps {
   reasonLabel: (reason: string) => string
 }
 
-function formatDateTime(change: ToolChange): string {
+function formatDateTime(change: ToolChange, locale: string): string {
   const source = change.created_at || change.change_date
   if (!source) return '—'
   try {
-    return new Date(source).toLocaleString('ko-KR', {
+    return new Date(source).toLocaleString(locale, {
       month: 'numeric',
       day: 'numeric',
       hour: '2-digit',
@@ -67,6 +76,8 @@ export function ToolChangeListCard({
   isDeleting,
   reasonLabel,
 }: ToolChangeListCardProps) {
+  const { i18n } = useTranslation()
+  const dateLocale = resolveDateLocale(i18n.language)
   const equipmentLabel = formatEquipmentNumber(change)
   const reason = change.change_reason || change.reason || ''
   const reasonText = reason ? reasonLabel(reason) : '—'
@@ -86,7 +97,7 @@ export function ToolChangeListCard({
             {equipmentLabel}
           </h3>
           <p className="mt-0.5 text-caption text-ink-soft tabular">
-            {formatDateTime(change)}
+            {formatDateTime(change, dateLocale)}
           </p>
         </div>
         <StatusBadge variant={variant} label={reasonText} />
