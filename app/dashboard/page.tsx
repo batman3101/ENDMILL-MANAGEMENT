@@ -7,6 +7,7 @@ import DonutChart from '../../components/features/DonutChart'
 import { useSettings } from '../../lib/hooks/useSettings'
 import { usePermissions } from '../../lib/hooks/usePermissions'
 import { useMultiTableRealtime } from '../../lib/hooks/useRealtime'
+import { StatusBadge } from '../../components/ui/status-badge'
 import {
   useDashboard,
   formatVND,
@@ -75,8 +76,8 @@ export default function DashboardPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('common.error')}</h2>
-          <p className="text-gray-600">{t('common.loadError')}</p>
+          <h2 className="text-title font-semibold text-ink mb-2">{t('common.error')}</h2>
+          <p className="text-ink-soft">{t('common.loadError')}</p>
         </div>
       </div>
     )
@@ -92,10 +93,10 @@ export default function DashboardPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{t('common.loadError')}</p>
+          <p className="text-signal-stop-strong mb-4">{t('common.loadError')}</p>
           <button
             onClick={refreshData}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-gauge-cobalt text-paper rounded-md hover:bg-gauge-cobalt-strong"
           >
             {t('equipment.retry')}
           </button>
@@ -107,23 +108,23 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* 상단 4개 카드 */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {isLoading && (
           <>
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 animate-pulse hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+              <div key={i} className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider animate-pulse">
                 <div className="flex items-center justify-between mb-6">
-                  <div className="h-5 bg-gray-200 rounded w-24"></div>
-                  <div className="h-4 bg-gray-200 rounded w-12"></div>
+                  <div className="h-5 bg-paper-warm rounded w-24"></div>
+                  <div className="h-4 bg-paper-warm rounded w-12"></div>
                 </div>
                 <div className="flex items-center justify-center">
-                  <div className="w-32 h-32 bg-gray-200 rounded-full"></div>
+                  <div className="w-32 h-32 bg-paper-warm rounded-full"></div>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   {[...Array(3)].map((_, j) => (
                     <div key={j} className="text-center">
-                      <div className="h-3 bg-gray-200 rounded mb-1 w-8 mx-auto"></div>
-                      <div className="h-4 bg-gray-200 rounded w-10 mx-auto"></div>
+                      <div className="h-3 bg-paper-warm rounded mb-1 w-8 mx-auto"></div>
+                      <div className="h-4 bg-paper-warm rounded w-10 mx-auto"></div>
                     </div>
                   ))}
                 </div>
@@ -135,10 +136,10 @@ export default function DashboardPage() {
           <>
 
         {/* 교체 사유 분석 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider transition-all duration-200">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">{t('dashboard.changeReasonAnalysis')}</h3>
-            <span className="text-sm text-gray-500">{t('dashboard.lastMonth')}</span>
+            <h3 className="text-title font-semibold text-ink-soft">{t('dashboard.changeReasonAnalysis')}</h3>
+            <span className="text-label text-ink-mute">{t('dashboard.lastMonth')}</span>
           </div>
           <div className="flex items-center justify-center">
             <DonutChart
@@ -152,36 +153,36 @@ export default function DashboardPage() {
               size={120}
             >
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-headline font-semibold text-ink tabular-nums">
                   {data?.endmillUsage?.brokenRate || 0}%
                 </div>
-                <div className="text-xs text-gray-500">{t('dashboard.brokenRate')}</div>
+                <div className="text-caption text-ink-mute">{t('dashboard.brokenRate')}</div>
               </div>
             </DonutChart>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             <div>
-              <p className="text-xs text-gray-500">{t('dashboard.normalLife')}</p>
-              <p className="text-sm font-semibold text-green-600">
+              <p className="text-caption text-ink-mute">{t('dashboard.normalLife')}</p>
+              <p className="text-base font-semibold text-signal-go-strong tabular-nums">
                 {data?.endmillUsage?.normalLife || 0}{t('dashboard.cases')}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">{t('dashboard.broken')}</p>
-              <p className="text-sm font-semibold text-red-600">
+              <p className="text-caption text-ink-mute">{t('dashboard.broken')}</p>
+              <p className="text-base font-semibold text-signal-stop-strong tabular-nums">
                 {data?.endmillUsage?.broken || 0}{t('dashboard.cases')}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">{t('dashboard.premature')}</p>
-              <p className="text-sm font-semibold text-yellow-600">
+              <p className="text-caption text-ink-mute">{t('dashboard.premature')}</p>
+              <p className="text-base font-semibold text-signal-watch-strong tabular-nums">
                 {data?.endmillUsage?.premature || 0}{t('dashboard.cases')}
               </p>
             </div>
           </div>
           {(data?.endmillUsage?.brokenRate || 0) >= 10 && (
-            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-xs text-yellow-800 text-center">
+            <div className="mt-3 p-2 bg-signal-watch-soft border border-signal-watch rounded-md">
+              <p className="text-caption text-signal-watch-strong text-center">
                 ⚠️ {t('dashboard.highBrokenRateWarning')}
               </p>
             </div>
@@ -189,10 +190,10 @@ export default function DashboardPage() {
         </div>
 
         {/* 설비 가동률 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider transition-all duration-200">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">{t('dashboard.equipmentStatus')}</h3>
-            <span className="text-sm text-gray-500">{t('endmill.realtimeConnected')}</span>
+            <h3 className="text-title font-semibold text-ink-soft">{t('dashboard.equipmentStatus')}</h3>
+            <span className="text-label text-ink-mute">{t('endmill.realtimeConnected')}</span>
           </div>
           <div className="flex items-center justify-center">
             <DonutChart
@@ -202,13 +203,13 @@ export default function DashboardPage() {
               size={120}
             >
               <div className="text-center">
-                <div className="text-xl font-bold text-gray-900">
+                <div className="text-headline font-semibold text-ink tabular-nums">
                   {data?.equipment?.active || 0}
                 </div>
-                <div className="text-[10px] text-gray-500">
+                <div className="text-caption text-ink-mute">
                   / {data?.equipment?.total || 0}{t('dashboard.equipmentCount')}
                 </div>
-                <div className="text-[10px] text-blue-600 mt-0.5">
+                <div className="text-caption text-gauge-cobalt-strong mt-0.5 tabular-nums">
                   {data?.equipment?.operatingRate || 0}% {t('dashboard.operatingRate')}
                 </div>
               </div>
@@ -216,20 +217,20 @@ export default function DashboardPage() {
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             <div>
-              <p className="text-xs text-gray-500">{t('equipment.operating')}</p>
-              <p className="text-sm font-semibold text-blue-600">
+              <p className="text-caption text-ink-mute">{t('equipment.operating')}</p>
+              <p className="text-base font-semibold text-gauge-cobalt-strong tabular-nums">
                 {data?.equipment?.active || 0}{t('dashboard.equipmentCount')}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">{t('equipment.maintenance')}</p>
-              <p className="text-sm font-semibold text-amber-600">
+              <p className="text-caption text-ink-mute">{t('equipment.maintenance')}</p>
+              <p className="text-base font-semibold text-amber-600 tabular-nums">
                 {data?.equipment?.maintenance || 0}{t('dashboard.equipmentCount')}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">{t('equipment.setup')}</p>
-              <p className="text-sm font-semibold text-purple-600">
+              <p className="text-caption text-ink-mute">{t('equipment.setup')}</p>
+              <p className="text-base font-semibold text-purple-600 tabular-nums">
                 {data?.equipment?.setup || 0}{t('dashboard.equipmentCount')}
               </p>
             </div>
@@ -237,41 +238,32 @@ export default function DashboardPage() {
         </div>
 
         {/* 재고 현황 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider transition-all duration-200">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">{t('inventory.stockStatus')}</h3>
-            <span className="text-sm text-gray-500">{t('endmill.realtimeConnected')}</span>
+            <h3 className="text-title font-semibold text-ink-soft">{t('inventory.stockStatus')}</h3>
+            <span className="text-label text-ink-mute">{t('endmill.realtimeConnected')}</span>
           </div>
           <div className="space-y-3">
             {/* 정상 재고 */}
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm font-medium text-gray-700">{t('inventory.sufficient')}</span>
-              </div>
-              <span className="text-lg font-bold text-green-600">
+            <div className="flex items-center justify-between p-3 bg-signal-go-soft rounded-md">
+              <StatusBadge variant="go" label={t('inventory.sufficient')} />
+              <span className="text-base font-bold text-signal-go-strong tabular-nums">
                 {data?.inventory?.sufficient || 0}{t('dashboard.pieceCount')}
               </span>
             </div>
 
             {/* 부족 재고 */}
-            <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm font-medium text-gray-700">{t('inventory.low')}</span>
-              </div>
-              <span className="text-lg font-bold text-yellow-600">
+            <div className="flex items-center justify-between p-3 bg-signal-watch-soft rounded-md">
+              <StatusBadge variant="watch" label={t('inventory.low')} />
+              <span className="text-base font-bold text-signal-watch-strong tabular-nums">
                 {data?.inventory?.low || 0}{t('dashboard.pieceCount')}
               </span>
             </div>
 
             {/* 위험 재고 */}
-            <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span className="text-sm font-medium text-gray-700">{t('inventory.critical')}</span>
-              </div>
-              <span className="text-lg font-bold text-red-600">
+            <div className="flex items-center justify-between p-3 bg-signal-stop-soft rounded-md">
+              <StatusBadge variant="stop" label={t('inventory.critical')} />
+              <span className="text-base font-bold text-signal-stop-strong tabular-nums">
                 {data?.inventory?.critical || 0}{t('dashboard.pieceCount')}
               </span>
             </div>
@@ -279,34 +271,34 @@ export default function DashboardPage() {
         </div>
 
         {/* 공구 사용 비용 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('reports.costAnalysis')}</h4>
-            <span className="text-2xl">📊</span>
+            <h4 className="text-title font-semibold text-ink-soft">{t('reports.costAnalysis')}</h4>
+            <span className="text-headline">📊</span>
           </div>
           {isLoading ? (
             <div className="animate-pulse">
-              <div className="h-4 bg-gray-200 rounded mb-2"></div>
-              <div className="h-8 bg-gray-200 rounded mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-paper-warm rounded mb-2"></div>
+              <div className="h-8 bg-paper-warm rounded mb-2"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="text-xs text-gray-500">
+              <div className="text-caption text-ink-mute">
                 {t('reports.monthlyReport')} ({t('dashboard.previous')}): {formatVND(data?.costAnalysis?.lastMonth || 0)}
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-caption text-ink-mute">
                 {t('reports.monthlyReport')} ({t('dashboard.current')}): {formatVND(data?.costAnalysis?.currentMonth || 0)}
               </div>
-              <div className={`text-sm font-semibold ${
-                (data?.costAnalysis?.savings || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+              <div className={`text-base font-semibold tabular-nums ${
+                (data?.costAnalysis?.savings || 0) >= 0 ? 'text-signal-go-strong' : 'text-signal-stop-strong'
               }`}>
                 {t('dashboard.savings')}: {formatVND(data?.costAnalysis?.savings || 0)}
                 ({data?.costAnalysis?.savingsPercent || 0}%)
               </div>
-              <div className="mt-3 h-2 bg-gray-200 rounded">
+              <div className="mt-3 h-2 bg-paper-warm rounded border border-divider">
                 <div
-                  className="h-2 bg-blue-500 rounded transition-all duration-300"
+                  className="h-2 bg-gauge-cobalt rounded transition-all duration-300"
                   style={{
                     width: `${Math.min(100, Math.abs((data?.costAnalysis?.currentMonth || 0) / (data?.costAnalysis?.lastMonth || 1) * 100))}%`
                   }}
@@ -322,126 +314,126 @@ export default function DashboardPage() {
       {/* 하단 4개 카드 */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* 설비별 교체 빈도 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h4 className="text-lg font-semibold text-gray-800">{t('equipment.model')} {t('toolChanges.changeReason')}</h4>
-              <span className="text-2xl">⚡</span>
+              <h4 className="text-title font-semibold text-ink-soft">{t('equipment.model')} {t('toolChanges.changeReason')}</h4>
+              <span className="text-headline">⚡</span>
             </div>
-            <span className="text-sm text-gray-500">{t('dashboard.lastMonth')}</span>
+            <span className="text-label text-ink-mute">{t('dashboard.lastMonth')}</span>
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
             </div>
           ) : (data?.frequencyAnalysis || []).length > 0 ? (
             <div className="space-y-2">
               {(data?.frequencyAnalysis || []).slice(0, 4).map((item, index) => (
-                <div key={index} className="flex justify-between items-center text-sm">
-                  <span className="text-gray-700">{item.series}:</span>
+                <div key={index} className="flex justify-between items-center text-base">
+                  <span className="text-ink-soft">{item.series}:</span>
                   <div className="text-right">
-                    <div className="font-semibold">{item.count}회</div>
-                    <div className="text-xs text-gray-500">{item.avgInterval}일/회</div>
+                    <div className="font-semibold tabular-nums">{item.count}회</div>
+                    <div className="text-caption text-ink-mute tabular-nums">{item.avgInterval}일/회</div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-24 text-gray-400">
+            <div className="flex items-center justify-center h-24 text-ink-mute">
               <div className="text-center">
-                <div className="text-sm">{t('common.noData')}</div>
-                <div className="text-xs mt-1">{t('common.noResults')}</div>
+                <div className="text-base">{t('common.noData')}</div>
+                <div className="text-caption mt-1">{t('common.noResults')}</div>
               </div>
             </div>
           )}
         </div>
 
         {/* 최다 파손 교체 엔드밀 Top 3 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h4 className="text-lg font-semibold text-gray-800">{t('dashboard.topBrokenEndmillsTitle')}</h4>
-              <span className="text-2xl">🔨</span>
+              <h4 className="text-title font-semibold text-ink-soft">{t('dashboard.topBrokenEndmillsTitle')}</h4>
+              <span className="text-headline">🔨</span>
             </div>
-            <span className="text-sm text-gray-500">{t('dashboard.lastMonth')}</span>
+            <span className="text-label text-ink-mute">{t('dashboard.lastMonth')}</span>
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
             </div>
           ) : (data?.topBrokenEndmills || []).length > 0 ? (
             <div className="space-y-3">
               {(data?.topBrokenEndmills || []).map((item: any, index: number) => (
-                <div key={index} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
-                  <span className="font-medium text-gray-700">{index + 1}{t('dashboard.rank')}: {item.code}</span>
-                  <span className="font-bold text-red-600">{item.count}{t('dashboard.times')}</span>
+                <div key={index} className="flex justify-between items-center text-base p-2 bg-paper-warm rounded-md border border-divider">
+                  <span className="font-medium text-ink-soft">{index + 1}{t('dashboard.rank')}: {item.code}</span>
+                  <span className="font-bold text-signal-stop-strong tabular-nums">{item.count}{t('dashboard.times')}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-24 text-gray-400">
+            <div className="flex items-center justify-center h-24 text-ink-mute">
               <div className="text-center">
-                <div className="text-sm">{t('common.noData')}</div>
-                <div className="text-xs mt-1">{t('dashboard.noBrokenEndmillsRecent')}</div>
+                <div className="text-base">{t('common.noData')}</div>
+                <div className="text-caption mt-1">{t('dashboard.noBrokenEndmillsRecent')}</div>
               </div>
             </div>
           )}
         </div>
 
         {/* 설비 모델별 비용 분석 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('equipment.model')} {t('reports.monthlyReport')}</h4>
-            <span className="text-2xl">🏭</span>
+            <h4 className="text-title font-semibold text-ink-soft">{t('equipment.model')} {t('reports.monthlyReport')}</h4>
+            <span className="text-headline">🏭</span>
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
             </div>
           ) : (data?.modelCostAnalysis || []).length > 0 ? (
             <div className="space-y-2">
               {(data?.modelCostAnalysis || []).slice(0, 4).map((item, index) => (
-                <div key={index} className="flex justify-between items-center text-sm">
-                  <span className="text-gray-700">{item.series}:</span>
+                <div key={index} className="flex justify-between items-center text-base">
+                  <span className="text-ink-soft">{item.series}:</span>
                   <div className="text-right">
-                    <div className="font-semibold text-blue-600">{formatVND(item.cost)}</div>
-                    <div className="text-xs text-gray-500">({item.percentage}%)</div>
+                    <div className="font-semibold text-gauge-cobalt-strong tabular-nums">{formatVND(item.cost)}</div>
+                    <div className="text-caption text-ink-mute tabular-nums">({item.percentage}%)</div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-24 text-gray-400">
+            <div className="flex items-center justify-center h-24 text-ink-mute">
               <div className="text-center">
-                <div className="text-sm">{t('common.noData')}</div>
-                <div className="text-xs mt-1">{t('common.noResults')}</div>
+                <div className="text-base">{t('common.noData')}</div>
+                <div className="text-caption mt-1">{t('common.noResults')}</div>
               </div>
             </div>
           )}
         </div>
 
         {/* 오늘의 교체 실적 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('dashboard.todayChanges')}</h4>
-            <span className="text-2xl">🔄</span>
+            <h4 className="text-title font-semibold text-ink-soft">{t('dashboard.todayChanges')}</h4>
+            <span className="text-headline">🔄</span>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-blue-600">
+            <p className="text-headline font-semibold text-gauge-cobalt-strong tabular-nums" style={{ fontSize: '1.875rem' }}>
               {data?.toolChanges?.today || 0}
             </p>
-            <p className="text-sm text-gray-500">{t('dashboard.pieceCount')} {t('common.success')}</p>
-            <div className="mt-3 flex justify-between text-xs">
-              <span className={`${getTrendColor(data?.toolChanges?.trend || '+8')}`}>
+            <p className="text-base text-ink-mute">{t('dashboard.pieceCount')} {t('common.success')}</p>
+            <div className="mt-3 flex justify-between text-caption">
+              <span className={`tabular-nums ${getTrendColor(data?.toolChanges?.trend || '+8')}`}>
                 {getTrendIcon(data?.toolChanges?.trend || '0')} {t('dashboard.vsPreviousDay')} {data?.toolChanges?.trend || '0'}
               </span>
-              <span className="text-gray-500">{t('dashboard.target')}: {data?.toolChanges?.target || 0}{t('dashboard.pieceCount')}</span>
+              <span className="text-ink-mute tabular-nums">{t('dashboard.target')}: {data?.toolChanges?.target || 0}{t('dashboard.pieceCount')}</span>
             </div>
           </div>
         </div>
@@ -450,63 +442,63 @@ export default function DashboardPage() {
       {/* Phase 4.1: 새로운 3개 카드 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 코드별 장착 설비수 Top5 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('common.code')}{t('dashboard.per')} {t('dashboard.mounted')} {t('dashboard.equipment')}{t('common.count')} Top5</h4>
-            <span className="text-2xl">🔧</span>
+            <h4 className="text-title font-semibold text-ink-soft">{t('common.code')}{t('dashboard.per')} {t('dashboard.mounted')} {t('dashboard.equipment')}{t('common.count')} Top5</h4>
+            <span className="text-headline">🔧</span>
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
             </div>
           ) : (data?.endmillByEquipmentCount || []).length > 0 ? (
             <div className="space-y-2">
               {(data?.endmillByEquipmentCount || []).slice(0, 5).map((item, index) => (
-                <div key={index} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
+                <div key={index} className="flex justify-between items-center text-base p-2 bg-paper-warm rounded-md border border-divider">
                   <div className="flex-1">
-                    <span className="font-medium text-gray-900">{item.endmillCode}</span>
-                    <div className="text-xs text-gray-500 truncate">{item.endmillName}</div>
+                    <span className="font-medium text-ink">{item.endmillCode}</span>
+                    <div className="text-caption text-ink-mute truncate">{item.endmillName}</div>
                   </div>
                   <div className="text-right ml-2">
-                    <div className="font-bold text-blue-600">{item.equipmentCount}{t('dashboard.equipmentCount')}</div>
-                    <div className="text-xs text-gray-500">{item.totalPositions}{t('dashboard.positions')}</div>
+                    <div className="font-bold text-gauge-cobalt-strong tabular-nums">{item.equipmentCount}{t('dashboard.equipmentCount')}</div>
+                    <div className="text-caption text-ink-mute tabular-nums">{item.totalPositions}{t('dashboard.positions')}</div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-32 text-gray-400">
+            <div className="flex items-center justify-center h-32 text-ink-mute">
               <div className="text-center">
-                <div className="text-sm">{t('common.noData')}</div>
+                <div className="text-base">{t('common.noData')}</div>
               </div>
             </div>
           )}
         </div>
 
         {/* 모델별 사용 앤드밀 분포 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">{t('equipment.model')}{t('dashboard.per')} {t('dashboard.usage')} {t('dashboard.endmill')} {t('dashboard.distribution')}</h4>
-            <span className="text-2xl">📊</span>
+            <h4 className="text-title font-semibold text-ink-soft">{t('equipment.model')}{t('dashboard.per')} {t('dashboard.usage')} {t('dashboard.endmill')} {t('dashboard.distribution')}</h4>
+            <span className="text-headline">📊</span>
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
             </div>
           ) : (data?.modelEndmillUsage || []).length > 0 ? (
             <div className="space-y-2">
               {(data?.modelEndmillUsage || []).map((item, index) => (
-                <div key={index} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
-                  <span className="font-medium text-gray-900">{item.model}</span>
+                <div key={index} className="flex justify-between items-center text-base p-2 bg-paper-warm rounded-md border border-divider">
+                  <span className="font-medium text-ink">{item.model}</span>
                   <div className="text-right">
-                    <div className="font-bold text-green-600">
+                    <div className="font-bold text-signal-go-strong tabular-nums">
                       {item.endmillCount}{t('dashboard.endmill')}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-caption text-ink-mute tabular-nums">
                       {item.equipmentCount}{t('dashboard.equipment')} ({t('dashboard.average')} {item.avgEndmillPerEquipment}{t('dashboard.perUnit')})
                     </div>
                   </div>
@@ -514,56 +506,56 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-32 text-gray-400">
+            <div className="flex items-center justify-center h-32 text-ink-mute">
               <div className="text-center">
-                <div className="text-sm">{t('common.noData')}</div>
+                <div className="text-base">{t('common.noData')}</div>
               </div>
             </div>
           )}
         </div>
 
         {/* 앤드밀 소진율 높은 설비 Top5 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h4 className="text-lg font-semibold text-gray-800">{t('dashboard.endmill')} {t('dashboard.lifeConsumption')} {t('common.high')} {t('dashboard.equipment')} Top5</h4>
-              <span className="text-2xl">⚙️</span>
+              <h4 className="text-title font-semibold text-ink-soft">{t('dashboard.endmill')} {t('dashboard.lifeConsumption')} {t('common.high')} {t('dashboard.equipment')} Top5</h4>
+              <span className="text-headline">⚙️</span>
             </div>
-            <span className="text-sm text-gray-500">{t('dashboard.lastMonth')}</span>
+            <span className="text-label text-ink-mute">{t('dashboard.lastMonth')}</span>
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-paper-warm rounded"></div>
             </div>
           ) : (data?.equipmentLifeConsumption || []).length > 0 ? (
             <div className="space-y-2">
               {(data?.equipmentLifeConsumption || []).slice(0, 5).map((item, index) => (
-                <div key={index} className="space-y-1 p-2 bg-gray-50 rounded">
+                <div key={index} className="space-y-1 p-2 bg-paper-warm rounded-md border border-divider">
                   <div className="flex justify-between items-center">
                     <div className="flex-1">
-                      <div className="font-semibold text-base text-gray-900">
+                      <div className="font-semibold text-base text-ink">
                         C{String(item.equipmentNumber).padStart(3, '0')} / {item.model} / ({(item as any).process || t('common.unknown')})
                       </div>
                     </div>
                     <div className="text-right ml-3">
-                      <span className={`font-bold text-2xl ${
-                        (item as any).changeCount >= 20 ? 'text-red-600' :
-                        (item as any).changeCount >= 10 ? 'text-yellow-600' :
-                        'text-green-600'
-                      }`}>
+                      <span className={`font-bold tabular-nums ${
+                        (item as any).changeCount >= 20 ? 'text-signal-stop-strong' :
+                        (item as any).changeCount >= 10 ? 'text-signal-watch-strong' :
+                        'text-signal-go-strong'
+                      }`} style={{ fontSize: '1.5rem' }}>
                         {(item as any).changeCount}
                       </span>
-                      <div className="text-xs text-gray-500 mt-0.5">{t('dashboard.changeCount')}</div>
+                      <div className="text-caption text-ink-mute mt-0.5">{t('dashboard.changeCount')}</div>
                     </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <div className="w-full bg-paper-warm rounded-full h-1.5 border border-divider">
                     <div
                       className={`h-1.5 rounded-full transition-all duration-300 ${
-                        (item as any).changeCount >= 20 ? 'bg-red-500' :
-                        (item as any).changeCount >= 10 ? 'bg-yellow-500' :
-                        'bg-green-500'
+                        (item as any).changeCount >= 20 ? 'bg-signal-stop-strong' :
+                        (item as any).changeCount >= 10 ? 'bg-signal-watch-strong' :
+                        'bg-signal-go-strong'
                       }`}
                       style={{ width: `${Math.min(100, ((item as any).changeCount / 30) * 100)}%` }}
                     ></div>
@@ -572,9 +564,9 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-32 text-gray-400">
+            <div className="flex items-center justify-center h-32 text-ink-mute">
               <div className="text-center">
-                <div className="text-sm">{t('common.noData')}</div>
+                <div className="text-base">{t('common.noData')}</div>
               </div>
             </div>
           )}
@@ -582,17 +574,17 @@ export default function DashboardPage() {
       </div>
 
       {/* 최근 활동 현황 */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-800">{t('dashboard.recentActivity')}</h3>
+      <div className="bg-paper-warm rounded-md border border-divider">
+        <div className="px-6 py-4 border-b border-divider flex items-center justify-between">
+          <h3 className="text-title font-semibold text-ink-soft">{t('dashboard.recentActivity')}</h3>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${isAllConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-              <span className={`text-xs font-medium ${isAllConnected ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`w-2 h-2 rounded-full ${isAllConnected ? 'bg-signal-go-strong animate-pulse' : 'bg-signal-stop-strong'}`}></div>
+              <span className={`text-caption font-medium ${isAllConnected ? 'text-signal-go-strong' : 'text-signal-stop-strong'}`}>
                 {isAllConnected ? t('endmill.realtimeConnected') : t('endmill.connecting')}
               </span>
             </div>
-            <span className="text-sm text-gray-500">
+            <span className="text-label text-ink-mute">
               {t('common.lastUpdate')}: {lastRefresh ? lastRefresh.toLocaleTimeString('ko-KR') : t('common.loading')} ({new Date().toLocaleDateString('ko-KR')})
             </span>
           </div>
@@ -626,21 +618,29 @@ export default function DashboardPage() {
                     ? `${alert.minutesAgo}${t('dashboard.minute')} ${t('dashboard.ago')}`
                     : `${Math.floor(alert.minutesAgo / 60)}${t('dashboard.hour')} ${t('dashboard.ago')}`
 
+                // alert.color 기반 신호 토큰 매핑
+                const alertColorMap: Record<string, { bg: string; border: string; text: string }> = {
+                  red: { bg: 'bg-signal-stop-soft', border: 'border-signal-stop', text: 'text-signal-stop-strong' },
+                  yellow: { bg: 'bg-signal-watch-soft', border: 'border-signal-watch', text: 'text-signal-watch-strong' },
+                  green: { bg: 'bg-signal-go-soft', border: 'border-signal-go', text: 'text-signal-go-strong' },
+                }
+                const alertTokens = alertColorMap[alert.color] ?? { bg: 'bg-paper-warm', border: 'border-divider', text: 'text-ink-mute' }
+
                 return (
-                  <div key={index} className={`flex items-start p-4 bg-${alert.color}-50 rounded-lg border border-${alert.color}-200`}>
+                  <div key={index} className={`flex items-start p-4 ${alertTokens.bg} rounded-md border ${alertTokens.border}`}>
                     <div className="flex-shrink-0 mt-1">
-                      <div className={`w-3 h-3 bg-${alert.color}-400 rounded-full ${alert.severity === 'high' || alert.severity === 'warning' ? 'animate-pulse' : ''}`}></div>
+                      <div className={`w-3 h-3 rounded-full ${alertTokens.text.replace('text-', 'bg-')} ${alert.severity === 'high' || alert.severity === 'warning' ? 'animate-pulse' : ''}`}></div>
                     </div>
                     <div className="ml-4 flex-1">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-gray-900">{title}</p>
-                        <span className={`text-xs text-${alert.color}-600 font-medium`}>
+                        <p className="text-base font-semibold text-ink">{title}</p>
+                        <span className={`text-caption ${alertTokens.text} font-medium`}>
                           {alert.severity === 'high' ? t('camSheets.high') : alert.severity === 'warning' ? t('common.warning') : alert.severity === 'medium' ? t('camSheets.medium') : t('common.info')}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">{message}</p>
+                      <p className="text-base text-ink-soft mt-1">{message}</p>
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs text-gray-500">{timeText}</span>
+                        <span className="text-caption text-ink-mute">{timeText}</span>
                       </div>
                     </div>
                   </div>
@@ -648,10 +648,10 @@ export default function DashboardPage() {
               })}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-32 text-gray-400">
+            <div className="flex items-center justify-center h-32 text-ink-mute">
               <div className="text-center">
-                <p className="text-sm">{t('common.noData')}</p>
-                <p className="text-xs mt-1">{t('dashboard.noAlerts')}</p>
+                <p className="text-base">{t('common.noData')}</p>
+                <p className="text-caption mt-1">{t('dashboard.noAlerts')}</p>
               </div>
             </div>
           )}
