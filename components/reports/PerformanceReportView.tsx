@@ -113,11 +113,11 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
 
   // 효율성 점수 색상
   const getEfficiencyColor = (score: number) => {
-    if (score >= 90) return 'text-green-600 bg-green-100'
-    if (score >= 80) return 'text-blue-600 bg-blue-100'
-    if (score >= 70) return 'text-yellow-600 bg-yellow-100'
-    if (score >= 60) return 'text-orange-600 bg-orange-100'
-    return 'text-red-600 bg-red-100'
+    if (score >= 90) return 'text-signal-go-strong bg-signal-go-soft'
+    if (score >= 80) return 'text-gauge-cobalt-strong bg-gauge-cobalt-soft'
+    if (score >= 70) return 'text-signal-watch-strong bg-signal-watch-soft'
+    if (score >= 60) return 'text-signal-watch-strong bg-signal-watch-soft'
+    return 'text-signal-stop-strong bg-signal-stop-soft'
   }
 
   // 랭킹 배지 색상
@@ -125,16 +125,16 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
     if (ranking === 1) return 'bg-yellow-500 text-white'
     if (ranking === 2) return 'bg-gray-400 text-white'
     if (ranking === 3) return 'bg-amber-600 text-white'
-    return 'bg-gray-200 text-gray-700'
+    return 'bg-gray-200 text-ink-soft'
   }
 
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-md p-6 border border-blue-200">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-blue-800">총 설비 수</span>
+            <span className="text-sm font-medium text-gauge-cobalt-strong">총 설비 수</span>
             <span className="text-2xl">🏭</span>
           </div>
           <div className="text-3xl font-bold text-blue-900">
@@ -145,9 +145,9 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-md p-6 border border-green-200">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-green-800">전체 효율성</span>
+            <span className="text-sm font-medium text-signal-go-strong">전체 효율성</span>
             <span className="text-2xl">📊</span>
           </div>
           <div className="text-3xl font-bold text-green-900">
@@ -158,45 +158,45 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="bg-white rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">최고 성능</span>
+            <span className="text-sm font-medium text-ink-soft">최고 성능</span>
             <span className="text-2xl">🏆</span>
           </div>
-          <div className="text-lg font-bold text-gray-900 mt-1">
+          <div className="text-lg font-bold text-ink mt-1">
             {summary.topPerformer}
           </div>
-          <div className="text-xs text-gray-500 mt-2">
+          <div className="text-xs text-ink-soft mt-2">
             Top Performer
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="bg-white rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">최저 성능</span>
+            <span className="text-sm font-medium text-ink-soft">최저 성능</span>
             <span className="text-2xl">⚠️</span>
           </div>
-          <div className="text-lg font-bold text-gray-900 mt-1">
+          <div className="text-lg font-bold text-ink mt-1">
             {summary.worstPerformer}
           </div>
-          <div className="text-xs text-gray-500 mt-2">
+          <div className="text-xs text-ink-soft mt-2">
             Needs Improvement
           </div>
         </div>
       </div>
 
       {/* 설비별 성능 분석 */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b bg-gray-50">
-          <h3 className="text-lg font-semibold text-gray-900">설비별 성능 분석</h3>
-          <p className="text-sm text-gray-600 mt-1">효율성 점수 기준 정렬</p>
+      <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+        <div className="px-6 py-4 border-b bg-paper">
+          <h3 className="text-lg font-semibold text-ink">설비별 성능 분석</h3>
+          <p className="text-sm text-ink-soft mt-1">효율성 점수 기준 정렬</p>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-divider">
+            <thead className="bg-paper">
               <tr>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('ranking', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
@@ -205,7 +205,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('equipmentNumber', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
@@ -214,7 +214,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('model', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
@@ -223,7 +223,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('location', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
@@ -232,7 +232,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('totalChanges', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
@@ -241,7 +241,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('totalCost', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
@@ -250,7 +250,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('averageToolLife', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
@@ -259,7 +259,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('standardLifeAchievement', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
@@ -268,7 +268,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('prematureFailures', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
@@ -277,7 +277,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('efficiencyScore', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
@@ -287,44 +287,44 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-divider">
               {sortedEquipmentData.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
+                <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${getRankingColor(item.ranking)}`}>
                       {item.ranking}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                     {item.equipmentNumber}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gauge-cobalt-soft text-gauge-cobalt-strong">
                       {item.model}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-soft">
                     {item.location}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                     {item.totalChanges}건
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                     {formatCurrency(item.totalCost)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                     {item.averageToolLife.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                     {item.standardLifeAchievement.toFixed(1)}%
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {item.prematureFailures > 0 ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-signal-stop-soft text-signal-stop-strong">
                         {item.prematureFailures}건
                       </span>
                     ) : (
-                      <span className="text-sm text-gray-400">-</span>
+                      <span className="text-sm text-ink-mute">-</span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -342,16 +342,16 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       {/* 모델별 & 위치별 비교 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 모델별 비교 */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b bg-gray-50">
-            <h3 className="text-lg font-semibold text-gray-900">모델별 비교</h3>
+        <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+          <div className="px-6 py-4 border-b bg-paper">
+            <h3 className="text-lg font-semibold text-ink">모델별 비교</h3>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-divider">
+              <thead className="bg-paper">
                 <tr>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('model', modelSortField, modelSortOrder, setModelSortField, setModelSortOrder)}
                   >
                     <div className="flex items-center">
@@ -360,7 +360,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     </div>
                   </th>
                   <th
-                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('equipmentCount', modelSortField, modelSortOrder, setModelSortField, setModelSortOrder)}
                   >
                     <div className="flex items-center justify-end">
@@ -369,7 +369,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     </div>
                   </th>
                   <th
-                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('averageChanges', modelSortField, modelSortOrder, setModelSortField, setModelSortOrder)}
                   >
                     <div className="flex items-center justify-end">
@@ -378,7 +378,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     </div>
                   </th>
                   <th
-                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('efficiencyScore', modelSortField, modelSortOrder, setModelSortField, setModelSortOrder)}
                   >
                     <div className="flex items-center justify-end">
@@ -388,16 +388,16 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-divider">
                 {sortedModelData.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <tr key={index} className="hover:bg-paper">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                       {item.model}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink-soft">
                       {item.equipmentCount}대
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                       {item.averageChanges}건
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -413,16 +413,16 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
         </div>
 
         {/* 위치별 비교 */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b bg-gray-50">
-            <h3 className="text-lg font-semibold text-gray-900">위치별 비교</h3>
+        <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+          <div className="px-6 py-4 border-b bg-paper">
+            <h3 className="text-lg font-semibold text-ink">위치별 비교</h3>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-divider">
+              <thead className="bg-paper">
                 <tr>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('location', locationSortField, locationSortOrder, setLocationSortField, setLocationSortOrder)}
                   >
                     <div className="flex items-center">
@@ -431,7 +431,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     </div>
                   </th>
                   <th
-                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('equipmentCount', locationSortField, locationSortOrder, setLocationSortField, setLocationSortOrder)}
                   >
                     <div className="flex items-center justify-end">
@@ -440,7 +440,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     </div>
                   </th>
                   <th
-                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('totalChanges', locationSortField, locationSortOrder, setLocationSortField, setLocationSortOrder)}
                   >
                     <div className="flex items-center justify-end">
@@ -449,7 +449,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     </div>
                   </th>
                   <th
-                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('efficiencyScore', locationSortField, locationSortOrder, setLocationSortField, setLocationSortOrder)}
                   >
                     <div className="flex items-center justify-end">
@@ -459,16 +459,16 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-divider">
                 {sortedLocationData.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <tr key={index} className="hover:bg-paper">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                       {item.location}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink-soft">
                       {item.equipmentCount}대
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                       {item.totalChanges}건
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -485,16 +485,16 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       </div>
 
       {/* 공정별 효율성 */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b bg-gray-50">
-          <h3 className="text-lg font-semibold text-gray-900">공정별 효율성 분석</h3>
+      <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+        <div className="px-6 py-4 border-b bg-paper">
+          <h3 className="text-lg font-semibold text-ink">공정별 효율성 분석</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-divider">
+            <thead className="bg-paper">
               <tr>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('process', processSortField, processSortOrder, setProcessSortField, setProcessSortOrder)}
                 >
                   <div className="flex items-center">
@@ -503,7 +503,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('changeCount', processSortField, processSortOrder, setProcessSortField, setProcessSortOrder)}
                 >
                   <div className="flex items-center">
@@ -512,7 +512,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('averageLife', processSortField, processSortOrder, setProcessSortField, setProcessSortOrder)}
                 >
                   <div className="flex items-center">
@@ -521,7 +521,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('cost', processSortField, processSortOrder, setProcessSortField, setProcessSortOrder)}
                 >
                   <div className="flex items-center">
@@ -530,7 +530,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('efficiencyScore', processSortField, processSortOrder, setProcessSortField, setProcessSortOrder)}
                 >
                   <div className="flex items-center">
@@ -540,19 +540,19 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-divider">
               {sortedProcessData.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr key={index} className="hover:bg-paper">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                     {item.process}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-soft">
                     {item.changeCount}건
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                     {item.averageLife.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                     {formatCurrency(item.cost)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -568,16 +568,16 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       </div>
 
       {/* 시간별 분석 */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b bg-gray-50">
-          <h3 className="text-lg font-semibold text-gray-900">시간별 성능 추이</h3>
+      <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+        <div className="px-6 py-4 border-b bg-paper">
+          <h3 className="text-lg font-semibold text-ink">시간별 성능 추이</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-divider">
+            <thead className="bg-paper">
               <tr>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('period', timeSortField, timeSortOrder, setTimeSortField, setTimeSortOrder)}
                 >
                   <div className="flex items-center">
@@ -586,7 +586,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('changeCount', timeSortField, timeSortOrder, setTimeSortField, setTimeSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -595,7 +595,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('cost', timeSortField, timeSortOrder, setTimeSortField, setTimeSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -604,7 +604,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('averageLife', timeSortField, timeSortOrder, setTimeSortField, setTimeSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -613,7 +613,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('efficiencyScore', timeSortField, timeSortOrder, setTimeSortField, setTimeSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -623,19 +623,19 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-divider">
               {sortedTimeData.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr key={index} className="hover:bg-paper">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                     {item.period}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink-soft">
                     {item.changeCount}건
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                     {formatCurrency(item.cost)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                     {item.averageLife.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -651,13 +651,13 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       </div>
 
       {/* 개선 권장사항 */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-6">
         <div className="flex">
           <div className="flex-shrink-0">
             <span className="text-blue-400 text-2xl">💡</span>
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">성능 개선 권장사항</h3>
+            <h3 className="text-sm font-medium text-gauge-cobalt-strong">성능 개선 권장사항</h3>
             <div className="mt-2 text-sm text-blue-700">
               <ul className="list-disc list-inside space-y-1">
                 {summary.overallEfficiency < 70 && (

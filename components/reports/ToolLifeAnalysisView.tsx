@@ -107,20 +107,20 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
 
   // 달성률 색상
   const getAchievementColor = (rate: number) => {
-    if (rate >= 100) return 'text-green-600 bg-green-100'
-    if (rate >= 80) return 'text-blue-600 bg-blue-100'
-    if (rate >= 60) return 'text-yellow-600 bg-yellow-100'
-    if (rate >= 40) return 'text-orange-600 bg-orange-100'
-    return 'text-red-600 bg-red-100'
+    if (rate >= 100) return 'text-signal-go-strong bg-signal-go-soft'
+    if (rate >= 80) return 'text-gauge-cobalt-strong bg-gauge-cobalt-soft'
+    if (rate >= 60) return 'text-signal-watch-strong bg-signal-watch-soft'
+    if (rate >= 40) return 'text-signal-watch-strong bg-signal-watch-soft'
+    return 'text-signal-stop-strong bg-signal-stop-soft'
   }
 
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-md p-6 border border-blue-200">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-blue-800">평균 수명</span>
+            <span className="text-sm font-medium text-gauge-cobalt-strong">평균 수명</span>
             <span className="text-2xl">⏱️</span>
           </div>
           <div className="text-3xl font-bold text-blue-900">
@@ -131,9 +131,9 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-md p-6 border border-green-200">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-green-800">표준 수명 달성률</span>
+            <span className="text-sm font-medium text-signal-go-strong">표준 수명 달성률</span>
             <span className="text-2xl">📊</span>
           </div>
           <div className="text-3xl font-bold text-green-900">
@@ -144,9 +144,9 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
+        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-md p-6 border border-red-200">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-red-800">조기 파손</span>
+            <span className="text-sm font-medium text-signal-stop-strong">조기 파손</span>
             <span className="text-2xl">⚠️</span>
           </div>
           <div className="text-3xl font-bold text-red-900">
@@ -157,18 +157,18 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="bg-white rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">성능 범위</span>
+            <span className="text-sm font-medium text-ink-soft">성능 범위</span>
             <span className="text-2xl">🏆</span>
           </div>
-          <div className="text-xs text-gray-600 mt-1">
+          <div className="text-xs text-ink-soft mt-1">
             <div className="flex items-center gap-1 mb-1">
-              <span className="text-green-600">⬆</span>
+              <span className="text-signal-go-strong">⬆</span>
               <span className="truncate">{summary.topPerformingTool}</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-red-600">⬇</span>
+              <span className="text-signal-stop-strong">⬇</span>
               <span className="truncate">{summary.worstPerformingTool}</span>
             </div>
           </div>
@@ -176,17 +176,17 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
       </div>
 
       {/* 공구별 수명 분석 */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b bg-gray-50">
-          <h3 className="text-lg font-semibold text-gray-900">공구별 수명 분석</h3>
-          <p className="text-sm text-gray-600 mt-1">표준 수명 달성률 기준 정렬</p>
+      <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+        <div className="px-6 py-4 border-b bg-paper">
+          <h3 className="text-lg font-semibold text-ink">공구별 수명 분석</h3>
+          <p className="text-sm text-ink-soft mt-1">표준 수명 달성률 기준 정렬</p>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-divider">
+            <thead className="bg-paper">
               <tr>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('toolName', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
@@ -195,7 +195,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('category', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
@@ -204,7 +204,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('averageLife', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
@@ -213,7 +213,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('standardLife', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
@@ -222,7 +222,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('achievementRate', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
@@ -231,7 +231,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('minLife', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
@@ -240,7 +240,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('changeCount', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
@@ -250,22 +250,22 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-divider">
               {sortedToolData.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
+                <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{item.toolName}</div>
-                    <div className="text-xs text-gray-500">{item.toolCode}</div>
+                    <div className="text-sm font-medium text-ink">{item.toolName}</div>
+                    <div className="text-xs text-ink-soft">{item.toolCode}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-paper-warm text-gray-800">
                       {item.category}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                     {item.averageLife.toFixed(0)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-soft">
                     {item.standardLife > 0 ? item.standardLife : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -273,10 +273,10 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                       {item.achievementRate.toFixed(1)}%
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-soft">
                     {item.minLife} - {item.maxLife}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-soft">
                     {item.changeCount}건
                   </td>
                 </tr>
@@ -289,17 +289,17 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
       {/* 교체 사유별 & 수명 분포 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 교체 사유별 수명 */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b bg-gray-50">
-            <h3 className="text-lg font-semibold text-gray-900">교체 사유별 평균 수명</h3>
+        <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+          <div className="px-6 py-4 border-b bg-paper">
+            <h3 className="text-lg font-semibold text-ink">교체 사유별 평균 수명</h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
               {lifeByReason.map((item, index) => (
                 <div key={index}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">{item.reason}</span>
-                    <span className="text-sm font-bold text-gray-900">{item.averageLife.toFixed(0)}</span>
+                    <span className="text-sm font-medium text-ink-soft">{item.reason}</span>
+                    <span className="text-sm font-bold text-ink">{item.averageLife.toFixed(0)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-gray-200 rounded-full h-2">
@@ -308,11 +308,11 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                         style={{ width: `${item.percentage}%` }}
                       />
                     </div>
-                    <span className="text-xs text-gray-500 w-12 text-right">
+                    <span className="text-xs text-ink-soft w-12 text-right">
                       {item.percentage.toFixed(0)}%
                     </span>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-ink-soft mt-1">
                     {item.count}건
                   </div>
                 </div>
@@ -322,17 +322,17 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
         </div>
 
         {/* 수명 분포 */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b bg-gray-50">
-            <h3 className="text-lg font-semibold text-gray-900">수명 분포</h3>
+        <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+          <div className="px-6 py-4 border-b bg-paper">
+            <h3 className="text-lg font-semibold text-ink">수명 분포</h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
               {lifeDistribution.map((item, index) => (
                 <div key={index}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">{item.range}</span>
-                    <span className="text-sm font-bold text-gray-900">{item.count}건</span>
+                    <span className="text-sm font-medium text-ink-soft">{item.range}</span>
+                    <span className="text-sm font-bold text-ink">{item.count}건</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-gray-200 rounded-full h-2">
@@ -341,7 +341,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                         style={{ width: `${item.percentage}%` }}
                       />
                     </div>
-                    <span className="text-xs text-gray-500 w-12 text-right">
+                    <span className="text-xs text-ink-soft w-12 text-right">
                       {item.percentage.toFixed(0)}%
                     </span>
                   </div>
@@ -353,16 +353,16 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
       </div>
 
       {/* 시간별 수명 트렌드 */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b bg-gray-50">
-          <h3 className="text-lg font-semibold text-gray-900">시간별 수명 트렌드</h3>
+      <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+        <div className="px-6 py-4 border-b bg-paper">
+          <h3 className="text-lg font-semibold text-ink">시간별 수명 트렌드</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-divider">
+            <thead className="bg-paper">
               <tr>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('period', trendSortField, trendSortOrder, setTrendSortField, setTrendSortOrder)}
                 >
                   <div className="flex items-center">
@@ -371,7 +371,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('changeCount', trendSortField, trendSortOrder, setTrendSortField, setTrendSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -380,7 +380,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-right text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                   onClick={() => handleSort('averageLife', trendSortField, trendSortOrder, setTrendSortField, setTrendSortOrder)}
                 >
                   <div className="flex items-center justify-end">
@@ -390,17 +390,17 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-divider">
               {sortedTrendData.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr key={index} className="hover:bg-paper">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                     {item.period}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink-soft">
                     {item.changeCount}건
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                    <span className="text-lg font-bold text-blue-600">{item.averageLife.toFixed(0)}</span>
+                    <span className="text-lg font-bold text-gauge-cobalt-strong">{item.averageLife.toFixed(0)}</span>
                   </td>
                 </tr>
               ))}
@@ -411,17 +411,17 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
 
       {/* 조기 파손 분석 */}
       {prematureFailureAnalysis.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
           <div className="px-6 py-4 border-b bg-red-50">
             <h3 className="text-lg font-semibold text-red-900">조기 파손 분석</h3>
             <p className="text-sm text-red-700 mt-1">표준 수명의 50% 미만으로 교체된 공구</p>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-divider">
+              <thead className="bg-paper">
                 <tr>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('toolName', failureSortField, failureSortOrder, setFailureSortField, setFailureSortOrder)}
                   >
                     <div className="flex items-center">
@@ -430,7 +430,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     </div>
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('failureCount', failureSortField, failureSortOrder, setFailureSortField, setFailureSortOrder)}
                   >
                     <div className="flex items-center">
@@ -439,7 +439,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     </div>
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('averageLifeAtFailure', failureSortField, failureSortOrder, setFailureSortField, setFailureSortOrder)}
                   >
                     <div className="flex items-center">
@@ -448,7 +448,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     </div>
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('standardLife', failureSortField, failureSortOrder, setFailureSortField, setFailureSortOrder)}
                   >
                     <div className="flex items-center">
@@ -457,7 +457,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     </div>
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('achievementRate', failureSortField, failureSortOrder, setFailureSortField, setFailureSortOrder)}
                   >
                     <div className="flex items-center">
@@ -466,7 +466,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     </div>
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase cursor-pointer hover:bg-paper-warm"
                     onClick={() => handleSort('mainReason', failureSortField, failureSortOrder, setFailureSortField, setFailureSortOrder)}
                   >
                     <div className="flex items-center">
@@ -476,30 +476,30 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-divider">
                 {sortedFailureData.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
+                  <tr key={index} className="hover:bg-paper">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{item.toolName}</div>
-                      <div className="text-xs text-gray-500">{item.toolCode}</div>
+                      <div className="text-sm font-medium text-ink">{item.toolName}</div>
+                      <div className="text-xs text-ink-soft">{item.toolCode}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-signal-stop-soft text-signal-stop-strong">
                         {item.failureCount}건
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                       {item.averageLifeAtFailure.toFixed(0)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-soft">
                       {item.standardLife}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-signal-stop-soft text-signal-stop-strong">
                         {item.achievementRate.toFixed(1)}%
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-soft">
                       {item.mainReason}
                     </td>
                   </tr>
@@ -511,13 +511,13 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
       )}
 
       {/* 권장사항 */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-6">
         <div className="flex">
           <div className="flex-shrink-0">
             <span className="text-blue-400 text-2xl">💡</span>
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">개선 권장사항</h3>
+            <h3 className="text-sm font-medium text-gauge-cobalt-strong">개선 권장사항</h3>
             <div className="mt-2 text-sm text-blue-700">
               <ul className="list-disc list-inside space-y-1">
                 {summary.prematureFailures > 0 && (

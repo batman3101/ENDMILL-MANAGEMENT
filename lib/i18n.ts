@@ -1581,6 +1581,10 @@ const resources = {
         performanceReport: '성능 리포트',
         performanceDescription: '설비별 성능 효율성',
         monthlyDescription: '월별 교체 현황 및 비용 분석',
+        startDate: '시작일',
+        endDate: '종료일',
+        generateSuccess: '리포트가 생성되었습니다',
+        generateError: '리포트 생성에 실패했습니다',
       },
 
       // 앤드밀 폐기 (신규)
@@ -3356,6 +3360,10 @@ const resources = {
         performanceReport: 'Báo cáo hiệu suất',
         performanceDescription: 'Hiệu suất theo thiết bị',
         monthlyDescription: 'Tình trạng thay thế hàng tháng và phân tích chi phí',
+        startDate: 'Ngày bắt đầu',
+        endDate: 'Ngày kết thúc',
+        generateSuccess: 'Báo cáo đã được tạo',
+        generateError: 'Tạo báo cáo thất bại',
       },
 
       // 사용자 관리
