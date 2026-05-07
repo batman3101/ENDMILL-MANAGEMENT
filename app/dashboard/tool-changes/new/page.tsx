@@ -14,6 +14,7 @@ import { useCAMSheets } from '@/lib/hooks/useCAMSheets'
 import { useSettings } from '@/lib/hooks/useSettings'
 import { useToast } from '@/components/shared/Toast'
 import { useStickyContext } from '@/lib/hooks/useStickyContext'
+import { useTranslations } from '@/lib/hooks/useTranslations'
 import { clientLogger } from '@/lib/utils/logger'
 import { cn } from '@/lib/utils'
 
@@ -68,6 +69,7 @@ export default function NewToolChangePage() {
   const { camSheets, getAvailableModels } = useCAMSheets()
   const { settings } = useSettings()
   const { showSuccess, showError } = useToast()
+  const { t } = useTranslations()
   const {
     context,
     hasContext,
@@ -297,7 +299,7 @@ export default function NewToolChangePage() {
       const result = await response.json()
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || '교체 실적 저장에 실패했습니다.')
+        throw new Error(result.error || t('toolChanges.saveFailedMessage'))
       }
 
       const replacerName = availableUsers.find((u) => u.id === form.changed_by)?.name
@@ -312,15 +314,19 @@ export default function NewToolChangePage() {
       const nextCount = recordedCount + 1
       setRecordedCount(nextCount)
       showSuccess(
-        '기록 완료',
-        `${form.equipment_number} T${String(form.t_number).padStart(2, '0')} (${nextCount}건째)`
+        t('toolChanges.recordCompleted'),
+        t('toolChanges.recordCompletedMessage', {
+          equipment: form.equipment_number,
+          tNumber: String(form.t_number).padStart(2, '0'),
+          count: nextCount,
+        })
       )
       resetVariableFields()
     } catch (error) {
       clientLogger.error('교체 실적 등록 오류:', error)
       showError(
-        '등록 실패',
-        error instanceof Error ? error.message : '교체 실적 등록 중 오류가 발생했습니다.'
+        t('toolChanges.registerFailedTitle'),
+        error instanceof Error ? error.message : t('toolChanges.registerErrorMessage')
       )
     } finally {
       setIsSubmitting(false)
@@ -359,7 +365,9 @@ export default function NewToolChangePage() {
   )
 
   const formattedSuggestedToolLife =
-    suggestedToolLife !== null ? `${suggestedToolLife.toLocaleString()}회` : '—'
+    suggestedToolLife !== null
+      ? `${suggestedToolLife.toLocaleString()}${t('toolChanges.toolLifeTimesSuffix')}`
+      : '—'
 
   return (
     <div className="flex min-h-screen flex-col bg-paper">
@@ -369,14 +377,14 @@ export default function NewToolChangePage() {
           variant="ghost"
           size="icon"
           onClick={() => router.push('/dashboard/tool-changes')}
-          aria-label="뒤로"
+          aria-label={t('toolChanges.back')}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-title font-semibold text-ink">교체 기록</h1>
+        <h1 className="text-title font-semibold text-ink">{t('toolChanges.recordTitle')}</h1>
         {recordedCount > 0 && (
           <span className="ml-auto text-caption text-ink-soft tabular">
-            이번 세션 <span className="font-semibold text-ink">{recordedCount}</span>건
+            {t('toolChanges.thisSession')} <span className="font-semibold text-ink">{recordedCount}</span>{t('toolChanges.cases')}
           </span>
         )}
       </header>
@@ -393,7 +401,7 @@ export default function NewToolChangePage() {
           />
         )}
 
-        <Field label="설비번호" htmlFor="equipment_number" hint="C001 형식">
+        <Field label={t('toolChanges.equipmentNumber')} htmlFor="equipment_number" hint={t('toolChanges.equipmentNumberHint')}>
           <Input
             id="equipment_number"
             type="text"
@@ -408,44 +416,44 @@ export default function NewToolChangePage() {
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="생산모델" htmlFor="production_model">
+          <Field label={t('toolChanges.productionModel')} htmlFor="production_model">
             <SmartDropdown
-              title="생산모델 선택"
+              title={t('toolChanges.selectProductionModel')}
               options={modelOptions}
               value={form.production_model}
               onChange={(v) => updateField('production_model', v)}
-              placeholder="선택"
+              placeholder={t('toolChanges.selectShort')}
               required
             />
           </Field>
-          <Field label="공정" htmlFor="process">
+          <Field label={t('toolChanges.process')} htmlFor="process">
             <SmartDropdown
-              title="공정 선택"
+              title={t('toolChanges.selectProcess')}
               options={processOptions}
               value={form.process}
               onChange={(v) => updateField('process', v)}
-              placeholder="선택"
+              placeholder={t('toolChanges.selectShort')}
               required
             />
           </Field>
         </div>
 
-        <Field label="T번호" htmlFor="t_number">
+        <Field label={t('toolChanges.tNumber')} htmlFor="t_number">
           <SmartDropdown
-            title="T번호 선택"
+            title={t('toolChanges.selectTNumber')}
             options={tNumberOptions}
             value={String(form.t_number)}
             onChange={(v) => updateField('t_number', parseInt(v, 10))}
-            placeholder="선택"
+            placeholder={t('toolChanges.selectShort')}
             recentValues={recentTNumbers}
             required
           />
         </Field>
 
         <Field
-          label="엔드밀 코드"
+          label={t('toolChanges.endmillCode')}
           htmlFor="endmill_code"
-          hint={isManualEndmillInput ? '수동 입력 모드' : 'CAM Sheet 자동 입력'}
+          hint={isManualEndmillInput ? t('toolChanges.manualInputMode') : t('toolChanges.camSheetAutoInputHint')}
           action={
             form.production_model && form.process && form.t_number ? (
               <button
@@ -453,7 +461,7 @@ export default function NewToolChangePage() {
                 onClick={() => setIsManualEndmillInput((v) => !v)}
                 className="text-caption font-medium text-gauge-cobalt transition-colors hover:text-gauge-cobalt-strong"
               >
-                {isManualEndmillInput ? '자동 입력' : '수동 입력'}
+                {isManualEndmillInput ? t('toolChanges.autoInputAction') : t('toolChanges.manualInputAction')}
               </button>
             ) : null
           }
@@ -471,7 +479,7 @@ export default function NewToolChangePage() {
           />
         </Field>
 
-        <Field label="엔드밀 이름" htmlFor="endmill_name">
+        <Field label={t('toolChanges.endmillName')} htmlFor="endmill_name">
           <Input
             id="endmill_name"
             type="text"
@@ -485,7 +493,7 @@ export default function NewToolChangePage() {
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="적용 Tool Life" htmlFor="suggested_tool_life" hint="CAM Sheet 기준 (참고)">
+          <Field label={t('toolChanges.appliedToolLifeShort')} htmlFor="suggested_tool_life" hint={t('toolChanges.camSheetReferenceHint')}>
             <Input
               id="suggested_tool_life"
               type="text"
@@ -496,7 +504,7 @@ export default function NewToolChangePage() {
             />
           </Field>
 
-          <Field label="실제 Tool Life" htmlFor="tool_life" hint="회 단위">
+          <Field label={t('toolChanges.actualToolLifeShort')} htmlFor="tool_life" hint={t('toolChanges.timesUnitHint')}>
             <Input
               id="tool_life"
               type="number"
@@ -517,24 +525,24 @@ export default function NewToolChangePage() {
           </Field>
         </div>
 
-        <Field label="교체 사유" htmlFor="change_reason">
+        <Field label={t('toolChanges.changeReasonLabel')} htmlFor="change_reason">
           <SmartDropdown
-            title="교체 사유 선택"
+            title={t('toolChanges.selectReplaceReason')}
             options={reasonOptions}
             value={form.change_reason}
             onChange={(v) => updateField('change_reason', v)}
-            placeholder="선택"
+            placeholder={t('toolChanges.selectShort')}
             required
           />
         </Field>
 
-        <Field label="작업자" htmlFor="changed_by">
+        <Field label={t('toolChanges.workerLabel')} htmlFor="changed_by">
           <SmartDropdown
-            title="작업자 선택"
+            title={t('toolChanges.selectWorker')}
             options={userOptions}
             value={form.changed_by}
             onChange={(v) => updateField('changed_by', v)}
-            placeholder="선택"
+            placeholder={t('toolChanges.selectShort')}
             required
           />
         </Field>
@@ -552,7 +560,7 @@ export default function NewToolChangePage() {
             onClick={() => router.push('/dashboard/tool-changes')}
             className="flex-1"
           >
-            취소
+            {t('toolChanges.cancel')}
           </Button>
           <Button
             type="button"
@@ -566,7 +574,7 @@ export default function NewToolChangePage() {
             ) : (
               <>
                 <Check className="mr-2 h-5 w-5" />
-                <NoBreak>기록</NoBreak>
+                <NoBreak>{t('toolChanges.recordButton')}</NoBreak>
               </>
             )}
           </Button>
