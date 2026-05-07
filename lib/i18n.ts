@@ -1627,6 +1627,23 @@ const resources = {
         loadError: '폐기 데이터를 불러오는데 실패했습니다.',
         loading: '로딩 중...',
         recordsCount: '건',
+
+        // 페이지네이션
+        previous: '이전',
+        next: '다음',
+        page: '페이지',
+        showing: '총',
+        of: '건 중',
+        displayed: '건 표시',
+
+        // 일별 트렌드 차트
+        dailyTrend: '일별 폐기 수량',
+        dailyTrendCaption: '선택 기간의 일자별 분포',
+        peakDay: '최고치',
+        noTrendData: '표시할 트렌드 데이터가 없습니다',
+
+        // 카드 보조
+        thumbnailAlt: '폐기 이미지 미리보기',
       },
 
       // 설정
@@ -3453,6 +3470,23 @@ const resources = {
         loadError: 'Không thể tải dữ liệu thanh lý.',
         loading: 'Đang tải...',
         recordsCount: 'bản ghi',
+
+        // 페이지네이션
+        previous: 'Trước',
+        next: 'Sau',
+        page: 'Trang',
+        showing: 'Tổng',
+        of: 'bản ghi trong số',
+        displayed: 'bản ghi hiển thị',
+
+        // 일별 트렌드 차트
+        dailyTrend: 'Số lượng thanh lý hàng ngày',
+        dailyTrendCaption: 'Phân bố theo ngày trong khoảng thời gian đã chọn',
+        peakDay: 'Cao nhất',
+        noTrendData: 'Không có dữ liệu xu hướng để hiển thị',
+
+        // 카드 보조
+        thumbnailAlt: 'Xem trước hình ảnh thanh lý',
       },
 
       // 설정
