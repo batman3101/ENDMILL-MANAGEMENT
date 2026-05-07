@@ -99,11 +99,11 @@ export default function CostAnalysisView({ data }: CostAnalysisViewProps) {
   const getTrendDisplay = (trend: string) => {
     switch (trend) {
       case 'increasing':
-        return { icon: '📈', text: '증가 추세', color: 'text-signal-stop-strong bg-red-50' }
+        return { icon: '📈', text: '증가 추세', color: 'text-signal-stop-strong bg-paper-warm' }
       case 'decreasing':
-        return { icon: '📉', text: '감소 추세', color: 'text-signal-go-strong bg-green-50' }
+        return { icon: '📉', text: '감소 추세', color: 'text-signal-go-strong bg-paper-warm' }
       default:
-        return { icon: '➡️', text: '안정적', color: 'text-gauge-cobalt-strong bg-blue-50' }
+        return { icon: '➡️', text: '안정적', color: 'text-gauge-cobalt-strong bg-paper-warm' }
     }
   }
 
@@ -121,15 +121,15 @@ export default function CostAnalysisView({ data }: CostAnalysisViewProps) {
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-md p-6 border border-blue-200">
+        <div className="bg-paper-warm rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gauge-cobalt-strong">총 비용</span>
             <span className="text-2xl">💰</span>
           </div>
-          <div className="text-3xl font-bold text-blue-900">
+          <div className="text-3xl font-bold text-gauge-cobalt-strong">
             {formatCurrency(summary.totalCost)}
           </div>
-          <div className="text-sm text-blue-700 mt-1">
+          <div className="text-sm text-gauge-cobalt-strong mt-1">
             교체당 평균: {formatCurrency(summary.averageCostPerChange)}
           </div>
         </div>
@@ -147,22 +147,22 @@ export default function CostAnalysisView({ data }: CostAnalysisViewProps) {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-md p-6 border border-green-200">
+        <div className="bg-paper-warm rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-signal-go-strong">기간별 분석</span>
             <span className="text-2xl">📊</span>
           </div>
-          <div className="text-2xl font-bold text-green-900">
+          <div className="text-2xl font-bold text-signal-go-strong">
             {costByPeriod.length} 기간
           </div>
-          <div className="text-sm text-green-700 mt-1">
+          <div className="text-sm text-signal-go-strong mt-1">
             총 {costByPeriod.reduce((sum, p) => sum + p.changeCount, 0)}건 교체
           </div>
         </div>
       </div>
 
       {/* 기간별 비용 */}
-      <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+      <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b bg-paper">
           <h3 className="text-lg font-semibold text-ink">기간별 비용 분석</h3>
         </div>
@@ -233,7 +233,7 @@ export default function CostAnalysisView({ data }: CostAnalysisViewProps) {
       {/* 모델별 & 카테고리별 비용 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 모델별 비용 */}
-        <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+        <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
           <div className="px-6 py-4 border-b bg-paper">
             <h3 className="text-lg font-semibold text-ink">모델별 비용</h3>
           </div>
@@ -270,7 +270,7 @@ export default function CostAnalysisView({ data }: CostAnalysisViewProps) {
         </div>
 
         {/* 카테고리별 비용 */}
-        <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+        <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
           <div className="px-6 py-4 border-b bg-paper">
             <h3 className="text-lg font-semibold text-ink">카테고리별 비용</h3>
           </div>
@@ -308,7 +308,7 @@ export default function CostAnalysisView({ data }: CostAnalysisViewProps) {
       </div>
 
       {/* 비용 효율성 분석 */}
-      <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+      <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b bg-paper">
           <h3 className="text-lg font-semibold text-ink">공구별 비용 효율성</h3>
           <p className="text-sm text-ink-soft mt-1">수명당 비용 기준 정렬 (낮을수록 효율적)</p>

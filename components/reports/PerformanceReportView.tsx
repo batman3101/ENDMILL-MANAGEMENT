@@ -111,49 +111,48 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
     </span>
   )
 
-  // 효율성 점수 색상
+  // 효율성 점수 색상 (4단계 → 3단계, signal 토큰 시스템 정합)
   const getEfficiencyColor = (score: number) => {
     if (score >= 90) return 'text-signal-go-strong bg-signal-go-soft'
     if (score >= 80) return 'text-gauge-cobalt-strong bg-gauge-cobalt-soft'
-    if (score >= 70) return 'text-signal-watch-strong bg-signal-watch-soft'
-    if (score >= 60) return 'text-signal-watch-strong bg-signal-watch-soft'
+    if (score >= 65) return 'text-signal-watch-strong bg-signal-watch-soft'
     return 'text-signal-stop-strong bg-signal-stop-soft'
   }
 
-  // 랭킹 배지 색상
+  // 랭킹 배지 색상 (gauge-cobalt 강도 단계로 1·2·3등 표현)
   const getRankingColor = (ranking: number) => {
-    if (ranking === 1) return 'bg-yellow-500 text-white'
-    if (ranking === 2) return 'bg-gray-400 text-white'
-    if (ranking === 3) return 'bg-amber-600 text-white'
-    return 'bg-gray-200 text-ink-soft'
+    if (ranking === 1) return 'bg-gauge-cobalt text-paper'
+    if (ranking === 2) return 'bg-gauge-cobalt-strong text-paper'
+    if (ranking === 3) return 'bg-gauge-cobalt-soft text-gauge-cobalt-strong'
+    return 'bg-paper-warm text-ink-soft'
   }
 
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-md p-6 border border-blue-200">
+        <div className="bg-paper-warm rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gauge-cobalt-strong">총 설비 수</span>
             <span className="text-2xl">🏭</span>
           </div>
-          <div className="text-3xl font-bold text-blue-900">
+          <div className="text-3xl font-bold text-gauge-cobalt-strong">
             {summary.totalEquipment}대
           </div>
-          <div className="text-sm text-blue-700 mt-1">
+          <div className="text-sm text-gauge-cobalt-strong mt-1">
             설비당 평균 {summary.averageChangesPerEquipment}건 교체
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-md p-6 border border-green-200">
+        <div className="bg-paper-warm rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-signal-go-strong">전체 효율성</span>
             <span className="text-2xl">📊</span>
           </div>
-          <div className="text-3xl font-bold text-green-900">
+          <div className="text-3xl font-bold text-signal-go-strong">
             {summary.overallEfficiency.toFixed(1)}%
           </div>
-          <div className="text-sm text-green-700 mt-1">
+          <div className="text-sm text-signal-go-strong mt-1">
             평균 표준 수명 달성률
           </div>
         </div>
@@ -186,7 +185,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       </div>
 
       {/* 설비별 성능 분석 */}
-      <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+      <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b bg-paper">
           <h3 className="text-lg font-semibold text-ink">설비별 성능 분석</h3>
           <p className="text-sm text-ink-soft mt-1">효율성 점수 기준 정렬</p>
@@ -342,7 +341,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       {/* 모델별 & 위치별 비교 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 모델별 비교 */}
-        <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+        <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
           <div className="px-6 py-4 border-b bg-paper">
             <h3 className="text-lg font-semibold text-ink">모델별 비교</h3>
           </div>
@@ -413,7 +412,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
         </div>
 
         {/* 위치별 비교 */}
-        <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+        <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
           <div className="px-6 py-4 border-b bg-paper">
             <h3 className="text-lg font-semibold text-ink">위치별 비교</h3>
           </div>
@@ -485,7 +484,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       </div>
 
       {/* 공정별 효율성 */}
-      <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+      <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b bg-paper">
           <h3 className="text-lg font-semibold text-ink">공정별 효율성 분석</h3>
         </div>
@@ -568,7 +567,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       </div>
 
       {/* 시간별 분석 */}
-      <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+      <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b bg-paper">
           <h3 className="text-lg font-semibold text-ink">시간별 성능 추이</h3>
         </div>
@@ -651,14 +650,14 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       </div>
 
       {/* 개선 권장사항 */}
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-6">
+      <div className="bg-paper-warm border border-divider rounded-md p-6">
         <div className="flex">
           <div className="flex-shrink-0">
             <span className="text-blue-400 text-2xl">💡</span>
           </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-gauge-cobalt-strong">성능 개선 권장사항</h3>
-            <div className="mt-2 text-sm text-blue-700">
+            <div className="mt-2 text-sm text-gauge-cobalt-strong">
               <ul className="list-disc list-inside space-y-1">
                 {summary.overallEfficiency < 70 && (
                   <li>전체 효율성이 {summary.overallEfficiency.toFixed(1)}%로 낮습니다. 전반적인 공구 관리 프로세스를 개선하세요.</li>

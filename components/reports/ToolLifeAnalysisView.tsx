@@ -105,12 +105,11 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
     </span>
   )
 
-  // 달성률 색상
+  // 달성률 색상 (3단계로 통합 — DESIGN.md signal 토큰 시스템 정합)
   const getAchievementColor = (rate: number) => {
     if (rate >= 100) return 'text-signal-go-strong bg-signal-go-soft'
     if (rate >= 80) return 'text-gauge-cobalt-strong bg-gauge-cobalt-soft'
-    if (rate >= 60) return 'text-signal-watch-strong bg-signal-watch-soft'
-    if (rate >= 40) return 'text-signal-watch-strong bg-signal-watch-soft'
+    if (rate >= 50) return 'text-signal-watch-strong bg-signal-watch-soft'
     return 'text-signal-stop-strong bg-signal-stop-soft'
   }
 
@@ -118,41 +117,41 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-md p-6 border border-blue-200">
+        <div className="bg-paper-warm rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gauge-cobalt-strong">평균 수명</span>
             <span className="text-2xl">⏱️</span>
           </div>
-          <div className="text-3xl font-bold text-blue-900">
+          <div className="text-3xl font-bold text-gauge-cobalt-strong">
             {summary.averageLife.toLocaleString()}
           </div>
-          <div className="text-sm text-blue-700 mt-1">
+          <div className="text-sm text-gauge-cobalt-strong mt-1">
             총 {summary.totalChanges}건 교체
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-md p-6 border border-green-200">
+        <div className="bg-paper-warm rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-signal-go-strong">표준 수명 달성률</span>
             <span className="text-2xl">📊</span>
           </div>
-          <div className="text-3xl font-bold text-green-900">
+          <div className="text-3xl font-bold text-signal-go-strong">
             {summary.standardLifeAchievement.toFixed(1)}%
           </div>
-          <div className="text-sm text-green-700 mt-1">
+          <div className="text-sm text-signal-go-strong mt-1">
             전체 평균 달성률
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-md p-6 border border-red-200">
+        <div className="bg-paper-warm rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-signal-stop-strong">조기 파손</span>
             <span className="text-2xl">⚠️</span>
           </div>
-          <div className="text-3xl font-bold text-red-900">
+          <div className="text-3xl font-bold text-signal-stop-strong">
             {summary.prematureFailures}건
           </div>
-          <div className="text-sm text-red-700 mt-1">
+          <div className="text-sm text-signal-stop-strong mt-1">
             표준 수명 50% 미만
           </div>
         </div>
@@ -176,7 +175,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
       </div>
 
       {/* 공구별 수명 분석 */}
-      <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+      <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b bg-paper">
           <h3 className="text-lg font-semibold text-ink">공구별 수명 분석</h3>
           <p className="text-sm text-ink-soft mt-1">표준 수명 달성률 기준 정렬</p>
@@ -289,7 +288,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
       {/* 교체 사유별 & 수명 분포 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 교체 사유별 수명 */}
-        <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+        <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
           <div className="px-6 py-4 border-b bg-paper">
             <h3 className="text-lg font-semibold text-ink">교체 사유별 평균 수명</h3>
           </div>
@@ -322,7 +321,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
         </div>
 
         {/* 수명 분포 */}
-        <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+        <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
           <div className="px-6 py-4 border-b bg-paper">
             <h3 className="text-lg font-semibold text-ink">수명 분포</h3>
           </div>
@@ -353,7 +352,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
       </div>
 
       {/* 시간별 수명 트렌드 */}
-      <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
+      <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b bg-paper">
           <h3 className="text-lg font-semibold text-ink">시간별 수명 트렌드</h3>
         </div>
@@ -411,10 +410,10 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
 
       {/* 조기 파손 분석 */}
       {prematureFailureAnalysis.length > 0 && (
-        <div className="rounded-md border border-divider bg-paper-warm border-divider overflow-hidden">
-          <div className="px-6 py-4 border-b bg-red-50">
-            <h3 className="text-lg font-semibold text-red-900">조기 파손 분석</h3>
-            <p className="text-sm text-red-700 mt-1">표준 수명의 50% 미만으로 교체된 공구</p>
+        <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
+          <div className="px-6 py-4 border-b bg-paper-warm">
+            <h3 className="text-lg font-semibold text-signal-stop-strong">조기 파손 분석</h3>
+            <p className="text-sm text-signal-stop-strong mt-1">표준 수명의 50% 미만으로 교체된 공구</p>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-divider">
@@ -511,14 +510,14 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
       )}
 
       {/* 권장사항 */}
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-6">
+      <div className="bg-paper-warm border border-divider rounded-md p-6">
         <div className="flex">
           <div className="flex-shrink-0">
             <span className="text-blue-400 text-2xl">💡</span>
           </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-gauge-cobalt-strong">개선 권장사항</h3>
-            <div className="mt-2 text-sm text-blue-700">
+            <div className="mt-2 text-sm text-gauge-cobalt-strong">
               <ul className="list-disc list-inside space-y-1">
                 {summary.prematureFailures > 0 && (
                   <li>조기 파손이 {summary.prematureFailures}건 발생했습니다. 가공 조건 및 공구 품질을 검토하세요.</li>
