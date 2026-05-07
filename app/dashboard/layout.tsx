@@ -31,6 +31,7 @@ import Breadcrumb from '../../components/shared/Breadcrumb'
 import { MobileBottomNav } from '../../components/mobile'
 import { clientLogger } from '@/lib/utils/logger'
 import { FactorySelector } from '@/components/shared/FactorySelector'
+import { LanguageSelector } from '@/components/shared/LanguageSelector'
 
 interface MenuItem {
   href: string
@@ -225,8 +226,6 @@ export default function DashboardLayout({
   })
 
   const activeItem = menuItems.find(item => item.active)
-  const isDetailPage = !!pathname.match(/\/dashboard\/[^\/]+\/[^\/]+/)
-  const isAiInsights = pathname.startsWith('/dashboard/ai-insights')
 
   return (
     <div className="min-h-screen bg-paper">
@@ -256,20 +255,18 @@ export default function DashboardLayout({
           <div className="flex items-center justify-between h-16 px-4 border-b border-paper/10 flex-shrink-0">
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 min-w-0 transition-opacity hover:opacity-90"
+              className="flex items-center gap-2.5 min-w-0 transition-opacity hover:opacity-90"
             >
-              <div className="w-9 h-9 bg-paper rounded-md flex items-center justify-center p-0.5 flex-shrink-0">
-                <Image
-                  src="/icons/endmill-sm.webp"
-                  alt={t('auth.loginTitle')}
-                  width={32}
-                  height={32}
-                  priority
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <span className="text-base font-semibold text-paper truncate">
-                CNC ENDMILL
+              <Image
+                src="/icons/endmill-sm.webp"
+                alt={t('auth.loginTitle')}
+                width={36}
+                height={36}
+                priority
+                className="h-9 w-9 flex-shrink-0 object-contain"
+              />
+              <span className="text-base font-semibold text-paper truncate no-break">
+                CNC ENDMILL MANAGER
               </span>
             </Link>
             <button
@@ -346,33 +343,14 @@ export default function DashboardLayout({
               </div>
 
               <div className="flex items-center gap-1 sm:gap-2">
-                {/* 언어 토글 */}
-                <div className="hidden sm:flex items-center gap-0.5 rounded-sm border border-divider p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => handleLanguageChange('ko')}
-                    className={
-                      currentLanguage === 'ko'
-                        ? 'h-9 px-2.5 rounded-sm text-caption font-medium bg-gauge-cobalt text-paper transition-colors'
-                        : 'h-9 px-2.5 rounded-sm text-caption font-medium text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink'
-                    }
-                  >
-                    KR
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleLanguageChange('vi')}
-                    className={
-                      currentLanguage === 'vi'
-                        ? 'h-9 px-2.5 rounded-sm text-caption font-medium bg-gauge-cobalt text-paper transition-colors'
-                        : 'h-9 px-2.5 rounded-sm text-caption font-medium text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink'
-                    }
-                  >
-                    VN
-                  </button>
-                </div>
+                {/* 언어 드롭다운 */}
+                <LanguageSelector
+                  currentLanguage={currentLanguage}
+                  onChange={handleLanguageChange}
+                />
 
-                <FactorySelector compact showLabel={false} />
+                {/* 공장 드롭다운 */}
+                <FactorySelector compact showLabel={true} />
 
                 {/* 시계 */}
                 <div className="hidden md:flex items-center gap-1.5 rounded-sm border border-divider px-2 h-10">
@@ -453,25 +431,11 @@ export default function DashboardLayout({
             </div>
           </header>
 
-          {/* 메인 콘텐츠 */}
+          {/* 메인 콘텐츠 — 페이지 제목은 헤더(sticky)에 위임, 본문은 즉시 데이터 진입 */}
           <main className="flex-1 p-4 md:p-6 pb-20 lg:pb-6 overflow-x-hidden">
             <div className="hidden md:block">
               <Breadcrumb />
             </div>
-
-            {!isDetailPage && !isAiInsights && (
-              <div className="mb-4 md:mb-6">
-                <h2 className="text-headline font-semibold text-ink no-break">
-                  {activeItem ? t(activeItem.labelKey) : t('navigation.dashboard')}
-                </h2>
-                {activeItem && (
-                  <p className="mt-1 text-base text-ink-soft">
-                    {t(activeItem.descriptionKey)}
-                  </p>
-                )}
-              </div>
-            )}
-
             <div>{children}</div>
           </main>
         </div>
