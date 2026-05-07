@@ -114,17 +114,17 @@ export default function DashboardPage() {
             {[...Array(4)].map((_, i) => (
               <div key={i} className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider animate-pulse">
                 <div className="flex items-center justify-between mb-6">
-                  <div className="h-5 bg-paper-warm rounded w-24"></div>
-                  <div className="h-4 bg-paper-warm rounded w-12"></div>
+                  <div className="h-5 bg-divider rounded w-24"></div>
+                  <div className="h-4 bg-divider rounded w-12"></div>
                 </div>
                 <div className="flex items-center justify-center">
-                  <div className="w-32 h-32 bg-paper-warm rounded-full"></div>
+                  <div className="w-32 h-32 bg-divider rounded-full"></div>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   {[...Array(3)].map((_, j) => (
                     <div key={j} className="text-center">
-                      <div className="h-3 bg-paper-warm rounded mb-1 w-8 mx-auto"></div>
-                      <div className="h-4 bg-paper-warm rounded w-10 mx-auto"></div>
+                      <div className="h-3 bg-divider rounded mb-1 w-8 mx-auto"></div>
+                      <div className="h-4 bg-divider rounded w-10 mx-auto"></div>
                     </div>
                   ))}
                 </div>
@@ -224,13 +224,13 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-caption text-ink-mute">{t('equipment.maintenance')}</p>
-              <p className="text-base font-semibold text-amber-600 tabular-nums">
+              <p className="text-base font-semibold text-signal-watch-strong tabular-nums">
                 {data?.equipment?.maintenance || 0}{t('dashboard.equipmentCount')}
               </p>
             </div>
             <div>
               <p className="text-caption text-ink-mute">{t('equipment.setup')}</p>
-              <p className="text-base font-semibold text-purple-600 tabular-nums">
+              <p className="text-base font-semibold text-ink-soft tabular-nums">
                 {data?.equipment?.setup || 0}{t('dashboard.equipmentCount')}
               </p>
             </div>
@@ -278,9 +278,9 @@ export default function DashboardPage() {
           </div>
           {isLoading ? (
             <div className="animate-pulse">
-              <div className="h-4 bg-paper-warm rounded mb-2"></div>
-              <div className="h-8 bg-paper-warm rounded mb-2"></div>
-              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-divider rounded mb-2"></div>
+              <div className="h-8 bg-divider rounded mb-2"></div>
+              <div className="h-4 bg-divider rounded"></div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -324,9 +324,9 @@ export default function DashboardPage() {
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-paper-warm rounded"></div>
-              <div className="h-4 bg-paper-warm rounded"></div>
-              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
             </div>
           ) : (data?.frequencyAnalysis || []).length > 0 ? (
             <div className="space-y-2">
@@ -361,9 +361,9 @@ export default function DashboardPage() {
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-paper-warm rounded"></div>
-              <div className="h-4 bg-paper-warm rounded"></div>
-              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
             </div>
           ) : (data?.topBrokenEndmills || []).length > 0 ? (
             <div className="space-y-3">
@@ -392,9 +392,9 @@ export default function DashboardPage() {
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-paper-warm rounded"></div>
-              <div className="h-4 bg-paper-warm rounded"></div>
-              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
             </div>
           ) : (data?.modelCostAnalysis || []).length > 0 ? (
             <div className="space-y-2">
@@ -449,9 +449,9 @@ export default function DashboardPage() {
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-paper-warm rounded"></div>
-              <div className="h-4 bg-paper-warm rounded"></div>
-              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
             </div>
           ) : (data?.endmillByEquipmentCount || []).length > 0 ? (
             <div className="space-y-2">
@@ -485,9 +485,9 @@ export default function DashboardPage() {
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-paper-warm rounded"></div>
-              <div className="h-4 bg-paper-warm rounded"></div>
-              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
             </div>
           ) : (data?.modelEndmillUsage || []).length > 0 ? (
             <div className="space-y-2">
@@ -525,9 +525,9 @@ export default function DashboardPage() {
           </div>
           {isLoading ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-paper-warm rounded"></div>
-              <div className="h-4 bg-paper-warm rounded"></div>
-              <div className="h-4 bg-paper-warm rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
+              <div className="h-4 bg-divider rounded"></div>
             </div>
           ) : (data?.equipmentLifeConsumption || []).length > 0 ? (
             <div className="space-y-2">
