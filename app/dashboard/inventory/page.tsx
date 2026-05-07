@@ -334,6 +334,14 @@ export default function InventoryPage() {
   const endIndex = startIndex + itemsPerPage
   const currentData = flattenedData.slice(startIndex, endIndex)
 
+  // currentPage clamp — 필터 적용 또는 항목 삭제로 totalPages가 줄어든 경우
+  // 모바일 카드 뷰가 빈 화면을 보이지 않도록 마지막 유효 페이지로 이동
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [totalPages, currentPage])
+
   const getStatusText = (status: 'sufficient' | 'low' | 'critical') => {
     switch (status) {
       case 'sufficient': return t('inventory.sufficient')
