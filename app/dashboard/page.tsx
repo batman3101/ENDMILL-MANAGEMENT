@@ -19,8 +19,10 @@ export default function DashboardPage() {
   const { t } = useTranslation()
   // 권한 확인
   const { canAccessPage } = usePermissions()
-  const { getSetting } = useSettings()
-  const { data, isLoading, error, refreshData, lastRefresh } = useDashboard() // 기본값 300초(5분) 사용 - Disk IO 절감
+  const { settings, getSetting } = useSettings()
+  // 사용자가 설정 페이지에서 조정한 새로고침 주기(초) → useDashboard는 ms 단위
+  const refreshIntervalMs = (settings.ui?.dashboard?.refreshInterval ?? 300) * 1000
+  const { data, isLoading, error, refreshData, lastRefresh } = useDashboard(refreshIntervalMs)
 
   // 실시간 연동 설정 (throttled refresh)
   // const [realtimeData, setRealtimeData] = useState<any>(null) // 미사용 (향후 사용 예정)
