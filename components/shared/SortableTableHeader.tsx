@@ -23,7 +23,7 @@ export default function SortableTableHeader({
 
   return (
     <th
-      className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 ${className}`}
+      className={`px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase tracking-wider cursor-pointer transition-colors hover:bg-paper-warm hover:text-ink ${className}`}
       onClick={() => onSort(field)}
     >
       <div className="flex items-center">

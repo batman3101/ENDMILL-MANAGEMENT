@@ -33,6 +33,7 @@ import { MobileBottomNav } from '../../components/mobile'
 import { clientLogger } from '@/lib/utils/logger'
 import { FactorySelector } from '@/components/shared/FactorySelector'
 import { LanguageSelector } from '@/components/shared/LanguageSelector'
+import { ThemeToggle } from '@/components/shared/ThemeToggle'
 import { useIdleTimeout } from '@/lib/hooks/useIdleTimeout'
 
 interface MenuItem {
@@ -441,6 +442,9 @@ export default function DashboardLayout({
               </div>
 
               <div className="flex items-center gap-1 sm:gap-2">
+                {/* 테마 토글 (라이트/다크/시스템) */}
+                <ThemeToggle />
+
                 {/* 언어 드롭다운 */}
                 <LanguageSelector
                   currentLanguage={currentLanguage}

@@ -170,33 +170,33 @@ export default function ToolChangesPage() {
   const getReasonBadge = (reason: string) => {
     switch (reason) {
       case '정기교체':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-gauge-cobalt-soft text-gauge-cobalt-strong'
       case '파손':
-        return 'bg-red-100 text-red-800'
+        return 'bg-signal-stop-soft text-signal-stop-strong'
       case '마모':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-signal-watch-soft text-signal-watch-strong'
       case '모델변경':
-        return 'bg-purple-100 text-purple-800'
+        return 'bg-gauge-cobalt-soft text-gauge-cobalt-strong'
       case '품질불량':
-        return 'bg-orange-100 text-orange-800'
+        return 'bg-signal-watch-soft text-signal-watch-strong'
       case '기타':
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-paper-warm text-ink-soft'
       // Legacy support for old reason names
       case 'Tool Life 종료':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-gauge-cobalt-soft text-gauge-cobalt-strong'
       case '모델 변경':
-        return 'bg-purple-100 text-purple-800'
+        return 'bg-gauge-cobalt-soft text-gauge-cobalt-strong'
       case '예방':
-        return 'bg-green-100 text-green-800'
+        return 'bg-signal-go-soft text-signal-go-strong'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-paper-warm text-ink-soft'
     }
   }
 
   const getToolLifeStatus = (toolLife: number) => {
-    if (toolLife < 1000) return { color: 'text-red-600', status: t('toolChanges.toolLifeShort') }
-    if (toolLife < 2000) return { color: 'text-yellow-600', status: t('toolChanges.toolLifeNormal') }
-    return { color: 'text-green-600', status: t('toolChanges.toolLifeGood') }
+    if (toolLife < 1000) return { color: 'text-signal-stop-strong', status: t('toolChanges.toolLifeShort') }
+    if (toolLife < 2000) return { color: 'text-signal-watch-strong', status: t('toolChanges.toolLifeNormal') }
+    return { color: 'text-signal-go-strong', status: t('toolChanges.toolLifeGood') }
   }
 
   // 수정 모달 열기
@@ -392,14 +392,14 @@ export default function ToolChangesPage() {
     <div className="space-y-6">
       {/* 통계 카드 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-lg shadow-sm border border-divider p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-gauge-cobalt-soft rounded-lg flex items-center justify-center mr-3">
               🔄
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">{t('toolChanges.todayChanges')}</p>
-              <p className="text-xl font-bold text-blue-600">
+              <p className="text-xs font-medium text-ink-soft">{t('toolChanges.todayChanges')}</p>
+              <p className="text-xl font-bold text-gauge-cobalt-strong">
                 {isStatsLoading ? (
                   <span className="text-sm">...</span>
                 ) : (
@@ -410,14 +410,14 @@ export default function ToolChangesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-lg shadow-sm border border-divider p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-signal-go-soft rounded-lg flex items-center justify-center mr-3">
               ⏱️
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">{t('toolChanges.regularReplacement')}</p>
-              <p className="text-xl font-bold text-green-600">
+              <p className="text-xs font-medium text-ink-soft">{t('toolChanges.regularReplacement')}</p>
+              <p className="text-xl font-bold text-signal-go-strong">
                 {isStatsLoading ? (
                   <span className="text-sm">...</span>
                 ) : (
@@ -428,14 +428,14 @@ export default function ToolChangesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-lg shadow-sm border border-divider p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-signal-stop-soft rounded-lg flex items-center justify-center mr-3">
               💥
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">{t('toolChanges.broken')}</p>
-              <p className="text-xl font-bold text-red-600">
+              <p className="text-xs font-medium text-ink-soft">{t('toolChanges.broken')}</p>
+              <p className="text-xl font-bold text-signal-stop-strong">
                 {isStatsLoading ? (
                   <span className="text-sm">...</span>
                 ) : (
@@ -446,14 +446,14 @@ export default function ToolChangesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-lg shadow-sm border border-divider p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-signal-watch-soft rounded-lg flex items-center justify-center mr-3">
               ⚠️
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">{t('toolChanges.wear')}</p>
-              <p className="text-xl font-bold text-yellow-600">
+              <p className="text-xs font-medium text-ink-soft">{t('toolChanges.wear')}</p>
+              <p className="text-xl font-bold text-signal-watch-strong">
                 {isStatsLoading ? (
                   <span className="text-sm">...</span>
                 ) : (
@@ -464,14 +464,14 @@ export default function ToolChangesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-lg shadow-sm border border-divider p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-gauge-cobalt-soft rounded-lg flex items-center justify-center mr-3">
               🔄
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">{t('toolChanges.modelChange')}</p>
-              <p className="text-xl font-bold text-purple-600">
+              <p className="text-xs font-medium text-ink-soft">{t('toolChanges.modelChange')}</p>
+              <p className="text-xl font-bold text-gauge-cobalt-strong">
                 {isStatsLoading ? (
                   <span className="text-sm">...</span>
                 ) : (
@@ -482,14 +482,14 @@ export default function ToolChangesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-lg shadow-sm border border-divider p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-signal-watch-soft rounded-lg flex items-center justify-center mr-3">
               🛡️
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">{t('toolChanges.qualityDefect')}</p>
-              <p className="text-xl font-bold text-orange-600">
+              <p className="text-xs font-medium text-ink-soft">{t('toolChanges.qualityDefect')}</p>
+              <p className="text-xl font-bold text-signal-watch-strong">
                 {isStatsLoading ? (
                   <span className="text-sm">...</span>
                 ) : (
@@ -500,38 +500,38 @@ export default function ToolChangesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-lg shadow-sm border border-divider p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-gauge-cobalt-soft rounded-lg flex items-center justify-center mr-3">
               🏭
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">{t('toolChanges.topModelToday')}</p>
+              <p className="text-xs font-medium text-ink-soft">{t('toolChanges.topModelToday')}</p>
               {isStatsLoading ? (
-                <p className="text-lg font-bold text-indigo-600">...</p>
+                <p className="text-lg font-bold text-gauge-cobalt-strong">...</p>
               ) : (
                 <>
-                  <p className="text-lg font-bold text-indigo-600">{stats?.topModelToday.name || t('toolChanges.none')}</p>
-                  <p className="text-xs text-gray-500">{stats?.topModelToday.count || 0} {t('toolChanges.cases')}</p>
+                  <p className="text-lg font-bold text-gauge-cobalt-strong">{stats?.topModelToday.name || t('toolChanges.none')}</p>
+                  <p className="text-xs text-ink-mute">{stats?.topModelToday.count || 0} {t('toolChanges.cases')}</p>
                 </>
               )}
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
+        <div className="bg-paper-warm rounded-lg shadow-sm border border-divider p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-signal-go-soft rounded-lg flex items-center justify-center mr-3">
               ⚙️
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-600">{t('toolChanges.topProcessToday')}</p>
+              <p className="text-xs font-medium text-ink-soft">{t('toolChanges.topProcessToday')}</p>
               {isStatsLoading ? (
-                <p className="text-lg font-bold text-teal-600">...</p>
+                <p className="text-lg font-bold text-signal-go-strong">...</p>
               ) : (
                 <>
-                  <p className="text-lg font-bold text-teal-600">{stats?.topProcessToday.name || t('toolChanges.none')}</p>
-                  <p className="text-xs text-gray-500">{stats?.topProcessToday.count || 0} {t('toolChanges.cases')}</p>
+                  <p className="text-lg font-bold text-signal-go-strong">{stats?.topProcessToday.name || t('toolChanges.none')}</p>
+                  <p className="text-xs text-ink-mute">{stats?.topProcessToday.count || 0} {t('toolChanges.cases')}</p>
                 </>
               )}
             </div>
@@ -692,13 +692,13 @@ export default function ToolChangesPage() {
       </div>
 
       {/* 데스크톱 테이블 (md 이상) */}
-      <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200">
-        <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">{t('toolChanges.changeHistoryList')}</h2>
+      <div className="hidden md:block bg-paper-warm rounded-lg shadow-sm border border-divider overflow-hidden hover:shadow-xl transition-all duration-200">
+        <div className="px-6 py-4 border-b border-divider">
+          <h2 className="text-lg font-semibold text-ink">{t('toolChanges.changeHistoryList')}</h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-divider">
+            <thead className="bg-paper">
               <tr>
                 <SortableTableHeader
                   label={t('toolChanges.changeDateTime')}
@@ -735,7 +735,7 @@ export default function ToolChangesPage() {
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase tracking-wider">
                   {t('toolChanges.endmillCode')}
                 </th>
                 <SortableTableHeader
@@ -745,7 +745,7 @@ export default function ToolChangesPage() {
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase tracking-wider">
                   {t('toolChanges.replacedBy')}
                 </th>
                 <SortableTableHeader
@@ -762,48 +762,48 @@ export default function ToolChangesPage() {
                   currentSortOrder={sortDirection}
                   onSort={handleSort}
                 />
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-ink-soft uppercase tracking-wider">
                   {t('toolChanges.actions')}
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-paper-warm divide-y divide-divider">
               {toolChanges.length > 0 ? toolChanges.map((change) => {
                 const toolLifeStatus = getToolLifeStatus(change.tool_life || 0)
                 // Format date properly - change_date is just a date string, not datetime
                 const formattedDateTime = change.created_at ? new Date(change.created_at).toLocaleString('ko-KR') : change.change_date
 
                 return (
-                  <tr key={change.id} className="hover:bg-gray-50">
+                  <tr key={change.id} className="hover:bg-paper transition-colors">
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formattedDateTime}</div>
+                      <div className="text-sm text-ink">{formattedDateTime}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-ink">
                         {change.equipment?.name || (change.equipment_number ? `C${change.equipment_number.toString().padStart(3, '0')}` : '-')}
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{change.production_model || '-'}</div>
+                      <div className="text-sm text-ink">{change.production_model || '-'}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{change.process || '-'}</div>
+                      <div className="text-sm text-ink">{change.process || '-'}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-ink">
                         {change.t_number ? `T${change.t_number.toString().padStart(2, '0')}` : '-'}
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{change.endmill_code || '-'}</div>
+                      <div className="text-sm font-medium text-ink">{change.endmill_code || '-'}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-ink">
                         {change.endmill_name || change.endmill_type?.name || change.endmill_type?.code || '-'}
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{change.user?.name || '-'}</div>
+                      <div className="text-sm text-ink">{change.user?.name || '-'}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getReasonBadge(change.change_reason || change.reason || '')}`}>
@@ -814,22 +814,22 @@ export default function ToolChangesPage() {
                       <div className={`text-sm font-medium ${toolLifeStatus.color}`}>
                         {(change.tool_life || change.old_life_hours || 0).toLocaleString()}
                       </div>
-                      <div className="text-xs text-gray-500">{toolLifeStatus.status}</div>
+                      <div className="text-xs text-ink-mute">{toolLifeStatus.status}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
                       <button
                         onClick={() => handleEdit(change)}
-                        className="text-blue-600 hover:text-blue-800 mr-3"
+                        className="text-gauge-cobalt-strong hover:underline mr-3 transition-colors"
                       >
                         {t('toolChanges.edit')}
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDelete(change)}
-                        className={`${
-                          deletingItemId === change.id 
-                            ? 'text-white bg-red-600 hover:bg-red-700 px-2 py-1 rounded font-medium' 
-                            : 'text-red-600 hover:text-red-800'
-                        }`}
+                        className={
+                          deletingItemId === change.id
+                            ? 'text-paper bg-signal-stop hover:bg-signal-stop-strong px-2 py-1 rounded font-medium transition-colors'
+                            : 'text-signal-stop-strong hover:underline transition-colors'
+                        }
                       >
                         {deletingItemId === change.id ? t('toolChanges.confirmDelete') : t('toolChanges.delete')}
                       </button>
@@ -838,10 +838,10 @@ export default function ToolChangesPage() {
                 )
               }) : (
                 <tr>
-                  <td colSpan={11} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={11} className="px-4 py-8 text-center text-ink-soft">
                     {isLoading ? (
                       <div className="flex items-center justify-center">
-                        <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mr-2"></div>
+                        <div className="w-6 h-6 border-2 border-divider border-t-gauge-cobalt rounded-full animate-spin mr-2"></div>
                         {t('toolChanges.loadingData')}
                       </div>
                     ) : (
@@ -856,9 +856,9 @@ export default function ToolChangesPage() {
 
         {/* 페이지네이션 */}
         {toolChanges.length > 0 && (
-          <div className="px-6 py-4 border-t bg-gray-50">
+          <div className="px-6 py-4 border-t border-divider bg-paper">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
+              <div className="text-sm text-ink-soft">
                 {t('toolChanges.showing', {
                   total: totalCount || toolChanges.length,
                   from: ((currentPage - 1) * itemsPerPage) + 1,
@@ -869,7 +869,7 @@ export default function ToolChangesPage() {
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1 || isLoading}
-                  className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-sm font-medium text-ink bg-paper-warm border border-divider rounded-md hover:bg-paper transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {t('toolChanges.previous')}
                 </button>
@@ -892,10 +892,10 @@ export default function ToolChangesPage() {
                           key={i}
                           onClick={() => setCurrentPage(i)}
                           disabled={isLoading}
-                          className={`px-3 py-1 text-sm font-medium rounded-md ${
+                          className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                             currentPage === i
-                              ? 'bg-blue-600 text-white'
-                              : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                              ? 'bg-gauge-cobalt text-paper'
+                              : 'text-ink bg-paper-warm border border-divider hover:bg-paper'
                           } disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                           {i}
@@ -912,7 +912,7 @@ export default function ToolChangesPage() {
                     return Math.min(prev + 1, totalPages)
                   })}
                   disabled={!hasMore || isLoading}
-                  className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-sm font-medium text-ink bg-paper-warm border border-divider rounded-md hover:bg-paper transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {t('toolChanges.next')}
                 </button>
@@ -927,10 +927,10 @@ export default function ToolChangesPage() {
         <div className="mobile-modal-container" onClick={handleCloseBulkUploadModal}>
           <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-modal-header">
-              <h3 className="text-lg font-medium">{t('toolChanges.bulkUploadTitle')}</h3>
+              <h3 className="text-lg font-medium text-ink">{t('toolChanges.bulkUploadTitle')}</h3>
               <button
                 onClick={handleCloseBulkUploadModal}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                className="p-2 text-ink-mute hover:text-ink hover:bg-paper-warm rounded-full transition-colors"
               >
                 ✕
               </button>
@@ -940,7 +940,7 @@ export default function ToolChangesPage() {
               <div className="mb-6">
                 <button
                   onClick={handleDownloadTemplate}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+                  className="px-4 py-2 bg-gauge-cobalt text-paper rounded-md hover:bg-gauge-cobalt-strong transition-colors flex items-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -951,10 +951,10 @@ export default function ToolChangesPage() {
 
               {/* 파일 업로드 영역 */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-ink mb-2">
                   {t('toolChanges.uploadFile')}
                 </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+                <div className="border-2 border-dashed border-divider rounded-lg p-6 text-center hover:border-gauge-cobalt transition-colors">
                   <input
                     type="file"
                     accept=".xlsx,.xls"
@@ -968,13 +968,13 @@ export default function ToolChangesPage() {
                     className="cursor-pointer"
                   >
                     <div className="flex flex-col items-center">
-                      <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-12 h-12 text-ink-mute mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
-                      <p className="text-sm text-gray-600 mb-1">
+                      <p className="text-sm text-ink-soft mb-1">
                         {excelFile ? excelFile.name : t('toolChanges.dragDropFile')}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-ink-mute">
                         {excelFile ? t('toolChanges.fileSelected') : 'Excel 파일 (.xlsx, .xls)'}
                       </p>
                     </div>
@@ -984,23 +984,23 @@ export default function ToolChangesPage() {
 
               {/* 검증 진행 중 */}
               {isValidating && (
-                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="mb-6 p-4 bg-gauge-cobalt-soft border border-divider rounded-md">
                   <div className="flex items-center">
-                    <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mr-3"></div>
-                    <p className="text-sm text-blue-700">{t('toolChanges.validationInProgress')}</p>
+                    <div className="w-5 h-5 border-2 border-divider border-t-gauge-cobalt rounded-full animate-spin mr-3"></div>
+                    <p className="text-sm text-gauge-cobalt-strong">{t('toolChanges.validationInProgress')}</p>
                   </div>
                 </div>
               )}
 
               {/* 검증 성공 */}
               {isDataValid && excelData.length > 0 && !isValidating && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
+                <div className="mb-6 p-4 bg-signal-go-soft border border-signal-go rounded-md">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-green-800">{t('toolChanges.validationSuccess')}</p>
-                      <p className="text-xs text-green-600 mt-1">{t('toolChanges.readyToInsert', { count: excelData.length })}</p>
+                      <p className="text-sm font-medium text-signal-go-strong">{t('toolChanges.validationSuccess')}</p>
+                      <p className="text-xs text-signal-go-strong/80 mt-1">{t('toolChanges.readyToInsert', { count: excelData.length })}</p>
                     </div>
-                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-signal-go-strong" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
@@ -1010,10 +1010,10 @@ export default function ToolChangesPage() {
               {/* 검증 오류 */}
               {validationErrors.length > 0 && (
                 <div className="mb-6">
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-sm font-medium text-red-800 mb-2">{t('toolChanges.validationFailed')}</p>
+                  <div className="p-4 bg-signal-stop-soft border border-signal-stop rounded-md">
+                    <p className="text-sm font-medium text-signal-stop-strong mb-2">{t('toolChanges.validationFailed')}</p>
                     <div className="max-h-40 overflow-y-auto">
-                      <ul className="text-xs text-red-600 space-y-1">
+                      <ul className="text-xs text-signal-stop-strong/80 space-y-1">
                         {validationErrors.map((error, index) => (
                           <li key={index}>• {error}</li>
                         ))}
@@ -1029,7 +1029,7 @@ export default function ToolChangesPage() {
               <button
                 type="button"
                 onClick={handleCloseBulkUploadModal}
-                className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                className="w-full sm:w-auto px-4 py-2 bg-paper-warm text-ink border border-divider rounded-md hover:bg-paper transition-colors"
                 disabled={isUploading}
               >
                 {t('toolChanges.closeModal')}
@@ -1037,11 +1037,11 @@ export default function ToolChangesPage() {
               <button
                 onClick={handleBulkUpload}
                 disabled={!isDataValid || isUploading || excelData.length === 0}
-                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-4 py-2 bg-signal-go-strong text-paper rounded-md hover:bg-signal-go transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isUploading ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-paper border-t-transparent rounded-full animate-spin"></div>
                     {t('toolChanges.processingUpload')}
                   </>
                 ) : (
