@@ -71,11 +71,11 @@ export function useRealtime({
         } else if (status === 'CHANNEL_ERROR') {
           setIsConnected(false)
           setError(`Failed to subscribe to ${table}`)
-          console.error(`❌ Subscription error for ${table}`)
+          clientLogger.error(`❌ Subscription error for ${table}`)
         } else if (status === 'TIMED_OUT') {
           setIsConnected(false)
           setError(`Connection timed out for ${table}`)
-          console.error(`⏰ Subscription timeout for ${table}`)
+          clientLogger.error(`⏰ Subscription timeout for ${table}`)
         } else if (status === 'CLOSED') {
           setIsConnected(false)
           clientLogger.log(`🔌 Subscription closed for ${table}`)
