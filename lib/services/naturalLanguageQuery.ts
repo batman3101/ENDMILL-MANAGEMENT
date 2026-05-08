@@ -16,6 +16,7 @@ import { getGeminiService } from './geminiService'
 import { getCachedSchemaContext } from '@/lib/utils/schemaContext'
 import { validateSQL, getSafetyScore, sanitizeSQL } from '@/lib/utils/sqlValidator'
 import { getCachedQuery, cacheQuery } from '@/lib/utils/queryCache'
+import { logger } from '@/lib/utils/logger'
 
 // 대화 히스토리 아이템 타입
 export interface ChatHistoryItem {
@@ -123,8 +124,8 @@ export async function executeNaturalLanguageQuery(
     try {
       validateSQL(sql)
     } catch (error: any) {
-      console.error('[AI Query] SQL Validation Error:', error.message)
-      console.error('[AI Query] Failed SQL:', sql)
+      logger.error('[AI Query] SQL Validation Error:', error.message)
+      logger.error('[AI Query] Failed SQL:', sql)
       throw new NaturalLanguageQueryError(
         `생성된 SQL이 안전하지 않습니다: ${error.message}`,
         'UNSAFE_SQL',

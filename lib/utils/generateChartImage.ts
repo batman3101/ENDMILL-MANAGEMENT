@@ -2,6 +2,7 @@
  * Generate Chart Image Utility
  * Recharts를 이미지로 변환
  */
+import { logger } from './logger'
 
 /**
  * 차트 요소를 Canvas로 변환하고 PNG 이미지 생성
@@ -49,7 +50,7 @@ export async function generateChartImage(
       img.src = svgDataUrl
     })
   } catch (error: any) {
-    console.error('차트 이미지 생성 오류:', error)
+    logger.error('차트 이미지 생성 오류:', error)
     throw new Error('차트 이미지 생성 중 오류가 발생했습니다.')
   }
 }
@@ -85,7 +86,7 @@ export async function downloadChartImage(
     link.download = fileName
     link.click()
   } catch (error: any) {
-    console.error('차트 다운로드 오류:', error)
+    logger.error('차트 다운로드 오류:', error)
     throw new Error('차트 다운로드 중 오류가 발생했습니다.')
   }
 }

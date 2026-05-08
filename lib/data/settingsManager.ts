@@ -1,12 +1,13 @@
-import { 
-  SystemSettings, 
-  DEFAULT_SETTINGS, 
+import {
+  SystemSettings,
+  DEFAULT_SETTINGS,
   SettingsCategory,
   SettingsHistory,
   SettingsValidationResult,
   SettingsValidationError,
   SettingsValidationWarning
 } from '@/lib/types/settings'
+import { logger } from '@/lib/utils/logger'
 
 const SETTINGS_STORAGE_KEY = 'endmill_system_settings'
 const SETTINGS_HISTORY_KEY = 'endmill_settings_history'
@@ -63,7 +64,7 @@ export class SettingsManager {
       
       return merged
     } catch (error) {
-      console.error('설정 로드 실패:', error)
+      logger.error('설정 로드 실패:', error)
       return DEFAULT_SETTINGS
     }
   }
@@ -97,7 +98,7 @@ export class SettingsManager {
         detail: this.settings 
       }))
     } catch (error) {
-      console.error('설정 저장 실패:', error)
+      logger.error('설정 저장 실패:', error)
     }
   }
 
@@ -111,7 +112,7 @@ export class SettingsManager {
       const stored = localStorage.getItem(SETTINGS_HISTORY_KEY)
       return stored ? JSON.parse(stored) : []
     } catch (error) {
-      console.error('설정 히스토리 로드 실패:', error)
+      logger.error('설정 히스토리 로드 실패:', error)
       return []
     }
   }
@@ -125,7 +126,7 @@ export class SettingsManager {
         localStorage.setItem(SETTINGS_HISTORY_KEY, JSON.stringify(recentHistory))
       }
     } catch (error) {
-      console.error('설정 히스토리 저장 실패:', error)
+      logger.error('설정 히스토리 저장 실패:', error)
     }
   }
 

@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs'
+import { logger } from './logger'
 
 // 엔드밀 엑셀 템플릿 타입 정의 (엔드밀 타입 마스터 데이터)
 // MODEL, PROCESS, TOOL LIFE, T NUMBER는 CAM Sheet에서 관리
@@ -168,7 +169,7 @@ export const downloadEndmillTemplate = async () => {
 
     return { success: true, fileName }
   } catch (error) {
-    console.error('엔드밀 템플릿 다운로드 오류:', error)
+    logger.error('엔드밀 템플릿 다운로드 오류:', error)
     return { success: false, error: '템플릿 다운로드 중 오류가 발생했습니다.' }
   }
 }
@@ -206,7 +207,7 @@ export const validateEndmillExcelData = async (data: any[]) => {
       }
     }
   } catch (error) {
-    console.warn('validation API 호출 실패, 기본값 사용:', error)
+    logger.warn('validation API 호출 실패, 기본값 사용:', error)
   }
 
   // 첫 번째 행의 컬럼 확인

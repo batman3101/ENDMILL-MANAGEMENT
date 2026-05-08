@@ -5,6 +5,7 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { createHash } from 'crypto'
+import { logger } from './logger'
 
 // 캐시 TTL (초) - 환경 변수에서 가져오거나 기본값 300초 (5분)
 const CACHE_TTL_SECONDS =
@@ -56,7 +57,7 @@ export async function getCachedQuery(
     }) as { data: CachedQuery[] | null; error: any }
 
     if (error) {
-      console.error('캐시 조회 오류:', error)
+      logger.error('캐시 조회 오류:', error)
       return null
     }
 
@@ -67,7 +68,7 @@ export async function getCachedQuery(
 
     return data[0]
   } catch (error) {
-    console.error('캐시 조회 중 예외 발생:', error)
+    logger.error('캐시 조회 중 예외 발생:', error)
     return null
   }
 }
@@ -106,13 +107,13 @@ export async function cacheQuery(
     )
 
     if (error) {
-      console.error('캐시 저장 오류:', error)
+      logger.error('캐시 저장 오류:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('캐시 저장 중 예외 발생:', error)
+    logger.error('캐시 저장 중 예외 발생:', error)
     return false
   }
 }
@@ -128,13 +129,13 @@ export async function clearExpiredCache(): Promise<number> {
     const { data, error } = await supabase.rpc('delete_expired_cache') as { data: number | null; error: any }
 
     if (error) {
-      console.error('만료된 캐시 삭제 오류:', error)
+      logger.error('만료된 캐시 삭제 오류:', error)
       return 0
     }
 
     return data || 0
   } catch (error) {
-    console.error('만료된 캐시 삭제 중 예외 발생:', error)
+    logger.error('만료된 캐시 삭제 중 예외 발생:', error)
     return 0
   }
 }
@@ -152,13 +153,13 @@ export async function invalidateCache(question: string): Promise<boolean> {
       .eq('query_hash', queryHash)
 
     if (error) {
-      console.error('캐시 무효화 오류:', error)
+      logger.error('캐시 무효화 오류:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('캐시 무효화 중 예외 발생:', error)
+    logger.error('캐시 무효화 중 예외 발생:', error)
     return false
   }
 }
@@ -172,13 +173,13 @@ export async function clearAllCache(): Promise<boolean> {
     const { error } = await (supabase.from('ai_query_cache') as any).delete().neq('id', '00000000-0000-0000-0000-000000000000') // 모든 레코드 삭제
 
     if (error) {
-      console.error('전체 캐시 삭제 오류:', error)
+      logger.error('전체 캐시 삭제 오류:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('전체 캐시 삭제 중 예외 발생:', error)
+    logger.error('전체 캐시 삭제 중 예외 발생:', error)
     return false
   }
 }
@@ -222,7 +223,7 @@ export async function getCacheStats(): Promise<{
       expiredEntries,
     }
   } catch (error) {
-    console.error('캐시 통계 조회 오류:', error)
+    logger.error('캐시 통계 조회 오류:', error)
     return {
       totalEntries: 0,
       totalHits: 0,

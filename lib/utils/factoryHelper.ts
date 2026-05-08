@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { SupabaseClient } from '@supabase/supabase-js'
+import { logger } from './logger'
 
 /**
  * API 요청에서 factory_id 추출
@@ -27,7 +28,7 @@ export async function getFactoryIdFromRequest(
     const { data: defaultFactoryId } = await supabase.rpc('get_user_default_factory')
     return defaultFactoryId || null
   } catch (error) {
-    console.error('기본 공장 조회 실패:', error)
+    logger.error('기본 공장 조회 실패:', error)
     return null
   }
 }
@@ -45,7 +46,7 @@ export async function verifyFactoryAccess(
     })
     return hasAccess === true
   } catch (error) {
-    console.error('공장 접근 권한 확인 실패:', error)
+    logger.error('공장 접근 권한 확인 실패:', error)
     return false
   }
 }
