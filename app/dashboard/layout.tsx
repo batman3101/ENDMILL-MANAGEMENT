@@ -32,6 +32,7 @@ import { MobileBottomNav } from '../../components/mobile'
 import { clientLogger } from '@/lib/utils/logger'
 import { FactorySelector } from '@/components/shared/FactorySelector'
 import { LanguageSelector } from '@/components/shared/LanguageSelector'
+import { useIdleTimeout } from '@/lib/hooks/useIdleTimeout'
 
 interface MenuItem {
   href: string
@@ -53,6 +54,9 @@ export default function DashboardLayout({
   const { t, currentLanguage, changeLanguage } = useTranslation()
   const { user, signOut, loading } = useAuth()
   const { canAccessPage, isAdmin } = usePermissions()
+  // 자동 로그아웃: settings.system.autoLogout = true 이고
+  // sessionTimeout(분) 동안 무동작 시 자동 signOut
+  useIdleTimeout()
   const [currentTime, setCurrentTime] = useState<string>('')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
