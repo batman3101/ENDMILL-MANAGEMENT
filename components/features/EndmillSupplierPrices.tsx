@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus } from 'lucide-react'
+import { Plus, Lightbulb } from 'lucide-react'
 import { NoBreak } from '@/components/ui/no-break'
 import { useToast } from '../shared/Toast'
 import AddSupplierPriceModal from './AddSupplierPriceModal'
@@ -108,10 +108,10 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
 
   // 품질 등급 색상
   const getQualityColor = (rating: number) => {
-    if (rating >= 9) return 'text-green-600 bg-green-100'
-    if (rating >= 8) return 'text-blue-600 bg-blue-100'
-    if (rating >= 7) return 'text-yellow-600 bg-yellow-100'
-    return 'text-red-600 bg-red-100'
+    if (rating >= 9) return 'text-signal-go-strong bg-signal-go-soft'
+    if (rating >= 8) return 'text-gauge-cobalt-strong bg-gauge-cobalt-soft'
+    if (rating >= 7) return 'text-signal-watch-strong bg-signal-watch-soft'
+    return 'text-signal-stop-strong bg-signal-stop-soft'
   }
 
   // 가격 정보 삭제
@@ -143,8 +143,8 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
   if (loading) {
     return (
       <div className="text-center py-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-2 text-gray-600">{t('endmill.loadingSupplierPrices')}</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gauge-cobalt mx-auto"></div>
+        <p className="mt-2 text-ink-soft">{t('endmill.loadingSupplierPrices')}</p>
       </div>
     )
   }
@@ -154,12 +154,12 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
       {/* 헤더 및 요약 정보 */}
       <div className="flex justify-between items-start">
         <div>
-          <h4 className="text-lg font-semibold text-gray-900">{t('endmill.supplierPricesTitle')}</h4>
+          <h4 className="text-title font-semibold text-ink">{t('endmill.supplierPricesTitle')}</h4>
           {supplierPrices.length > 0 && (
-            <div className="mt-2 text-sm text-gray-600">
-              <span className="mr-4">{t('endmill.lowestPrice')}: <span className="font-medium text-green-600">{min.toLocaleString()} VND</span></span>
-              <span className="mr-4">{t('endmill.highestPrice')}: <span className="font-medium text-red-600">{max.toLocaleString()} VND</span></span>
-              <span>{t('endmill.averagePrice')}: <span className="font-medium text-blue-600">{Math.round(avg).toLocaleString()} VND</span></span>
+            <div className="mt-2 text-label text-ink-soft">
+              <span className="mr-4">{t('endmill.lowestPrice')}: <span className="font-medium text-signal-go-strong">{min.toLocaleString()} VND</span></span>
+              <span className="mr-4">{t('endmill.highestPrice')}: <span className="font-medium text-signal-stop-strong">{max.toLocaleString()} VND</span></span>
+              <span>{t('endmill.averagePrice')}: <span className="font-medium text-gauge-cobalt-strong">{Math.round(avg).toLocaleString()} VND</span></span>
             </div>
           )}
         </div>
@@ -176,32 +176,32 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
       {/* 공급업체별 가격 테이블 */}
       {supplierPrices.length > 0 ? (
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-divider text-label">
+            <thead className="bg-paper-warm">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left font-medium text-ink-soft uppercase tracking-wider">
                   {t('endmill.supplierColumn')}
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left font-medium text-ink-soft uppercase tracking-wider">
                   {t('endmill.unitPriceColumn')}
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left font-medium text-ink-soft uppercase tracking-wider">
                   {t('endmill.qualityRatingColumn')}
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left font-medium text-ink-soft uppercase tracking-wider">
                   {t('endmill.actionsColumn')}
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-paper divide-y divide-divider">
               {supplierPrices.map((price) => (
-                <tr key={price.id} className={`hover:bg-gray-50 ${price.is_preferred ? 'bg-blue-50' : ''}`}>
+                <tr key={price.id} className={`hover:bg-paper-warm ${price.is_preferred ? 'bg-gauge-cobalt-soft' : ''}`}>
                   <td className="px-4 py-3">
                     <div>
-                      <div className="font-medium text-gray-900 flex items-center">
+                      <div className="font-medium text-ink flex items-center">
                         {price.supplier.code || price.supplier.name}
                         {price.is_preferred && (
-                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-sm text-caption font-medium bg-gauge-cobalt-soft text-gauge-cobalt-strong">
                             {t('endmill.preferredSupplier')}
                           </span>
                         )}
@@ -209,15 +209,15 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">
+                    <div className="font-medium text-ink">
                       {price.unit_price.toLocaleString()} VND
                     </div>
                     {price.unit_price === min && (
-                      <span className="text-xs text-green-600 font-medium">{t('endmill.lowestPriceLabel')}</span>
+                      <span className="text-caption text-signal-go-strong font-medium">{t('endmill.lowestPriceLabel')}</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getQualityColor(price.quality_rating || price.supplier.quality_rating)}`}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-caption font-medium ${getQualityColor(price.quality_rating || price.supplier.quality_rating)}`}>
                       {price.quality_rating || price.supplier.quality_rating}/10
                     </span>
                   </td>
@@ -225,13 +225,13 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
                     <div className="flex space-x-2">
                       <button
                         onClick={() => setEditingPrice(price)}
-                        className="text-blue-600 hover:text-blue-800 text-sm"
+                        className="text-gauge-cobalt-strong hover:opacity-80 text-label"
                       >
                         {t('endmill.editAction')}
                       </button>
                       <button
                         onClick={() => handleDeletePrice(price.id)}
-                        className="text-red-600 hover:text-red-800 text-sm"
+                        className="text-signal-stop-strong hover:opacity-80 text-label"
                       >
                         {t('endmill.deleteAction')}
                       </button>
@@ -243,11 +243,11 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
           </table>
         </div>
       ) : (
-        <div className="text-center py-8 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">{t('endmill.noSupplierPrices')}</p>
+        <div className="text-center py-8 bg-paper-warm rounded-md">
+          <p className="text-ink-mute">{t('endmill.noSupplierPrices')}</p>
           <button
             onClick={() => setShowAddForm(true)}
-            className="mt-2 text-blue-600 hover:text-blue-800"
+            className="mt-2 text-gauge-cobalt-strong hover:opacity-80"
           >
             {t('endmill.addFirstPrice')}
           </button>
@@ -256,16 +256,16 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
 
       {/* 추가 정보 */}
       {supplierPrices.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-gauge-cobalt-soft border border-divider rounded-md p-4">
           <div className="flex">
             <div className="flex-shrink-0">
-              <span className="text-blue-400">💡</span>
+              <Lightbulb className="w-5 h-5 text-gauge-cobalt-strong" aria-hidden="true" />
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-800">
+              <h3 className="text-label font-medium text-gauge-cobalt-strong">
                 {t('endmill.purchaseRecommendation')}
               </h3>
-              <div className="mt-2 text-sm text-blue-700">
+              <div className="mt-2 text-label text-gauge-cobalt-strong">
                 <ul className="list-disc list-inside space-y-1">
                   {supplierPrices.filter(p => p.is_preferred).length > 0 && (
                     <li>{t('endmill.preferredSuppliers')}: {supplierPrices.filter(p => p.is_preferred).map(p => p.supplier.code || p.supplier.name).join(', ')}</li>

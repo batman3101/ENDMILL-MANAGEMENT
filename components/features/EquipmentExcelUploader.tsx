@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
+import { X, CheckCircle2, AlertTriangle, XCircle, Download, FolderOpen } from 'lucide-react'
 import {
   parseEquipmentExcel,
   validateEquipmentData,
@@ -173,15 +174,16 @@ export default function EquipmentExcelUploader({
       <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
         {/* 헤더 */}
         <div className="mobile-modal-header">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-title font-semibold text-ink">
             {t('equipment.bulkRegistration')}
           </h3>
           <button
             onClick={onCancel}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+            className="p-2 text-ink-mute hover:text-ink-soft hover:bg-paper-warm rounded-full"
             disabled={isUploading}
+            aria-label="닫기"
           >
-            ✕
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
@@ -191,44 +193,45 @@ export default function EquipmentExcelUploader({
           <div className="mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
+                <div className="w-8 h-8 bg-gauge-cobalt text-paper rounded-full flex items-center justify-center font-semibold">
                   1
                 </div>
-                <span className="ml-2 text-sm font-medium">{t('equipment.templateDownloadStep')}</span>
+                <span className="ml-2 text-label font-medium text-ink">{t('equipment.templateDownloadStep')}</span>
               </div>
               <div className="flex items-center">
-                <div className={`w-8 h-8 ${parsedData.length > 0 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'} rounded-full flex items-center justify-center font-semibold`}>
+                <div className={`w-8 h-8 ${parsedData.length > 0 ? 'bg-gauge-cobalt text-paper' : 'bg-paper-warm text-ink-mute'} rounded-full flex items-center justify-center font-semibold`}>
                   2
                 </div>
-                <span className="ml-2 text-sm font-medium">{t('equipment.fileUploadStep')}</span>
+                <span className="ml-2 text-label font-medium text-ink">{t('equipment.fileUploadStep')}</span>
               </div>
               <div className="flex items-center">
-                <div className={`w-8 h-8 ${uploadResults ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'} rounded-full flex items-center justify-center font-semibold`}>
+                <div className={`w-8 h-8 ${uploadResults ? 'bg-gauge-cobalt text-paper' : 'bg-paper-warm text-ink-mute'} rounded-full flex items-center justify-center font-semibold`}>
                   3
                 </div>
-                <span className="ml-2 text-sm font-medium">{t('equipment.registrationCompleteStep')}</span>
+                <span className="ml-2 text-label font-medium text-ink">{t('equipment.registrationCompleteStep')}</span>
               </div>
             </div>
           </div>
 
           {/* 1. 템플릿 다운로드 */}
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">1. {t('equipment.downloadExcelTemplate')}</h4>
-            <p className="text-sm text-gray-600 mb-3">
+          <div className="mb-6 p-4 bg-gauge-cobalt-soft rounded-md">
+            <h4 className="font-medium text-ink mb-2">1. {t('equipment.downloadExcelTemplate')}</h4>
+            <p className="text-label text-ink-soft mb-3">
               {t('equipment.downloadTemplateDesc')}
             </p>
             <button
               onClick={handleDownloadTemplate}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gauge-cobalt text-paper rounded-md hover:bg-gauge-cobalt-strong min-h-touch"
             >
-              📥 {t('equipment.templateDownloadStep')}
+              <Download className="w-4 h-4" aria-hidden="true" />
+              {t('equipment.templateDownloadStep')}
             </button>
           </div>
 
           {/* 2. 파일 업로드 */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">2. {t('equipment.uploadExcelFile')}</h4>
-            <p className="text-sm text-gray-600 mb-3">
+          <div className="mb-6 p-4 bg-paper-warm rounded-md">
+            <h4 className="font-medium text-ink mb-2">2. {t('equipment.uploadExcelFile')}</h4>
+            <p className="text-label text-ink-soft mb-3">
               {t('equipment.uploadFileDesc')}
             </p>
             <div>
@@ -243,16 +246,17 @@ export default function EquipmentExcelUploader({
               />
               <label
                 htmlFor="equipment-excel-upload"
-                className="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-semibold rounded-md border-0 cursor-pointer hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gauge-cobalt-soft text-gauge-cobalt-strong text-label font-semibold rounded-md border-0 cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                📁 {t('equipment.selectFile')}
+                <FolderOpen className="w-4 h-4" aria-hidden="true" />
+                {t('equipment.selectFile')}
               </label>
               {selectedFileName ? (
-                <span className="ml-3 text-sm text-gray-600">
+                <span className="ml-3 text-label text-ink-soft">
                   {selectedFileName}
                 </span>
               ) : (
-                <span className="ml-3 text-sm text-gray-400">
+                <span className="ml-3 text-label text-ink-mute">
                   {t('equipment.noFileSelected')}
                 </span>
               )}
@@ -261,10 +265,13 @@ export default function EquipmentExcelUploader({
 
           {/* 유효성 검사 오류 */}
           {validationErrors.length > 0 && (
-            <div className="mb-6 p-4 bg-red-50 rounded-lg">
-              <h4 className="font-medium text-red-900 mb-2">❌ {t('equipment.validationFailed')}</h4>
+            <div className="mb-6 p-4 bg-signal-stop-soft rounded-md">
+              <h4 className="font-medium text-signal-stop-strong mb-2 inline-flex items-center gap-2">
+                <XCircle className="w-4 h-4" aria-hidden="true" />
+                {t('equipment.validationFailed')}
+              </h4>
               <div className="max-h-40 overflow-y-auto">
-                <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
+                <ul className="list-disc list-inside text-label text-signal-stop-strong space-y-1">
                   {validationErrors.map((error, index) => (
                     <li key={index}>{error}</li>
                   ))}
@@ -276,34 +283,34 @@ export default function EquipmentExcelUploader({
           {/* 파싱된 데이터 미리보기 */}
           {parsedData.length > 0 && validationErrors.length === 0 && !uploadResults && (
             <div className="mb-6">
-              <h4 className="font-medium text-gray-900 mb-2">
+              <h4 className="font-medium text-ink mb-2">
                 {t('equipment.dataPreview')} ({parsedData.length}{t('equipment.items')})
               </h4>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-divider">
+                  <thead className="bg-paper-warm">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('equipment.equipmentNumber')}</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('equipment.location')}</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('equipment.status')}</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('equipment.productionModel')}</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('equipment.process')}</th>
+                      <th className="px-4 py-2 text-left text-caption font-medium text-ink-soft uppercase">{t('equipment.equipmentNumber')}</th>
+                      <th className="px-4 py-2 text-left text-caption font-medium text-ink-soft uppercase">{t('equipment.location')}</th>
+                      <th className="px-4 py-2 text-left text-caption font-medium text-ink-soft uppercase">{t('equipment.status')}</th>
+                      <th className="px-4 py-2 text-left text-caption font-medium text-ink-soft uppercase">{t('equipment.productionModel')}</th>
+                      <th className="px-4 py-2 text-left text-caption font-medium text-ink-soft uppercase">{t('equipment.process')}</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-paper divide-y divide-divider">
                     {parsedData.slice(0, 10).map((item, index) => (
                       <tr key={index}>
-                        <td className="px-4 py-2 text-sm text-gray-900">{item.equipment_number}</td>
-                        <td className="px-4 py-2 text-sm text-gray-900">{item.location}</td>
-                        <td className="px-4 py-2 text-sm text-gray-900">{item.status}</td>
-                        <td className="px-4 py-2 text-sm text-gray-900">{item.current_model}</td>
-                        <td className="px-4 py-2 text-sm text-gray-900">{item.process}</td>
+                        <td className="px-4 py-2 text-label text-ink">{item.equipment_number}</td>
+                        <td className="px-4 py-2 text-label text-ink">{item.location}</td>
+                        <td className="px-4 py-2 text-label text-ink">{item.status}</td>
+                        <td className="px-4 py-2 text-label text-ink">{item.current_model}</td>
+                        <td className="px-4 py-2 text-label text-ink">{item.process}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 {parsedData.length > 10 && (
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-label text-ink-mute mt-2">
                     ... 외 {parsedData.length - 10}개
                   </p>
                 )}
@@ -316,11 +323,12 @@ export default function EquipmentExcelUploader({
             <div className="mb-6 space-y-4">
               {/* 성공 */}
               {uploadResults.success?.length > 0 && (
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h4 className="font-medium text-green-900 mb-2">
-                    ✅ 성공적으로 등록됨 ({uploadResults.success.length}개)
+                <div className="p-4 bg-signal-go-soft rounded-md">
+                  <h4 className="font-medium text-signal-go-strong mb-2 inline-flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                    성공적으로 등록됨 ({uploadResults.success.length}개)
                   </h4>
-                  <div className="text-sm text-green-700">
+                  <div className="text-label text-signal-go-strong">
                     {uploadResults.success.map((item: any, index: number) => (
                       <div key={index}>{item.equipment_number}</div>
                     ))}
@@ -330,11 +338,12 @@ export default function EquipmentExcelUploader({
 
               {/* 중복 */}
               {uploadResults.duplicates?.length > 0 && (
-                <div className="p-4 bg-yellow-50 rounded-lg">
-                  <h4 className="font-medium text-yellow-900 mb-2">
-                    ⚠️ 중복된 설비번호 ({uploadResults.duplicates.length}개)
+                <div className="p-4 bg-signal-watch-soft rounded-md">
+                  <h4 className="font-medium text-signal-watch-strong mb-2 inline-flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+                    중복된 설비번호 ({uploadResults.duplicates.length}개)
                   </h4>
-                  <div className="text-sm text-yellow-700">
+                  <div className="text-label text-signal-watch-strong">
                     {uploadResults.duplicates.map((item: any, index: number) => (
                       <div key={index}>
                         {item.equipment_number}: {item.reason}
@@ -346,11 +355,12 @@ export default function EquipmentExcelUploader({
 
               {/* 실패 */}
               {uploadResults.failed?.length > 0 && (
-                <div className="p-4 bg-red-50 rounded-lg">
-                  <h4 className="font-medium text-red-900 mb-2">
-                    ❌ 등록 실패 ({uploadResults.failed.length}개)
+                <div className="p-4 bg-signal-stop-soft rounded-md">
+                  <h4 className="font-medium text-signal-stop-strong mb-2 inline-flex items-center gap-2">
+                    <XCircle className="w-4 h-4" aria-hidden="true" />
+                    등록 실패 ({uploadResults.failed.length}개)
                   </h4>
-                  <div className="text-sm text-red-700">
+                  <div className="text-label text-signal-stop-strong">
                     {uploadResults.failed.map((item: any, index: number) => (
                       <div key={index}>
                         {item.equipment_number}: {item.reason}
@@ -369,25 +379,25 @@ export default function EquipmentExcelUploader({
             <>
               <button
                 onClick={handleReset}
-                className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                className="w-full sm:w-auto px-4 py-2 bg-paper-warm text-ink border border-divider rounded-md hover:bg-paper min-h-touch"
                 disabled={isUploading}
               >
                 {t('equipment.reset')}
               </button>
               <button
                 onClick={onCancel}
-                className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                className="w-full sm:w-auto px-4 py-2 bg-paper-warm text-ink border border-divider rounded-md hover:bg-paper min-h-touch"
                 disabled={isUploading}
               >
                 {t('equipment.cancel')}
               </button>
               <button
                 onClick={handleUpload}
-                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="w-full sm:w-auto px-4 py-2 bg-gauge-cobalt text-paper rounded-md hover:bg-gauge-cobalt-strong disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-h-touch"
                 disabled={parsedData.length === 0 || isUploading}
               >
                 {isUploading && (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-paper mr-2"></div>
                 )}
                 {isUploading ? t('equipment.uploading') : t('equipment.uploadStart')}
               </button>
@@ -396,7 +406,7 @@ export default function EquipmentExcelUploader({
           {uploadResults && (
             <button
               onClick={onCancel}
-              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="w-full sm:w-auto px-4 py-2 bg-gauge-cobalt text-paper rounded-md hover:bg-gauge-cobalt-strong min-h-touch"
             >
               {t('equipment.close')}
             </button>

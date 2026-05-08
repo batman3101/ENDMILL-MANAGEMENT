@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { Lightbulb } from 'lucide-react'
 import { PerformanceReportData } from '../../lib/types/reports'
 import { formatCurrency } from '../../lib/utils/reportCalculations'
 
@@ -157,7 +158,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
           </div>
         </div>
 
-        <div className="bg-white rounded-md p-6 border border-divider">
+        <div className="bg-paper rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-ink-soft">최고 성능</span>
             <span className="text-2xl">🏆</span>
@@ -170,7 +171,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
           </div>
         </div>
 
-        <div className="bg-white rounded-md p-6 border border-divider">
+        <div className="bg-paper rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-ink-soft">최저 성능</span>
             <span className="text-2xl">⚠️</span>
@@ -286,7 +287,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-divider">
+            <tbody className="bg-paper divide-y divide-divider">
               {sortedEquipmentData.map((item, index) => (
                 <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -387,7 +388,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-divider">
+              <tbody className="bg-paper divide-y divide-divider">
                 {sortedModelData.map((item, index) => (
                   <tr key={index} className="hover:bg-paper">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
@@ -458,7 +459,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-divider">
+              <tbody className="bg-paper divide-y divide-divider">
                 {sortedLocationData.map((item, index) => (
                   <tr key={index} className="hover:bg-paper">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
@@ -539,7 +540,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-divider">
+            <tbody className="bg-paper divide-y divide-divider">
               {sortedProcessData.map((item, index) => (
                 <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
@@ -622,7 +623,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-divider">
+            <tbody className="bg-paper divide-y divide-divider">
               {sortedTimeData.map((item, index) => (
                 <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
@@ -653,7 +654,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       <div className="bg-paper-warm border border-divider rounded-md p-6">
         <div className="flex">
           <div className="flex-shrink-0">
-            <span className="text-blue-400 text-2xl">💡</span>
+            <Lightbulb className="w-6 h-6 text-gauge-cobalt-strong" aria-hidden="true" />
           </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-gauge-cobalt-strong">성능 개선 권장사항</h3>

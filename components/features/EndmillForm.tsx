@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { X } from 'lucide-react'
 import { useToast } from '../shared/Toast'
 import { clientLogger } from '@/lib/utils/logger'
 
@@ -239,14 +240,15 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
     <div className="mobile-modal-container" onClick={onClose}>
       <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header">
-          <h3 className="text-lg font-medium">
+          <h3 className="text-title font-medium text-ink">
             {editData ? t('endmill.editEndmillTitle') : t('endmill.newEndmillTitle')}
           </h3>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+            className="p-2 text-ink-mute hover:text-ink-soft hover:bg-paper-warm rounded-full"
+            aria-label="닫기"
           >
-            ✕
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
@@ -254,32 +256,32 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
           <div className="mobile-modal-body space-y-6">
           {/* 엔드밀 코드 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('endmill.endmillCodeRequired')} <span className="text-red-500">{t('endmill.required')}</span>
+            <label className="block text-label font-medium text-ink mb-2">
+              {t('endmill.endmillCodeRequired')} <span className="text-signal-stop-strong">{t('endmill.required')}</span>
             </label>
             <input
               type="text"
               value={formData.code}
               onChange={(e) => handleInputChange('code', e.target.value.toUpperCase())}
               placeholder={t('endmill.endmillCodePlaceholder')}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.code ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink ${
+                errors.code ? 'border-signal-stop-strong' : 'border-divider'
               }`}
               disabled={loading}
             />
-            {errors.code && <p className="mt-1 text-sm text-red-600">{errors.code}</p>}
+            {errors.code && <p className="mt-1 text-caption text-signal-stop-strong">{errors.code}</p>}
           </div>
 
           {/* 카테고리 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('endmill.categoryRequired')} <span className="text-red-500">{t('endmill.required')}</span>
+            <label className="block text-label font-medium text-ink mb-2">
+              {t('endmill.categoryRequired')} <span className="text-signal-stop-strong">{t('endmill.required')}</span>
             </label>
             <select
               value={formData.category}
               onChange={(e) => handleCategoryChange(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.category ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink ${
+                errors.category ? 'border-signal-stop-strong' : 'border-divider'
               }`}
               disabled={loading}
             >
@@ -290,32 +292,32 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                 </option>
               ))}
             </select>
-            {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
+            {errors.category && <p className="mt-1 text-caption text-signal-stop-strong">{errors.category}</p>}
           </div>
 
           {/* 엔드밀 이름 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('endmill.endmillNameRequired')} <span className="text-red-500">{t('endmill.required')}</span>
+            <label className="block text-label font-medium text-ink mb-2">
+              {t('endmill.endmillNameRequired')} <span className="text-signal-stop-strong">{t('endmill.required')}</span>
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
               placeholder={t('endmill.endmillNamePlaceholder')}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink ${
+                errors.name ? 'border-signal-stop-strong' : 'border-divider'
               }`}
               disabled={loading}
             />
-            {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+            {errors.name && <p className="mt-1 text-caption text-signal-stop-strong">{errors.name}</p>}
           </div>
 
 
           {/* 표준 수명 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('endmill.standardLifeRequired')} <span className="text-red-500">{t('endmill.required')}</span>
+            <label className="block text-label font-medium text-ink mb-2">
+              {t('endmill.standardLifeRequired')} <span className="text-signal-stop-strong">{t('endmill.required')}</span>
             </label>
             <input
               type="number"
@@ -324,36 +326,36 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
               min="0"
               step="100"
               placeholder="예: 3000"
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.standardLife ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink ${
+                errors.standardLife ? 'border-signal-stop-strong' : 'border-divider'
               }`}
               disabled={loading}
             />
-            {errors.standardLife && <p className="mt-1 text-sm text-red-600">{errors.standardLife}</p>}
-            <p className="text-xs text-gray-500 mt-1">
+            {errors.standardLife && <p className="mt-1 text-caption text-signal-stop-strong">{errors.standardLife}</p>}
+            <p className="text-caption text-ink-mute mt-1">
               표준 사용 수명 (회). 기준 단가는 공급업체 가격 중 최소값으로 자동 설정됩니다.
             </p>
           </div>
 
 
           {/* 공급업체별 가격 정보 섹션 */}
-          <div className="border-t pt-6">
+          <div className="border-t border-divider pt-6">
             <div className="mb-4">
-              <h4 className="text-md font-medium text-gray-900 mb-2">💰 {t('endmill.supplierPriceInfo')}</h4>
-              <p className="text-sm text-gray-600">
+              <h4 className="text-label font-medium text-ink mb-2">{t('endmill.supplierPriceInfo')}</h4>
+              <p className="text-label text-ink-soft">
                 {t('endmill.supplierPriceDescription')}
               </p>
             </div>
 
             <div className="space-y-4">
               {supplierPrices.map((price, index) => (
-                <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-300">
+                <div key={index} className="bg-paper-warm p-4 rounded-md border border-divider">
                   <div className="flex justify-between items-start mb-3">
-                    <h5 className="text-sm font-medium text-gray-700">{t('endmill.supplierLabel')} {index + 1}</h5>
+                    <h5 className="text-label font-medium text-ink">{t('endmill.supplierLabel')} {index + 1}</h5>
                     <button
                       type="button"
                       onClick={() => removeSupplierPrice(index)}
-                      className="text-red-600 hover:text-red-800 text-sm font-medium"
+                      className="text-signal-stop-strong hover:opacity-80 text-label font-medium disabled:opacity-50"
                       disabled={supplierPrices.length === 1}
                     >
                       {t('common.delete')}
@@ -362,13 +364,13 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
 
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t('endmill.selectSupplier')} <span className="text-red-500">*</span>
+                      <label className="block text-label font-medium text-ink mb-1">
+                        {t('endmill.selectSupplier')} <span className="text-signal-stop-strong">*</span>
                       </label>
                       <select
                         value={price.supplier_id}
                         onChange={(e) => updateSupplierPrice(index, 'supplier_id', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
                         disabled={loading}
                       >
                         <option value="">{t('endmill.selectSupplierPlaceholder')}</option>
@@ -382,8 +384,8 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          {t('endmill.supplierUnitPrice')} <span className="text-red-500">*</span>
+                        <label className="block text-label font-medium text-ink mb-1">
+                          {t('endmill.supplierUnitPrice')} <span className="text-signal-stop-strong">*</span>
                         </label>
                         <input
                           type="number"
@@ -392,13 +394,13 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                           min="0"
                           step="1000"
                           placeholder="예: 145000"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
                           disabled={loading || !price.supplier_id}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-label font-medium text-ink mb-1">
                           {t('endmill.qualityRating')}
                         </label>
                         <input
@@ -408,7 +410,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                           min="1"
                           max="10"
                           placeholder="8"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
                           disabled={loading}
                         />
                       </div>
@@ -416,7 +418,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-label font-medium text-ink mb-1">
                           {t('endmill.minOrder')}
                         </label>
                         <input
@@ -425,13 +427,13 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                           onChange={(e) => updateSupplierPrice(index, 'min_order_quantity', Number(e.target.value))}
                           min="1"
                           placeholder="1"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
                           disabled={loading}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-label font-medium text-ink mb-1">
                           {t('endmill.leadTimeDays')}
                         </label>
                         <input
@@ -440,13 +442,13 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                           onChange={(e) => updateSupplierPrice(index, 'lead_time_days', Number(e.target.value))}
                           min="1"
                           placeholder="7"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
                           disabled={loading}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-label font-medium text-ink mb-1">
                           {t('endmill.currentStockLabel')}
                         </label>
                         <input
@@ -455,7 +457,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                           onChange={(e) => updateSupplierPrice(index, 'current_stock', Number(e.target.value))}
                           min="0"
                           placeholder="0"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
                           disabled={loading}
                         />
                       </div>
@@ -467,10 +469,10 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
                         id={`is_preferred_${index}`}
                         checked={price.is_preferred || false}
                         onChange={(e) => updateSupplierPrice(index, 'is_preferred', e.target.checked)}
-                        className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="mr-2 rounded border-divider text-gauge-cobalt focus:ring-gauge-cobalt"
                         disabled={loading}
                       />
-                      <label htmlFor={`is_preferred_${index}`} className="text-sm text-gray-700">
+                      <label htmlFor={`is_preferred_${index}`} className="text-label text-ink">
                         {t('endmill.setAsPreferred')}
                       </label>
                     </div>
@@ -481,15 +483,15 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
               <button
                 type="button"
                 onClick={addSupplierPrice}
-                className="w-full px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-lg hover:bg-blue-100 disabled:opacity-50"
+                className="w-full px-4 py-2 text-label font-medium text-gauge-cobalt-strong bg-gauge-cobalt-soft border border-divider rounded-md hover:opacity-90 disabled:opacity-50 min-h-touch"
                 disabled={loading}
               >
                 {t('endmill.addSupplierButton')}
               </button>
 
               {supplierPrices.length === 0 && (
-                <div className="text-center py-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800">
+                <div className="text-center py-4 bg-signal-watch-soft border border-divider rounded-md">
+                  <p className="text-label text-signal-watch-strong">
                     {t('endmill.noSupplierWarning')}
                   </p>
                 </div>
@@ -503,14 +505,14 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto px-4 py-2 text-gray-700 bg-gray-300 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2 text-ink bg-paper-warm border border-divider rounded-md hover:bg-paper disabled:opacity-50 min-h-touch"
               disabled={loading}
             >
               {t('endmill.cancelButton')}
             </button>
             <button
               type="submit"
-              className="w-full sm:w-auto px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-4 py-2 text-paper bg-gauge-cobalt rounded-md hover:bg-gauge-cobalt-strong disabled:opacity-50 disabled:cursor-not-allowed min-h-touch"
               disabled={loading}
             >
               {loading ? t('endmill.submitting') : (editData ? t('endmill.editButton') : t('endmill.submitButton'))}

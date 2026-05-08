@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { X, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
 import ExcelJS from 'exceljs'
 import { validateEndmillExcelData, convertToEndmillDBFormat } from '../../lib/utils/endmillExcelTemplate'
 import { useToast } from '../shared/Toast'
@@ -210,19 +211,20 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
     <div className="mobile-modal-container" onClick={onClose}>
       <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header">
-          <h3 className="text-lg font-medium">{t('endmill.bulkUploadTitle')}</h3>
+          <h3 className="text-title font-medium text-ink">{t('endmill.bulkUploadTitle')}</h3>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+            className="p-2 text-ink-mute hover:text-ink-soft hover:bg-paper-warm rounded-full"
+            aria-label="닫기"
           >
-            ✕
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
         <div className="mobile-modal-body space-y-6">
           {/* 파일 선택 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-label font-medium text-ink mb-2">
               {t('endmill.excelFileSelect')}
             </label>
             <input
@@ -230,21 +232,21 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
               type="file"
               accept=".xlsx,.xls"
               onChange={handleFileChange}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              className="block w-full text-label text-ink-mute file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-label file:font-medium file:bg-gauge-cobalt-soft file:text-gauge-cobalt-strong hover:file:opacity-90"
             />
             {file && (
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-label text-ink-soft">
                 {t('endmill.selectedFile')}: {file.name}
               </p>
             )}
           </div>
 
           {/* 버튼들 */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <button
               onClick={handleValidate}
               disabled={!file || loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-gauge-cobalt text-paper rounded-md hover:bg-gauge-cobalt-strong disabled:opacity-50 disabled:cursor-not-allowed min-h-touch"
             >
               {loading ? t('endmill.validating') : t('endmill.validateButton')}
             </button>
@@ -253,7 +255,7 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
               <button
                 onClick={handleUpload}
                 disabled={loading}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-signal-go-strong text-paper rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed min-h-touch"
               >
                 {loading ? t('endmill.uploading') : t('endmill.uploadButton')}
               </button>
@@ -262,7 +264,7 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
             <button
               onClick={resetForm}
               disabled={loading}
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-paper-warm text-ink border border-divider rounded-md hover:bg-paper disabled:opacity-50 disabled:cursor-not-allowed min-h-touch"
             >
               {t('endmill.resetButton')}
             </button>
@@ -271,22 +273,26 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
           {/* 유효성 검사 결과 */}
           {validationResult && (
             <div className="mt-6">
-              <h4 className="text-md font-medium mb-3">{t('endmill.validationResults')}</h4>
+              <h4 className="text-label font-medium text-ink mb-3">{t('endmill.validationResults')}</h4>
 
               {/* 성공 메시지 */}
               {validationResult.isValid && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                  <p className="text-green-800">
-                    ✅ {validationResult.validData.length}{t('endmill.validDataCount')}
+                <div className="bg-signal-go-soft border border-divider rounded-md p-4 mb-4">
+                  <p className="text-signal-go-strong inline-flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                    {validationResult.validData.length}{t('endmill.validDataCount')}
                   </p>
                 </div>
               )}
 
               {/* 오류 메시지 */}
               {validationResult.errors.length > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                  <h5 className="text-red-800 font-medium mb-2">{t('endmill.errorsCount')} ({validationResult.errors.length}{t('endmill.count')})</h5>
-                  <ul className="text-red-700 text-sm space-y-1 max-h-40 overflow-y-auto">
+                <div className="bg-signal-stop-soft border border-divider rounded-md p-4 mb-4">
+                  <h5 className="text-signal-stop-strong font-medium mb-2 inline-flex items-center gap-2">
+                    <XCircle className="w-4 h-4" aria-hidden="true" />
+                    {t('endmill.errorsCount')} ({validationResult.errors.length}{t('endmill.count')})
+                  </h5>
+                  <ul className="text-signal-stop-strong text-label space-y-1 max-h-40 overflow-y-auto">
                     {validationResult.errors.map((error: string, index: number) => (
                       <li key={index}>• {error}</li>
                     ))}
@@ -296,9 +302,12 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
 
               {/* 경고 메시지 */}
               {validationResult.warnings.length > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                  <h5 className="text-yellow-800 font-medium mb-2">{t('endmill.warningsCount')} ({validationResult.warnings.length}{t('endmill.count')})</h5>
-                  <ul className="text-yellow-700 text-sm space-y-1 max-h-40 overflow-y-auto">
+                <div className="bg-signal-watch-soft border border-divider rounded-md p-4 mb-4">
+                  <h5 className="text-signal-watch-strong font-medium mb-2 inline-flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+                    {t('endmill.warningsCount')} ({validationResult.warnings.length}{t('endmill.count')})
+                  </h5>
+                  <ul className="text-signal-watch-strong text-label space-y-1 max-h-40 overflow-y-auto">
                     {validationResult.warnings.map((warning: string, index: number) => (
                       <li key={index}>• {warning}</li>
                     ))}
@@ -308,37 +317,37 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
 
               {/* 유효한 데이터 미리보기 */}
               {validationResult.validData.length > 0 && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <h5 className="text-gray-800 font-medium mb-2">
+                <div className="bg-paper-warm border border-divider rounded-md p-4">
+                  <h5 className="text-ink font-medium mb-2">
                     {t('endmill.validDataPreview')}
                   </h5>
                   <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
+                    <table className="min-w-full text-label">
                       <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2">{t('endmill.codeColumn')}</th>
-                          <th className="text-left py-2">{t('endmill.categoryColumn')}</th>
-                          <th className="text-left py-2">{t('endmill.nameColumn')}</th>
-                          <th className="text-left py-2">{t('endmill.modelColumn')}</th>
-                          <th className="text-left py-2">{t('endmill.processColumn')}</th>
-                          <th className="text-left py-2">{t('endmill.unitCostColumn')}</th>
+                        <tr className="border-b border-divider">
+                          <th className="text-left py-2 text-ink-soft">{t('endmill.codeColumn')}</th>
+                          <th className="text-left py-2 text-ink-soft">{t('endmill.categoryColumn')}</th>
+                          <th className="text-left py-2 text-ink-soft">{t('endmill.nameColumn')}</th>
+                          <th className="text-left py-2 text-ink-soft">{t('endmill.modelColumn')}</th>
+                          <th className="text-left py-2 text-ink-soft">{t('endmill.processColumn')}</th>
+                          <th className="text-left py-2 text-ink-soft">{t('endmill.unitCostColumn')}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {validationResult.validData.slice(0, 5).map((item: any, index: number) => (
-                          <tr key={index} className="border-b">
-                            <td className="py-2">{item.code}</td>
-                            <td className="py-2">{item.category}</td>
-                            <td className="py-2">{item.name}</td>
-                            <td className="py-2">{item.model}</td>
-                            <td className="py-2">{item.process}</td>
-                            <td className="py-2">{item.unit_cost.toLocaleString()} VND</td>
+                          <tr key={index} className="border-b border-divider">
+                            <td className="py-2 text-ink">{item.code}</td>
+                            <td className="py-2 text-ink">{item.category}</td>
+                            <td className="py-2 text-ink">{item.name}</td>
+                            <td className="py-2 text-ink">{item.model}</td>
+                            <td className="py-2 text-ink">{item.process}</td>
+                            <td className="py-2 text-ink">{item.unit_cost.toLocaleString()} VND</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                     {validationResult.validData.length > 5 && (
-                      <p className="text-gray-500 text-xs mt-2">
+                      <p className="text-ink-mute text-caption mt-2">
                         {t('endmill.moreItems')} {validationResult.validData.length - 5}{t('endmill.moreItemsSuffix')}
                       </p>
                     )}
@@ -352,7 +361,7 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
         <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+            className="w-full sm:w-auto px-4 py-2 bg-paper-warm text-ink border border-divider rounded-md hover:bg-paper min-h-touch"
           >
             {t('common.close')}
           </button>

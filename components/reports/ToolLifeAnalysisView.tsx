@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { Lightbulb } from 'lucide-react'
 import { ToolLifeAnalysisData } from '../../lib/types/reports'
 
 interface ToolLifeAnalysisViewProps {
@@ -156,7 +157,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
           </div>
         </div>
 
-        <div className="bg-white rounded-md p-6 border border-divider">
+        <div className="bg-paper rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-ink-soft">성능 범위</span>
             <span className="text-2xl">🏆</span>
@@ -249,7 +250,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-divider">
+            <tbody className="bg-paper divide-y divide-divider">
               {sortedToolData.map((item, index) => (
                 <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -257,7 +258,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     <div className="text-xs text-ink-soft">{item.toolCode}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-paper-warm text-gray-800">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-paper-warm text-ink">
                       {item.category}
                     </span>
                   </td>
@@ -301,9 +302,9 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     <span className="text-sm font-bold text-ink">{item.averageLife.toFixed(0)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div className="flex-1 bg-paper-warm rounded-full h-2">
                       <div
-                        className="bg-blue-600 h-2 rounded-full"
+                        className="bg-gauge-cobalt h-2 rounded-full"
                         style={{ width: `${item.percentage}%` }}
                       />
                     </div>
@@ -334,9 +335,9 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     <span className="text-sm font-bold text-ink">{item.count}건</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div className="flex-1 bg-paper-warm rounded-full h-2">
                       <div
-                        className="bg-green-600 h-2 rounded-full"
+                        className="bg-signal-go-strong h-2 rounded-full"
                         style={{ width: `${item.percentage}%` }}
                       />
                     </div>
@@ -389,7 +390,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-divider">
+            <tbody className="bg-paper divide-y divide-divider">
               {sortedTrendData.map((item, index) => (
                 <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
@@ -475,7 +476,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-divider">
+              <tbody className="bg-paper divide-y divide-divider">
                 {sortedFailureData.map((item, index) => (
                   <tr key={index} className="hover:bg-paper">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -513,7 +514,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
       <div className="bg-paper-warm border border-divider rounded-md p-6">
         <div className="flex">
           <div className="flex-shrink-0">
-            <span className="text-blue-400 text-2xl">💡</span>
+            <Lightbulb className="w-6 h-6 text-gauge-cobalt-strong" aria-hidden="true" />
           </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-gauge-cobalt-strong">개선 권장사항</h3>

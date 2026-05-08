@@ -86,14 +86,17 @@ export default function EditSupplierPriceModal({
     }
   }
 
+  const inputClass =
+    'w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink'
+
   return (
     <div className="mobile-modal-container" onClick={onClose}>
       <div className="mobile-modal-content md:max-w-lg" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header flex-col items-start">
-          <h3 className="text-lg font-medium">공급업체 가격 수정</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            엔드밀 코드: <span className="font-medium">{endmillCode}</span> |
-            공급업체: <span className="font-medium">{supplierPrice.supplier.code || supplierPrice.supplier.name}</span>
+          <h3 className="text-title font-medium text-ink">공급업체 가격 수정</h3>
+          <p className="text-label text-ink-soft mt-1">
+            엔드밀 코드: <span className="font-medium text-ink">{endmillCode}</span> |
+            공급업체: <span className="font-medium text-ink">{supplierPrice.supplier.code || supplierPrice.supplier.name}</span>
           </p>
         </div>
 
@@ -101,14 +104,14 @@ export default function EditSupplierPriceModal({
           <div className="mobile-modal-body space-y-4">
           {/* 단가 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              단가 (VND) <span className="text-red-500">*</span>
+            <label className="block text-label font-medium text-ink mb-1">
+              단가 (VND) <span className="text-signal-stop-strong">*</span>
             </label>
             <input
               type="number"
               value={unitPrice}
               onChange={(e) => setUnitPrice(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder="예: 145000"
               required
               min="1"
@@ -117,14 +120,14 @@ export default function EditSupplierPriceModal({
 
           {/* 최소 주문 수량 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-label font-medium text-ink mb-1">
               최소 주문 수량
             </label>
             <input
               type="number"
               value={minOrderQuantity}
               onChange={(e) => setMinOrderQuantity(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder="기본값: 1"
               min="1"
             />
@@ -132,14 +135,14 @@ export default function EditSupplierPriceModal({
 
           {/* 납기일 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-label font-medium text-ink mb-1">
               납기일 (일)
             </label>
             <input
               type="number"
               value={leadTimeDays}
               onChange={(e) => setLeadTimeDays(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder="기본값: 7"
               min="1"
             />
@@ -147,14 +150,14 @@ export default function EditSupplierPriceModal({
 
           {/* 현재 재고 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-label font-medium text-ink mb-1">
               현재 재고
             </label>
             <input
               type="number"
               value={currentStock}
               onChange={(e) => setCurrentStock(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder="기본값: 0"
               min="0"
             />
@@ -162,19 +165,19 @@ export default function EditSupplierPriceModal({
 
           {/* 품질등급 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-label font-medium text-ink mb-1">
               품질등급 (1-10)
             </label>
             <input
               type="number"
               value={qualityRating}
               onChange={(e) => setQualityRating(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder="1-10 사이의 점수"
               min="1"
               max="10"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-caption text-ink-mute mt-1">
               10점이 최고 품질입니다
             </p>
           </div>
@@ -186,9 +189,9 @@ export default function EditSupplierPriceModal({
               id="isPreferred"
               checked={isPreferred}
               onChange={(e) => setIsPreferred(e.target.checked)}
-              className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="mr-2 rounded border-divider text-gauge-cobalt focus:ring-gauge-cobalt"
             />
-            <label htmlFor="isPreferred" className="text-sm text-gray-700">
+            <label htmlFor="isPreferred" className="text-label text-ink">
               선호업체로 설정
             </label>
           </div>
@@ -200,14 +203,14 @@ export default function EditSupplierPriceModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="w-full sm:w-auto px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2 text-ink bg-paper-warm border border-divider rounded-md hover:bg-paper disabled:opacity-50 min-h-touch"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={loading || !unitPrice}
-              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2 bg-gauge-cobalt text-paper rounded-md hover:bg-gauge-cobalt-strong disabled:opacity-50 min-h-touch"
             >
               {loading ? '수정 중...' : '수정'}
             </button>

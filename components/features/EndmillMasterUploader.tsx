@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { X, FileText, Download, Upload, FolderOpen, BarChart3, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
 import ExcelJS from 'exceljs'
 import { downloadEndmillMasterTemplate, validateEndmillMasterData } from '../../lib/utils/excelTemplate'
 import { useToast } from '../shared/Toast'
@@ -177,38 +178,46 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
     <div className="mobile-modal-container" onClick={onClose}>
       <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header">
-          <h3 className="text-lg font-medium">{t('endmill.bulkUpdateTitle')}</h3>
+          <h3 className="text-title font-medium text-ink">{t('endmill.bulkUpdateTitle')}</h3>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+            className="p-2 text-ink-mute hover:text-ink-soft hover:bg-paper-warm rounded-full"
+            aria-label="닫기"
           >
-            ✕
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
         <div className="mobile-modal-body">
           {/* 템플릿 다운로드 섹션 */}
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="font-medium text-blue-900 mb-2">📋 {t('endmill.step1Title')}</h4>
-            <p className="text-sm text-blue-700 mb-3">
+          <div className="mb-6 p-4 bg-gauge-cobalt-soft rounded-md border border-divider">
+            <h4 className="font-medium text-gauge-cobalt-strong mb-2 inline-flex items-center gap-2">
+              <FileText className="w-4 h-4" aria-hidden="true" />
+              {t('endmill.step1Title')}
+            </h4>
+            <p className="text-label text-gauge-cobalt-strong mb-3">
               {t('endmill.step1Description')}
             </p>
             <button
               onClick={downloadEndmillMasterTemplate}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gauge-cobalt text-paper rounded-md hover:bg-gauge-cobalt-strong min-h-touch"
             >
-              📁 {t('endmill.templateDownload')}
+              <Download className="w-4 h-4" aria-hidden="true" />
+              {t('endmill.templateDownload')}
             </button>
           </div>
 
           {/* 파일 업로드 섹션 */}
           <div className="mb-6">
-            <h4 className="font-medium text-gray-900 mb-3">📤 {t('endmill.step2Title')}</h4>
+            <h4 className="font-medium text-ink mb-3 inline-flex items-center gap-2">
+              <Upload className="w-4 h-4" aria-hidden="true" />
+              {t('endmill.step2Title')}
+            </h4>
             <div
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+              className={`border-2 border-dashed rounded-md p-8 text-center transition-colors ${
                 dragActive
-                  ? 'border-blue-400 bg-blue-50'
-                  : 'border-gray-300 hover:border-gray-400'
+                  ? 'border-gauge-cobalt bg-gauge-cobalt-soft'
+                  : 'border-divider hover:border-ink-mute'
               }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -217,24 +226,25 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
             >
               {processing ? (
                 <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-gray-600">{t('endmill.processingFile')}</p>
+                  <div className="w-8 h-8 border-4 border-gauge-cobalt border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="text-ink-soft">{t('endmill.processingFile')}</p>
                 </div>
               ) : (
                 <div>
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
-                    📊
+                  <div className="w-16 h-16 mx-auto mb-4 bg-paper-warm rounded-md flex items-center justify-center">
+                    <BarChart3 className="w-8 h-8 text-ink-mute" aria-hidden="true" />
                   </div>
-                  <p className="text-lg font-medium text-gray-900 mb-2">
+                  <p className="text-title font-medium text-ink mb-2">
                     {t('endmill.dragDropText')}
                   </p>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-label text-ink-soft mb-4">
                     {t('endmill.supportedFormats')}
                   </p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-paper-warm text-ink border border-divider rounded-md hover:bg-paper min-h-touch"
                   >
+                    <FolderOpen className="w-4 h-4" aria-hidden="true" />
                     {t('endmill.fileSelect')}
                   </button>
                   <input
@@ -252,13 +262,16 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
           {/* 검증 결과 섹션 */}
           {showValidation && validationResult && (
             <div className="mb-6">
-              <h4 className="font-medium text-gray-900 mb-3">🔍 {t('endmill.step3Title')}</h4>
+              <h4 className="font-medium text-ink mb-3">{t('endmill.step3Title')}</h4>
 
               {/* 오류 표시 */}
               {validationResult.errors.length > 0 && (
-                <div className="mb-4 p-4 bg-red-50 rounded-lg border border-red-200">
-                  <h5 className="font-medium text-red-900 mb-2">❌ {t('endmill.errorLabel')} ({validationResult.errors.length}개)</h5>
-                  <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
+                <div className="mb-4 p-4 bg-signal-stop-soft rounded-md border border-divider">
+                  <h5 className="font-medium text-signal-stop-strong mb-2 inline-flex items-center gap-2">
+                    <XCircle className="w-4 h-4" aria-hidden="true" />
+                    {t('endmill.errorLabel')} ({validationResult.errors.length}개)
+                  </h5>
+                  <ul className="list-disc list-inside text-label text-signal-stop-strong space-y-1">
                     {validationResult.errors.map((error: string, index: number) => (
                       <li key={index}>{error}</li>
                     ))}
@@ -268,9 +281,12 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
 
               {/* 경고 표시 */}
               {validationResult.warnings.length > 0 && (
-                <div className="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <h5 className="font-medium text-yellow-900 mb-2">⚠️ {t('endmill.warningLabel')} ({validationResult.warnings.length}개)</h5>
-                  <ul className="list-disc list-inside text-sm text-yellow-700 space-y-1">
+                <div className="mb-4 p-4 bg-signal-watch-soft rounded-md border border-divider">
+                  <h5 className="font-medium text-signal-watch-strong mb-2 inline-flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+                    {t('endmill.warningLabel')} ({validationResult.warnings.length}개)
+                  </h5>
+                  <ul className="list-disc list-inside text-label text-signal-watch-strong space-y-1">
                     {validationResult.warnings.map((warning: string, index: number) => (
                       <li key={index}>{warning}</li>
                     ))}
@@ -280,9 +296,12 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
 
               {/* 성공 표시 */}
               {validationResult.isValid && (
-                <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                  <h5 className="font-medium text-green-900 mb-2">✅ {t('endmill.validationSuccessTitle')}</h5>
-                  <p className="text-sm text-green-700">
+                <div className="mb-4 p-4 bg-signal-go-soft rounded-md border border-divider">
+                  <h5 className="font-medium text-signal-go-strong mb-2 inline-flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                    {t('endmill.validationSuccessTitle')}
+                  </h5>
+                  <p className="text-label text-signal-go-strong">
                     {validationResult.validData.length}{t('endmill.validationSuccessMessage')}
                   </p>
                 </div>
@@ -296,7 +315,7 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
         <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+            className="w-full sm:w-auto px-4 py-2 bg-paper-warm text-ink border border-divider rounded-md hover:bg-paper min-h-touch"
           >
             {t('common.cancel')}
           </button>
@@ -304,13 +323,14 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
           {validationResult && validationResult.isValid && (
             <button
               onClick={processValidData}
-              className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              className="w-full sm:w-auto px-4 py-2 bg-signal-go-strong text-paper rounded-md hover:opacity-90 inline-flex items-center justify-center gap-2 min-h-touch"
             >
-              ✅ {t('endmill.proceedWithUpdate')}
+              <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+              {t('endmill.proceedWithUpdate')}
             </button>
           )}
         </div>
       </div>
     </div>
   )
-} 
+}
