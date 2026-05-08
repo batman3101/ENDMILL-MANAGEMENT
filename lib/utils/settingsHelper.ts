@@ -193,29 +193,3 @@ export const ToolChangeSettings = {
   }
 }
 
-/**
- * 알림 설정 조회
- */
-export const NotificationSettings = {
-  async isEmailEnabled() {
-    const emailSettings = await getSetting<{ enabled: boolean }>('notifications', 'email', { enabled: false })
-    return emailSettings?.enabled ?? false
-  },
-
-  async isRealtimeEnabled() {
-    const realtimeSettings = await getSetting<{ enabled: boolean }>('notifications', 'realtime', { enabled: true })
-    return realtimeSettings?.enabled ?? true
-  },
-
-  async getScheduling() {
-    return getSetting<{ dailyReport: string; weeklyReport: string; monthlyReport: string }>(
-      'notifications',
-      'scheduling',
-      {
-        dailyReport: '08:00',
-        weeklyReport: '월요일 09:00',
-        monthlyReport: '1일 10:00'
-      }
-    )
-  }
-}

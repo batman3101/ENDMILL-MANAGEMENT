@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Bell,
   Boxes,
-  Building2,
   Cpu,
   Factory,
   Globe2,
@@ -24,11 +23,8 @@ import {
   Sliders,
   Tags,
   Truck,
-  UserCheck,
-  Users,
   Wrench,
   X,
-  Clock,
 } from 'lucide-react'
 import { useSettings } from '../../../lib/hooks/useSettings'
 import { SettingsCategory } from '../../../lib/types/settings'
@@ -54,13 +50,6 @@ interface SupplierRecord {
   is_active?: boolean
 }
 
-interface RoleRecord {
-  code: string
-  name: string
-  permissions: string[]
-  isActive: boolean
-}
-
 const TAB_DEFS: Array<{
   id: SettingsCategory
   Icon: typeof Cpu
@@ -70,22 +59,13 @@ const TAB_DEFS: Array<{
   { id: 'equipment', Icon: Factory, labelKey: 'settings.tabs.equipment' },
   { id: 'inventory', Icon: Boxes, labelKey: 'settings.tabs.inventory' },
   { id: 'toolChanges', Icon: Wrench, labelKey: 'settings.tabs.toolChanges' },
-  { id: 'organization', Icon: Users, labelKey: 'settings.tabs.organization' },
   { id: 'ui', Icon: Palette, labelKey: 'settings.tabs.ui' },
-  { id: 'notifications', Icon: Bell, labelKey: 'settings.tabs.notifications' },
 ]
 
 const DEFAULT_LOCATIONS = ['A동', 'B동']
 const DEFAULT_MODELS = ['PA1', 'PA2', 'PS', 'B7', 'Q7']
 const DEFAULT_PROCESSES = ['CNC1', 'CNC2', 'CNC2-1']
 const DEFAULT_REASONS = ['정상 수명', '파손', '마모', '품질 불량', '기타']
-const DEFAULT_DEPARTMENTS = ['종합 관리실', '공구 관리실', '기술팀']
-const DEFAULT_SHIFTS = ['A', 'B']
-const DEFAULT_ROLES: RoleRecord[] = [
-  { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
-  { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
-  { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true },
-]
 
 export default function SettingsPage() {
   return (
@@ -541,30 +521,12 @@ function SettingsPageContent() {
                   isSubmitting={isSubmitting}
                 />
               )}
-              {activeTab === 'organization' && (
-                <OrganizationTab
-                  formData={formData}
-                  updateFormData={updateFormData}
-                  onSave={() => handleSave('organization')}
-                  onReset={() => handleReset('organization')}
-                  isSubmitting={isSubmitting}
-                />
-              )}
               {activeTab === 'ui' && (
                 <UiTab
                   formData={formData}
                   updateFormData={updateFormData}
                   onSave={() => handleSave('ui')}
                   onReset={() => handleReset('ui')}
-                  isSubmitting={isSubmitting}
-                />
-              )}
-              {activeTab === 'notifications' && (
-                <NotificationsTab
-                  formData={formData}
-                  updateFormData={updateFormData}
-                  onSave={() => handleSave('notifications')}
-                  onReset={() => handleReset('notifications')}
                   isSubmitting={isSubmitting}
                 />
               )}
@@ -1261,107 +1223,6 @@ function ToolChangesTab({
   )
 }
 
-function OrganizationTab({
-  formData,
-  updateFormData,
-  onSave,
-  onReset,
-  isSubmitting,
-}: TabContentProps) {
-  const { t } = useTranslation()
-  const departments: string[] = Array.isArray(formData.organization?.departments)
-    ? formData.organization.departments
-    : DEFAULT_DEPARTMENTS
-  const shifts: string[] = Array.isArray(formData.organization?.shifts)
-    ? formData.organization.shifts
-    : DEFAULT_SHIFTS
-  const roles: RoleRecord[] = Array.isArray(formData.organization?.roles)
-    ? formData.organization.roles
-    : DEFAULT_ROLES
-
-  return (
-    <div className="space-y-4">
-      <Section
-        Icon={Building2}
-        title={t('settings.departmentManagement')}
-        description={t('settings.departmentManagementDesc')}
-      >
-        <ListEditor
-          items={departments}
-          fallback={DEFAULT_DEPARTMENTS}
-          placeholder={t('settings.placeholders.departmentName')}
-          addLabel={t('settings.actions.addDepartment')}
-          onChange={(next) => updateFormData('organization', 'departments', next)}
-        />
-      </Section>
-
-      <Section
-        Icon={Clock}
-        title={t('settings.shiftManagement')}
-        description={t('settings.shiftManagementDesc')}
-      >
-        <ListEditor
-          items={shifts}
-          fallback={DEFAULT_SHIFTS}
-          placeholder={t('settings.placeholders.shiftName')}
-          addLabel={t('settings.actions.addShift')}
-          onChange={(next) => updateFormData('organization', 'shifts', next)}
-        />
-      </Section>
-
-      <Section
-        Icon={UserCheck}
-        title={t('settings.roleManagement')}
-        description={t('settings.roleManagementDesc')}
-      >
-        <RoleEditor
-          roles={roles}
-          onChange={(next) => updateFormData('organization', 'roles', next)}
-        />
-      </Section>
-
-      <Section
-        Icon={Sliders}
-        title={t('settings.defaultSettings')}
-        description={t('settings.defaultSettingsDesc')}
-      >
-        <FieldGrid>
-          <Field id="defaultRole" label={t('settings.fields.defaultRole')}>
-            <select
-              id="defaultRole"
-              value={formData.organization?.defaultRole || 'operator'}
-              onChange={(e) => updateFormData('organization', 'defaultRole', e.target.value)}
-              className={inputClass(false)}
-            >
-              {roles.map((role) => (
-                <option key={role.code} value={role.code}>
-                  {role.name} ({role.code})
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field id="defaultShift" label={t('settings.fields.defaultShift')}>
-            <select
-              id="defaultShift"
-              value={formData.organization?.defaultShift || shifts[0] || 'A'}
-              onChange={(e) => updateFormData('organization', 'defaultShift', e.target.value)}
-              className={inputClass(false)}
-            >
-              {shifts.map((shift) => (
-                <option key={shift} value={shift}>
-                  {shift}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </FieldGrid>
-      </Section>
-
-      <ActionRow onSave={onSave} onReset={onReset} isSubmitting={isSubmitting} />
-    </div>
-  )
-}
-
 function UiTab({ formData, updateFormData, onSave, onReset, isSubmitting }: TabContentProps) {
   const { t } = useTranslation()
   return (
@@ -1483,180 +1344,6 @@ function UiTab({ formData, updateFormData, onSave, onReset, isSubmitting }: TabC
               <option value={5}>5s</option>
               <option value={10}>10s</option>
               <option value={0}>{t('settings.options.manual')}</option>
-            </select>
-          </Field>
-        </FieldGrid>
-      </Section>
-
-      <ActionRow onSave={onSave} onReset={onReset} isSubmitting={isSubmitting} />
-    </div>
-  )
-}
-
-function NotificationsTab({
-  formData,
-  updateFormData,
-  onSave,
-  onReset,
-  isSubmitting,
-}: TabContentProps) {
-  const { t } = useTranslation()
-  const types =
-    formData.notifications?.realtime?.types ||
-    [
-      { type: 'tool_change', enabled: true, priority: 'medium', channels: ['ui'] },
-      { type: 'inventory_low', enabled: true, priority: 'high', channels: ['ui', 'email'] },
-      { type: 'equipment_status', enabled: true, priority: 'high', channels: ['ui'] },
-      { type: 'system', enabled: true, priority: 'low', channels: ['ui'] },
-    ]
-
-  const labelForType = (type: string) => t(`settings.notifTypes.${type}`, type)
-  const labelForPriority = (p: string) => t(`settings.notifPriority.${p}`, p)
-
-  return (
-    <div className="space-y-4">
-      <Section
-        Icon={Bell}
-        title={t('settings.notificationMethod')}
-        description={t('settings.notificationMethodDesc')}
-      >
-        <div className="space-y-3">
-          <ToggleRow
-            label={t('settings.fields.realtimeNotif')}
-            hint={t('settings.hints.realtimeNotif')}
-            checked={formData.notifications?.realtime?.enabled !== false}
-            onChange={(v) =>
-              updateFormData('notifications', 'realtime', {
-                ...formData.notifications?.realtime,
-                enabled: v,
-              })
-            }
-          />
-          <ToggleRow
-            label={t('settings.fields.emailNotif')}
-            hint={t('settings.hints.emailNotif')}
-            checked={formData.notifications?.email?.enabled || false}
-            onChange={(v) =>
-              updateFormData('notifications', 'email', {
-                ...formData.notifications?.email,
-                enabled: v,
-              })
-            }
-          />
-        </div>
-      </Section>
-
-      <Section
-        Icon={AlertTriangle}
-        title={t('settings.notificationTypes')}
-        description={t('settings.notificationTypesDesc')}
-      >
-        <div className="space-y-3">
-          {types.map(
-            (
-              notif: {
-                type: string
-                enabled: boolean
-                priority: 'low' | 'medium' | 'high'
-                channels: string[]
-              },
-              index: number,
-            ) => (
-              <div
-                key={index}
-                className="flex flex-wrap items-center gap-3 rounded-sm border border-divider bg-paper p-3"
-              >
-                <label className="flex flex-1 min-w-[12rem] items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={notif.enabled}
-                    onChange={(e) => {
-                      const next = [...types]
-                      next[index] = { ...next[index], enabled: e.target.checked }
-                      updateFormData('notifications', 'realtime', {
-                        ...formData.notifications?.realtime,
-                        types: next,
-                      })
-                    }}
-                    className={checkboxClass()}
-                  />
-                  <span className="text-label font-medium text-ink">
-                    {labelForType(notif.type)}
-                  </span>
-                </label>
-                <span
-                  className={
-                    notif.priority === 'high'
-                      ? 'inline-flex items-center rounded-sm bg-signal-stop-soft px-2 py-0.5 text-caption font-medium text-signal-stop-strong'
-                      : notif.priority === 'medium'
-                        ? 'inline-flex items-center rounded-sm bg-signal-watch-soft px-2 py-0.5 text-caption font-medium text-signal-watch-strong'
-                        : 'inline-flex items-center rounded-sm bg-paper-warm px-2 py-0.5 text-caption font-medium text-ink-soft'
-                  }
-                >
-                  {labelForPriority(notif.priority)}
-                </span>
-                <select
-                  value={notif.priority}
-                  disabled={!notif.enabled}
-                  onChange={(e) => {
-                    const next = [...types]
-                    next[index] = {
-                      ...next[index],
-                      priority: e.target.value as 'low' | 'medium' | 'high',
-                    }
-                    updateFormData('notifications', 'realtime', {
-                      ...formData.notifications?.realtime,
-                      types: next,
-                    })
-                  }}
-                  className={inputClass(false) + ' max-w-[10rem]'}
-                >
-                  <option value="low">{labelForPriority('low')}</option>
-                  <option value="medium">{labelForPriority('medium')}</option>
-                  <option value="high">{labelForPriority('high')}</option>
-                </select>
-              </div>
-            ),
-          )}
-        </div>
-      </Section>
-
-      <Section
-        Icon={Clock}
-        title={t('settings.notificationSchedule')}
-        description={t('settings.notificationScheduleDesc')}
-      >
-        <FieldGrid>
-          <Field id="dailyReport" label={t('settings.fields.dailyReport')}>
-            <input
-              id="dailyReport"
-              type="time"
-              value={formData.notifications?.scheduling?.dailyReport || '18:00'}
-              onChange={(e) =>
-                updateFormData('notifications', 'scheduling', {
-                  ...formData.notifications?.scheduling,
-                  dailyReport: e.target.value,
-                })
-              }
-              className={inputClass(false)}
-            />
-          </Field>
-          <Field id="weeklyReport" label={t('settings.fields.weeklyReport')}>
-            <select
-              id="weeklyReport"
-              value={formData.notifications?.scheduling?.weeklyReport || 'sunday'}
-              onChange={(e) =>
-                updateFormData('notifications', 'scheduling', {
-                  ...formData.notifications?.scheduling,
-                  weeklyReport: e.target.value,
-                })
-              }
-              className={inputClass(false)}
-            >
-              <option value="sunday">{t('settings.options.sunday')}</option>
-              <option value="monday">{t('settings.options.monday')}</option>
-              <option value="friday">{t('settings.options.friday')}</option>
-              <option value="saturday">{t('settings.options.saturday')}</option>
             </select>
           </Field>
         </FieldGrid>
@@ -1933,141 +1620,6 @@ function StatusListEditor({
           />
         </div>
       ))}
-    </div>
-  )
-}
-
-interface RoleEditorProps {
-  roles: RoleRecord[]
-  onChange: (next: RoleRecord[]) => void
-}
-
-function RoleEditor({ roles, onChange }: RoleEditorProps) {
-  const { t } = useTranslation()
-  const list = roles.length > 0 ? roles : DEFAULT_ROLES
-  return (
-    <div className="space-y-4">
-      {list.map((role, index) => (
-        <div key={index} className="rounded-sm border border-divider bg-paper p-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <Field id={`roleCode${index}`} label={t('settings.fields.roleCode')}>
-              <input
-                id={`roleCode${index}`}
-                type="text"
-                value={role.code}
-                onChange={(e) => {
-                  const next = [...list]
-                  next[index] = { ...next[index], code: e.target.value }
-                  onChange(next)
-                }}
-                className={inputClass(false)}
-              />
-            </Field>
-            <Field id={`roleName${index}`} label={t('settings.fields.roleName')}>
-              <input
-                id={`roleName${index}`}
-                type="text"
-                value={role.name}
-                onChange={(e) => {
-                  const next = [...list]
-                  next[index] = { ...next[index], name: e.target.value }
-                  onChange(next)
-                }}
-                className={inputClass(false)}
-              />
-            </Field>
-            <div className="flex items-end">
-              <label className="inline-flex min-h-touch items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={role.isActive}
-                  onChange={(e) => {
-                    const next = [...list]
-                    next[index] = { ...next[index], isActive: e.target.checked }
-                    onChange(next)
-                  }}
-                  className={checkboxClass()}
-                />
-                <span className="text-label text-ink-soft">
-                  {t('settings.fields.roleActive')}
-                </span>
-              </label>
-            </div>
-          </div>
-          <div className="mt-3">
-            <Field id={`rolePerms${index}`} label={t('settings.fields.rolePermissions')}>
-              <input
-                id={`rolePerms${index}`}
-                type="text"
-                value={role.permissions.join(', ')}
-                onChange={(e) => {
-                  const next = [...list]
-                  next[index] = {
-                    ...next[index],
-                    permissions: e.target.value
-                      .split(',')
-                      .map((p) => p.trim())
-                      .filter((p) => p),
-                  }
-                  onChange(next)
-                }}
-                className={inputClass(false)}
-              />
-            </Field>
-          </div>
-          <div className="mt-3 flex justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                const next = [...list]
-                next.splice(index, 1)
-                onChange(next)
-              }}
-              disabled={list.length <= 1}
-              className={dangerBtnClass()}
-            >
-              {t('settings.actions.deleteRole')}
-            </button>
-          </div>
-        </div>
-      ))}
-      <button
-        type="button"
-        onClick={() =>
-          onChange([
-            ...list,
-            { code: 'new_role', name: '새 역할', permissions: ['읽기'], isActive: true },
-          ])
-        }
-        className={addRowBtnClass()}
-      >
-        <Plus className="h-4 w-4" aria-hidden="true" />
-        {t('settings.actions.addRole')}
-      </button>
-    </div>
-  )
-}
-
-interface ToggleRowProps {
-  label: string
-  hint?: string
-  checked: boolean
-  onChange: (v: boolean) => void
-}
-
-function ToggleRow({ label, hint, checked, onChange }: ToggleRowProps) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-sm border border-divider bg-paper p-3">
-      <div>
-        <p className="text-label font-medium text-ink">{label}</p>
-        {hint && <p className="text-caption text-ink-mute">{hint}</p>}
-      </div>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className={checkboxClass()}
-      />
     </div>
   )
 }
