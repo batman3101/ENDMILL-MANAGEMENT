@@ -1057,6 +1057,7 @@ const resources = {
         backToMain: '메인으로 돌아가기',
         loginError: '로그인에 실패했습니다.',
         emailPasswordRequired: '이메일과 비밀번호를 입력해주세요.',
+        idleLogoutMessage: '자리비움이 감지되어 자동 로그아웃되었습니다. 다시 로그인해 주세요.',
       },
 
       // 프로필
@@ -4183,6 +4184,7 @@ const resources = {
         backToMain: 'Quay lại trang chính',
         loginError: 'Đăng nhập thất bại.',
         emailPasswordRequired: 'Vui lòng nhập email và mật khẩu.',
+        idleLogoutMessage: 'Phát hiện không hoạt động, đã tự động đăng xuất. Vui lòng đăng nhập lại.',
       },
 
       // 프로필
