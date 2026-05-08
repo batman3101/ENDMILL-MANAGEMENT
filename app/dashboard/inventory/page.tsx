@@ -1421,14 +1421,27 @@ export default function InventoryPage() {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700">{t('inventory.statusInfo')}</label>
-                      <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
-                        selectedItem.current_stock <= selectedItem.min_stock * 1.5 ? 'bg-red-100 text-red-800' :
-                        selectedItem.current_stock <= selectedItem.min_stock ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {selectedItem.current_stock <= selectedItem.min_stock * 1.5 ? t('inventory.critical') :
-                         selectedItem.current_stock <= selectedItem.min_stock ? t('inventory.low') : t('inventory.sufficient')}
-                      </span>
+                      {(() => {
+                        // settings.inventory.stockThresholds 기반 — 사용자 설정 임계값 적용
+                        // 추가: 기존 코드의 조건 순서 버그(첫 조건이 항상 매칭되어 'low' 도달 불가) 함께 수정
+                        const min = selectedItem.min_stock || 0
+                        const current = selectedItem.current_stock || 0
+                        const thresholds = settings.inventory?.stockThresholds ?? { criticalPercent: 50, lowPercent: 100 }
+                        const criticalLine = min * (thresholds.criticalPercent / 100)
+                        const lowLine = min * (thresholds.lowPercent / 100)
+                        const isCritical = current <= criticalLine
+                        const isLow = !isCritical && current <= lowLine
+                        return (
+                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                            isCritical ? 'bg-red-100 text-red-800' :
+                            isLow ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {isCritical ? t('inventory.critical') :
+                             isLow ? t('inventory.low') : t('inventory.sufficient')}
+                          </span>
+                        )
+                      })()}
                     </div>
                   </div>
                 </div>

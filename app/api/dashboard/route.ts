@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 import { getFactoryToday, getFactoryYesterday, getFactoryDayRange } from '@/lib/utils/dateUtils'
 import { applyFactoryFilter } from '@/lib/utils/factoryFilter'
+import { InventorySettings } from '@/lib/utils/settingsHelper'
 
 // 동적 라우트로 명시적 설정 (캐싱 방지)
 export const dynamic = 'force-dynamic'
@@ -107,6 +108,9 @@ export async function GET(request: NextRequest) {
       inventory: allInventory.length,
     })
 
+    // 사용자 설정 기반 재고 임계값 (settings.inventory.stockThresholds)
+    const stockThresholds = await InventorySettings.getStockThresholds()
+
     // 2단계: 분석 함수 병렬 실행 (공통 데이터 재사용)
     const [
       equipmentStats,
@@ -125,7 +129,7 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       getEquipmentStats(allEquipment, allToolPositions, factoryId),
       getEndmillUsageStats(allToolChanges),
-      getInventoryStats(allInventory),
+      getInventoryStats(allInventory, stockThresholds),
       getToolChangeStats(supabase, allToolChanges),
       getCostAnalysis(allToolChanges, allEndmillTypes),
       getFrequencyAnalysis(allToolChanges, allEquipment),
@@ -264,14 +268,22 @@ function getEndmillUsageStats(allToolChanges: any[]) {
 }
 
 // 재고 통계 (공통 inventory 데이터 재사용 - DB 쿼리 제거)
-function getInventoryStats(allInventory: any[]) {
+// thresholds: settings.inventory.stockThresholds — criticalPercent / lowPercent (%)
+function getInventoryStats(
+  allInventory: any[],
+  thresholds: { criticalPercent: number; lowPercent: number }
+) {
   const items = allInventory || []
 
-  // status 필드를 신뢰하지 않고, 실제 재고 수량으로 직접 계산
+  // 사용자 설정 임계값 기반으로 직접 계산 (status 필드 무시 — 실시간 정확성 우선)
   const stats = items.reduce((acc: { sufficient: number; low: number; critical: number }, item: any) => {
-    if (item.current_stock >= item.min_stock * 1.5) acc.sufficient++
-    else if (item.current_stock >= item.min_stock) acc.low++
-    else acc.critical++
+    const min = item.min_stock || 0
+    const current = item.current_stock || 0
+    const criticalLine = min * (thresholds.criticalPercent / 100)
+    const lowLine = min * (thresholds.lowPercent / 100)
+    if (current <= criticalLine) acc.critical++
+    else if (current <= lowLine) acc.low++
+    else acc.sufficient++
     return acc
   }, { sufficient: 0, low: 0, critical: 0 })
 
