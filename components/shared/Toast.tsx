@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { createContext, useContext, ReactNode } from 'react'
+import { useSettings } from '@/lib/hooks/useSettings'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
+export type ToastPosition = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left'
 
 export interface Toast {
   id: string
@@ -39,6 +41,11 @@ let toastCounter = 0
 
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([])
+  // settings.ui.notifications: 사용자 설정 (위치 + 표시 시간)
+  // duration 단위는 초이므로 ms 변환. 기본값 4초, top-right.
+  const { settings } = useSettings()
+  const defaultDurationMs = (settings?.ui?.notifications?.duration ?? 4) * 1000
+  const position: ToastPosition = settings?.ui?.notifications?.position ?? 'top-right'
 
   const removeToast = (id: string) => {
     setToasts(prev => prev.filter(toast => toast.id !== id))
@@ -50,7 +57,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
     const newToast: Toast = {
       ...toast,
       id,
-      duration: toast.duration || 4000
+      duration: toast.duration || defaultDurationMs
     }
 
     setToasts(prev => [...prev, newToast])
@@ -80,7 +87,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
   return (
     <ToastContext.Provider value={{ showToast, showSuccess, showError, showWarning, showInfo }}>
       {children}
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
+      <ToastContainer toasts={toasts} onRemove={removeToast} position={position} />
     </ToastContext.Provider>
   )
 }
@@ -88,11 +95,19 @@ export function ToastProvider({ children }: ToastProviderProps) {
 interface ToastContainerProps {
   toasts: Toast[]
   onRemove: (id: string) => void
+  position: ToastPosition
 }
 
-function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
+const positionClass: Record<ToastPosition, string> = {
+  'top-right': 'top-4 right-4',
+  'top-left': 'top-4 left-4',
+  'bottom-right': 'bottom-4 right-4',
+  'bottom-left': 'bottom-4 left-4',
+}
+
+function ToastContainer({ toasts, onRemove, position }: ToastContainerProps) {
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
+    <div className={`fixed z-50 space-y-2 ${positionClass[position]}`}>
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
