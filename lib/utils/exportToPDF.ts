@@ -6,6 +6,7 @@
 import jsPDF from 'jspdf'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { logger } from './logger'
 
 export interface InsightData {
   id: string
@@ -121,7 +122,7 @@ export async function exportInsightToPDF(insight: InsightData): Promise<void> {
     // PDF 다운로드
     doc.save(fileName)
   } catch (error) {
-    console.error('PDF 생성 오류:', error)
+    logger.error('PDF 생성 오류:', error)
     throw new Error('PDF 생성 중 오류가 발생했습니다.')
   }
 }
@@ -204,7 +205,7 @@ export async function exportMultipleInsightsToPDF(
     // PDF 다운로드
     doc.save(fileName)
   } catch (error) {
-    console.error('PDF 생성 오류:', error)
+    logger.error('PDF 생성 오류:', error)
     throw new Error('PDF 생성 중 오류가 발생했습니다.')
   }
 }

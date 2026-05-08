@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import { logger } from '@/lib/utils/logger'
 
 // TranslationNamespace 타입 정의
 type TranslationNamespace = 'common' | 'navigation' | 'dashboard' | 'equipment' | 'endmill' | 'inventory' | 'toolChanges' | 'camSheets' | 'users' | 'settings' | 'reports'
@@ -68,11 +69,11 @@ export class TextScanService {
   public async scanProject(projectRoot: string): Promise<ScannedTextResult[]> {
     const results: ScannedTextResult[] = []
     
-    console.log('🔍 프로젝트 전체 한국어 텍스트 스캔 시작...')
+    logger.log('🔍 프로젝트 전체 한국어 텍스트 스캔 시작...')
     
     await this.scanDirectory(projectRoot, results)
     
-    console.log(`✅ 스캔 완료: ${results.length}개의 한국어 텍스트 발견`)
+    logger.log(`✅ 스캔 완료: ${results.length}개의 한국어 텍스트 발견`)
     
     return this.deduplicate(results)
   }
@@ -101,7 +102,7 @@ export class TextScanService {
         }
       }
     } catch (error) {
-      console.error(`디렉토리 스캔 오류 (${dirPath}):`, error)
+      logger.error(`디렉토리 스캔 오류 (${dirPath}):`, error)
     }
   }
 
@@ -129,10 +130,10 @@ export class TextScanService {
           })
         }
         
-        console.log(`📄 ${relativePath}: ${koreanTexts.length}개 텍스트 발견`)
+        logger.log(`📄 ${relativePath}: ${koreanTexts.length}개 텍스트 발견`)
       }
     } catch (error) {
-      console.error(`파일 스캔 오류 (${filePath}):`, error)
+      logger.error(`파일 스캔 오류 (${filePath}):`, error)
     }
   }
 

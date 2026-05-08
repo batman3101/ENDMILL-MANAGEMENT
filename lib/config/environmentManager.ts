@@ -4,6 +4,7 @@
  */
 
 import { SettingsManager } from '../data/settingsManager'
+import { logger } from '../utils/logger'
 
 export interface EnvironmentVariable {
   key: string
@@ -205,7 +206,7 @@ export class EnvironmentManager {
           break
       }
     } catch (error) {
-      console.error('설정 동기화 실패:', error)
+      logger.error('설정 동기화 실패:', error)
     }
   }
 
@@ -307,7 +308,7 @@ ${Object.entries(safeConfig)
     try {
       return Buffer.from(text).toString('base64')
     } catch (error) {
-      console.error('암호화 실패:', error)
+      logger.error('암호화 실패:', error)
       return text
     }
   }
@@ -323,7 +324,7 @@ ${Object.entries(safeConfig)
     try {
       return Buffer.from(encryptedText, 'base64').toString()
     } catch (error) {
-      console.error('복호화 실패:', error)
+      logger.error('복호화 실패:', error)
       return encryptedText
     }
   }

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { SystemSettings } from '@/lib/types/settings'
+import { logger } from '@/lib/utils/logger'
 
 interface SettingsContextType {
   settings: SystemSettings
@@ -31,7 +32,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         throw new Error(result.error || 'Failed to load settings')
       }
     } catch (err) {
-      console.error('Settings loading error:', err)
+      logger.error('Settings loading error:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
 
       // Fallback to default settings

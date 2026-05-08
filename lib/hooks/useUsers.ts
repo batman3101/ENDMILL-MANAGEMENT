@@ -234,7 +234,7 @@ export const useUsers = () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
     onError: (error) => {
-      console.error('❌ User creation failed:', error)
+      logger.error('❌ User creation failed:', error)
     }
   })
 
@@ -263,7 +263,7 @@ export const useUsers = () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
     onError: (error) => {
-      console.error('❌ User update failed:', error)
+      logger.error('❌ User update failed:', error)
     }
   })
 
@@ -280,7 +280,7 @@ export const useUsers = () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
     onError: (error) => {
-      console.error('❌ User deletion failed:', error)
+      logger.error('❌ User deletion failed:', error)
     }
   })
 

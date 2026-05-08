@@ -4,6 +4,7 @@
  */
 
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai'
+import { logger } from '@/lib/utils/logger'
 
 // Gemini 응답 타입
 export interface GeminiResponse {
@@ -61,7 +62,7 @@ class GeminiService {
         responseTimeMs,
       }
     } catch (error: any) {
-      console.error('Gemini API Error:', error)
+      logger.error('Gemini API Error:', error)
       throw new Error(`Gemini API request failed: ${error.message}`)
     }
   }
@@ -235,7 +236,7 @@ ${dataJson}
       const insights = JSON.parse(jsonText)
       return insights as Insight[]
     } catch (error) {
-      console.error('Failed to parse insights JSON:', error)
+      logger.error('Failed to parse insights JSON:', error)
       return []
     }
   }
@@ -260,7 +261,7 @@ ${dataJson}
       const response = result.response
       return response.text()
     } catch (error: any) {
-      console.error('Gemini Chat Error:', error)
+      logger.error('Gemini Chat Error:', error)
       throw new Error(`Chat request failed: ${error.message}`)
     }
   }

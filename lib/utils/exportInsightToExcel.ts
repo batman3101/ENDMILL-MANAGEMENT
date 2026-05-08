@@ -7,6 +7,7 @@ import ExcelJS from 'exceljs'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { InsightData } from './exportToPDF'
+import { logger } from './logger'
 
 /**
  * HTML을 텍스트로 변환
@@ -116,7 +117,7 @@ export async function exportInsightToExcel(
     // Excel 파일 다운로드
     await downloadWorkbook(workbook, fileName)
   } catch (error) {
-    console.error('Excel 생성 오류:', error)
+    logger.error('Excel 생성 오류:', error)
     throw new Error('Excel 생성 중 오류가 발생했습니다.')
   }
 }
@@ -204,7 +205,7 @@ export async function exportMultipleInsightsToExcel(
     // Excel 파일 다운로드
     await downloadWorkbook(workbook, fileName)
   } catch (error) {
-    console.error('Excel 생성 오류:', error)
+    logger.error('Excel 생성 오류:', error)
     throw new Error('Excel 생성 중 오류가 발생했습니다.')
   }
 }
@@ -276,7 +277,7 @@ export async function exportDataToExcel(
     // Excel 파일 다운로드
     await downloadWorkbook(workbook, fullFileName)
   } catch (error) {
-    console.error('Excel 생성 오류:', error)
+    logger.error('Excel 생성 오류:', error)
     throw new Error('Excel 생성 중 오류가 발생했습니다.')
   }
 }

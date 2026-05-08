@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader2, RefreshCw } from 'lucide-react'
 import { usePermissions } from '@/lib/hooks/usePermissions'
@@ -28,11 +28,7 @@ export default function SystemSettingsPage() {
 
   const canManageSettings = hasPermission('settings', 'update')
 
-  useEffect(() => {
-    fetchSettings()
-  }, [])
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       setIsLoading(true)
       const response = await fetch('/api/settings')
@@ -47,7 +43,11 @@ export default function SystemSettingsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [t])
+
+  useEffect(() => {
+    fetchSettings()
+  }, [fetchSettings])
 
   const handleEdit = (setting: SystemSetting) => {
     setEditingId(setting.id)

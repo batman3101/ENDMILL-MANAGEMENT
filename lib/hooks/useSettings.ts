@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { SettingsManager } from '@/lib/data/settingsManager'
-import { 
-  SystemSettings, 
-  SettingsCategory, 
+import {
+  SystemSettings,
+  SettingsCategory,
   SettingsHistory,
-  SettingsValidationResult 
+  SettingsValidationResult
 } from '@/lib/types/settings'
+import { logger } from '@/lib/utils/logger'
 
 // 설정 훅 반환 타입
 interface UseSettingsReturn {
@@ -124,7 +125,7 @@ export function useSettings(): UseSettingsReturn {
           }
         }
       } catch (error) {
-        console.warn('API에서 설정 로드 실패, 로컬 설정 사용:', error)
+        logger.warn('API에서 설정 로드 실패, 로컬 설정 사용:', error)
         // 폴백: 로컬 설정 사용
         if (settingsManagerRef.current) {
           setSettings(settingsManagerRef.current.getSettings())
@@ -219,7 +220,7 @@ export function useSettings(): UseSettingsReturn {
         })
         setSettings(result.data)
       } catch (apiError) {
-        console.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
+        logger.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
         settingsManagerRef.current?.updateSettings(updates, changedBy, reason)
         setSettings(settingsManagerRef.current?.getSettings() || settings)
@@ -258,7 +259,7 @@ export function useSettings(): UseSettingsReturn {
         })
         setSettings(prev => ({ ...prev, ...result.data }))
       } catch (apiError) {
-        console.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
+        logger.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
         settingsManagerRef.current?.updateCategorySettings(category, updates, changedBy, reason)
         const newSettings = settingsManagerRef.current?.getSettings() || settings
@@ -301,7 +302,7 @@ export function useSettings(): UseSettingsReturn {
         })
         setSettings(prev => ({ ...prev, ...result.data }))
       } catch (apiError) {
-        console.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
+        logger.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
         settingsManagerRef.current?.updateSetting(category, key, value, changedBy, reason)
         setSettings(settingsManagerRef.current?.getSettings() || settings)
@@ -336,7 +337,7 @@ export function useSettings(): UseSettingsReturn {
         })
         setSettings(result.data)
       } catch (apiError) {
-        console.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
+        logger.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
         settingsManagerRef.current?.resetSettings(category, changedBy)
         setSettings(settingsManagerRef.current?.getSettings() || settings)
@@ -376,7 +377,7 @@ export function useSettings(): UseSettingsReturn {
         })
         setSettings(result.data)
       } catch (apiError) {
-        console.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
+        logger.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
         settingsManagerRef.current?.importSettings(jsonData, changedBy)
         setSettings(settingsManagerRef.current?.getSettings() || settings)

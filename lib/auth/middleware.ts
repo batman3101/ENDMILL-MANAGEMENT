@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
 import { hasPermission, parsePermissionsFromDB, Permission } from './permissions'
 import { Database } from '@/lib/types/database'
+import { logger } from '@/lib/utils/logger'
 
 type UserRole = Database['public']['Enums']['user_role_type']
 
@@ -103,7 +104,7 @@ export async function withAuth(
       }
     }
   } catch (error: any) {
-    console.error('Error in withAuth middleware:', error)
+    logger.error('Error in withAuth middleware:', error)
     return {
       success: false,
       response: NextResponse.json(
