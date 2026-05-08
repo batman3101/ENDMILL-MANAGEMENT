@@ -273,11 +273,12 @@ export default function EndmillPage() {
   }, [searchTerm, statusFilter, typeFilter])
 
   // page guard: 결과가 줄어 현재 페이지가 범위를 벗어나면 마지막 페이지로
+  // 함수형 업데이트로 currentPage를 deps에서 제거 — R18 strict/concurrent 친화
   useEffect(() => {
-    if (totalPages > 0 && currentPage > totalPages) {
-      setCurrentPage(totalPages)
-    }
-  }, [totalPages, currentPage])
+    setCurrentPage((prev) =>
+      totalPages > 0 && prev > totalPages ? totalPages : prev
+    )
+  }, [totalPages])
 
   // 사용 설비 수 (실제 설비 데이터 기반)
   const getEndmillUsageCount = useCallback(

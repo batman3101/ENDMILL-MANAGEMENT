@@ -125,12 +125,12 @@ export default function EndmillDetailPage() {
     setCurrentPage(1)
   }, [sortField, sortOrder])
 
-  // page guard
+  // page guard: 함수형 업데이트로 currentPage를 deps에서 제거 — R18 strict/concurrent 친화
   useEffect(() => {
-    if (totalPages > 0 && currentPage > totalPages) {
-      setCurrentPage(totalPages)
-    }
-  }, [totalPages, currentPage])
+    setCurrentPage((prev) =>
+      totalPages > 0 && prev > totalPages ? totalPages : prev
+    )
+  }, [totalPages])
 
   const handleMasterDataUpdate = (data: any[]) => {
     showSuccess(
