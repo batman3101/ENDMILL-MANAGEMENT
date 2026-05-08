@@ -60,11 +60,6 @@ function formatDateForLocale(value: string | null | undefined, locale: string): 
   }
 }
 
-function formatEquipmentNumber(num: number | null | undefined): string {
-  if (num == null) return '—'
-  return `C${String(num).padStart(3, '0')}`
-}
-
 function statusVariant(status: string | null | undefined): StatusBadgeVariant {
   if (status === '가동중') return 'go'
   if (status === '점검중') return 'stop'
@@ -72,11 +67,8 @@ function statusVariant(status: string | null | undefined): StatusBadgeVariant {
   return 'neutral'
 }
 
-function statusUsageColor(percent: number): string {
-  if (percent >= 80) return 'bg-signal-stop'
-  if (percent >= 60) return 'bg-signal-watch'
-  return 'bg-signal-go'
-}
+// formatEquipmentNumber 와 statusUsageColor 는 컴포넌트 내부로 이동했습니다 —
+// settings(numberFormat / toolChanges.lifeThresholds)에 closure로 접근하기 위함.
 
 interface AddFormData {
   equipmentNumber: string
@@ -126,6 +118,30 @@ export default function EquipmentPage() {
   const equipmentStatuses = settings.equipment.statuses
   const settingsProcesses = settings.equipment.processes
   const settingsModels = settings.equipment.models
+
+  // 사용자 설정의 numberFormat 패턴(`C{number:3}`) 적용
+  const formatEquipmentNumber = useCallback(
+    (num: number | null | undefined): string => {
+      if (num == null) return '—'
+      const format = settings.equipment?.numberFormat ?? 'C{number:3}'
+      return format.replace(/\{number:(\d+)\}/, (_, w: string) =>
+        String(num).padStart(parseInt(w, 10), '0')
+      )
+    },
+    [settings.equipment?.numberFormat]
+  )
+
+  // 사용자 설정의 lifeThresholds(% 단위) 적용 — 사용률이 critical 이상이면 stop, warning 이상이면 watch
+  const statusUsageColor = useCallback(
+    (percent: number): string => {
+      const warning = settings.toolChanges?.lifeThresholds?.warning ?? 80
+      const critical = settings.toolChanges?.lifeThresholds?.critical ?? 95
+      if (percent >= critical) return 'bg-signal-stop'
+      if (percent >= warning) return 'bg-signal-watch'
+      return 'bg-signal-go'
+    },
+    [settings.toolChanges?.lifeThresholds]
+  )
 
   const throttledRefresh = useCallback(() => {
     const now = Date.now()
