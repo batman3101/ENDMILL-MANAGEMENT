@@ -5,7 +5,6 @@ import QueryProvider from '../lib/providers/QueryProvider';
 import { I18nProvider } from '../lib/providers/I18nProvider';
 import { ToastProvider } from '../components/shared/Toast';
 import { AuthProvider } from '../lib/hooks/useAuth';
-import { SettingsProvider } from '../lib/providers/SettingsProvider';
 import { FactoryProvider } from '../lib/providers/FactoryProvider';
 import { ServiceWorkerRegister, InstallPrompt } from '../components/pwa';
 import { MobileDebugConsole } from '../components/debug/MobileDebugConsole';
@@ -88,11 +87,9 @@ export default function RootLayout({
               <QueryProvider>
                 <AuthProvider>
                   <FactoryProvider>
-                    <SettingsProvider>
-                      {children}
-                      {/* PWA 설치 프롬프트 */}
-                      <InstallPrompt />
-                    </SettingsProvider>
+                    {children}
+                    {/* PWA 설치 프롬프트 */}
+                    <InstallPrompt />
                   </FactoryProvider>
                 </AuthProvider>
               </QueryProvider>
