@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Loader2, RefreshCw } from 'lucide-react'
 import { usePermissions } from '@/lib/hooks/usePermissions'
 import { clientLogger } from '@/lib/utils/logger'
+
+type SettingValue = string | number | boolean | null
 
 interface SystemSetting {
   id: string
   category: string
   key: string
-  value: any
+  value: SettingValue
   description: string | null
   updated_at: string | null
 }
@@ -21,9 +24,8 @@ export default function SystemSettingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editValue, setEditValue] = useState<any>(null)
+  const [editValue, setEditValue] = useState<SettingValue>(null)
 
-  // system_admin 권한 확인
   const canManageSettings = hasPermission('settings', 'update')
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export default function SystemSettingsPage() {
       }
     } catch (error) {
       clientLogger.error('설정 조회 오류:', error)
-      alert('설정을 불러오는데 실패했습니다.')
+      alert(t('settings.system.loadError'))
     } finally {
       setIsLoading(false)
     }
@@ -59,7 +61,7 @@ export default function SystemSettingsPage() {
 
   const handleSave = async (setting: SystemSetting) => {
     if (!canManageSettings) {
-      alert('설정을 변경할 권한이 없습니다.')
+      alert(t('settings.system.noPermission'))
       return
     }
 
@@ -71,23 +73,23 @@ export default function SystemSettingsPage() {
         body: JSON.stringify({
           category: setting.category,
           key: setting.key,
-          value: editValue
-        })
+          value: editValue,
+        }),
       })
 
       const data = await response.json()
 
       if (data.success) {
-        alert('설정이 성공적으로 업데이트되었습니다.')
+        alert(t('settings.system.updateSuccess'))
         await fetchSettings()
         setEditingId(null)
         setEditValue(null)
       } else {
-        alert(data.error || '설정 업데이트에 실패했습니다.')
+        alert(data.error || t('settings.system.updateError'))
       }
     } catch (error) {
       clientLogger.error('설정 업데이트 오류:', error)
-      alert('설정 업데이트 중 오류가 발생했습니다.')
+      alert(t('settings.system.updateError'))
     } finally {
       setIsSaving(false)
     }
@@ -96,161 +98,159 @@ export default function SystemSettingsPage() {
   const renderValueInput = (setting: SystemSetting, isEditing: boolean) => {
     const value = isEditing ? editValue : setting.value
 
-    // 숫자 타입
     if (typeof setting.value === 'number') {
       return isEditing ? (
         <input
           type="number"
-          value={value}
+          value={value as number}
           onChange={(e) => setEditValue(Number(e.target.value))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full min-h-touch rounded-sm border border-divider bg-paper px-3 py-2 text-label text-ink focus:border-gauge-cobalt focus:outline-none focus:ring-1 focus:ring-gauge-cobalt"
         />
       ) : (
-        <span className="text-gray-900 font-medium">{value}</span>
+        <span className="text-label font-medium text-ink">{value as number}</span>
       )
     }
 
-    // 불리언 타입
     if (typeof setting.value === 'boolean') {
       return isEditing ? (
         <select
           value={value ? 'true' : 'false'}
           onChange={(e) => setEditValue(e.target.value === 'true')}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full min-h-touch rounded-sm border border-divider bg-paper px-3 py-2 text-label text-ink focus:border-gauge-cobalt focus:outline-none focus:ring-1 focus:ring-gauge-cobalt"
         >
-          <option value="true">활성화</option>
-          <option value="false">비활성화</option>
+          <option value="true">{t('settings.system.enabled')}</option>
+          <option value="false">{t('settings.system.disabled')}</option>
         </select>
       ) : (
-        <span className={`px-2 py-1 rounded text-xs font-medium ${
-          value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-        }`}>
-          {value ? '활성화' : '비활성화'}
+        <span
+          className={
+            value
+              ? 'inline-flex items-center rounded-sm bg-signal-go-soft px-2 py-0.5 text-caption font-medium text-signal-go-strong'
+              : 'inline-flex items-center rounded-sm bg-paper-warm px-2 py-0.5 text-caption font-medium text-ink-soft'
+          }
+        >
+          {value ? t('settings.system.enabled') : t('settings.system.disabled')}
         </span>
       )
     }
 
-    // 문자열 타입
     return isEditing ? (
       <input
         type="text"
-        value={value}
+        value={(value as string) ?? ''}
         onChange={(e) => setEditValue(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        className="w-full min-h-touch rounded-sm border border-divider bg-paper px-3 py-2 text-label text-ink focus:border-gauge-cobalt focus:outline-none focus:ring-1 focus:ring-gauge-cobalt"
       />
     ) : (
-      <span className="text-gray-900 font-medium">{value}</span>
+      <span className="text-label font-medium text-ink">{value as string}</span>
     )
   }
 
   if (!canManageSettings) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">접근 권한 없음</h2>
-          <p className="text-gray-600">시스템 설정을 관리할 권한이 없습니다.</p>
+          <h2 className="text-title font-semibold text-ink">
+            {t('settings.system.accessDeniedTitle')}
+          </h2>
+          <p className="mt-1 text-label text-ink-soft">
+            {t('settings.system.accessDeniedDesc')}
+          </p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('settings.systemSettings')}</h1>
-          <p className="text-sm text-gray-600 mt-1">시스템 전역 설정을 관리합니다.</p>
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-end">
         <button
           onClick={fetchSettings}
           disabled={isLoading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+          className="inline-flex min-h-touch items-center gap-2 rounded-sm border border-divider bg-paper px-3 text-label font-medium text-ink transition-colors hover:bg-paper-warm disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isLoading ? '새로고침 중...' : '새로고침'}
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <RefreshCw className="h-4 w-4" aria-hidden="true" />
+          )}
+          {isLoading ? t('settings.system.refreshing') : t('settings.system.refresh')}
         </button>
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-64">
+        <div className="flex h-64 items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">설정을 불러오는 중...</p>
+            <Loader2
+              className="mx-auto mb-4 h-8 w-8 animate-spin text-gauge-cobalt-strong"
+              aria-hidden="true"
+            />
+            <p className="text-label text-ink-soft">{t('settings.system.loading')}</p>
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="overflow-hidden rounded-md border border-divider bg-paper-warm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-divider">
+              <thead className="bg-paper-warm">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    카테고리
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    키
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    값
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    설명
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    마지막 수정
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    작업
-                  </th>
+                  <Th>{t('settings.system.colCategory')}</Th>
+                  <Th>{t('settings.system.colKey')}</Th>
+                  <Th>{t('settings.system.colValue')}</Th>
+                  <Th>{t('settings.system.colDescription')}</Th>
+                  <Th>{t('settings.system.colUpdatedAt')}</Th>
+                  <Th align="right">{t('settings.system.colAction')}</Th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-divider bg-paper">
                 {settings.map((setting) => {
                   const isEditing = editingId === setting.id
                   return (
-                    <tr key={setting.id} className={isEditing ? 'bg-blue-50' : 'hover:bg-gray-50'}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded">
+                    <tr
+                      key={setting.id}
+                      className={isEditing ? 'bg-gauge-cobalt-soft' : 'hover:bg-paper-warm'}
+                    >
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span className="inline-flex items-center rounded-sm bg-paper-warm px-2 py-0.5 text-caption font-medium text-ink-soft">
                           {setting.category}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <code className="text-sm text-gray-900">{setting.key}</code>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <code className="text-caption text-ink">{setting.key}</code>
                       </td>
-                      <td className="px-6 py-4">
-                        {renderValueInput(setting, isEditing)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-4 py-3">{renderValueInput(setting, isEditing)}</td>
+                      <td className="px-4 py-3 text-label text-ink-soft">
                         {setting.description || '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="whitespace-nowrap px-4 py-3 text-caption text-ink-mute">
                         {setting.updated_at
                           ? new Date(setting.updated_at).toLocaleString('ko-KR')
                           : '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-label font-medium">
                         {isEditing ? (
-                          <div className="flex items-center justify-end space-x-2">
+                          <div className="flex items-center justify-end gap-3">
                             <button
                               onClick={() => handleSave(setting)}
                               disabled={isSaving}
-                              className="text-green-600 hover:text-green-900 disabled:text-gray-400"
+                              className="text-signal-go-strong hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              저장
+                              {t('common.save')}
                             </button>
                             <button
                               onClick={handleCancel}
                               disabled={isSaving}
-                              className="text-gray-600 hover:text-gray-900 disabled:text-gray-400"
+                              className="text-ink-soft hover:text-ink hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              취소
+                              {t('common.cancel')}
                             </button>
                           </div>
                         ) : (
                           <button
                             onClick={() => handleEdit(setting)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-gauge-cobalt-strong hover:underline"
                           >
-                            수정
+                            {t('common.edit')}
                           </button>
                         )}
                       </td>
@@ -262,12 +262,32 @@ export default function SystemSettingsPage() {
           </div>
 
           {settings.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">등록된 시스템 설정이 없습니다.</p>
+            <div className="py-12 text-center">
+              <p className="text-label text-ink-mute">{t('settings.system.empty')}</p>
             </div>
           )}
         </div>
       )}
     </div>
+  )
+}
+
+interface ThProps {
+  children: React.ReactNode
+  align?: 'left' | 'right'
+}
+
+function Th({ children, align = 'left' }: ThProps) {
+  return (
+    <th
+      scope="col"
+      className={
+        align === 'right'
+          ? 'px-4 py-3 text-right text-caption font-medium uppercase tracking-wider text-ink-soft'
+          : 'px-4 py-3 text-left text-caption font-medium uppercase tracking-wider text-ink-soft'
+      }
+    >
+      {children}
+    </th>
   )
 }

@@ -1,56 +1,90 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  AlertTriangle,
+  Bell,
+  Boxes,
+  Building2,
+  Cpu,
+  Factory,
+  Globe2,
+  Info,
+  Layers,
+  Loader2,
+  Lock,
+  MapPin,
+  Monitor,
+  Palette,
+  Plus,
+  RefreshCw,
+  Save,
+  ShieldAlert,
+  Sliders,
+  Tags,
+  Truck,
+  UserCheck,
+  Users,
+  Wrench,
+  X,
+  Clock,
+} from 'lucide-react'
 import { useSettings } from '../../../lib/hooks/useSettings'
 import { SettingsCategory } from '../../../lib/types/settings'
 import { useToast } from '../../../components/shared/Toast'
 import { AdminGuard } from '../../../components/auth/PermissionGuard'
 import { clientLogger } from '../../../lib/utils/logger'
 
-// 설정 탭 정의
-const SETTINGS_TABS = [
-  { 
-    id: 'system' as SettingsCategory, 
-    name: '시스템 설정', 
-    icon: '⚙️',
-    description: '기본 시스템 설정 및 환경 구성'
-  },
-  { 
-    id: 'equipment' as SettingsCategory, 
-    name: '설비 관리', 
-    icon: '🏭',
-    description: '설비 번호, 위치, 상태 관리'
-  },
-  { 
-    id: 'inventory' as SettingsCategory, 
-    name: '재고 관리', 
-    icon: '📦',
-    description: '재고 임계값 및 카테고리 설정'
-  },
-  { 
-    id: 'toolChanges' as SettingsCategory, 
-    name: '교체 이력', 
-    icon: '🔧',
-    description: '교체 사유 및 임계값 설정'
-  },
-  { 
-    id: 'organization' as SettingsCategory, 
-    name: '조직 관리', 
-    icon: '👥',
-    description: '부서, 교대, 역할 관리'
-  },
-  { 
-    id: 'ui' as SettingsCategory, 
-    name: 'UI/UX', 
-    icon: '🎨',
-    description: '화면 테마 및 인터페이스 설정'
-  },
-  {
-    id: 'notifications' as SettingsCategory,
-    name: '알림 설정',
-    icon: '🔔',
-    description: '알림 방식 및 스케줄 설정'
-  }
+// === Types ===
+
+interface EndmillCategoryRecord {
+  id: string
+  code: string
+  name_ko: string
+  name_vi?: string
+  description?: string | null
+}
+
+interface SupplierRecord {
+  id: string
+  code: string
+  name: string
+  quality_rating?: number | null
+  is_active?: boolean
+}
+
+interface RoleRecord {
+  code: string
+  name: string
+  permissions: string[]
+  isActive: boolean
+}
+
+const TAB_DEFS: Array<{
+  id: SettingsCategory
+  Icon: typeof Cpu
+  labelKey: string
+}> = [
+  { id: 'system', Icon: Cpu, labelKey: 'settings.tabs.system' },
+  { id: 'equipment', Icon: Factory, labelKey: 'settings.tabs.equipment' },
+  { id: 'inventory', Icon: Boxes, labelKey: 'settings.tabs.inventory' },
+  { id: 'toolChanges', Icon: Wrench, labelKey: 'settings.tabs.toolChanges' },
+  { id: 'organization', Icon: Users, labelKey: 'settings.tabs.organization' },
+  { id: 'ui', Icon: Palette, labelKey: 'settings.tabs.ui' },
+  { id: 'notifications', Icon: Bell, labelKey: 'settings.tabs.notifications' },
+]
+
+const DEFAULT_LOCATIONS = ['A동', 'B동']
+const DEFAULT_MODELS = ['PA1', 'PA2', 'PS', 'B7', 'Q7']
+const DEFAULT_PROCESSES = ['CNC1', 'CNC2', 'CNC2-1']
+const DEFAULT_REASONS = ['정상 수명', '파손', '마모', '품질 불량', '기타']
+const DEFAULT_DEPARTMENTS = ['종합 관리실', '공구 관리실', '기술팀']
+const DEFAULT_SHIFTS = ['A', 'B']
+const DEFAULT_ROLES: RoleRecord[] = [
+  { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
+  { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
+  { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true },
 ]
 
 export default function SettingsPage() {
@@ -62,6 +96,7 @@ export default function SettingsPage() {
 }
 
 function SettingsPageContent() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<SettingsCategory>('system')
   const {
     settings,
@@ -69,47 +104,38 @@ function SettingsPageContent() {
     resetSettings,
     isLoading,
     error,
-    hasUnsavedChanges
+    hasUnsavedChanges,
   } = useSettings()
-  const { showSuccess, showError, showInfo } = useToast()
+  const { showSuccess, showError } = useToast()
 
-  // 임시 폼 상태 (각 탭별로)
   const [formData, setFormData] = useState(settings || null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // 엔드밀 카테고리 관리 state (endmill_categories 테이블에서 직접 관리)
-  const [endmillCategories, setEndmillCategories] = useState<any[]>([])
+  // 엔드밀 카테고리
+  const [endmillCategories, setEndmillCategories] = useState<EndmillCategoryRecord[]>([])
   const [isCategoryLoading, setIsCategoryLoading] = useState(false)
-
-  // 카테고리 모달 state
   const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add')
-  const [modalCategoryData, setModalCategoryData] = useState<any>(null)
+  const [modalCategoryData, setModalCategoryData] = useState<EndmillCategoryRecord | null>(null)
   const [categoryCode, setCategoryCode] = useState('')
   const [categoryName, setCategoryName] = useState('')
 
-  // 공급업체 관리 state (suppliers 테이블에서 직접 관리)
-  const [suppliers, setSuppliers] = useState<any[]>([])
+  // 공급업체
+  const [suppliers, setSuppliers] = useState<SupplierRecord[]>([])
   const [isSupplierLoading, setIsSupplierLoading] = useState(false)
-
-  // 공급업체 모달 state
   const [showSupplierModal, setShowSupplierModal] = useState(false)
   const [modalSupplierMode, setModalSupplierMode] = useState<'add' | 'edit'>('add')
-  const [modalSupplierData, setModalSupplierData] = useState<any>(null)
+  const [modalSupplierData, setModalSupplierData] = useState<SupplierRecord | null>(null)
   const [supplierCode, setSupplierCode] = useState('')
   const [supplierName, setSupplierName] = useState('')
   const [supplierQualityRating, setSupplierQualityRating] = useState('8')
 
-  const activeTabInfo = SETTINGS_TABS.find(tab => tab.id === activeTab)
-
-  // 폼 데이터 업데이트 시 settings가 변경되면 동기화
   useEffect(() => {
     if (settings) {
       setFormData(settings)
     }
   }, [settings])
 
-  // 엔드밀 카테고리 불러오기
   useEffect(() => {
     if (activeTab === 'inventory') {
       fetchEndmillCategories()
@@ -122,35 +148,31 @@ function SettingsPageContent() {
       setIsCategoryLoading(true)
       const response = await fetch('/api/endmill-categories')
       const result = await response.json()
-
       if (result.success) {
         setEndmillCategories(result.data || [])
       }
-    } catch (error) {
-      clientLogger.error('카테고리 조회 오류:', error)
+    } catch (err) {
+      clientLogger.error('카테고리 조회 오류:', err)
     } finally {
       setIsCategoryLoading(false)
     }
   }
 
-  // 공급업체 불러오기
   const fetchSuppliers = async () => {
     try {
       setIsSupplierLoading(true)
       const response = await fetch('/api/suppliers?includeInactive=true')
       const result = await response.json()
-
       if (result.success) {
         setSuppliers(result.data || [])
       }
-    } catch (error) {
-      clientLogger.error('공급업체 조회 오류:', error)
+    } catch (err) {
+      clientLogger.error('공급업체 조회 오류:', err)
     } finally {
       setIsSupplierLoading(false)
     }
   }
 
-  // 카테고리 추가 모달 열기
   const handleAddCategory = () => {
     setModalMode('add')
     setCategoryCode('')
@@ -159,13 +181,11 @@ function SettingsPageContent() {
     setShowCategoryModal(true)
   }
 
-  // 카테고리 추가 실행
   const handleSubmitAddCategory = async () => {
     if (!categoryCode.trim() || !categoryName.trim()) {
-      showError('입력 오류', '카테고리 코드와 이름을 모두 입력하세요.')
+      showError(t('common.validationError'), t('settings.modals.categoryCodeNameRequired'))
       return
     }
-
     try {
       setIsCategoryLoading(true)
       const response = await fetch('/api/endmill-categories', {
@@ -175,29 +195,26 @@ function SettingsPageContent() {
           code: categoryCode.trim().toUpperCase(),
           name_ko: categoryName.trim(),
           name_vi: categoryName.trim(),
-          description: `${categoryName.trim()} 엔드밀`
-        })
+          description: `${categoryName.trim()} 엔드밀`,
+        }),
       })
-
       const result = await response.json()
-
       if (result.success) {
-        showSuccess('카테고리 추가', '카테고리가 성공적으로 추가되었습니다.')
+        showSuccess(t('common.addSuccess'), t('settings.modals.categoryAddSuccess'))
         await fetchEndmillCategories()
         setShowCategoryModal(false)
       } else {
-        showError('추가 실패', result.error || '카테고리 추가에 실패했습니다.')
+        showError(t('common.addFailed'), result.error || t('settings.modals.categoryAddFailed'))
       }
-    } catch (error) {
-      clientLogger.error('카테고리 추가 오류:', error)
-      showError('추가 실패', '카테고리 추가 중 오류가 발생했습니다.')
+    } catch (err) {
+      clientLogger.error('카테고리 추가 오류:', err)
+      showError(t('common.addFailed'), t('settings.modals.categoryAddFailed'))
     } finally {
       setIsCategoryLoading(false)
     }
   }
 
-  // 카테고리 수정 모달 열기
-  const handleUpdateCategory = (category: any) => {
+  const handleUpdateCategory = (category: EndmillCategoryRecord) => {
     setModalMode('edit')
     setCategoryCode(category.code)
     setCategoryName(category.name_ko)
@@ -205,15 +222,12 @@ function SettingsPageContent() {
     setShowCategoryModal(true)
   }
 
-  // 카테고리 수정 실행
   const handleSubmitUpdateCategory = async () => {
     if (!categoryName.trim()) {
-      showError('입력 오류', '카테고리 이름을 입력하세요.')
+      showError(t('common.validationError'), t('settings.modals.categoryNameRequired'))
       return
     }
-
     if (!modalCategoryData) return
-
     try {
       setIsCategoryLoading(true)
       const response = await fetch('/api/endmill-categories', {
@@ -222,56 +236,49 @@ function SettingsPageContent() {
         body: JSON.stringify({
           id: modalCategoryData.id,
           name_ko: categoryName.trim(),
-          name_vi: categoryName.trim()
-        })
+          name_vi: categoryName.trim(),
+        }),
       })
-
       const result = await response.json()
-
       if (result.success) {
-        showSuccess('카테고리 수정', '카테고리가 성공적으로 수정되었습니다.')
+        showSuccess(t('common.updateSuccess'), t('settings.modals.categoryUpdateSuccess'))
         await fetchEndmillCategories()
         setShowCategoryModal(false)
       } else {
-        showError('수정 실패', result.error || '카테고리 수정에 실패했습니다.')
+        showError(t('common.updateFailed'), result.error || t('settings.modals.categoryUpdateFailed'))
       }
-    } catch (error) {
-      clientLogger.error('카테고리 수정 오류:', error)
-      showError('수정 실패', '카테고리 수정 중 오류가 발생했습니다.')
+    } catch (err) {
+      clientLogger.error('카테고리 수정 오류:', err)
+      showError(t('common.updateFailed'), t('settings.modals.categoryUpdateFailed'))
     } finally {
       setIsCategoryLoading(false)
     }
   }
 
-  // 카테고리 삭제
-  const handleDeleteCategory = async (category: any) => {
-    if (!confirm(`정말로 "${category.name_ko}" 카테고리를 삭제하시겠습니까?\n\n이 카테고리를 사용하는 엔드밀이 있으면 삭제할 수 없습니다.`)) {
+  const handleDeleteCategory = async (category: EndmillCategoryRecord) => {
+    if (!confirm(t('settings.modals.categoryDeleteConfirm', { name: category.name_ko }))) {
       return
     }
-
     try {
       setIsCategoryLoading(true)
       const response = await fetch(`/api/endmill-categories?id=${category.id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       })
-
       const result = await response.json()
-
       if (result.success) {
-        showSuccess('카테고리 삭제', '카테고리가 성공적으로 삭제되었습니다.')
+        showSuccess(t('common.deleteSuccess'), t('settings.modals.categoryDeleteSuccess'))
         await fetchEndmillCategories()
       } else {
-        showError('삭제 실패', result.error || '카테고리 삭제에 실패했습니다.')
+        showError(t('common.deleteFailed'), result.error || t('settings.modals.categoryDeleteFailed'))
       }
-    } catch (error) {
-      clientLogger.error('카테고리 삭제 오류:', error)
-      showError('삭제 실패', '카테고리 삭제 중 오류가 발생했습니다.')
+    } catch (err) {
+      clientLogger.error('카테고리 삭제 오류:', err)
+      showError(t('common.deleteFailed'), t('settings.modals.categoryDeleteFailed'))
     } finally {
       setIsCategoryLoading(false)
     }
   }
 
-  // 공급업체 추가 모달 열기
   const handleAddSupplier = () => {
     setModalSupplierMode('add')
     setSupplierCode('')
@@ -281,13 +288,11 @@ function SettingsPageContent() {
     setShowSupplierModal(true)
   }
 
-  // 공급업체 추가 실행
   const handleSubmitAddSupplier = async () => {
     if (!supplierCode.trim() || !supplierName.trim()) {
-      showError('입력 오류', '공급업체 코드와 이름을 모두 입력하세요.')
+      showError(t('common.validationError'), t('settings.modals.supplierCodeNameRequired'))
       return
     }
-
     try {
       setIsSupplierLoading(true)
       const response = await fetch('/api/suppliers', {
@@ -297,29 +302,26 @@ function SettingsPageContent() {
           code: supplierCode.trim().toUpperCase(),
           name: supplierName.trim(),
           quality_rating: parseInt(supplierQualityRating) || 8,
-          is_active: true
-        })
+          is_active: true,
+        }),
       })
-
       const result = await response.json()
-
       if (result.success) {
-        showSuccess('공급업체 추가', '공급업체가 성공적으로 추가되었습니다.')
+        showSuccess(t('common.addSuccess'), t('settings.modals.supplierAddSuccess'))
         await fetchSuppliers()
         setShowSupplierModal(false)
       } else {
-        showError('추가 실패', result.error || '공급업체 추가에 실패했습니다.')
+        showError(t('common.addFailed'), result.error || t('settings.modals.supplierAddFailed'))
       }
-    } catch (error) {
-      clientLogger.error('공급업체 추가 오류:', error)
-      showError('추가 실패', '공급업체 추가 중 오류가 발생했습니다.')
+    } catch (err) {
+      clientLogger.error('공급업체 추가 오류:', err)
+      showError(t('common.addFailed'), t('settings.modals.supplierAddFailed'))
     } finally {
       setIsSupplierLoading(false)
     }
   }
 
-  // 공급업체 수정 모달 열기
-  const handleUpdateSupplier = (supplier: any) => {
+  const handleUpdateSupplier = (supplier: SupplierRecord) => {
     setModalSupplierMode('edit')
     setSupplierCode(supplier.code)
     setSupplierName(supplier.name)
@@ -328,15 +330,12 @@ function SettingsPageContent() {
     setShowSupplierModal(true)
   }
 
-  // 공급업체 수정 실행
   const handleSubmitUpdateSupplier = async () => {
     if (!supplierName.trim()) {
-      showError('입력 오류', '공급업체 이름을 입력하세요.')
+      showError(t('common.validationError'), t('settings.modals.supplierNameRequired'))
       return
     }
-
     if (!modalSupplierData) return
-
     try {
       setIsSupplierLoading(true)
       const response = await fetch(`/api/suppliers?id=${modalSupplierData.id}`, {
@@ -344,2609 +343,2044 @@ function SettingsPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: supplierName.trim(),
-          quality_rating: parseInt(supplierQualityRating) || 8
-        })
+          quality_rating: parseInt(supplierQualityRating) || 8,
+        }),
       })
-
       const result = await response.json()
-
       if (result.success) {
-        showSuccess('공급업체 수정', '공급업체가 성공적으로 수정되었습니다.')
+        showSuccess(t('common.updateSuccess'), t('settings.modals.supplierUpdateSuccess'))
         await fetchSuppliers()
         setShowSupplierModal(false)
       } else {
-        showError('수정 실패', result.error || '공급업체 수정에 실패했습니다.')
+        showError(t('common.updateFailed'), result.error || t('settings.modals.supplierUpdateFailed'))
       }
-    } catch (error) {
-      clientLogger.error('공급업체 수정 오류:', error)
-      showError('수정 실패', '공급업체 수정 중 오류가 발생했습니다.')
+    } catch (err) {
+      clientLogger.error('공급업체 수정 오류:', err)
+      showError(t('common.updateFailed'), t('settings.modals.supplierUpdateFailed'))
     } finally {
       setIsSupplierLoading(false)
     }
   }
 
-  // 공급업체 삭제 (소프트 삭제)
-  const handleDeleteSupplier = async (supplier: any) => {
-    if (!confirm(`정말로 "${supplier.name}" 공급업체를 삭제하시겠습니까?\n\n이 공급업체의 가격 정보가 있으면 삭제할 수 없습니다.`)) {
+  const handleDeleteSupplier = async (supplier: SupplierRecord) => {
+    if (!confirm(t('settings.modals.supplierDeleteConfirm', { name: supplier.name }))) {
       return
     }
-
     try {
       setIsSupplierLoading(true)
       const response = await fetch(`/api/suppliers?id=${supplier.id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       })
-
       const result = await response.json()
-
       if (result.success) {
-        showSuccess('공급업체 삭제', '공급업체가 성공적으로 삭제되었습니다.')
+        showSuccess(t('common.deleteSuccess'), t('settings.modals.supplierDeleteSuccess'))
         await fetchSuppliers()
       } else {
-        showError('삭제 실패', result.error || '공급업체 삭제에 실패했습니다.')
+        showError(t('common.deleteFailed'), result.error || t('settings.modals.supplierDeleteFailed'))
       }
-    } catch (error) {
-      clientLogger.error('공급업체 삭제 오류:', error)
-      showError('삭제 실패', '공급업체 삭제 중 오류가 발생했습니다.')
+    } catch (err) {
+      clientLogger.error('공급업체 삭제 오류:', err)
+      showError(t('common.deleteFailed'), t('settings.modals.supplierDeleteFailed'))
     } finally {
       setIsSupplierLoading(false)
     }
   }
 
-  // 저장 핸들러
   const handleSave = async (category: SettingsCategory) => {
     if (!formData) {
-      showError('저장 실패', '설정 데이터가 로드되지 않았습니다.')
+      showError(t('settings.savedFailed'), t('settings.notLoaded'))
       return
     }
-
     setIsSubmitting(true)
-
     try {
-      await updateCategorySettings(category, formData[category], '관리자', '설정 업데이트')
-
-      // 설정 업데이트 이벤트 발생 (SettingsProvider가 감지하여 새로고침)
+      await updateCategorySettings(
+        category,
+        formData[category],
+        '관리자',
+        t('settings.updateReason'),
+      )
       window.dispatchEvent(new CustomEvent('settingsUpdated'))
-
-      showSuccess('저장 완료', `${activeTabInfo?.name} 설정이 성공적으로 저장되었습니다.`)
-    } catch (_err) {
-      showError('저장 실패', '설정 저장 중 오류가 발생했습니다.')
+      showSuccess(t('settings.saveComplete'), t('settings.saveSuccess'))
+    } catch {
+      showError(t('settings.saveFailed'), t('settings.saveErrorDesc'))
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // 초기화 핸들러
   const handleReset = async (category: SettingsCategory) => {
     try {
       await resetSettings(category, '관리자')
-      setFormData(prev => {
+      setFormData((prev) => {
         if (!prev || !settings) return prev
         return { ...prev, [category]: settings[category] }
       })
-      showSuccess('초기화 완료', `${activeTabInfo?.name} 설정이 기본값으로 초기화되었습니다.`)
-    } catch (_err) {
-      showError('초기화 실패', '설정 초기화 중 오류가 발생했습니다.')
+      showSuccess(t('settings.resetComplete'), t('settings.resetSuccess'))
+    } catch {
+      showError(t('settings.resetFailed'), t('settings.resetErrorDesc'))
     }
   }
 
-  // 폼 데이터 업데이트
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateFormData = (category: SettingsCategory, field: string, value: any) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       if (!prev) return prev
       return {
         ...prev,
         [category]: {
           ...prev[category],
-          [field]: value
-        }
+          [field]: value,
+        },
       }
     })
   }
 
-  // early return 제거 - JSX에서만 조건부 렌더링
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {isLoading || !formData ? (
-        // 로딩 화면
-        <div className="flex items-center justify-center h-64">
+        <div className="flex h-64 items-center justify-center">
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">⚙️</span>
-            </div>
-            <p className="text-gray-600">설정을 불러오는 중...</p>
+            <Loader2
+              className="mx-auto mb-4 h-8 w-8 animate-spin text-gauge-cobalt-strong"
+              aria-hidden="true"
+            />
+            <p className="text-label text-ink-soft">{t('settings.settingsLoading')}</p>
           </div>
         </div>
       ) : (
-        // 정상 화면
         <>
-          {/* 헤더 */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">⚙️ 시스템 설정</h1>
-              <p className="text-gray-600">엔드밀 관리 시스템의 각종 설정을 관리합니다</p>
+          {/* 상태 알림 (저장되지 않은 변경 / 에러) */}
+          {(hasUnsavedChanges || error) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {hasUnsavedChanges && (
+                <div className="inline-flex items-center gap-2 rounded-sm border border-divider bg-signal-watch-soft px-3 py-2">
+                  <AlertTriangle
+                    className="h-4 w-4 text-signal-watch-strong"
+                    aria-hidden="true"
+                  />
+                  <span className="text-caption text-signal-watch-strong">
+                    {t('settings.unsavedChanges')}
+                  </span>
+                </div>
+              )}
+              {error && (
+                <div className="inline-flex items-center gap-2 rounded-sm border border-divider bg-signal-stop-soft px-3 py-2">
+                  <ShieldAlert
+                    className="h-4 w-4 text-signal-stop-strong"
+                    aria-hidden="true"
+                  />
+                  <span className="text-caption text-signal-stop-strong">{error}</span>
+                </div>
+              )}
             </div>
-            
-            {/* 저장 상태 표시 */}
-            {hasUnsavedChanges && (
-              <div className="flex items-center space-x-2 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <span className="text-yellow-600 text-sm">⚠️ 저장되지 않은 변경사항이 있습니다</span>
-              </div>
-            )}
-            
-            {error && (
-              <div className="flex items-center space-x-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-                <span className="text-red-600 text-sm">❌ {error}</span>
-              </div>
-            )}
-          </div>
+          )}
 
-          {/* 탭 네비게이션 */}
-          <div className="bg-white rounded-lg shadow-sm border">
-            <div className="border-b border-gray-200">
-              <nav className="flex overflow-x-auto" aria-label="설정 탭">
-                {SETTINGS_TABS.map((tab) => (
-                  <button
+          {/* 탭 네비 + 본문 — 카드 컨테이너 */}
+          <div className="overflow-hidden rounded-md border border-divider bg-paper-warm">
+            <div className="border-b border-divider">
+              <nav
+                className="-mb-px flex overflow-x-auto px-2 sm:px-4"
+                aria-label={t('settings.tabsAriaLabel')}
+              >
+                {TAB_DEFS.map((tab) => (
+                  <TabButton
                     key={tab.id}
+                    Icon={tab.Icon}
+                    label={t(tab.labelKey)}
+                    active={activeTab === tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex-shrink-0 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                      activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600 bg-blue-50'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg">{tab.icon}</span>
-                      <span>{tab.name}</span>
-                    </div>
-                  </button>
+                  />
                 ))}
               </nav>
             </div>
 
-            {/* 활성 탭 설명 */}
-            {activeTabInfo && (
-              <div className="px-6 py-4 bg-gray-50 border-b">
-                <div className="flex items-center space-x-3">
-                  <span className="text-2xl">{activeTabInfo.icon}</span>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">{activeTabInfo.name}</h2>
-                    <p className="text-sm text-gray-600">{activeTabInfo.description}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 탭 내용 영역 */}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {activeTab === 'system' && (
-                <div className="space-y-6">
-                  {/* 기본 시스템 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🌐 기본 설정</h3>
-                      <p className="text-sm text-gray-600">시스템의 기본 언어, 화폐, 시간대 설정</p>
-                    </div>
-                    <div className="p-6 space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* 기본 언어 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            기본 언어
-                          </label>
-                          <select
-                            value={formData.system?.defaultLanguage || 'ko'}
-                            onChange={(e) => updateFormData('system', 'defaultLanguage', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="ko">한국어</option>
-                            <option value="vi">베트남어</option>
-                          </select>
-                        </div>
-
-                        {/* 화폐 단위 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            화폐 단위
-                          </label>
-                          <select
-                            value={formData.system?.currency || 'VND'}
-                            onChange={(e) => updateFormData('system', 'currency', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="VND">베트남 동 (VND)</option>
-                            <option value="KRW">한국 원 (KRW)</option>
-                            <option value="USD">미국 달러 (USD)</option>
-                          </select>
-                        </div>
-
-                        {/* 시간대 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            시간대
-                          </label>
-                          <select
-                            value={formData.system?.timezone || 'Asia/Ho_Chi_Minh'}
-                            onChange={(e) => updateFormData('system', 'timezone', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="Asia/Ho_Chi_Minh">베트남 (GMT+7)</option>
-                            <option value="Asia/Seoul">한국 (GMT+9)</option>
-                            <option value="UTC">UTC (GMT+0)</option>
-                          </select>
-                        </div>
-
-                        {/* 날짜 형식 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            날짜 형식
-                          </label>
-                          <select
-                            value={formData.system?.dateFormat || 'YYYY-MM-DD'}
-                            onChange={(e) => updateFormData('system', 'dateFormat', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="YYYY-MM-DD">YYYY-MM-DD (2024-01-01)</option>
-                            <option value="DD/MM/YYYY">DD/MM/YYYY (01/01/2024)</option>
-                            <option value="MM/DD/YYYY">MM/DD/YYYY (01/01/2024)</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 세션 및 보안 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🔒 세션 및 보안</h3>
-                      <p className="text-sm text-gray-600">로그인 세션 및 보안 관련 설정</p>
-                    </div>
-                    <div className="p-6 space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* 세션 타임아웃 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            세션 타임아웃 (분)
-                          </label>
-                          <input
-                            type="number"
-                            min="5"
-                            max="480"
-                            value={formData.system?.sessionTimeout || 60}
-                            onChange={(e) => updateFormData('system', 'sessionTimeout', parseInt(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            5분에서 480분(8시간) 사이에서 설정 가능합니다
-                          </p>
-                        </div>
-
-                        {/* 자동 로그아웃 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            자동 로그아웃
-                          </label>
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={formData.system?.autoLogout || false}
-                              onChange={(e) => updateFormData('system', 'autoLogout', e.target.checked)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">
-                              비활성 상태에서 자동으로 로그아웃
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 표시 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">📊 표시 설정</h3>
-                      <p className="text-sm text-gray-600">페이지 표시 및 파일 업로드 관련 설정</p>
-                    </div>
-                    <div className="p-6 space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* 페이지당 항목 수 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            페이지당 항목 수
-                          </label>
-                          <select
-                            value={formData.system?.itemsPerPage || 20}
-                            onChange={(e) => updateFormData('system', 'itemsPerPage', parseInt(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value={10}>10개</option>
-                            <option value={20}>20개</option>
-                            <option value={50}>50개</option>
-                            <option value={100}>100개</option>
-                          </select>
-                        </div>
-
-                        {/* 최대 파일 크기 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            최대 파일 크기 (MB)
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="100"
-                            value={formData.system?.maxFileSize || 10}
-                            onChange={(e) => updateFormData('system', 'maxFileSize', parseInt(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            업로드 가능한 최대 파일 크기 (1MB - 100MB)
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 저장/초기화 버튼 */}
-                  <div className="flex justify-end space-x-3 pt-6 border-t">
-                    <button
-                      onClick={() => handleReset('system')}
-                      disabled={isSubmitting}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
-                    >
-                      기본값으로 초기화
-                    </button>
-                    <button
-                      onClick={() => handleSave('system')}
-                      disabled={isSubmitting}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
-                    >
-                      {isSubmitting && (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      )}
-                      {isSubmitting ? '저장 중...' : '💾 설정 저장'}
-                    </button>
-                  </div>
-                </div>
+                <SystemTab
+                  formData={formData}
+                  updateFormData={updateFormData}
+                  onSave={() => handleSave('system')}
+                  onReset={() => handleReset('system')}
+                  isSubmitting={isSubmitting}
+                />
               )}
-
               {activeTab === 'equipment' && (
-                <div className="space-y-6">
-                  {/* 설비 기본 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🏭 설비 기본 설정</h3>
-                      <p className="text-sm text-gray-600">설비 수량, 번호 형식, 위치 관리</p>
-                    </div>
-                    <div className="p-6 space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* 총 설비 수 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            총 설비 수
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="1000"
-                            value={formData.equipment?.totalCount || 800}
-                            onChange={(e) => updateFormData('equipment', 'totalCount', parseInt(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            관리할 전체 설비 수량 (1-1000대)
-                          </p>
-                        </div>
-
-                        {/* 설비 번호 형식 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            설비 번호 형식
-                          </label>
-                          <select
-                            value={formData.equipment?.numberFormat || 'C{number:3}'}
-                            onChange={(e) => updateFormData('equipment', 'numberFormat', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="C{number:3}">C001, C002, ... (C + 3자리)</option>
-                            <option value="M{number:3}">M001, M002, ... (M + 3자리)</option>
-                            <option value="CNC{number:3}">CNC001, CNC002, ... (CNC + 3자리)</option>
-                            <option value="{number:4}">{`0001, 0002, ... (4자리 숫자)`}</option>
-                          </select>
-                        </div>
-
-                        {/* 툴 포지션 수 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            툴 포지션 수
-                          </label>
-                          <input
-                            type="number"
-                            min="12"
-                            max="24"
-                            value={formData.equipment?.toolPositionCount || 21}
-                            onChange={(e) => updateFormData('equipment', 'toolPositionCount', parseInt(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            각 설비의 툴 포지션 개수 (T1~T{formData.equipment?.toolPositionCount || 21})
-                          </p>
-                        </div>
-
-                        {/* 기본 상태 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            신규 설비 기본 상태
-                          </label>
-                          <select
-                            value={formData.equipment?.defaultStatus || '가동중'}
-                            onChange={(e) => updateFormData('equipment', 'defaultStatus', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="가동중">가동중</option>
-                            <option value="점검중">점검중</option>
-                            <option value="셋업중">셋업중</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 설비 위치 관리 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">📍 설비 위치 관리</h3>
-                      <p className="text-sm text-gray-600">설비가 배치된 위치 목록 관리</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="space-y-4">
-                        {(Array.isArray(formData.equipment?.locations) ? formData.equipment.locations : ['A동', 'B동']).map((location, index) => (
-                          <div key={index} className="flex items-center space-x-3">
-                            <div className="flex-1">
-                              <input
-                                type="text"
-                                value={location}
-                                onChange={(e) => {
-                                  const newLocations = [...(Array.isArray(formData.equipment?.locations) ? formData.equipment.locations : ['A동', 'B동'])]
-                                  newLocations[index] = e.target.value
-                                  updateFormData('equipment', 'locations', newLocations)
-                                }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="위치명 입력"
-                              />
-                            </div>
-                            <button
-                              onClick={() => {
-                                const newLocations = [...(Array.isArray(formData.equipment?.locations) ? formData.equipment.locations : ['A동', 'B동'])]
-                                newLocations.splice(index, 1)
-                                updateFormData('equipment', 'locations', newLocations)
-                              }}
-                              className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                              disabled={(formData.equipment?.locations || []).length <= 1}
-                            >
-                              삭제
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => {
-                            const currentLocations = Array.isArray(formData.equipment?.locations) ? formData.equipment.locations : ['A동', 'B동']
-                            const newLocations = [...currentLocations, '새 위치']
-                            updateFormData('equipment', 'locations', newLocations)
-                          }}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          + 위치 추가
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 생산 모델 관리 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🚗 생산 모델 관리</h3>
-                      <p className="text-sm text-gray-600">설비에서 생산하는 모델 목록 관리</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="space-y-4">
-                        {(Array.isArray(formData.equipment?.models) ? formData.equipment.models : ['PA1', 'PA2', 'PS', 'B7', 'Q7']).map((model, index) => (
-                          <div key={index} className="flex items-center space-x-3">
-                            <div className="flex-1">
-                              <input
-                                type="text"
-                                value={model}
-                                onChange={(e) => {
-                                  const newModels = [...(Array.isArray(formData.equipment?.models) ? formData.equipment.models : ['PA1', 'PA2', 'PS', 'B7', 'Q7'])]
-                                  newModels[index] = e.target.value
-                                  updateFormData('equipment', 'models', newModels)
-                                }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="모델명 입력"
-                              />
-                            </div>
-                            <button
-                              onClick={() => {
-                                const newModels = [...(Array.isArray(formData.equipment?.models) ? formData.equipment.models : ['PA1', 'PA2', 'PS', 'B7', 'Q7'])]
-                                newModels.splice(index, 1)
-                                updateFormData('equipment', 'models', newModels)
-                              }}
-                              className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                              disabled={(formData.equipment?.models || []).length <= 1}
-                            >
-                              삭제
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => {
-                            const currentModels = Array.isArray(formData.equipment?.models) ? formData.equipment.models : ['PA1', 'PA2', 'PS', 'B7', 'Q7']
-                            const newModels = [...currentModels, '새 모델']
-                            updateFormData('equipment', 'models', newModels)
-                          }}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          + 모델 추가
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 공정 관리 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">⚙️ 공정 관리</h3>
-                      <p className="text-sm text-gray-600">설비에서 수행하는 공정 목록 관리</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="space-y-4">
-                        {(Array.isArray(formData.equipment?.processes) ? formData.equipment.processes : ['CNC1', 'CNC2', 'CNC2-1']).map((process, index) => (
-                          <div key={index} className="flex items-center space-x-3">
-                            <div className="flex-1">
-                              <input
-                                type="text"
-                                value={process}
-                                onChange={(e) => {
-                                  const newProcesses = [...(Array.isArray(formData.equipment?.processes) ? formData.equipment.processes : ['CNC1', 'CNC2', 'CNC2-1'])]
-                                  newProcesses[index] = e.target.value
-                                  updateFormData('equipment', 'processes', newProcesses)
-                                }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="공정명 입력"
-                              />
-                            </div>
-                            <button
-                              onClick={() => {
-                                const newProcesses = [...(Array.isArray(formData.equipment?.processes) ? formData.equipment.processes : ['CNC1', 'CNC2', 'CNC2-1'])]
-                                newProcesses.splice(index, 1)
-                                updateFormData('equipment', 'processes', newProcesses)
-                              }}
-                              className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                              disabled={(formData.equipment?.processes || []).length <= 1}
-                            >
-                              삭제
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => {
-                            const currentProcesses = Array.isArray(formData.equipment?.processes) ? formData.equipment.processes : ['CNC1', 'CNC2', 'CNC2-1']
-                            const newProcesses = [...currentProcesses, '새 공정']
-                            updateFormData('equipment', 'processes', newProcesses)
-                          }}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          + 공정 추가
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 저장/초기화 버튼 */}
-                  <div className="flex justify-end space-x-3 pt-6 border-t">
-                    <button
-                      onClick={() => handleReset('equipment')}
-                      disabled={isSubmitting}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
-                    >
-                      기본값으로 초기화
-                    </button>
-                    <button
-                      onClick={() => handleSave('equipment')}
-                      disabled={isSubmitting}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
-                    >
-                      {isSubmitting && (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      )}
-                      {isSubmitting ? '저장 중...' : '💾 설정 저장'}
-                    </button>
-                  </div>
-                </div>
+                <EquipmentTab
+                  formData={formData}
+                  updateFormData={updateFormData}
+                  onSave={() => handleSave('equipment')}
+                  onReset={() => handleReset('equipment')}
+                  isSubmitting={isSubmitting}
+                />
               )}
-
               {activeTab === 'inventory' && (
-                <div className="space-y-6">
-                  {/* 재고 임계값 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">📊 재고 임계값 설정</h3>
-                      <p className="text-sm text-gray-600">재고 상태 판단 기준값 및 기본값 설정</p>
-                    </div>
-                    <div className="p-6 space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* 위험 임계값 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            위험 임계값 (%)
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="50"
-                            value={formData.inventory?.stockThresholds?.criticalPercent || 25}
-                            onChange={(e) => updateFormData('inventory', 'stockThresholds', {
-                              ...formData.inventory?.stockThresholds,
-                              criticalPercent: parseInt(e.target.value)
-                            })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            최소재고의 {formData.inventory?.stockThresholds?.criticalPercent || 25}% 이하일 때 위험 상태
-                          </p>
-                        </div>
-
-                        {/* 부족 임계값 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            부족 임계값 (%)
-                          </label>
-                          <input
-                            type="number"
-                            min="51"
-                            max="100"
-                            value={formData.inventory?.stockThresholds?.lowPercent || 75}
-                            onChange={(e) => updateFormData('inventory', 'stockThresholds', {
-                              ...formData.inventory?.stockThresholds,
-                              lowPercent: parseInt(e.target.value)
-                            })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            최소재고의 {formData.inventory?.stockThresholds?.lowPercent || 75}% 이하일 때 부족 상태
-                          </p>
-                        </div>
-
-                        {/* 기본 최소재고 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            기본 최소재고 (개)
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={formData.inventory?.defaultValues?.minStock || 20}
-                            onChange={(e) => updateFormData('inventory', 'defaultValues', {
-                              ...formData.inventory?.defaultValues,
-                              minStock: parseInt(e.target.value)
-                            })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-
-                        {/* 기본 최대재고 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            기본 최대재고 (개)
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={formData.inventory?.defaultValues?.maxStock || 100}
-                            onChange={(e) => updateFormData('inventory', 'defaultValues', {
-                              ...formData.inventory?.defaultValues,
-                              maxStock: parseInt(e.target.value)
-                            })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-
-                        {/* 기본 표준수명 */}
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            기본 표준수명 (회)
-                          </label>
-                          <input
-                            type="number"
-                            min="100"
-                            value={formData.inventory?.defaultValues?.standardLife || 10000}
-                            onChange={(e) => updateFormData('inventory', 'defaultValues', {
-                              ...formData.inventory?.defaultValues,
-                              standardLife: parseInt(e.target.value)
-                            })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            신규 앤드밀 등록 시 기본 표준수명 값
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 앤드밀 카테고리 관리 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🔧 앤드밀 카테고리 관리</h3>
-                      <p className="text-sm text-gray-600">앤드밀 유형별 카테고리 목록 관리 (endmill_categories 테이블 직접 연동)</p>
-                    </div>
-                    <div className="p-6">
-                      {isCategoryLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                          <span className="ml-3 text-gray-600">카테고리 불러오는 중...</span>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {endmillCategories.map((category) => (
-                            <div key={category.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-3">
-                                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-md font-mono font-semibold text-sm">
-                                    {category.code}
-                                  </span>
-                                  <span className="text-gray-900 font-medium">{category.name_ko}</span>
-                                  {category.description && (
-                                    <span className="text-gray-500 text-sm">- {category.description}</span>
-                                  )}
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => handleUpdateCategory(category)}
-                                className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-                                disabled={isCategoryLoading}
-                              >
-                                수정
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCategory(category)}
-                                className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                                disabled={isCategoryLoading}
-                              >
-                                삭제
-                              </button>
-                            </div>
-                          ))}
-                          <button
-                            onClick={handleAddCategory}
-                            className="w-full px-4 py-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 font-medium disabled:opacity-50"
-                            disabled={isCategoryLoading}
-                          >
-                            + 카테고리 추가
-                          </button>
-                          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                            <p className="text-sm text-blue-800">
-                              <strong>ℹ️ 알림:</strong> 카테고리는 즉시 endmill_categories 테이블에 저장됩니다.
-                              별도의 &ldquo;설정 저장&rdquo; 버튼을 누를 필요가 없습니다.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 공급업체 관리 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🏢 공급업체 관리</h3>
-                      <p className="text-sm text-gray-600">앤드밀 공급업체 목록 관리 (suppliers 테이블 연동)</p>
-                    </div>
-                    <div className="p-6">
-                      {isSupplierLoading ? (
-                        <div className="flex justify-center items-center py-8">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                          <span className="ml-3 text-gray-600">로딩 중...</span>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {suppliers.map((supplier) => (
-                            <div key={supplier.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-3">
-                                  <span className="px-3 py-1 bg-cyan-100 text-cyan-800 rounded-md font-mono font-semibold text-sm">
-                                    {supplier.code}
-                                  </span>
-                                  <span className="text-gray-900 font-medium">{supplier.name}</span>
-                                  <span className="text-xs text-gray-500">
-                                    품질등급: {supplier.quality_rating || 8}/10
-                                  </span>
-                                  {!supplier.is_active && (
-                                    <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-md">
-                                      비활성
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => handleUpdateSupplier(supplier)}
-                                className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-                                disabled={isSupplierLoading}
-                              >
-                                수정
-                              </button>
-                              <button
-                                onClick={() => handleDeleteSupplier(supplier)}
-                                className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                                disabled={isSupplierLoading}
-                              >
-                                삭제
-                              </button>
-                            </div>
-                          ))}
-                          <button
-                            onClick={handleAddSupplier}
-                            className="w-full px-4 py-3 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 font-medium disabled:opacity-50"
-                            disabled={isSupplierLoading}
-                          >
-                            + 공급업체 추가
-                          </button>
-                          <div className="mt-4 p-4 bg-cyan-50 border border-cyan-200 rounded-lg">
-                            <p className="text-sm text-cyan-800">
-                              <strong>ℹ️ 알림:</strong> 공급업체는 즉시 suppliers 테이블에 저장됩니다.
-                              별도의 &ldquo;설정 저장&rdquo; 버튼을 누를 필요가 없습니다.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 재고 상태 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🚨 재고 상태 표시 설정</h3>
-                      <p className="text-sm text-gray-600">각 재고 상태별 표시 색상 및 이름 설정</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="space-y-4">
-                        {(formData.inventory?.statuses || [
-                          { code: 'sufficient', name: '충분', color: 'green', threshold: 100 },
-                          { code: 'low', name: '부족', color: 'yellow', threshold: 75 },
-                          { code: 'critical', name: '위험', color: 'red', threshold: 25 }
-                        ]).map((status, index) => (
-                          <div key={index} className="flex items-center space-x-6 p-4 border border-gray-200 rounded-lg">
-                            <div className="flex-1 grid grid-cols-3 gap-4">
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                  상태명
-                                </label>
-                                <input
-                                  type="text"
-                                  value={status.name}
-                                  onChange={(e) => {
-                                    const newStatuses = [...(formData.inventory?.statuses || [])]
-                                    newStatuses[index] = { ...newStatuses[index], name: e.target.value }
-                                    updateFormData('inventory', 'statuses', newStatuses)
-                                  }}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                  색상
-                                </label>
-                                <select
-                                  value={status.color}
-                                  onChange={(e) => {
-                                    const newStatuses = [...(formData.inventory?.statuses || [])]
-                                    newStatuses[index] = { ...newStatuses[index], color: e.target.value }
-                                    updateFormData('inventory', 'statuses', newStatuses)
-                                  }}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                  <option value="green">녹색</option>
-                                  <option value="yellow">노란색</option>
-                                  <option value="red">빨간색</option>
-                                  <option value="blue">파란색</option>
-                                  <option value="gray">회색</option>
-                                </select>
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                  임계값 (%)
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  value={status.threshold}
-                                  onChange={(e) => {
-                                    const newStatuses = [...(formData.inventory?.statuses || [])]
-                                    newStatuses[index] = { ...newStatuses[index], threshold: parseInt(e.target.value) }
-                                    updateFormData('inventory', 'statuses', newStatuses)
-                                  }}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                              </div>
-                            </div>
-                            <div className={`w-8 h-8 rounded-full bg-${status.color}-500 flex-shrink-0`}></div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 저장/초기화 버튼 */}
-                  <div className="flex justify-end space-x-3 pt-6 border-t">
-                    <button
-                      onClick={() => handleReset('inventory')}
-                      disabled={isSubmitting}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
-                    >
-                      기본값으로 초기화
-                    </button>
-                    <button
-                      onClick={() => handleSave('inventory')}
-                      disabled={isSubmitting}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
-                    >
-                      {isSubmitting && (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      )}
-                      {isSubmitting ? '저장 중...' : '💾 설정 저장'}
-                    </button>
-                  </div>
-                </div>
+                <InventoryTab
+                  formData={formData}
+                  updateFormData={updateFormData}
+                  onSave={() => handleSave('inventory')}
+                  onReset={() => handleReset('inventory')}
+                  isSubmitting={isSubmitting}
+                  endmillCategories={endmillCategories}
+                  isCategoryLoading={isCategoryLoading}
+                  onAddCategory={handleAddCategory}
+                  onUpdateCategory={handleUpdateCategory}
+                  onDeleteCategory={handleDeleteCategory}
+                  suppliers={suppliers}
+                  isSupplierLoading={isSupplierLoading}
+                  onAddSupplier={handleAddSupplier}
+                  onUpdateSupplier={handleUpdateSupplier}
+                  onDeleteSupplier={handleDeleteSupplier}
+                />
               )}
-
               {activeTab === 'toolChanges' && (
-                <div className="space-y-6">
-                  {/* 교체 사유 관리 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">📝 교체 사유 관리</h3>
-                      <p className="text-sm text-gray-600">앤드밀 교체 사유 목록 관리</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="space-y-4">
-                        {(Array.isArray(formData.toolChanges?.reasons) ? formData.toolChanges.reasons : ['정상 수명', '파손', '마모', '품질 불량', '기타']).map((reason, index) => (
-                          <div key={index} className="flex items-center space-x-3">
-                            <div className="flex-1">
-                              <input
-                                type="text"
-                                value={reason}
-                                onChange={(e) => {
-                                  const newReasons = [...(formData.toolChanges?.reasons || [])]
-                                  newReasons[index] = e.target.value
-                                  updateFormData('toolChanges', 'reasons', newReasons)
-                                }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="교체 사유 입력"
-                              />
-                            </div>
-                            <button
-                              onClick={() => {
-                                const newReasons = [...(formData.toolChanges?.reasons || [])]
-                                newReasons.splice(index, 1)
-                                updateFormData('toolChanges', 'reasons', newReasons)
-                              }}
-                              className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                              disabled={(formData.toolChanges?.reasons || []).length <= 1}
-                            >
-                              삭제
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => {
-                            const newReasons = [...(formData.toolChanges?.reasons || []), '새 사유']
-                            updateFormData('toolChanges', 'reasons', newReasons)
-                          }}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          + 사유 추가
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 교체 임계값 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">⚠️ 교체 임계값 설정</h3>
-                      <p className="text-sm text-gray-600">Tool Life 기준 교체 알림 임계값</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            교체 경고 임계값 (%)
-                          </label>
-                          <input
-                            type="number"
-                            min="50"
-                            max="95"
-                            value={formData.toolChanges?.lifeThresholds?.warning || 80}
-                            onChange={(e) => updateFormData('toolChanges', 'lifeThresholds', { ...formData.toolChanges?.lifeThresholds, warning: parseInt(e.target.value) })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Tool Life {formData.toolChanges?.lifeThresholds?.warning || 80}% 달성 시 경고
-                          </p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            교체 필수 임계값 (%)
-                          </label>
-                          <input
-                            type="number"
-                            min="90"
-                            max="100"
-                            value={formData.toolChanges?.lifeThresholds?.critical || 95}
-                            onChange={(e) => updateFormData('toolChanges', 'lifeThresholds', { ...formData.toolChanges?.lifeThresholds, critical: parseInt(e.target.value) })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Tool Life {formData.toolChanges?.lifeThresholds?.critical || 95}% 달성 시 필수 교체
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 저장/초기화 버튼 */}
-                  <div className="flex justify-end space-x-3 pt-6 border-t">
-                    <button
-                      onClick={() => handleReset('toolChanges')}
-                      disabled={isSubmitting}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
-                    >
-                      기본값으로 초기화
-                    </button>
-                    <button
-                      onClick={() => handleSave('toolChanges')}
-                      disabled={isSubmitting}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
-                    >
-                      {isSubmitting && (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      )}
-                      {isSubmitting ? '저장 중...' : '💾 설정 저장'}
-                    </button>
-                  </div>
-                </div>
+                <ToolChangesTab
+                  formData={formData}
+                  updateFormData={updateFormData}
+                  onSave={() => handleSave('toolChanges')}
+                  onReset={() => handleReset('toolChanges')}
+                  isSubmitting={isSubmitting}
+                />
               )}
-
               {activeTab === 'organization' && (
-                <div className="space-y-6">
-                  {/* 부서 관리 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🏢 부서 관리</h3>
-                      <p className="text-sm text-gray-600">회사 부서 목록 관리</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="space-y-4">
-                        {(Array.isArray(formData.organization?.departments) ? formData.organization.departments : ['종합 관리실', '공구 관리실', '기술팀']).map((department, index) => (
-                          <div key={index} className="flex items-center space-x-3">
-                            <div className="flex-1">
-                              <input
-                                type="text"
-                                value={department}
-                                onChange={(e) => {
-                                  const newDepartments = [...(formData.organization?.departments || [])]
-                                  newDepartments[index] = e.target.value
-                                  updateFormData('organization', 'departments', newDepartments)
-                                }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="부서명 입력"
-                              />
-                            </div>
-                            <button
-                              onClick={() => {
-                                const newDepartments = [...(formData.organization?.departments || [])]
-                                newDepartments.splice(index, 1)
-                                updateFormData('organization', 'departments', newDepartments)
-                              }}
-                              className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                              disabled={(formData.organization?.departments || []).length <= 1}
-                            >
-                              삭제
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => {
-                            const newDepartments = [...(formData.organization?.departments || []), '새 부서']
-                            updateFormData('organization', 'departments', newDepartments)
-                          }}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          + 부서 추가
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 교대 관리 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🔄 교대 관리</h3>
-                      <p className="text-sm text-gray-600">근무 교대 목록 관리</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="space-y-4">
-                        {(Array.isArray(formData.organization?.shifts) ? formData.organization.shifts : ['A', 'B']).map((shift, index) => (
-                          <div key={index} className="flex items-center space-x-3">
-                            <div className="flex-1">
-                              <input
-                                type="text"
-                                value={shift}
-                                onChange={(e) => {
-                                  const newShifts = [...(formData.organization?.shifts || [])]
-                                  newShifts[index] = e.target.value
-                                  updateFormData('organization', 'shifts', newShifts)
-                                }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="교대명 입력"
-                              />
-                            </div>
-                            <button
-                              onClick={() => {
-                                const newShifts = [...(formData.organization?.shifts || [])]
-                                newShifts.splice(index, 1)
-                                updateFormData('organization', 'shifts', newShifts)
-                              }}
-                              className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                              disabled={(formData.organization?.shifts || []).length <= 1}
-                            >
-                              삭제
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => {
-                            const newShifts = [...(formData.organization?.shifts || []), '새 교대']
-                            updateFormData('organization', 'shifts', newShifts)
-                          }}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          + 교대 추가
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 사용자 역할 관리 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">👤 사용자 역할 관리</h3>
-                      <p className="text-sm text-gray-600">시스템 사용자 역할 및 권한 설정</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="space-y-6">
-                        {(Array.isArray(formData.organization?.roles)
-                          ? formData.organization.roles
-                          : [
-                              { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
-                              { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
-                              { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
-                            ]
-                        ).map((role, index) => (
-                          <div key={index} className="p-4 border border-gray-200 rounded-lg">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                  역할 코드
-                                </label>
-                                <input
-                                  type="text"
-                                  value={role.code}
-                                  onChange={(e) => {
-                                    const currentRoles = Array.isArray(formData.organization?.roles)
-                                      ? formData.organization.roles
-                                      : [
-                                          { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
-                                          { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
-                                          { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
-                                        ]
-                                    const newRoles = [...currentRoles]
-                                    newRoles[index] = { ...newRoles[index], code: e.target.value }
-                                    updateFormData('organization', 'roles', newRoles)
-                                  }}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  placeholder="admin"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                  역할명
-                                </label>
-                                <input
-                                  type="text"
-                                  value={role.name}
-                                  onChange={(e) => {
-                                    const currentRoles = Array.isArray(formData.organization?.roles)
-                                      ? formData.organization.roles
-                                      : [
-                                          { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
-                                          { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
-                                          { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
-                                        ]
-                                    const newRoles = [...currentRoles]
-                                    newRoles[index] = { ...newRoles[index], name: e.target.value }
-                                    updateFormData('organization', 'roles', newRoles)
-                                  }}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  placeholder="관리자"
-                                />
-                              </div>
-                              <div className="flex items-end">
-                                <label className="flex items-center">
-                                  <input
-                                    type="checkbox"
-                                    checked={role.isActive}
-                                    onChange={(e) => {
-                                      const currentRoles = Array.isArray(formData.organization?.roles)
-                                        ? formData.organization.roles
-                                        : [
-                                            { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
-                                            { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
-                                            { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
-                                          ]
-                                      const newRoles = [...currentRoles]
-                                      newRoles[index] = { ...newRoles[index], isActive: e.target.checked }
-                                      updateFormData('organization', 'roles', newRoles)
-                                    }}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                  />
-                                  <span className="ml-2 text-sm text-gray-700">활성화</span>
-                                </label>
-                              </div>
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                권한 목록 (쉼표로 구분)
-                              </label>
-                              <input
-                                type="text"
-                                value={role.permissions.join(', ')}
-                                onChange={(e) => {
-                                  const currentRoles = Array.isArray(formData.organization?.roles)
-                                    ? formData.organization.roles
-                                    : [
-                                        { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
-                                        { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
-                                        { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
-                                      ]
-                                  const newRoles = [...currentRoles]
-                                  newRoles[index] = {
-                                    ...newRoles[index],
-                                    permissions: e.target.value.split(',').map(p => p.trim()).filter(p => p)
-                                  }
-                                  updateFormData('organization', 'roles', newRoles)
-                                }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="읽기, 쓰기, 수정, 삭제"
-                              />
-                            </div>
-                            <div className="flex justify-end mt-4">
-                              <button
-                                onClick={() => {
-                                  const currentRoles = Array.isArray(formData.organization?.roles)
-                                    ? formData.organization.roles
-                                    : [
-                                        { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
-                                        { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
-                                        { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
-                                      ]
-                                  const newRoles = [...currentRoles]
-                                  newRoles.splice(index, 1)
-                                  updateFormData('organization', 'roles', newRoles)
-                                }}
-                                className="px-3 py-1 bg-red-500 text-white text-sm rounded-md hover:bg-red-600"
-                                disabled={(Array.isArray(formData.organization?.roles)
-                                  ? formData.organization.roles
-                                  : []).length <= 1}
-                              >
-                                역할 삭제
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => {
-                            const currentRoles = Array.isArray(formData.organization?.roles)
-                              ? formData.organization.roles
-                              : [
-                                  { code: 'admin', name: '관리자', permissions: ['모든 권한'], isActive: true },
-                                  { code: 'manager', name: '매니저', permissions: ['읽기', '쓰기', '수정'], isActive: true },
-                                  { code: 'operator', name: '운영자', permissions: ['읽기', '쓰기'], isActive: true }
-                                ]
-                            const newRoles = [...currentRoles, {
-                              code: 'new_role',
-                              name: '새 역할',
-                              permissions: ['읽기'],
-                              isActive: true
-                            }]
-                            updateFormData('organization', 'roles', newRoles)
-                          }}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          + 역할 추가
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 기본값 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">⚙️ 기본값 설정</h3>
-                      <p className="text-sm text-gray-600">신규 사용자 등록 시 기본값 설정</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            기본 역할
-                          </label>
-                          <select
-                            value={formData.organization?.defaultRole || 'operator'}
-                            onChange={(e) => updateFormData('organization', 'defaultRole', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            {(Array.isArray(formData.organization?.roles) ? formData.organization.roles : []).map(role => (
-                              <option key={role.code} value={role.code}>
-                                {role.name} ({role.code})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            기본 교대
-                          </label>
-                          <select
-                            value={formData.organization?.defaultShift || (formData.organization?.shifts as any)?.default || 'A'}
-                            onChange={(e) => updateFormData('organization', 'defaultShift', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            {((Array.isArray(formData.organization?.shifts?.values) ? formData.organization.shifts.values : (Array.isArray(formData.organization?.shifts) ? formData.organization.shifts : ['A', 'B'])) as string[]).map((shift: string) => (
-                              <option key={shift} value={shift}>
-                                {shift}교대
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 저장/초기화 버튼 */}
-                  <div className="flex justify-end space-x-3 pt-6 border-t">
-                    <button
-                      onClick={() => handleReset('organization')}
-                      disabled={isSubmitting}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
-                    >
-                      기본값으로 초기화
-                    </button>
-                    <button
-                      onClick={() => handleSave('organization')}
-                      disabled={isSubmitting}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
-                    >
-                      {isSubmitting && (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      )}
-                      {isSubmitting ? '저장 중...' : '💾 설정 저장'}
-                    </button>
-                  </div>
-                </div>
+                <OrganizationTab
+                  formData={formData}
+                  updateFormData={updateFormData}
+                  onSave={() => handleSave('organization')}
+                  onReset={() => handleReset('organization')}
+                  isSubmitting={isSubmitting}
+                />
               )}
-
               {activeTab === 'ui' && (
-                <div className="space-y-6">
-                  {/* 표시 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">📱 표시 설정</h3>
-                      <p className="text-sm text-gray-600">페이지당 항목 수 및 새로고침 간격 설정</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            페이지당 항목 수
-                          </label>
-                          <select
-                            value={formData.system?.itemsPerPage || 20}
-                            onChange={(e) => updateFormData('system', 'itemsPerPage', parseInt(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value={10}>10개</option>
-                            <option value={20}>20개</option>
-                            <option value={50}>50개</option>
-                            <option value={100}>100개</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            자동 새로고침 간격 (초)
-                          </label>
-                          <select
-                            value={formData.ui?.dashboard?.refreshInterval || 30}
-                            onChange={(e) => updateFormData('ui', 'dashboard', {...formData.ui?.dashboard, refreshInterval: parseInt(e.target.value)})}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value={0}>비활성화</option>
-                            <option value={10}>10초</option>
-                            <option value={30}>30초</option>
-                            <option value={60}>1분</option>
-                            <option value={300}>5분</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 테마 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🎨 테마 설정</h3>
-                      <p className="text-sm text-gray-600">사용자 인터페이스 테마 및 색상 설정</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            테마 모드
-                          </label>
-                          <select
-                            value={formData.ui?.theme || 'light'}
-                            onChange={(e) => updateFormData('ui', 'theme', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="light">라이트 모드</option>
-                            <option value="dark">다크 모드</option>
-                            <option value="system">시스템 설정 따름</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            사이드바 상태
-                          </label>
-                          <select
-                            value={formData.ui?.sidebarCollapsed ? 'collapsed' : 'expanded'}
-                            onChange={(e) => updateFormData('ui', 'sidebarCollapsed', e.target.value === 'collapsed')}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="expanded">확장됨</option>
-                            <option value="collapsed">접힘</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 알림 위치 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🔔 알림 설정</h3>
-                      <p className="text-sm text-gray-600">알림 표시 위치 및 지속시간 설정</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            알림 위치
-                          </label>
-                          <select
-                            value={formData.ui?.notifications?.position || 'top-right'}
-                            onChange={(e) => updateFormData('ui', 'notifications', {...formData.ui?.notifications, position: e.target.value})}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="top-right">우측 상단</option>
-                            <option value="top-left">좌측 상단</option>
-                            <option value="bottom-right">우측 하단</option>
-                            <option value="bottom-left">좌측 하단</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            알림 지속시간 (초)
-                          </label>
-                          <select
-                            value={formData.ui?.notifications?.duration || 5}
-                            onChange={(e) => updateFormData('ui', 'notifications', {...formData.ui?.notifications, duration: parseInt(e.target.value)})}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value={3}>3초</option>
-                            <option value={5}>5초</option>
-                            <option value={10}>10초</option>
-                            <option value={0}>수동으로 닫기</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 저장/초기화 버튼 */}
-                  <div className="flex justify-end space-x-3 pt-6 border-t">
-                    <button
-                      onClick={() => handleReset('ui')}
-                      disabled={isSubmitting}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
-                    >
-                      기본값으로 초기화
-                    </button>
-                    <button
-                      onClick={() => handleSave('ui')}
-                      disabled={isSubmitting}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
-                    >
-                      {isSubmitting && (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      )}
-                      {isSubmitting ? '저장 중...' : '💾 설정 저장'}
-                    </button>
-                  </div>
-                </div>
+                <UiTab
+                  formData={formData}
+                  updateFormData={updateFormData}
+                  onSave={() => handleSave('ui')}
+                  onReset={() => handleReset('ui')}
+                  isSubmitting={isSubmitting}
+                />
               )}
-
               {activeTab === 'notifications' && (
-                <div className="space-y-6">
-                  {/* 알림 방법 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">📢 알림 방법 설정</h3>
-                      <p className="text-sm text-gray-600">시스템 알림 전송 방법 및 채널 설정</p>
-                    </div>
-                    <div className="p-6 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">실시간 알림</p>
-                          <p className="text-xs text-gray-500">웹 브라우저 실시간 알림 사용</p>
-                        </div>
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={formData.notifications?.realtime?.enabled !== false}
-                            onChange={(e) => updateFormData('notifications', 'realtime', {...formData.notifications?.realtime, enabled: e.target.checked})}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                        </label>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">이메일 알림</p>
-                          <p className="text-xs text-gray-500">중요한 이벤트 발생 시 이메일 전송</p>
-                        </div>
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={formData.notifications?.email?.enabled || false}
-                            onChange={(e) => updateFormData('notifications', 'email', {...formData.notifications?.email, enabled: e.target.checked})}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 알림 유형별 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">⚠️ 알림 유형별 설정</h3>
-                      <p className="text-sm text-gray-600">각 이벤트별 알림 활성화/비활성화 설정</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="space-y-6">
-                        {(formData.notifications?.realtime?.types || [
-                          { type: 'tool_change', enabled: true, priority: 'medium', channels: ['ui'] },
-                          { type: 'inventory_low', enabled: true, priority: 'high', channels: ['ui', 'email'] },
-                          { type: 'equipment_status', enabled: true, priority: 'high', channels: ['ui'] },
-                          { type: 'system', enabled: true, priority: 'low', channels: ['ui'] }
-                        ]).map((notifType, index) => (
-                          <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-3">
-                                <label className="flex items-center">
-                                  <input
-                                    type="checkbox"
-                                    checked={notifType.enabled}
-                                    onChange={(e) => {
-                                      const newTypes = [...(formData.notifications?.realtime?.types || [])]
-                                      newTypes[index] = { ...newTypes[index], enabled: e.target.checked }
-                                      updateFormData('notifications', 'realtime', {...formData.notifications?.realtime, types: newTypes})
-                                    }}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                  />
-                                  <span className="ml-2 font-medium text-gray-700">
-                                    {notifType.type === 'tool_change' ? '앤드밀 교체' :
-                                     notifType.type === 'inventory_low' ? '재고 부족' :
-                                     notifType.type === 'equipment_status' ? '설비 상태' :
-                                     notifType.type === 'system' ? '시스템' : notifType.type}
-                                  </span>
-                                </label>
-                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                  notifType.priority === 'high' ? 'bg-red-100 text-red-800' :
-                                  notifType.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {notifType.priority === 'high' ? '긴급' : 
-                                   notifType.priority === 'medium' ? '보통' : '낮음'}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="ml-4">
-                              <select
-                                value={notifType.priority}
-                                onChange={(e) => {
-                                  const newTypes = [...(formData.notifications?.realtime?.types || [])]
-                                  newTypes[index] = { ...newTypes[index], priority: e.target.value as 'low' | 'medium' | 'high' }
-                                  updateFormData('notifications', 'realtime', {...formData.notifications?.realtime, types: newTypes})
-                                }}
-                                className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                disabled={!notifType.enabled}
-                              >
-                                <option value="low">낮음</option>
-                                <option value="medium">보통</option>
-                                <option value="high">긴급</option>
-                              </select>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 알림 스케줄 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">⏰ 알림 스케줄 설정</h3>
-                      <p className="text-sm text-gray-600">알림 전송 시간 및 빈도 설정</p>
-                    </div>
-                    <div className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            일일 리포트 전송 시간
-                          </label>
-                          <input
-                            type="time"
-                            value={formData.notifications?.scheduling?.dailyReport || '18:00'}
-                            onChange={(e) => updateFormData('notifications', 'scheduling', {...formData.notifications?.scheduling, dailyReport: e.target.value})}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            주간 리포트 전송 요일
-                          </label>
-                          <select
-                            value={formData.notifications?.scheduling?.weeklyReport || 'sunday'}
-                            onChange={(e) => updateFormData('notifications', 'scheduling', {...formData.notifications?.scheduling, weeklyReport: e.target.value})}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="sunday">일요일</option>
-                            <option value="monday">월요일</option>
-                            <option value="friday">금요일</option>
-                            <option value="saturday">토요일</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 저장/초기화 버튼 */}
-                  <div className="flex justify-end space-x-3 pt-6 border-t">
-                    <button
-                      onClick={() => handleReset('notifications')}
-                      disabled={isSubmitting}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
-                    >
-                      기본값으로 초기화
-                    </button>
-                    <button
-                      onClick={() => handleSave('notifications')}
-                      disabled={isSubmitting}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
-                    >
-                      {isSubmitting && (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      )}
-                      {isSubmitting ? '저장 중...' : '💾 설정 저장'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {(activeTab as string) === 'translations' && (
-                <div className="space-y-6">
-                  {/* 기본 번역 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🌐 기본 번역 설정</h3>
-                      <p className="text-sm text-gray-600">다국어 지원을 위한 기본 언어 및 자동 번역 설정</p>
-                    </div>
-                    <div className="p-6 space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* 기본 언어 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            기본 언어
-                          </label>
-                          <select
-                            value={(formData as any).translations?.defaultLanguage || 'ko'}
-                            onChange={(e) => updateFormData('translations', 'defaultLanguage', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="ko">🇰🇷 한국어</option>
-                            <option value="vi">🇻🇳 베트남어</option>
-                          </select>
-                        </div>
-
-                        {/* 대체 언어 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            대체 언어
-                          </label>
-                          <select
-                            value={(formData as any).translations?.fallbackLanguage || 'ko'}
-                            onChange={(e) => updateFormData('translations', 'fallbackLanguage', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="ko">🇰🇷 한국어</option>
-                            <option value="vi">🇻🇳 베트남어</option>
-                          </select>
-                          <p className="text-xs text-gray-500 mt-1">
-                            번역이 없을 때 사용할 언어
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        {/* 번역 관리 활성화 */}
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">번역 관리 활성화</p>
-                            <p className="text-xs text-gray-500">다국어 번역 기능 사용</p>
-                          </div>
-                          <label className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={(formData as any).translations?.enabled !== false}
-                              onChange={(e) => updateFormData('translations', 'enabled', e.target.checked)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                          </label>
-                        </div>
-
-                        {/* 자동 번역 */}
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">자동 번역</p>
-                            <p className="text-xs text-gray-500">새 번역 키 추가 시 Google Translate 사용</p>
-                          </div>
-                          <label className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={(formData as any).translations?.autoTranslate || false}
-                              onChange={(e) => updateFormData('translations', 'autoTranslate', e.target.checked)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                              disabled={!(formData as any).translations?.enabled}
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Google Translate API 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🔑 Google Translate API 설정</h3>
-                      <p className="text-sm text-gray-600">자동 번역을 위한 Google Cloud Translation API 설정</p>
-                    </div>
-                    <div className="p-6 space-y-6">
-                      {/* Google API 기본 설정 */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* API 키 */}
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Google Cloud Translation API 키
-                          </label>
-                          <div className="flex space-x-3">
-                            <input
-                              type="password"
-                              value={(formData as any).translations?.googleApiKey || ''}
-                              onChange={(e) => updateFormData('translations', 'googleApiKey', e.target.value)}
-                              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="AIzaSyB1234567890abcdefghijklmnopqrstuvwxyz"
-                              disabled={!(formData as any).translations?.enabled}
-                            />
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                // API 키 검증 로직
-                                try {
-                                  showInfo('검증 중...', 'API 키를 검증하고 있습니다.')
-                                  // 실제 검증 로직은 GoogleTranslateService에서 처리
-                                  showSuccess('검증 완료', 'API 키가 유효합니다.')
-                                } catch (_error) {
-                                  showError('검증 실패', 'API 키가 유효하지 않거나 권한이 없습니다.')
-                                }
-                              }}
-                              disabled={!(formData as any).translations?.googleApiKey || !(formData as any).translations?.enabled}
-                              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              검증
-                            </button>
-                          </div>
-                          <div className="mt-2 space-y-1">
-                            <p className="text-xs text-gray-500">
-                              Google Cloud Console에서 Translation API를 활성화하고 API 키를 생성하세요.
-                            </p>
-                            <a 
-                              href="https://console.cloud.google.com/apis/library/translate.googleapis.com" 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:text-blue-800 underline"
-                            >
-                              Google Cloud Translation API 설정 가이드 →
-                            </a>
-                          </div>
-                        </div>
-
-                        {/* 프로젝트 ID */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Google Cloud 프로젝트 ID
-                          </label>
-                          <input
-                            type="text"
-                            value={(formData as any).translations?.googleProjectId || ''}
-                            onChange={(e) => updateFormData('translations', 'googleProjectId', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="my-project-12345"
-                            disabled={!(formData as any).translations?.enabled}
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            고급 API (v3) 사용 시 필요한 프로젝트 ID
-                          </p>
-                        </div>
-
-                        {/* 위치 설정 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Google Cloud 위치
-                          </label>
-                          <select
-                            value={(formData as any).translations?.googleLocation || 'global'}
-                            onChange={(e) => updateFormData('translations', 'googleLocation', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            disabled={!(formData as any).translations?.enabled}
-                          >
-                            <option value="global">Global</option>
-                            <option value="us-central1">US Central (Iowa)</option>
-                            <option value="asia-northeast1">Asia Northeast (Tokyo)</option>
-                            <option value="asia-southeast1">Asia Southeast (Singapore)</option>
-                            <option value="europe-west1">Europe West (Belgium)</option>
-                          </select>
-                          <p className="text-xs text-gray-500 mt-1">
-                            번역 처리가 수행될 Google Cloud 리전
-                          </p>
-                        </div>
-
-                        {/* 고급 API 사용 */}
-                        <div className="md:col-span-2">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-gray-700">고급 번역 API (v3) 사용</p>
-                              <p className="text-xs text-gray-500">용어집, 사용자 정의 모델 등 고급 기능 사용</p>
-                            </div>
-                            <label className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={(formData as any).translations?.useAdvancedAPI || false}
-                                onChange={(e) => updateFormData('translations', 'useAdvancedAPI', e.target.checked)}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                disabled={!(formData as any).translations?.enabled}
-                              />
-                            </label>
-                          </div>
-                          {(formData as any).translations?.useAdvancedAPI && (
-                            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                              <p className="text-sm text-blue-800">
-                                <span className="font-medium">주의:</span> 고급 API는 프로젝트 ID가 필요하며,
-                                기본 API보다 더 많은 기능을 제공하지만 설정이 복잡할 수 있습니다.
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* API 사용량 정보 */}
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="text-sm font-medium text-gray-700">📊 API 사용량</h4>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              // 사용량 새로고침 로직
-                              showInfo('업데이트 중...', 'API 사용량을 업데이트하고 있습니다.')
-                              // 실제 사용량 갱신 로직 추가 예정
-                            }}
-                            className="text-xs text-blue-600 hover:text-blue-800"
-                          >
-                            새로고침
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-500">이번 달 사용량</p>
-                            <p className="font-medium">
-                              {(formData as any).translations?.apiUsage?.currentUsage?.toLocaleString() || '0'} / {(formData as any).translations?.apiUsage?.monthlyLimit?.toLocaleString() || '500,000'}자
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">남은 할당량</p>
-                            <p className={`font-medium ${
-                              (((formData as any).translations?.apiUsage?.monthlyLimit || 500000) - ((formData as any).translations?.apiUsage?.currentUsage || 0)) > 100000
-                                ? 'text-green-600'
-                                : 'text-yellow-600'
-                            }`}>
-                              {(((formData as any).translations?.apiUsage?.monthlyLimit || 500000) - ((formData as any).translations?.apiUsage?.currentUsage || 0)).toLocaleString()}자
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">사용률</p>
-                            <p className="font-medium">
-                              {((((formData as any).translations?.apiUsage?.currentUsage || 0) / ((formData as any).translations?.apiUsage?.monthlyLimit || 500000)) * 100).toFixed(1)}%
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">마지막 리셋</p>
-                            <p className="font-medium">
-                              {(formData as any).translations?.apiUsage?.lastResetDate
-                                ? new Date((formData as any).translations.apiUsage.lastResetDate).toLocaleDateString('ko-KR')
-                                : '-'}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* 사용량 제한 설정 */}
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                          <h5 className="text-sm font-medium text-gray-700 mb-2">월간 사용량 제한</h5>
-                          <div className="flex items-center space-x-3">
-                            <input
-                              type="number"
-                              min="10000"
-                              max="10000000"
-                              step="10000"
-                              value={(formData as any).translations?.apiUsage?.monthlyLimit || 500000}
-                              onChange={(e) => updateFormData('translations', 'apiUsage', {
-                                ...(formData as any).translations?.apiUsage,
-                                monthlyLimit: parseInt(e.target.value)
-                              })}
-                              className="w-32 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              disabled={!(formData as any).translations?.enabled}
-                            />
-                            <span className="text-sm text-gray-500">문자</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                updateFormData('translations', 'apiUsage', {
-                                  ...(formData as any).translations?.apiUsage,
-                                  currentUsage: 0,
-                                  lastResetDate: new Date().toISOString()
-                                })
-                                showSuccess('리셋 완료', '사용량이 0으로 초기화되었습니다.')
-                              }}
-                              className="px-3 py-1 text-xs bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
-                              disabled={!(formData as any).translations?.enabled}
-                            >
-                              사용량 리셋
-                            </button>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Google Cloud Translation API 월간 할당량에 맞춰 설정하세요.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 번역 캐시 설정 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">💾 번역 캐시 설정</h3>
-                      <p className="text-sm text-gray-600">번역 결과 캐싱을 통한 성능 최적화 및 API 사용량 절약</p>
-                    </div>
-                    <div className="p-6 space-y-6">
-                      <div className="space-y-4">
-                        {/* 캐시 활성화 */}
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">번역 캐시 활성화</p>
-                            <p className="text-xs text-gray-500">번역 결과를 로컬에 저장하여 중복 번역 방지</p>
-                          </div>
-                          <label className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={(formData as any).translations?.cacheEnabled !== false}
-                              onChange={(e) => updateFormData('translations', 'cacheEnabled', e.target.checked)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                              disabled={!(formData as any).translations?.enabled}
-                            />
-                          </label>
-                        </div>
-
-                        {/* 캐시 만료 시간 */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            캐시 만료 시간
-                          </label>
-                          <div className="grid grid-cols-2 gap-4">
-                            <select
-                              value={(formData as any).translations?.cacheExpiry || 60}
-                              onChange={(e) => updateFormData('translations', 'cacheExpiry', parseInt(e.target.value))}
-                              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              disabled={!(formData as any).translations?.enabled || !(formData as any).translations?.cacheEnabled}
-                            >
-                              <option value={30}>30분</option>
-                              <option value={60}>1시간</option>
-                              <option value={360}>6시간</option>
-                              <option value={720}>12시간</option>
-                              <option value={1440}>1일</option>
-                              <option value={10080}>1주일</option>
-                              <option value={43200}>1개월</option>
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                // 캐시 삭제 로직 (추후 구현)
-                                clientLogger.log('캐시 삭제')
-                              }}
-                              disabled={!(formData as any).translations?.enabled || !(formData as any).translations?.cacheEnabled}
-                              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              캐시 삭제
-                            </button>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            캐시된 번역 결과가 자동으로 삭제되는 시간
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* 캐시 통계 */}
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-3">📈 캐시 통계</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-500">캐시된 번역</p>
-                            <p className="font-medium">0개</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">캐시 적중률</p>
-                            <p className="font-medium">0%</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">절약된 API 호출</p>
-                            <p className="font-medium text-green-600">0회</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">캐시 크기</p>
-                            <p className="font-medium">0 KB</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 번역 관리 도구 */}
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="text-lg font-medium text-gray-900">🛠️ 번역 관리 도구</h3>
-                      <p className="text-sm text-gray-600">번역 데이터 백업, 복원 및 관리 도구</p>
-                    </div>
-                    <div className="p-6 space-y-6">
-                      {/* 프로젝트 스캔 및 자동 번역 */}
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-3">🔍 프로젝트 스캔 및 자동 번역</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              try {
-                                setIsSubmitting(true)
-                                showInfo('스캔 중...', '프로젝트에서 한국어 텍스트를 스캔하고 있습니다.')
-                                
-                                const response = await fetch('/api/translations', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({
-                                    action: 'scan_project',
-                                    data: {
-                                      projectRoot: process.cwd()
-                                    }
-                                  })
-                                })
-                                
-                                const result = await response.json()
-                                if (result.success) {
-                                  showSuccess('스캔 완료', `${result.data.scannedTexts}개의 한국어 텍스트를 발견했습니다.`)
-                                } else {
-                                  showError('스캔 실패', result.error || '알 수 없는 오류가 발생했습니다.')
-                                }
-                              } catch (_error) {
-                                showError('스캔 실패', '네트워크 오류가 발생했습니다.')
-                              } finally {
-                                setIsSubmitting(false)
-                              }
-                            }}
-                            disabled={!(formData as any).translations?.enabled || isSubmitting}
-                            className="flex items-center justify-center px-4 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="mr-2">🔎</span>
-                            {isSubmitting ? '스캔 중...' : '프로젝트 스캔'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              try {
-                                setIsSubmitting(true)
-                                showInfo('처리 중...', '프로젝트를 스캔하고 자동 번역을 진행하고 있습니다.')
-
-                                const response = await fetch('/api/translations', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({
-                                    action: 'scan_and_register',
-                                    data: {
-                                      projectRoot: process.cwd(),
-                                      autoTranslateScanned: true,
-                                      confidenceThreshold: 0.7,
-                                      changedBy: '관리자'
-                                    }
-                                  })
-                                })
-
-                                const result = await response.json()
-                                if (result.success) {
-                                  showSuccess('완료', `${result.data.scannedTexts}개 텍스트 스캔, ${result.data.registeredKeys}개 번역 키 등록 완료`)
-                                } else {
-                                  showError('실패', result.error || '알 수 없는 오류가 발생했습니다.')
-                                }
-                              } catch (_error) {
-                                showError('실패', '네트워크 오류가 발생했습니다.')
-                              } finally {
-                                setIsSubmitting(false)
-                              }
-                            }}
-                            disabled={!(formData as any).translations?.enabled || !(formData as any).translations?.autoTranslate || isSubmitting}
-                            className="flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="mr-2">🚀</span>
-                            {isSubmitting ? '처리 중...' : '스캔 + 자동번역'}
-                          </button>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">
-                          프로젝트 전체에서 하드코딩된 한국어 텍스트를 찾아 번역 키로 자동 등록합니다.
-                        </p>
-                        {!(formData as any).translations?.autoTranslate && (
-                          <p className="text-xs text-yellow-600 mt-1">
-                            ⚠️ 자동 번역이 비활성화되어 있어 &quot;스캔 + 자동번역&quot; 기능을 사용할 수 없습니다.
-                          </p>
-                        )}
-                      </div>
-
-                      {/* 데이터 가져오기/내보내기 */}
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-3">📁 데이터 가져오기/내보내기</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              try {
-                                const response = await fetch('/api/translations', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({
-                                    action: 'export'
-                                  })
-                                })
-                                
-                                const result = await response.json()
-                                if (result.success) {
-                                  const dataStr = JSON.stringify(result.data, null, 2)
-                                  const dataBlob = new Blob([dataStr], { type: 'application/json' })
-                                  const url = URL.createObjectURL(dataBlob)
-                                  const link = document.createElement('a')
-                                  link.href = url
-                                  link.download = `translations_export_${new Date().toISOString().split('T')[0]}.json`
-                                  link.click()
-                                  URL.revokeObjectURL(url)
-                                  
-                                  showSuccess('내보내기 완료', '번역 데이터가 다운로드되었습니다.')
-                                } else {
-                                  showError('내보내기 실패', result.error || '알 수 없는 오류가 발생했습니다.')
-                                }
-                              } catch (_error) {
-                                showError('내보내기 실패', '네트워크 오류가 발생했습니다.')
-                              }
-                            }}
-                            disabled={!(formData as any).translations?.enabled}
-                            className="flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="mr-2">📤</span>
-                            번역 데이터 내보내기
-                          </button>
-                          <label className="flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 cursor-pointer disabled:opacity-50">
-                            <span className="mr-2">📥</span>
-                            번역 데이터 가져오기
-                            <input
-                              type="file"
-                              accept=".json"
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0]
-                                if (!file) return
-
-                                try {
-                                  const text = await file.text()
-                                  const response = await fetch('/api/translations', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                      action: 'import',
-                                      data: {
-                                        jsonData: text,
-                                        changedBy: '관리자'
-                                      }
-                                    })
-                                  })
-
-                                  const result = await response.json()
-                                  if (result.success) {
-                                    showSuccess('가져오기 완료', '번역 데이터를 성공적으로 가져왔습니다.')
-                                  } else {
-                                    showError('가져오기 실패', result.error || '알 수 없는 오류가 발생했습니다.')
-                                  }
-                                } catch (_error) {
-                                  showError('가져오기 실패', '파일을 읽는 중 오류가 발생했습니다.')
-                                }
-
-                                // 파일 입력 초기화
-                                e.target.value = ''
-                              }}
-                              className="hidden"
-                              disabled={!(formData as any).translations?.enabled}
-                            />
-                          </label>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">
-                          JSON 형식으로 번역 데이터를 백업하거나 복원할 수 있습니다.
-                        </p>
-                      </div>
-
-                      {/* 번역 검증 및 통계 */}
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-3">🔍 번역 검증 및 통계</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              // 번역 검증 로직 (추후 구현)
-                              clientLogger.log('번역 검증')
-                            }}
-                            disabled={!(formData as any).translations?.enabled}
-                            className="flex items-center justify-center px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="mr-2">✅</span>
-                            번역 검증
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              // 번역 통계 보기 로직 (추후 구현)
-                              clientLogger.log('번역 통계')
-                            }}
-                            disabled={!(formData as any).translations?.enabled}
-                            className="flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="mr-2">📊</span>
-                            통계 보기
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              // 누락된 번역 찾기 로직 (추후 구현)
-                              clientLogger.log('누락된 번역 찾기')
-                            }}
-                            disabled={!(formData as any).translations?.enabled}
-                            className="flex items-center justify-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="mr-2">🔎</span>
-                            누락 번역 찾기
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* 위험 작업 */}
-                      <div className="border-t pt-6">
-                        <h4 className="text-sm font-medium text-red-700 mb-3">⚠️ 위험 작업</h4>
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-red-800">번역 데이터 초기화</p>
-                              <p className="text-xs text-red-600">모든 번역 데이터를 기본값으로 초기화합니다. 이 작업은 되돌릴 수 없습니다.</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm('정말로 모든 번역 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
-                                  // 번역 데이터 초기화 로직 (추후 구현)
-                                  clientLogger.log('번역 데이터 초기화')
-                                }
-                              }}
-                              disabled={!(formData as any).translations?.enabled}
-                              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              초기화
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 저장/초기화 버튼 */}
-                  <div className="flex justify-end space-x-3 pt-6 border-t">
-                    <button
-                      onClick={() => handleReset('translations')}
-                      disabled={isSubmitting}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
-                    >
-                      기본값으로 초기화
-                    </button>
-                    <button
-                      onClick={() => handleSave('translations')}
-                      disabled={isSubmitting}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
-                    >
-                      {isSubmitting && (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      )}
-                      {isSubmitting ? '저장 중...' : '💾 설정 저장'}
-                    </button>
-                  </div>
-                </div>
+                <NotificationsTab
+                  formData={formData}
+                  updateFormData={updateFormData}
+                  onSave={() => handleSave('notifications')}
+                  onReset={() => handleReset('notifications')}
+                  isSubmitting={isSubmitting}
+                />
               )}
             </div>
           </div>
 
-          {/* 현재 설정값 디버깅 정보 (개발용) */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <details>
-              <summary className="text-sm font-medium text-gray-700 cursor-pointer hover:text-gray-900">
-                🔍 현재 설정값 보기 (개발용)
-              </summary>
-              <div className="mt-3 p-3 bg-white rounded border">
-                <pre className="text-xs text-gray-600 overflow-auto max-h-40">
-                  {settings ? JSON.stringify(settings[activeTab], null, 2) : '설정 로딩 중...'}
-                </pre>
-              </div>
-            </details>
-          </div>
-
-          {/* 카테고리 추가/수정 모달 */}
           {showCategoryModal && (
-            <div className="mobile-modal-container" onClick={() => !isCategoryLoading && setShowCategoryModal(false)}>
-              <div className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
-                <div className="mobile-modal-header">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {modalMode === 'add' ? '새 카테고리 추가' : '카테고리 수정'}
-                  </h3>
-                  <button
-                    onClick={() => setShowCategoryModal(false)}
-                    disabled={isCategoryLoading}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="mobile-modal-body space-y-4">
-                  {modalMode === 'add' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        카테고리 코드 <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={categoryCode}
-                        onChange={(e) => setCategoryCode(e.target.value.toUpperCase())}
-                        placeholder="예: FORM, TAP"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={isCategoryLoading}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        영문 대문자로 입력하세요
-                      </p>
-                    </div>
-                  )}
-
-                  {modalMode === 'edit' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        카테고리 코드
-                      </label>
-                      <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 font-mono">
-                        {categoryCode}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        코드는 수정할 수 없습니다
-                      </p>
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      카테고리 이름 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={categoryName}
-                      onChange={(e) => setCategoryName(e.target.value)}
-                      placeholder="예: FORM, TAP"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={isCategoryLoading}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      한글 또는 영문으로 입력하세요
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                  <button
-                    onClick={() => setShowCategoryModal(false)}
-                    disabled={isCategoryLoading}
-                    className="w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={modalMode === 'add' ? handleSubmitAddCategory : handleSubmitUpdateCategory}
-                    disabled={isCategoryLoading}
-                    className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
-                  >
-                    {isCategoryLoading && (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    )}
-                    {isCategoryLoading ? '처리 중...' : (modalMode === 'add' ? '추가' : '수정')}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <CategoryModal
+              mode={modalMode}
+              code={categoryCode}
+              name={categoryName}
+              isLoading={isCategoryLoading}
+              onCodeChange={setCategoryCode}
+              onNameChange={setCategoryName}
+              onClose={() => setShowCategoryModal(false)}
+              onSubmit={
+                modalMode === 'add' ? handleSubmitAddCategory : handleSubmitUpdateCategory
+              }
+            />
           )}
 
-          {/* 공급업체 추가/수정 모달 */}
           {showSupplierModal && (
-            <div className="mobile-modal-container" onClick={() => !isSupplierLoading && setShowSupplierModal(false)}>
-              <div className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
-                <div className="mobile-modal-header">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {modalSupplierMode === 'add' ? '새 공급업체 추가' : '공급업체 수정'}
-                  </h3>
-                  <button
-                    onClick={() => setShowSupplierModal(false)}
-                    disabled={isSupplierLoading}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="mobile-modal-body space-y-4">
-                  {modalSupplierMode === 'add' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        공급업체 코드 <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={supplierCode}
-                        onChange={(e) => setSupplierCode(e.target.value.toUpperCase())}
-                        placeholder="예: TOOLEX, ATH"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                        disabled={isSupplierLoading}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        영문 대문자로 입력하세요
-                      </p>
-                    </div>
-                  )}
-
-                  {modalSupplierMode === 'edit' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        공급업체 코드
-                      </label>
-                      <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 font-mono">
-                        {supplierCode}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        코드는 수정할 수 없습니다
-                      </p>
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      공급업체 이름 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={supplierName}
-                      onChange={(e) => setSupplierName(e.target.value)}
-                      placeholder="예: TOOLEX 공구, ATH 공구"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      disabled={isSupplierLoading}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      한글 또는 영문으로 입력하세요
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      품질등급 (1-10) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={supplierQualityRating}
-                      onChange={(e) => setSupplierQualityRating(e.target.value)}
-                      placeholder="8"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      disabled={isSupplierLoading}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      10점이 최고 품질입니다 (기본값: 8)
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                  <button
-                    onClick={() => setShowSupplierModal(false)}
-                    disabled={isSupplierLoading}
-                    className="w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={modalSupplierMode === 'add' ? handleSubmitAddSupplier : handleSubmitUpdateSupplier}
-                    disabled={isSupplierLoading}
-                    className="w-full sm:w-auto px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:opacity-50 flex items-center justify-center"
-                  >
-                    {isSupplierLoading && (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    )}
-                    {isSupplierLoading ? '처리 중...' : (modalSupplierMode === 'add' ? '추가' : '수정')}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <SupplierModal
+              mode={modalSupplierMode}
+              code={supplierCode}
+              name={supplierName}
+              qualityRating={supplierQualityRating}
+              isLoading={isSupplierLoading}
+              onCodeChange={setSupplierCode}
+              onNameChange={setSupplierName}
+              onQualityChange={setSupplierQualityRating}
+              onClose={() => setShowSupplierModal(false)}
+              onSubmit={
+                modalSupplierMode === 'add'
+                  ? handleSubmitAddSupplier
+                  : handleSubmitUpdateSupplier
+              }
+            />
           )}
+
         </>
       )}
     </div>
   )
+}
+
+// === 탭 컨테이너 컴포넌트 ===
+
+interface TabContentProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  formData: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updateFormData: (category: SettingsCategory, field: string, value: any) => void
+  onSave: () => void
+  onReset: () => void
+  isSubmitting: boolean
+}
+
+function SystemTab({ formData, updateFormData, onSave, onReset, isSubmitting }: TabContentProps) {
+  const { t } = useTranslation()
+  return (
+    <div className="space-y-4">
+      <Section
+        Icon={Globe2}
+        title={t('settings.basicSettings')}
+        description={t('settings.basicSettingsDesc')}
+      >
+        <FieldGrid>
+          <Field id="defaultLanguage" label={t('settings.fields.defaultLanguage')}>
+            <select
+              id="defaultLanguage"
+              value={formData.system?.defaultLanguage || 'ko'}
+              onChange={(e) => updateFormData('system', 'defaultLanguage', e.target.value)}
+              className={inputClass(false)}
+            >
+              <option value="ko">{t('settings.options.korean')}</option>
+              <option value="vi">{t('settings.options.vietnamese')}</option>
+            </select>
+          </Field>
+          <Field id="currency" label={t('settings.fields.currency')}>
+            <select
+              id="currency"
+              value={formData.system?.currency || 'VND'}
+              onChange={(e) => updateFormData('system', 'currency', e.target.value)}
+              className={inputClass(false)}
+            >
+              <option value="VND">{t('settings.options.vnd')}</option>
+              <option value="KRW">{t('settings.options.krw')}</option>
+              <option value="USD">{t('settings.options.usd')}</option>
+            </select>
+          </Field>
+          <Field id="timezone" label={t('settings.fields.timezone')}>
+            <select
+              id="timezone"
+              value={formData.system?.timezone || 'Asia/Ho_Chi_Minh'}
+              onChange={(e) => updateFormData('system', 'timezone', e.target.value)}
+              className={inputClass(false)}
+            >
+              <option value="Asia/Ho_Chi_Minh">{t('settings.options.tzVN')}</option>
+              <option value="Asia/Seoul">{t('settings.options.tzKR')}</option>
+              <option value="UTC">{t('settings.options.tzUTC')}</option>
+            </select>
+          </Field>
+          <Field id="dateFormat" label={t('settings.fields.dateFormat')}>
+            <select
+              id="dateFormat"
+              value={formData.system?.dateFormat || 'YYYY-MM-DD'}
+              onChange={(e) => updateFormData('system', 'dateFormat', e.target.value)}
+              className={inputClass(false)}
+            >
+              <option value="YYYY-MM-DD">YYYY-MM-DD (2024-01-01)</option>
+              <option value="DD/MM/YYYY">DD/MM/YYYY (01/01/2024)</option>
+              <option value="MM/DD/YYYY">MM/DD/YYYY (01/01/2024)</option>
+            </select>
+          </Field>
+        </FieldGrid>
+      </Section>
+
+      <Section
+        Icon={Lock}
+        title={t('settings.sessionSecurity')}
+        description={t('settings.sessionSecurityDesc')}
+      >
+        <FieldGrid>
+          <Field
+            id="sessionTimeout"
+            label={t('settings.fields.sessionTimeout')}
+            hint={t('settings.hints.sessionTimeoutRange')}
+          >
+            <input
+              id="sessionTimeout"
+              type="number"
+              min={5}
+              max={480}
+              value={formData.system?.sessionTimeout || 60}
+              onChange={(e) =>
+                updateFormData('system', 'sessionTimeout', parseInt(e.target.value))
+              }
+              className={inputClass(false)}
+            />
+          </Field>
+          <Field id="autoLogout" label={t('settings.fields.autoLogout')}>
+            <label className="inline-flex min-h-touch items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.system?.autoLogout || false}
+                onChange={(e) => updateFormData('system', 'autoLogout', e.target.checked)}
+                className={checkboxClass()}
+              />
+              <span className="text-label text-ink-soft">
+                {t('settings.fields.autoLogoutDesc')}
+              </span>
+            </label>
+          </Field>
+        </FieldGrid>
+      </Section>
+
+      <Section
+        Icon={Monitor}
+        title={t('settings.displaySettings')}
+        description={t('settings.displaySettingsDesc')}
+      >
+        <FieldGrid>
+          <Field id="itemsPerPage" label={t('settings.fields.itemsPerPage')}>
+            <select
+              id="itemsPerPage"
+              value={formData.system?.itemsPerPage || 20}
+              onChange={(e) =>
+                updateFormData('system', 'itemsPerPage', parseInt(e.target.value))
+              }
+              className={inputClass(false)}
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </Field>
+          <Field
+            id="maxFileSize"
+            label={t('settings.fields.maxFileSize')}
+            hint={t('settings.hints.maxFileSizeRange')}
+          >
+            <input
+              id="maxFileSize"
+              type="number"
+              min={1}
+              max={100}
+              value={formData.system?.maxFileSize || 10}
+              onChange={(e) =>
+                updateFormData('system', 'maxFileSize', parseInt(e.target.value))
+              }
+              className={inputClass(false)}
+            />
+          </Field>
+        </FieldGrid>
+      </Section>
+
+      <ActionRow onSave={onSave} onReset={onReset} isSubmitting={isSubmitting} />
+    </div>
+  )
+}
+
+function EquipmentTab({
+  formData,
+  updateFormData,
+  onSave,
+  onReset,
+  isSubmitting,
+}: TabContentProps) {
+  const { t } = useTranslation()
+  const locations: string[] = Array.isArray(formData.equipment?.locations)
+    ? formData.equipment.locations
+    : DEFAULT_LOCATIONS
+  const models: string[] = Array.isArray(formData.equipment?.models)
+    ? formData.equipment.models
+    : DEFAULT_MODELS
+  const processes: string[] = Array.isArray(formData.equipment?.processes)
+    ? formData.equipment.processes
+    : DEFAULT_PROCESSES
+
+  return (
+    <div className="space-y-4">
+      <Section
+        Icon={Factory}
+        title={t('settings.equipmentBasic')}
+        description={t('settings.equipmentBasicDesc')}
+      >
+        <FieldGrid>
+          <Field
+            id="totalCount"
+            label={t('settings.fields.totalCount')}
+            hint={t('settings.hints.totalCountRange')}
+          >
+            <input
+              id="totalCount"
+              type="number"
+              min={1}
+              max={1000}
+              value={formData.equipment?.totalCount || 800}
+              onChange={(e) =>
+                updateFormData('equipment', 'totalCount', parseInt(e.target.value))
+              }
+              className={inputClass(false)}
+            />
+          </Field>
+          <Field id="numberFormat" label={t('settings.fields.numberFormat')}>
+            <select
+              id="numberFormat"
+              value={formData.equipment?.numberFormat || 'C{number:3}'}
+              onChange={(e) => updateFormData('equipment', 'numberFormat', e.target.value)}
+              className={inputClass(false)}
+            >
+              <option value="C{number:3}">C001, C002, ... (C + 3)</option>
+              <option value="M{number:3}">M001, M002, ... (M + 3)</option>
+              <option value="CNC{number:3}">CNC001, CNC002, ... (CNC + 3)</option>
+              <option value="{number:4}">0001, 0002, ... (4)</option>
+            </select>
+          </Field>
+          <Field
+            id="toolPositionCount"
+            label={t('settings.fields.toolPositionCount')}
+            hint={t('settings.hints.toolPositionCountRange', {
+              count: formData.equipment?.toolPositionCount || 21,
+            })}
+          >
+            <input
+              id="toolPositionCount"
+              type="number"
+              min={12}
+              max={24}
+              value={formData.equipment?.toolPositionCount || 21}
+              onChange={(e) =>
+                updateFormData('equipment', 'toolPositionCount', parseInt(e.target.value))
+              }
+              className={inputClass(false)}
+            />
+          </Field>
+          <Field id="defaultStatus" label={t('settings.fields.defaultStatus')}>
+            <select
+              id="defaultStatus"
+              value={formData.equipment?.defaultStatus || '가동중'}
+              onChange={(e) => updateFormData('equipment', 'defaultStatus', e.target.value)}
+              className={inputClass(false)}
+            >
+              <option value="가동중">{t('settings.options.statusRunning')}</option>
+              <option value="점검중">{t('settings.options.statusInspection')}</option>
+              <option value="셋업중">{t('settings.options.statusSetup')}</option>
+            </select>
+          </Field>
+        </FieldGrid>
+      </Section>
+
+      <Section
+        Icon={MapPin}
+        title={t('settings.locationManagement')}
+        description={t('settings.locationManagementDesc')}
+      >
+        <ListEditor
+          items={locations}
+          fallback={DEFAULT_LOCATIONS}
+          placeholder={t('settings.placeholders.locationName')}
+          addLabel={t('settings.actions.addLocation')}
+          onChange={(next) => updateFormData('equipment', 'locations', next)}
+        />
+      </Section>
+
+      <Section
+        Icon={Layers}
+        title={t('settings.modelManagement')}
+        description={t('settings.modelManagementDesc')}
+      >
+        <ListEditor
+          items={models}
+          fallback={DEFAULT_MODELS}
+          placeholder={t('settings.placeholders.modelName')}
+          addLabel={t('settings.actions.addModel')}
+          onChange={(next) => updateFormData('equipment', 'models', next)}
+        />
+      </Section>
+
+      <Section
+        Icon={Sliders}
+        title={t('settings.processManagement')}
+        description={t('settings.processManagementDesc')}
+      >
+        <ListEditor
+          items={processes}
+          fallback={DEFAULT_PROCESSES}
+          placeholder={t('settings.placeholders.processName')}
+          addLabel={t('settings.actions.addProcess')}
+          onChange={(next) => updateFormData('equipment', 'processes', next)}
+        />
+      </Section>
+
+      <ActionRow onSave={onSave} onReset={onReset} isSubmitting={isSubmitting} />
+    </div>
+  )
+}
+
+interface InventoryTabProps extends TabContentProps {
+  endmillCategories: EndmillCategoryRecord[]
+  isCategoryLoading: boolean
+  onAddCategory: () => void
+  onUpdateCategory: (c: EndmillCategoryRecord) => void
+  onDeleteCategory: (c: EndmillCategoryRecord) => void
+  suppliers: SupplierRecord[]
+  isSupplierLoading: boolean
+  onAddSupplier: () => void
+  onUpdateSupplier: (s: SupplierRecord) => void
+  onDeleteSupplier: (s: SupplierRecord) => void
+}
+
+function InventoryTab(props: InventoryTabProps) {
+  const { t } = useTranslation()
+  const {
+    formData,
+    updateFormData,
+    onSave,
+    onReset,
+    isSubmitting,
+    endmillCategories,
+    isCategoryLoading,
+    onAddCategory,
+    onUpdateCategory,
+    onDeleteCategory,
+    suppliers,
+    isSupplierLoading,
+    onAddSupplier,
+    onUpdateSupplier,
+    onDeleteSupplier,
+  } = props
+
+  return (
+    <div className="space-y-4">
+      <Section
+        Icon={Boxes}
+        title={t('settings.inventoryThresholds')}
+        description={t('settings.inventoryThresholdsDesc')}
+      >
+        <FieldGrid>
+          <Field
+            id="criticalPercent"
+            label={t('settings.fields.criticalPercent')}
+            hint={t('settings.hints.criticalPercent', {
+              p: formData.inventory?.stockThresholds?.criticalPercent || 25,
+            })}
+          >
+            <input
+              id="criticalPercent"
+              type="number"
+              min={1}
+              max={50}
+              value={formData.inventory?.stockThresholds?.criticalPercent || 25}
+              onChange={(e) =>
+                updateFormData('inventory', 'stockThresholds', {
+                  ...formData.inventory?.stockThresholds,
+                  criticalPercent: parseInt(e.target.value),
+                })
+              }
+              className={inputClass(false)}
+            />
+          </Field>
+          <Field
+            id="lowPercent"
+            label={t('settings.fields.lowPercent')}
+            hint={t('settings.hints.lowPercent', {
+              p: formData.inventory?.stockThresholds?.lowPercent || 75,
+            })}
+          >
+            <input
+              id="lowPercent"
+              type="number"
+              min={51}
+              max={100}
+              value={formData.inventory?.stockThresholds?.lowPercent || 75}
+              onChange={(e) =>
+                updateFormData('inventory', 'stockThresholds', {
+                  ...formData.inventory?.stockThresholds,
+                  lowPercent: parseInt(e.target.value),
+                })
+              }
+              className={inputClass(false)}
+            />
+          </Field>
+          <Field id="defaultMinStock" label={t('settings.fields.defaultMinStock')}>
+            <input
+              id="defaultMinStock"
+              type="number"
+              min={1}
+              value={formData.inventory?.defaultValues?.minStock || 20}
+              onChange={(e) =>
+                updateFormData('inventory', 'defaultValues', {
+                  ...formData.inventory?.defaultValues,
+                  minStock: parseInt(e.target.value),
+                })
+              }
+              className={inputClass(false)}
+            />
+          </Field>
+          <Field id="defaultMaxStock" label={t('settings.fields.defaultMaxStock')}>
+            <input
+              id="defaultMaxStock"
+              type="number"
+              min={1}
+              value={formData.inventory?.defaultValues?.maxStock || 100}
+              onChange={(e) =>
+                updateFormData('inventory', 'defaultValues', {
+                  ...formData.inventory?.defaultValues,
+                  maxStock: parseInt(e.target.value),
+                })
+              }
+              className={inputClass(false)}
+            />
+          </Field>
+          <div className="md:col-span-2">
+            <Field
+              id="defaultStandardLife"
+              label={t('settings.fields.defaultStandardLife')}
+              hint={t('settings.hints.defaultStandardLifeDesc')}
+            >
+              <input
+                id="defaultStandardLife"
+                type="number"
+                min={100}
+                value={formData.inventory?.defaultValues?.standardLife || 10000}
+                onChange={(e) =>
+                  updateFormData('inventory', 'defaultValues', {
+                    ...formData.inventory?.defaultValues,
+                    standardLife: parseInt(e.target.value),
+                  })
+                }
+                className={inputClass(false)}
+              />
+            </Field>
+          </div>
+        </FieldGrid>
+      </Section>
+
+      <Section
+        Icon={Tags}
+        title={t('settings.categoryManagement')}
+        description={t('settings.categoryManagementDesc')}
+      >
+        {isCategoryLoading ? (
+          <LoadingRow text={t('settings.misc.loadingCategories')} />
+        ) : (
+          <div className="space-y-3">
+            {endmillCategories.map((category) => (
+              <div
+                key={category.id}
+                className="flex flex-wrap items-center gap-3 rounded-sm border border-divider bg-paper p-3"
+              >
+                <div className="flex flex-1 flex-wrap items-center gap-3">
+                  <span className="inline-flex items-center rounded-sm bg-gauge-cobalt-soft px-2 py-0.5 font-mono text-caption font-semibold text-gauge-cobalt-strong">
+                    {category.code}
+                  </span>
+                  <span className="text-label font-medium text-ink">{category.name_ko}</span>
+                  {category.description && (
+                    <span className="text-caption text-ink-mute">{category.description}</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onUpdateCategory(category)}
+                  disabled={isCategoryLoading}
+                  className={secondaryBtnClass()}
+                >
+                  {t('common.edit')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDeleteCategory(category)}
+                  disabled={isCategoryLoading}
+                  className={dangerBtnClass()}
+                >
+                  {t('common.delete')}
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={onAddCategory}
+              disabled={isCategoryLoading}
+              className={addRowBtnClass()}
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              {t('settings.actions.addCategory')}
+            </button>
+            <InfoCallout text={t('settings.misc.categoryInstantSave')} />
+          </div>
+        )}
+      </Section>
+
+      <Section
+        Icon={Truck}
+        title={t('settings.supplierManagement')}
+        description={t('settings.supplierManagementDesc')}
+      >
+        {isSupplierLoading ? (
+          <LoadingRow text={t('settings.misc.loadingSuppliers')} />
+        ) : (
+          <div className="space-y-3">
+            {suppliers.map((supplier) => (
+              <div
+                key={supplier.id}
+                className="flex flex-wrap items-center gap-3 rounded-sm border border-divider bg-paper p-3"
+              >
+                <div className="flex flex-1 flex-wrap items-center gap-3">
+                  <span className="inline-flex items-center rounded-sm bg-gauge-cobalt-soft px-2 py-0.5 font-mono text-caption font-semibold text-gauge-cobalt-strong">
+                    {supplier.code}
+                  </span>
+                  <span className="text-label font-medium text-ink">{supplier.name}</span>
+                  <span className="text-caption text-ink-mute">
+                    {t('settings.misc.qualityRating', { v: supplier.quality_rating ?? 8 })}
+                  </span>
+                  {!supplier.is_active && (
+                    <span className="inline-flex items-center rounded-sm bg-signal-stop-soft px-2 py-0.5 text-caption font-medium text-signal-stop-strong">
+                      {t('settings.misc.inactive')}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onUpdateSupplier(supplier)}
+                  disabled={isSupplierLoading}
+                  className={secondaryBtnClass()}
+                >
+                  {t('common.edit')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDeleteSupplier(supplier)}
+                  disabled={isSupplierLoading}
+                  className={dangerBtnClass()}
+                >
+                  {t('common.delete')}
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={onAddSupplier}
+              disabled={isSupplierLoading}
+              className={addRowBtnClass()}
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              {t('settings.actions.addSupplier')}
+            </button>
+            <InfoCallout text={t('settings.misc.supplierInstantSave')} />
+          </div>
+        )}
+      </Section>
+
+      <Section
+        Icon={AlertTriangle}
+        title={t('settings.statusDisplay')}
+        description={t('settings.statusDisplayDesc')}
+      >
+        <StatusListEditor
+          statuses={formData.inventory?.statuses || []}
+          onChange={(next) => updateFormData('inventory', 'statuses', next)}
+        />
+      </Section>
+
+      <ActionRow onSave={onSave} onReset={onReset} isSubmitting={isSubmitting} />
+    </div>
+  )
+}
+
+function ToolChangesTab({
+  formData,
+  updateFormData,
+  onSave,
+  onReset,
+  isSubmitting,
+}: TabContentProps) {
+  const { t } = useTranslation()
+  const reasons: string[] = Array.isArray(formData.toolChanges?.reasons)
+    ? formData.toolChanges.reasons
+    : DEFAULT_REASONS
+
+  return (
+    <div className="space-y-4">
+      <Section
+        Icon={Wrench}
+        title={t('settings.reasonManagement')}
+        description={t('settings.reasonManagementDesc')}
+      >
+        <ListEditor
+          items={reasons}
+          fallback={DEFAULT_REASONS}
+          placeholder={t('settings.placeholders.reasonName')}
+          addLabel={t('settings.actions.addReason')}
+          onChange={(next) => updateFormData('toolChanges', 'reasons', next)}
+        />
+      </Section>
+
+      <Section
+        Icon={AlertTriangle}
+        title={t('settings.thresholdSettings')}
+        description={t('settings.thresholdSettingsDesc')}
+      >
+        <FieldGrid>
+          <Field
+            id="warningThreshold"
+            label={t('settings.fields.warningThreshold')}
+            hint={t('settings.hints.warningThreshold', {
+              p: formData.toolChanges?.lifeThresholds?.warning || 80,
+            })}
+          >
+            <input
+              id="warningThreshold"
+              type="number"
+              min={50}
+              max={95}
+              value={formData.toolChanges?.lifeThresholds?.warning || 80}
+              onChange={(e) =>
+                updateFormData('toolChanges', 'lifeThresholds', {
+                  ...formData.toolChanges?.lifeThresholds,
+                  warning: parseInt(e.target.value),
+                })
+              }
+              className={inputClass(false)}
+            />
+          </Field>
+          <Field
+            id="criticalThreshold"
+            label={t('settings.fields.criticalThreshold')}
+            hint={t('settings.hints.criticalThreshold', {
+              p: formData.toolChanges?.lifeThresholds?.critical || 95,
+            })}
+          >
+            <input
+              id="criticalThreshold"
+              type="number"
+              min={90}
+              max={100}
+              value={formData.toolChanges?.lifeThresholds?.critical || 95}
+              onChange={(e) =>
+                updateFormData('toolChanges', 'lifeThresholds', {
+                  ...formData.toolChanges?.lifeThresholds,
+                  critical: parseInt(e.target.value),
+                })
+              }
+              className={inputClass(false)}
+            />
+          </Field>
+        </FieldGrid>
+      </Section>
+
+      <ActionRow onSave={onSave} onReset={onReset} isSubmitting={isSubmitting} />
+    </div>
+  )
+}
+
+function OrganizationTab({
+  formData,
+  updateFormData,
+  onSave,
+  onReset,
+  isSubmitting,
+}: TabContentProps) {
+  const { t } = useTranslation()
+  const departments: string[] = Array.isArray(formData.organization?.departments)
+    ? formData.organization.departments
+    : DEFAULT_DEPARTMENTS
+  const shifts: string[] = Array.isArray(formData.organization?.shifts)
+    ? formData.organization.shifts
+    : DEFAULT_SHIFTS
+  const roles: RoleRecord[] = Array.isArray(formData.organization?.roles)
+    ? formData.organization.roles
+    : DEFAULT_ROLES
+
+  return (
+    <div className="space-y-4">
+      <Section
+        Icon={Building2}
+        title={t('settings.departmentManagement')}
+        description={t('settings.departmentManagementDesc')}
+      >
+        <ListEditor
+          items={departments}
+          fallback={DEFAULT_DEPARTMENTS}
+          placeholder={t('settings.placeholders.departmentName')}
+          addLabel={t('settings.actions.addDepartment')}
+          onChange={(next) => updateFormData('organization', 'departments', next)}
+        />
+      </Section>
+
+      <Section
+        Icon={Clock}
+        title={t('settings.shiftManagement')}
+        description={t('settings.shiftManagementDesc')}
+      >
+        <ListEditor
+          items={shifts}
+          fallback={DEFAULT_SHIFTS}
+          placeholder={t('settings.placeholders.shiftName')}
+          addLabel={t('settings.actions.addShift')}
+          onChange={(next) => updateFormData('organization', 'shifts', next)}
+        />
+      </Section>
+
+      <Section
+        Icon={UserCheck}
+        title={t('settings.roleManagement')}
+        description={t('settings.roleManagementDesc')}
+      >
+        <RoleEditor
+          roles={roles}
+          onChange={(next) => updateFormData('organization', 'roles', next)}
+        />
+      </Section>
+
+      <Section
+        Icon={Sliders}
+        title={t('settings.defaultSettings')}
+        description={t('settings.defaultSettingsDesc')}
+      >
+        <FieldGrid>
+          <Field id="defaultRole" label={t('settings.fields.defaultRole')}>
+            <select
+              id="defaultRole"
+              value={formData.organization?.defaultRole || 'operator'}
+              onChange={(e) => updateFormData('organization', 'defaultRole', e.target.value)}
+              className={inputClass(false)}
+            >
+              {roles.map((role) => (
+                <option key={role.code} value={role.code}>
+                  {role.name} ({role.code})
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field id="defaultShift" label={t('settings.fields.defaultShift')}>
+            <select
+              id="defaultShift"
+              value={formData.organization?.defaultShift || shifts[0] || 'A'}
+              onChange={(e) => updateFormData('organization', 'defaultShift', e.target.value)}
+              className={inputClass(false)}
+            >
+              {shifts.map((shift) => (
+                <option key={shift} value={shift}>
+                  {shift}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </FieldGrid>
+      </Section>
+
+      <ActionRow onSave={onSave} onReset={onReset} isSubmitting={isSubmitting} />
+    </div>
+  )
+}
+
+function UiTab({ formData, updateFormData, onSave, onReset, isSubmitting }: TabContentProps) {
+  const { t } = useTranslation()
+  return (
+    <div className="space-y-4">
+      <Section
+        Icon={Monitor}
+        title={t('settings.uiDisplay')}
+        description={t('settings.uiDisplayDesc')}
+      >
+        <FieldGrid>
+          <Field id="uiItemsPerPage" label={t('settings.fields.itemsPerPage')}>
+            <select
+              id="uiItemsPerPage"
+              value={formData.system?.itemsPerPage || 20}
+              onChange={(e) =>
+                updateFormData('system', 'itemsPerPage', parseInt(e.target.value))
+              }
+              className={inputClass(false)}
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </Field>
+          <Field id="refreshInterval" label={t('settings.fields.refreshInterval')}>
+            <select
+              id="refreshInterval"
+              value={formData.ui?.dashboard?.refreshInterval || 30}
+              onChange={(e) =>
+                updateFormData('ui', 'dashboard', {
+                  ...formData.ui?.dashboard,
+                  refreshInterval: parseInt(e.target.value),
+                })
+              }
+              className={inputClass(false)}
+            >
+              <option value={0}>{t('settings.options.disabled')}</option>
+              <option value={10}>10s</option>
+              <option value={30}>30s</option>
+              <option value={60}>1m</option>
+              <option value={300}>5m</option>
+            </select>
+          </Field>
+        </FieldGrid>
+      </Section>
+
+      <Section
+        Icon={Palette}
+        title={t('settings.themeSettings')}
+        description={t('settings.themeSettingsDesc')}
+      >
+        <FieldGrid>
+          <Field id="theme" label={t('settings.fields.theme')}>
+            <select
+              id="theme"
+              value={formData.ui?.theme || 'light'}
+              onChange={(e) => updateFormData('ui', 'theme', e.target.value)}
+              className={inputClass(false)}
+            >
+              <option value="light">{t('settings.options.themeLight')}</option>
+              <option value="dark">{t('settings.options.themeDark')}</option>
+              <option value="system">{t('settings.options.themeSystem')}</option>
+            </select>
+          </Field>
+          <Field id="sidebarState" label={t('settings.fields.sidebarState')}>
+            <select
+              id="sidebarState"
+              value={formData.ui?.sidebarCollapsed ? 'collapsed' : 'expanded'}
+              onChange={(e) =>
+                updateFormData('ui', 'sidebarCollapsed', e.target.value === 'collapsed')
+              }
+              className={inputClass(false)}
+            >
+              <option value="expanded">{t('settings.options.sidebarExpanded')}</option>
+              <option value="collapsed">{t('settings.options.sidebarCollapsed')}</option>
+            </select>
+          </Field>
+        </FieldGrid>
+      </Section>
+
+      <Section
+        Icon={Bell}
+        title={t('settings.uiNotifications')}
+        description={t('settings.uiNotificationsDesc')}
+      >
+        <FieldGrid>
+          <Field id="notifPosition" label={t('settings.fields.notifPosition')}>
+            <select
+              id="notifPosition"
+              value={formData.ui?.notifications?.position || 'top-right'}
+              onChange={(e) =>
+                updateFormData('ui', 'notifications', {
+                  ...formData.ui?.notifications,
+                  position: e.target.value,
+                })
+              }
+              className={inputClass(false)}
+            >
+              <option value="top-right">{t('settings.options.posTopRight')}</option>
+              <option value="top-left">{t('settings.options.posTopLeft')}</option>
+              <option value="bottom-right">{t('settings.options.posBottomRight')}</option>
+              <option value="bottom-left">{t('settings.options.posBottomLeft')}</option>
+            </select>
+          </Field>
+          <Field id="notifDuration" label={t('settings.fields.notifDuration')}>
+            <select
+              id="notifDuration"
+              value={formData.ui?.notifications?.duration || 5}
+              onChange={(e) =>
+                updateFormData('ui', 'notifications', {
+                  ...formData.ui?.notifications,
+                  duration: parseInt(e.target.value),
+                })
+              }
+              className={inputClass(false)}
+            >
+              <option value={3}>3s</option>
+              <option value={5}>5s</option>
+              <option value={10}>10s</option>
+              <option value={0}>{t('settings.options.manual')}</option>
+            </select>
+          </Field>
+        </FieldGrid>
+      </Section>
+
+      <ActionRow onSave={onSave} onReset={onReset} isSubmitting={isSubmitting} />
+    </div>
+  )
+}
+
+function NotificationsTab({
+  formData,
+  updateFormData,
+  onSave,
+  onReset,
+  isSubmitting,
+}: TabContentProps) {
+  const { t } = useTranslation()
+  const types =
+    formData.notifications?.realtime?.types ||
+    [
+      { type: 'tool_change', enabled: true, priority: 'medium', channels: ['ui'] },
+      { type: 'inventory_low', enabled: true, priority: 'high', channels: ['ui', 'email'] },
+      { type: 'equipment_status', enabled: true, priority: 'high', channels: ['ui'] },
+      { type: 'system', enabled: true, priority: 'low', channels: ['ui'] },
+    ]
+
+  const labelForType = (type: string) => t(`settings.notifTypes.${type}`, type)
+  const labelForPriority = (p: string) => t(`settings.notifPriority.${p}`, p)
+
+  return (
+    <div className="space-y-4">
+      <Section
+        Icon={Bell}
+        title={t('settings.notificationMethod')}
+        description={t('settings.notificationMethodDesc')}
+      >
+        <div className="space-y-3">
+          <ToggleRow
+            label={t('settings.fields.realtimeNotif')}
+            hint={t('settings.hints.realtimeNotif')}
+            checked={formData.notifications?.realtime?.enabled !== false}
+            onChange={(v) =>
+              updateFormData('notifications', 'realtime', {
+                ...formData.notifications?.realtime,
+                enabled: v,
+              })
+            }
+          />
+          <ToggleRow
+            label={t('settings.fields.emailNotif')}
+            hint={t('settings.hints.emailNotif')}
+            checked={formData.notifications?.email?.enabled || false}
+            onChange={(v) =>
+              updateFormData('notifications', 'email', {
+                ...formData.notifications?.email,
+                enabled: v,
+              })
+            }
+          />
+        </div>
+      </Section>
+
+      <Section
+        Icon={AlertTriangle}
+        title={t('settings.notificationTypes')}
+        description={t('settings.notificationTypesDesc')}
+      >
+        <div className="space-y-3">
+          {types.map(
+            (
+              notif: {
+                type: string
+                enabled: boolean
+                priority: 'low' | 'medium' | 'high'
+                channels: string[]
+              },
+              index: number,
+            ) => (
+              <div
+                key={index}
+                className="flex flex-wrap items-center gap-3 rounded-sm border border-divider bg-paper p-3"
+              >
+                <label className="flex flex-1 min-w-[12rem] items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={notif.enabled}
+                    onChange={(e) => {
+                      const next = [...types]
+                      next[index] = { ...next[index], enabled: e.target.checked }
+                      updateFormData('notifications', 'realtime', {
+                        ...formData.notifications?.realtime,
+                        types: next,
+                      })
+                    }}
+                    className={checkboxClass()}
+                  />
+                  <span className="text-label font-medium text-ink">
+                    {labelForType(notif.type)}
+                  </span>
+                </label>
+                <span
+                  className={
+                    notif.priority === 'high'
+                      ? 'inline-flex items-center rounded-sm bg-signal-stop-soft px-2 py-0.5 text-caption font-medium text-signal-stop-strong'
+                      : notif.priority === 'medium'
+                        ? 'inline-flex items-center rounded-sm bg-signal-watch-soft px-2 py-0.5 text-caption font-medium text-signal-watch-strong'
+                        : 'inline-flex items-center rounded-sm bg-paper-warm px-2 py-0.5 text-caption font-medium text-ink-soft'
+                  }
+                >
+                  {labelForPriority(notif.priority)}
+                </span>
+                <select
+                  value={notif.priority}
+                  disabled={!notif.enabled}
+                  onChange={(e) => {
+                    const next = [...types]
+                    next[index] = {
+                      ...next[index],
+                      priority: e.target.value as 'low' | 'medium' | 'high',
+                    }
+                    updateFormData('notifications', 'realtime', {
+                      ...formData.notifications?.realtime,
+                      types: next,
+                    })
+                  }}
+                  className={inputClass(false) + ' max-w-[10rem]'}
+                >
+                  <option value="low">{labelForPriority('low')}</option>
+                  <option value="medium">{labelForPriority('medium')}</option>
+                  <option value="high">{labelForPriority('high')}</option>
+                </select>
+              </div>
+            ),
+          )}
+        </div>
+      </Section>
+
+      <Section
+        Icon={Clock}
+        title={t('settings.notificationSchedule')}
+        description={t('settings.notificationScheduleDesc')}
+      >
+        <FieldGrid>
+          <Field id="dailyReport" label={t('settings.fields.dailyReport')}>
+            <input
+              id="dailyReport"
+              type="time"
+              value={formData.notifications?.scheduling?.dailyReport || '18:00'}
+              onChange={(e) =>
+                updateFormData('notifications', 'scheduling', {
+                  ...formData.notifications?.scheduling,
+                  dailyReport: e.target.value,
+                })
+              }
+              className={inputClass(false)}
+            />
+          </Field>
+          <Field id="weeklyReport" label={t('settings.fields.weeklyReport')}>
+            <select
+              id="weeklyReport"
+              value={formData.notifications?.scheduling?.weeklyReport || 'sunday'}
+              onChange={(e) =>
+                updateFormData('notifications', 'scheduling', {
+                  ...formData.notifications?.scheduling,
+                  weeklyReport: e.target.value,
+                })
+              }
+              className={inputClass(false)}
+            >
+              <option value="sunday">{t('settings.options.sunday')}</option>
+              <option value="monday">{t('settings.options.monday')}</option>
+              <option value="friday">{t('settings.options.friday')}</option>
+              <option value="saturday">{t('settings.options.saturday')}</option>
+            </select>
+          </Field>
+        </FieldGrid>
+      </Section>
+
+      <ActionRow onSave={onSave} onReset={onReset} isSubmitting={isSubmitting} />
+    </div>
+  )
+}
+
+// === 공용 서브 컴포넌트 ===
+
+interface SectionProps {
+  Icon: typeof Cpu
+  title: string
+  description?: string
+  children: React.ReactNode
+}
+
+function Section({ Icon, title, description, children }: SectionProps) {
+  return (
+    <section className="overflow-hidden rounded-md border border-divider bg-paper">
+      <header className="flex items-start gap-2 border-b border-divider bg-paper-warm px-4 py-3">
+        <Icon
+          className="mt-0.5 h-5 w-5 flex-shrink-0 text-gauge-cobalt-strong"
+          aria-hidden="true"
+        />
+        <div>
+          <h3 className="text-label font-semibold text-ink">{title}</h3>
+          {description && <p className="text-caption text-ink-soft">{description}</p>}
+        </div>
+      </header>
+      <div className="p-4">{children}</div>
+    </section>
+  )
+}
+
+interface FieldProps {
+  id: string
+  label: string
+  hint?: string
+  children: React.ReactNode
+}
+
+function Field({ id, label, hint, children }: FieldProps) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1 block text-caption font-medium text-ink-soft">
+        {label}
+      </label>
+      {children}
+      {hint && <p className="mt-1 text-caption text-ink-mute">{hint}</p>}
+    </div>
+  )
+}
+
+function FieldGrid({ children }: { children: React.ReactNode }) {
+  return <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">{children}</div>
+}
+
+interface TabButtonProps {
+  Icon: typeof Cpu
+  label: string
+  active: boolean
+  onClick: () => void
+}
+
+function TabButton({ Icon, label, active, onClick }: TabButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        active
+          ? 'inline-flex flex-shrink-0 items-center gap-2 border-b-2 border-gauge-cobalt px-3 py-3 text-label font-semibold text-gauge-cobalt-strong transition-colors no-break'
+          : 'inline-flex flex-shrink-0 items-center gap-2 border-b-2 border-transparent px-3 py-3 text-label font-medium text-ink-soft transition-colors hover:border-divider hover:text-ink no-break'
+      }
+    >
+      <Icon className="h-4 w-4" aria-hidden="true" />
+      {label}
+    </button>
+  )
+}
+
+interface ActionRowProps {
+  onSave: () => void
+  onReset: () => void
+  isSubmitting: boolean
+}
+
+function ActionRow({ onSave, onReset, isSubmitting }: ActionRowProps) {
+  const { t } = useTranslation()
+  return (
+    <div className="flex flex-col-reverse justify-end gap-2 border-t border-divider pt-4 sm:flex-row sm:gap-3">
+      <button
+        type="button"
+        onClick={onReset}
+        disabled={isSubmitting}
+        className="inline-flex min-h-touch items-center justify-center gap-2 rounded-sm border border-divider bg-paper px-4 text-label font-medium text-ink transition-colors hover:bg-paper-warm disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <RefreshCw className="h-4 w-4" aria-hidden="true" />
+        {t('settings.resetToDefault')}
+      </button>
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={isSubmitting}
+        className="inline-flex min-h-touch items-center justify-center gap-2 rounded-sm bg-gauge-cobalt px-4 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {isSubmitting ? (
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        ) : (
+          <Save className="h-4 w-4" aria-hidden="true" />
+        )}
+        {isSubmitting ? t('settings.saving') : t('settings.saveSetting')}
+      </button>
+    </div>
+  )
+}
+
+interface ListEditorProps {
+  items: string[]
+  fallback: string[]
+  placeholder: string
+  addLabel: string
+  onChange: (next: string[]) => void
+}
+
+function ListEditor({ items, fallback, placeholder, addLabel, onChange }: ListEditorProps) {
+  const { t } = useTranslation()
+  const list = items.length > 0 ? items : fallback
+  return (
+    <div className="space-y-3">
+      {list.map((item, index) => (
+        <div key={index} className="flex items-center gap-2">
+          <input
+            type="text"
+            value={item}
+            onChange={(e) => {
+              const next = [...list]
+              next[index] = e.target.value
+              onChange(next)
+            }}
+            placeholder={placeholder}
+            className={inputClass(false) + ' flex-1'}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const next = [...list]
+              next.splice(index, 1)
+              onChange(next)
+            }}
+            disabled={list.length <= 1}
+            className={dangerBtnClass()}
+          >
+            {t('common.delete')}
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => onChange([...list, ''])}
+        className={addRowBtnClass()}
+      >
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        {addLabel}
+      </button>
+    </div>
+  )
+}
+
+interface StatusItem {
+  code: string
+  name: string
+  color: string
+  threshold: number
+}
+
+function StatusListEditor({
+  statuses,
+  onChange,
+}: {
+  statuses: StatusItem[]
+  onChange: (next: StatusItem[]) => void
+}) {
+  const { t } = useTranslation()
+  const list: StatusItem[] =
+    statuses.length > 0
+      ? statuses
+      : [
+          { code: 'sufficient', name: '충분', color: 'go', threshold: 100 },
+          { code: 'low', name: '부족', color: 'watch', threshold: 75 },
+          { code: 'critical', name: '위험', color: 'stop', threshold: 25 },
+        ]
+
+  const dotClass = (color: string) => {
+    switch (color) {
+      case 'go':
+      case 'green':
+        return 'bg-signal-go-strong'
+      case 'watch':
+      case 'yellow':
+        return 'bg-signal-watch-strong'
+      case 'stop':
+      case 'red':
+        return 'bg-signal-stop-strong'
+      case 'cobalt':
+      case 'blue':
+        return 'bg-gauge-cobalt-strong'
+      default:
+        return 'bg-ink-mute'
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      {list.map((status, index) => (
+        <div
+          key={index}
+          className="flex flex-wrap items-center gap-3 rounded-sm border border-divider bg-paper p-3"
+        >
+          <div className="flex flex-1 flex-wrap gap-3">
+            <Field id={`statusName${index}`} label={t('settings.fields.statusName')}>
+              <input
+                id={`statusName${index}`}
+                type="text"
+                value={status.name}
+                onChange={(e) => {
+                  const next = [...list]
+                  next[index] = { ...next[index], name: e.target.value }
+                  onChange(next)
+                }}
+                className={inputClass(false)}
+              />
+            </Field>
+            <Field id={`statusColor${index}`} label={t('settings.fields.statusColor')}>
+              <select
+                id={`statusColor${index}`}
+                value={status.color}
+                onChange={(e) => {
+                  const next = [...list]
+                  next[index] = { ...next[index], color: e.target.value }
+                  onChange(next)
+                }}
+                className={inputClass(false)}
+              >
+                <option value="go">{t('settings.options.colorGo')}</option>
+                <option value="watch">{t('settings.options.colorWatch')}</option>
+                <option value="stop">{t('settings.options.colorStop')}</option>
+                <option value="cobalt">{t('settings.options.colorCobalt')}</option>
+                <option value="neutral">{t('settings.options.colorNeutral')}</option>
+              </select>
+            </Field>
+            <Field id={`statusThreshold${index}`} label={t('settings.fields.statusThreshold')}>
+              <input
+                id={`statusThreshold${index}`}
+                type="number"
+                min={0}
+                max={100}
+                value={status.threshold}
+                onChange={(e) => {
+                  const next = [...list]
+                  next[index] = { ...next[index], threshold: parseInt(e.target.value) }
+                  onChange(next)
+                }}
+                className={inputClass(false)}
+              />
+            </Field>
+          </div>
+          <span
+            aria-hidden="true"
+            className={`h-3 w-3 flex-shrink-0 rounded-full ${dotClass(status.color)}`}
+          />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+interface RoleEditorProps {
+  roles: RoleRecord[]
+  onChange: (next: RoleRecord[]) => void
+}
+
+function RoleEditor({ roles, onChange }: RoleEditorProps) {
+  const { t } = useTranslation()
+  const list = roles.length > 0 ? roles : DEFAULT_ROLES
+  return (
+    <div className="space-y-4">
+      {list.map((role, index) => (
+        <div key={index} className="rounded-sm border border-divider bg-paper p-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <Field id={`roleCode${index}`} label={t('settings.fields.roleCode')}>
+              <input
+                id={`roleCode${index}`}
+                type="text"
+                value={role.code}
+                onChange={(e) => {
+                  const next = [...list]
+                  next[index] = { ...next[index], code: e.target.value }
+                  onChange(next)
+                }}
+                className={inputClass(false)}
+              />
+            </Field>
+            <Field id={`roleName${index}`} label={t('settings.fields.roleName')}>
+              <input
+                id={`roleName${index}`}
+                type="text"
+                value={role.name}
+                onChange={(e) => {
+                  const next = [...list]
+                  next[index] = { ...next[index], name: e.target.value }
+                  onChange(next)
+                }}
+                className={inputClass(false)}
+              />
+            </Field>
+            <div className="flex items-end">
+              <label className="inline-flex min-h-touch items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={role.isActive}
+                  onChange={(e) => {
+                    const next = [...list]
+                    next[index] = { ...next[index], isActive: e.target.checked }
+                    onChange(next)
+                  }}
+                  className={checkboxClass()}
+                />
+                <span className="text-label text-ink-soft">
+                  {t('settings.fields.roleActive')}
+                </span>
+              </label>
+            </div>
+          </div>
+          <div className="mt-3">
+            <Field id={`rolePerms${index}`} label={t('settings.fields.rolePermissions')}>
+              <input
+                id={`rolePerms${index}`}
+                type="text"
+                value={role.permissions.join(', ')}
+                onChange={(e) => {
+                  const next = [...list]
+                  next[index] = {
+                    ...next[index],
+                    permissions: e.target.value
+                      .split(',')
+                      .map((p) => p.trim())
+                      .filter((p) => p),
+                  }
+                  onChange(next)
+                }}
+                className={inputClass(false)}
+              />
+            </Field>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                const next = [...list]
+                next.splice(index, 1)
+                onChange(next)
+              }}
+              disabled={list.length <= 1}
+              className={dangerBtnClass()}
+            >
+              {t('settings.actions.deleteRole')}
+            </button>
+          </div>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() =>
+          onChange([
+            ...list,
+            { code: 'new_role', name: '새 역할', permissions: ['읽기'], isActive: true },
+          ])
+        }
+        className={addRowBtnClass()}
+      >
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        {t('settings.actions.addRole')}
+      </button>
+    </div>
+  )
+}
+
+interface ToggleRowProps {
+  label: string
+  hint?: string
+  checked: boolean
+  onChange: (v: boolean) => void
+}
+
+function ToggleRow({ label, hint, checked, onChange }: ToggleRowProps) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-sm border border-divider bg-paper p-3">
+      <div>
+        <p className="text-label font-medium text-ink">{label}</p>
+        {hint && <p className="text-caption text-ink-mute">{hint}</p>}
+      </div>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className={checkboxClass()}
+      />
+    </div>
+  )
+}
+
+function LoadingRow({ text }: { text: string }) {
+  return (
+    <div className="flex items-center justify-center gap-3 py-8">
+      <Loader2 className="h-5 w-5 animate-spin text-gauge-cobalt-strong" aria-hidden="true" />
+      <span className="text-label text-ink-soft">{text}</span>
+    </div>
+  )
+}
+
+function InfoCallout({ text }: { text: string }) {
+  return (
+    <div className="rounded-sm border border-divider bg-gauge-cobalt-soft p-3">
+      <div className="flex gap-2">
+        <Info
+          className="mt-0.5 h-4 w-4 flex-shrink-0 text-gauge-cobalt-strong"
+          aria-hidden="true"
+        />
+        <p className="text-caption text-gauge-cobalt-strong">{text}</p>
+      </div>
+    </div>
+  )
+}
+
+// === 모달 ===
+
+interface CategoryModalProps {
+  mode: 'add' | 'edit'
+  code: string
+  name: string
+  isLoading: boolean
+  onCodeChange: (v: string) => void
+  onNameChange: (v: string) => void
+  onClose: () => void
+  onSubmit: () => void
+}
+
+function CategoryModal({
+  mode,
+  code,
+  name,
+  isLoading,
+  onCodeChange,
+  onNameChange,
+  onClose,
+  onSubmit,
+}: CategoryModalProps) {
+  const { t } = useTranslation()
+  return (
+    <div
+      className="mobile-modal-container"
+      onClick={() => !isLoading && onClose()}
+    >
+      <div
+        className="mobile-modal-content md:max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mobile-modal-header flex items-center justify-between">
+          <h3 className="text-title font-semibold text-ink">
+            {mode === 'add'
+              ? t('settings.modals.addCategoryTitle')
+              : t('settings.modals.editCategoryTitle')}
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            aria-label={t('common.close')}
+            className="rounded-sm p-1 text-ink-mute transition-colors hover:bg-paper-warm hover:text-ink"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="mobile-modal-body space-y-4">
+          {mode === 'add' ? (
+            <Field
+              id="catCode"
+              label={t('settings.modals.categoryCode')}
+              hint={t('settings.modals.uppercaseHint')}
+            >
+              <input
+                id="catCode"
+                type="text"
+                value={code}
+                onChange={(e) => onCodeChange(e.target.value.toUpperCase())}
+                placeholder={t('settings.modals.categoryCodePlaceholder')}
+                disabled={isLoading}
+                className={inputClass(false)}
+              />
+            </Field>
+          ) : (
+            <Field
+              id="catCode"
+              label={t('settings.modals.categoryCode')}
+              hint={t('settings.modals.codeImmutable')}
+            >
+              <div className="rounded-sm border border-divider bg-paper-warm px-3 py-2 font-mono text-label text-ink-soft">
+                {code}
+              </div>
+            </Field>
+          )}
+          <Field
+            id="catName"
+            label={t('settings.modals.categoryName')}
+            hint={t('settings.modals.nameLangHint')}
+          >
+            <input
+              id="catName"
+              type="text"
+              value={name}
+              onChange={(e) => onNameChange(e.target.value)}
+              placeholder={t('settings.modals.categoryNamePlaceholder')}
+              disabled={isLoading}
+              className={inputClass(false)}
+            />
+          </Field>
+        </div>
+
+        <div className="mobile-modal-footer flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            className="inline-flex min-h-touch items-center justify-center gap-2 rounded-sm border border-divider bg-paper px-4 text-label font-medium text-ink transition-colors hover:bg-paper-warm disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={isLoading}
+            className="inline-flex min-h-touch items-center justify-center gap-2 rounded-sm bg-gauge-cobalt px-4 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+            {isLoading
+              ? t('settings.modals.processing')
+              : mode === 'add'
+                ? t('common.add')
+                : t('common.edit')}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface SupplierModalProps {
+  mode: 'add' | 'edit'
+  code: string
+  name: string
+  qualityRating: string
+  isLoading: boolean
+  onCodeChange: (v: string) => void
+  onNameChange: (v: string) => void
+  onQualityChange: (v: string) => void
+  onClose: () => void
+  onSubmit: () => void
+}
+
+function SupplierModal({
+  mode,
+  code,
+  name,
+  qualityRating,
+  isLoading,
+  onCodeChange,
+  onNameChange,
+  onQualityChange,
+  onClose,
+  onSubmit,
+}: SupplierModalProps) {
+  const { t } = useTranslation()
+  return (
+    <div
+      className="mobile-modal-container"
+      onClick={() => !isLoading && onClose()}
+    >
+      <div
+        className="mobile-modal-content md:max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mobile-modal-header flex items-center justify-between">
+          <h3 className="text-title font-semibold text-ink">
+            {mode === 'add'
+              ? t('settings.modals.addSupplierTitle')
+              : t('settings.modals.editSupplierTitle')}
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            aria-label={t('common.close')}
+            className="rounded-sm p-1 text-ink-mute transition-colors hover:bg-paper-warm hover:text-ink"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="mobile-modal-body space-y-4">
+          {mode === 'add' ? (
+            <Field
+              id="supCode"
+              label={t('settings.modals.supplierCode')}
+              hint={t('settings.modals.uppercaseHint')}
+            >
+              <input
+                id="supCode"
+                type="text"
+                value={code}
+                onChange={(e) => onCodeChange(e.target.value.toUpperCase())}
+                placeholder={t('settings.modals.supplierCodePlaceholder')}
+                disabled={isLoading}
+                className={inputClass(false)}
+              />
+            </Field>
+          ) : (
+            <Field
+              id="supCode"
+              label={t('settings.modals.supplierCode')}
+              hint={t('settings.modals.codeImmutable')}
+            >
+              <div className="rounded-sm border border-divider bg-paper-warm px-3 py-2 font-mono text-label text-ink-soft">
+                {code}
+              </div>
+            </Field>
+          )}
+          <Field
+            id="supName"
+            label={t('settings.modals.supplierName')}
+            hint={t('settings.modals.nameLangHint')}
+          >
+            <input
+              id="supName"
+              type="text"
+              value={name}
+              onChange={(e) => onNameChange(e.target.value)}
+              placeholder={t('settings.modals.supplierNamePlaceholder')}
+              disabled={isLoading}
+              className={inputClass(false)}
+            />
+          </Field>
+          <Field
+            id="supQuality"
+            label={t('settings.modals.supplierQuality')}
+            hint={t('settings.modals.qualityHint')}
+          >
+            <input
+              id="supQuality"
+              type="number"
+              min={1}
+              max={10}
+              value={qualityRating}
+              onChange={(e) => onQualityChange(e.target.value)}
+              disabled={isLoading}
+              className={inputClass(false)}
+            />
+          </Field>
+        </div>
+
+        <div className="mobile-modal-footer flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            className="inline-flex min-h-touch items-center justify-center gap-2 rounded-sm border border-divider bg-paper px-4 text-label font-medium text-ink transition-colors hover:bg-paper-warm disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={isLoading}
+            className="inline-flex min-h-touch items-center justify-center gap-2 rounded-sm bg-gauge-cobalt px-4 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+            {isLoading
+              ? t('settings.modals.processing')
+              : mode === 'add'
+                ? t('common.add')
+                : t('common.edit')}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// === 클래스 헬퍼 ===
+
+function inputClass(hasError: boolean): string {
+  const base =
+    'w-full min-h-touch rounded-sm border bg-paper px-3 py-2 text-label text-ink focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60'
+  return hasError
+    ? `${base} border-signal-stop-strong focus:border-signal-stop-strong focus:ring-signal-stop-strong`
+    : `${base} border-divider focus:border-gauge-cobalt focus:ring-gauge-cobalt`
+}
+
+function checkboxClass(): string {
+  return 'h-4 w-4 rounded-sm border-divider text-gauge-cobalt-strong focus:ring-gauge-cobalt'
+}
+
+function secondaryBtnClass(): string {
+  return 'inline-flex min-h-touch items-center gap-1 rounded-sm border border-divider bg-paper px-3 text-label font-medium text-ink transition-colors hover:bg-paper-warm disabled:cursor-not-allowed disabled:opacity-50'
+}
+
+function dangerBtnClass(): string {
+  return 'inline-flex min-h-touch items-center gap-1 rounded-sm border border-divider bg-paper px-3 text-label font-medium text-signal-stop-strong transition-colors hover:bg-signal-stop-soft disabled:cursor-not-allowed disabled:opacity-50'
+}
+
+function addRowBtnClass(): string {
+  return 'inline-flex min-h-touch w-full items-center justify-center gap-1 rounded-sm border border-dashed border-divider bg-paper px-3 text-label font-medium text-gauge-cobalt-strong transition-colors hover:bg-gauge-cobalt-soft disabled:cursor-not-allowed disabled:opacity-50'
 }
