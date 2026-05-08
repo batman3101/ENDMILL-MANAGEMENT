@@ -54,15 +54,6 @@ export interface SystemSettings {
     }
   }
 
-  // 사용자 및 조직 설정
-  organization: {
-    departments: string[]
-    shifts: string[]
-    roles: UserRoleConfig[]
-    defaultRole: string
-    defaultShift: string
-  }
-
   // UI/UX 설정
   ui: {
     theme: 'light' | 'dark' | 'auto'
@@ -78,41 +69,6 @@ export interface SystemSettings {
     }
   }
 
-  // 알림 설정
-  notifications: {
-    email: {
-      enabled: boolean
-      recipientGroups: string[]
-    }
-    realtime: {
-      enabled: boolean
-      types: NotificationTypeConfig[]
-    }
-    scheduling: {
-      dailyReport: string // HH:MM 형식
-      weeklyReport: string
-      monthlyReport: string
-    }
-  }
-
-  // 번역 설정
-  translations?: {
-    enabled?: boolean
-    defaultLanguage?: 'ko' | 'vi'
-    fallbackLanguage?: 'ko' | 'vi'
-    autoTranslate?: boolean
-    googleApiKey?: string
-    googleProjectId?: string
-    googleLocation?: string
-    useAdvancedAPI?: boolean
-    apiUsage?: {
-      currentUsage?: number
-      monthlyLimit?: number
-      lastResetDate?: string
-    }
-    cacheEnabled?: boolean
-    cacheExpiry?: number
-  }
 }
 
 // 설비 상태 설정
@@ -135,34 +91,13 @@ export interface InventoryStatusConfig {
   description?: string
 }
 
-// 사용자 역할 설정
-export interface UserRoleConfig {
-  code: string
-  name: string
-  permissions: string[]
-  description?: string
-  isActive: boolean
-}
-
-// 알림 타입 설정
-export interface NotificationTypeConfig {
-  type: 'equipment_status' | 'inventory_low' | 'tool_change' | 'system'
-  enabled: boolean
-  priority: 'high' | 'medium' | 'low'
-  channels: ('ui' | 'email' | 'sms')[]
-  template?: string
-}
-
 // 설정 카테고리 타입
 export type SettingsCategory =
   | 'system'
   | 'equipment'
   | 'inventory'
   | 'toolChanges'
-  | 'organization'
   | 'ui'
-  | 'notifications'
-  | 'translations'
 
 // 설정 수정 내역
 export interface SettingsHistory {
@@ -265,33 +200,6 @@ export const DEFAULT_SETTINGS: SystemSettings = {
     }
   },
 
-  organization: {
-    departments: ['종합 관리실', '공구 관리실', '기술팀'],
-    shifts: ['A', 'B'],
-    roles: [
-      { 
-        code: 'admin', 
-        name: '관리자', 
-        permissions: ['*'], 
-        isActive: true 
-      },
-      { 
-        code: 'manager', 
-        name: '매니저', 
-        permissions: ['read', 'write', 'export'], 
-        isActive: true 
-      },
-      { 
-        code: 'operator', 
-        name: '운영자', 
-        permissions: ['read', 'tool_change'], 
-        isActive: true 
-      }
-    ],
-    defaultRole: 'operator',
-    defaultShift: 'A'
-  },
-
   ui: {
     theme: 'light',
     sidebarCollapsed: false,
@@ -306,24 +214,4 @@ export const DEFAULT_SETTINGS: SystemSettings = {
     }
   },
 
-  notifications: {
-    email: {
-      enabled: false,
-      recipientGroups: ['managers', 'admins']
-    },
-    realtime: {
-      enabled: true,
-      types: [
-        { type: 'equipment_status', enabled: true, priority: 'high', channels: ['ui'] },
-        { type: 'inventory_low', enabled: true, priority: 'medium', channels: ['ui'] },
-        { type: 'tool_change', enabled: true, priority: 'low', channels: ['ui'] },
-        { type: 'system', enabled: true, priority: 'high', channels: ['ui'] }
-      ]
-    },
-    scheduling: {
-      dailyReport: '08:00',
-      weeklyReport: '월요일 09:00',
-      monthlyReport: '1일 10:00'
-    }
-  }
-} 
+}

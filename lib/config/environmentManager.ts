@@ -3,7 +3,6 @@
  * API 키와 같은 민감한 정보를 안전하게 관리하고 환경변수와 설정 시스템을 연결합니다.
  */
 
-import { SettingsManager } from '../data/settingsManager'
 import { logger } from '../utils/logger'
 
 export interface EnvironmentVariable {
@@ -148,8 +147,6 @@ export class EnvironmentManager {
       value: config.isEncrypted ? this.encrypt(value) : value
     })
 
-    // 설정 시스템에도 동기화
-    this.syncToSettings(key, value)
   }
 
   /**
@@ -180,56 +177,6 @@ export class EnvironmentManager {
    */
   public deleteEnvironmentVariable(key: string): void {
     this.environmentVariables.delete(key)
-    // 설정에서도 제거
-    this.syncToSettings(key, '')
-  }
-
-  /**
-   * 설정 시스템과 동기화
-   */
-  private syncToSettings(key: string, value: string): void {
-    const settingsManager = SettingsManager.getInstance()
-    
-    try {
-      switch (key) {
-        case 'GOOGLE_TRANSLATE_API_KEY':
-          settingsManager.updateCategorySettings('translations', { googleApiKey: value }, 'system')
-          break
-        case 'GOOGLE_CLOUD_PROJECT_ID':
-          settingsManager.updateCategorySettings('translations', { googleProjectId: value }, 'system')
-          break
-        case 'GOOGLE_CLOUD_LOCATION':
-          settingsManager.updateCategorySettings('translations', { googleLocation: value }, 'system')
-          break
-        case 'USE_ADVANCED_TRANSLATION_API':
-          settingsManager.updateCategorySettings('translations', { useAdvancedAPI: value === 'true' }, 'system')
-          break
-      }
-    } catch (error) {
-      logger.error('설정 동기화 실패:', error)
-    }
-  }
-
-  /**
-   * 설정에서 환경변수로 동기화
-   */
-  public syncFromSettings(): void {
-    const settingsManager = SettingsManager.getInstance()
-    const translationSettings = settingsManager.getCategorySettings('translations')
-
-    // Google API 설정 동기화
-    if (translationSettings?.googleApiKey) {
-      this.setEnvironmentVariable('GOOGLE_TRANSLATE_API_KEY', translationSettings.googleApiKey)
-    }
-    if (translationSettings?.googleProjectId) {
-      this.setEnvironmentVariable('GOOGLE_CLOUD_PROJECT_ID', translationSettings.googleProjectId)
-    }
-    if (translationSettings?.googleLocation) {
-      this.setEnvironmentVariable('GOOGLE_CLOUD_LOCATION', translationSettings.googleLocation)
-    }
-    if (translationSettings?.useAdvancedAPI !== undefined) {
-      this.setEnvironmentVariable('USE_ADVANCED_TRANSLATION_API', translationSettings.useAdvancedAPI.toString())
-    }
   }
 
   /**
