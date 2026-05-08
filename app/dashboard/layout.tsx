@@ -181,10 +181,10 @@ export default function DashboardLayout({
     return (
       <div className="min-h-screen bg-paper">
         <div className="flex min-h-screen">
-          <aside className="hidden lg:flex w-64 bg-ink min-h-screen p-4 flex-col gap-2">
-            <div className="h-12 bg-paper/10 rounded-md animate-pulse mb-4" />
+          <aside className="hidden lg:flex w-64 bg-sidebar min-h-screen p-4 flex-col gap-2">
+            <div className="h-12 bg-sidebar-fg/10 rounded-md animate-pulse mb-4" />
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-10 bg-paper/10 rounded-sm animate-pulse" />
+              <div key={i} className="h-10 bg-sidebar-fg/10 rounded-sm animate-pulse" />
             ))}
           </aside>
           <div className="flex-1 p-4 md:p-6">
@@ -316,19 +316,22 @@ export default function DashboardLayout({
         {/* 모바일 사이드바 오버레이 */}
         {mobileSidebarOpen && (
           <div
-            className="lg:hidden fixed inset-0 z-40 bg-ink/60"
+            className="lg:hidden fixed inset-0 z-40 bg-sidebar/60"
             onClick={() => setMobileSidebarOpen(false)}
             aria-hidden="true"
           />
         )}
 
-        {/* === 사이드바 === */}
+        {/* === 사이드바 ===
+            NOTE: 사이드바는 light/dark 모드 무관 항상 동일한 어두운 톤 유지.
+            bg-sidebar / text-sidebar-fg 등 사이드바 전용 토큰 사용
+            (CSS 변수 :root 와 .dark 양쪽에서 동일 값 — globals.css 참고) */}
         <aside
           style={{ width: `${sidebarWidth}px` }}
           className={`
             fixed lg:sticky top-0 left-0 z-50 lg:z-auto
             h-screen flex-shrink-0 max-lg:!w-64
-            bg-ink text-paper
+            bg-sidebar text-sidebar-fg
             flex flex-col
             transition-transform duration-200 ease-out
             ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -344,10 +347,10 @@ export default function DashboardLayout({
             aria-label="Resize sidebar"
             className="hidden lg:block absolute top-0 right-0 z-10 h-full w-1.5 cursor-col-resize group"
           >
-            <div className="absolute inset-y-0 right-0 w-px bg-paper/10 group-hover:bg-gauge-cobalt group-hover:w-0.5 transition-all" />
+            <div className="absolute inset-y-0 right-0 w-px bg-sidebar-fg/10 group-hover:bg-gauge-cobalt group-hover:w-0.5 transition-all" />
           </div>
           {/* 로고 영역 */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-paper/10 flex-shrink-0">
+          <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-fg/10 flex-shrink-0">
             <Link
               href="/dashboard"
               className="flex items-center gap-2.5 min-w-0 transition-opacity hover:opacity-90"
@@ -360,14 +363,14 @@ export default function DashboardLayout({
                 priority
                 className="h-9 w-9 flex-shrink-0 object-contain"
               />
-              <span className="text-base font-semibold text-paper truncate no-break">
+              <span className="text-base font-semibold text-sidebar-fg truncate no-break">
                 CNC ENDMILL MANAGER
               </span>
             </Link>
             <button
               type="button"
               onClick={() => setMobileSidebarOpen(false)}
-              className="lg:hidden inline-flex h-8 w-8 items-center justify-center rounded-sm text-paper/70 transition-colors hover:bg-paper/10 hover:text-paper"
+              className="lg:hidden inline-flex h-8 w-8 items-center justify-center rounded-sm text-sidebar-fg/70 transition-colors hover:bg-sidebar-fg/10 hover:text-sidebar-fg"
               aria-label={t('common.close')}
             >
               <X className="h-5 w-5" />
@@ -384,8 +387,8 @@ export default function DashboardLayout({
                     aria-current={item.active ? 'page' : undefined}
                     className={
                       item.active
-                        ? 'flex items-center gap-3 min-h-touch px-3 rounded-sm text-label font-medium no-break bg-gauge-cobalt text-paper transition-colors'
-                        : 'flex items-center gap-3 min-h-touch px-3 rounded-sm text-label font-medium no-break text-paper/75 transition-colors hover:bg-paper/10 hover:text-paper'
+                        ? 'flex items-center gap-3 min-h-touch px-3 rounded-sm text-label font-medium no-break bg-gauge-cobalt text-sidebar-fg transition-colors'
+                        : 'flex items-center gap-3 min-h-touch px-3 rounded-sm text-label font-medium no-break text-sidebar-fg/75 transition-colors hover:bg-sidebar-fg/10 hover:text-sidebar-fg'
                     }
                   >
                     <item.Icon
@@ -400,17 +403,17 @@ export default function DashboardLayout({
           </nav>
 
           {/* 하단 사용자 정보 */}
-          <div className="border-t border-paper/10 p-3 flex-shrink-0">
+          <div className="border-t border-sidebar-fg/10 p-3 flex-shrink-0">
             <Link
               href="/dashboard/profile"
-              className="flex items-center gap-3 min-h-touch px-3 rounded-sm text-paper/75 transition-colors hover:bg-paper/10 hover:text-paper"
+              className="flex items-center gap-3 min-h-touch px-3 rounded-sm text-sidebar-fg/75 transition-colors hover:bg-sidebar-fg/10 hover:text-sidebar-fg"
             >
               <User className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
               <div className="min-w-0 flex-1">
-                <p className="text-label font-medium text-paper truncate">
+                <p className="text-label font-medium text-sidebar-fg truncate">
                   {user?.name || t('common.user')}
                 </p>
-                <p className="text-caption text-paper/60 truncate">
+                <p className="text-caption text-sidebar-fg/60 truncate">
                   {user?.position || t('common.noPosition')}
                 </p>
               </div>

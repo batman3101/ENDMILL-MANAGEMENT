@@ -6,6 +6,7 @@ import { I18nProvider } from '../lib/providers/I18nProvider';
 import { ToastProvider } from '../components/shared/Toast';
 import { AuthProvider } from '../lib/hooks/useAuth';
 import { FactoryProvider } from '../lib/providers/FactoryProvider';
+import { ThemeProvider, THEME_NO_FLASH_SCRIPT } from '../lib/providers/ThemeProvider';
 import { ServiceWorkerRegister, InstallPrompt } from '../components/pwa';
 import { MobileDebugConsole } from '../components/debug/MobileDebugConsole';
 
@@ -54,8 +55,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <head>
+        {/* FOUC 방지: 페이지 렌더 전 <html>에 dark 클래스를 즉시 적용
+            컴파일 타임 정적 상수 문자열만 주입 — 사용자 입력 없음 → XSS 위험 없음
+            (ThemeProvider.tsx의 THEME_NO_FLASH_SCRIPT 참조)
+            React에서 inline script를 head에 주입하는 표준 방식 */}
+        {/* eslint-disable-next-line react/no-danger */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_NO_FLASH_SCRIPT }} />
+
         {/* PWA 지원을 위한 메타 태그 */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -66,7 +74,7 @@ export default function RootLayout({
         <link rel="shortcut icon" type="image/png" href="/icons/endmill-favicon.png" />
         <link rel="apple-touch-icon" href="/icons/endmill-apple-touch.png" />
       </head>
-      <body className={`${inter.className} antialiased bg-gray-50 text-gray-900`}>
+      <body className={`${inter.className} antialiased bg-paper text-ink`}>
         {/* 접근성을 위한 스킵 링크 */}
         <a
           href="#main-content"
@@ -87,9 +95,13 @@ export default function RootLayout({
               <QueryProvider>
                 <AuthProvider>
                   <FactoryProvider>
-                    {children}
-                    {/* PWA 설치 프롬프트 */}
-                    <InstallPrompt />
+                    {/* ThemeProvider — settings.ui.theme 추적 + <html class> 토글
+                        useSettings()를 사용하므로 QueryProvider 하위에 위치 */}
+                    <ThemeProvider>
+                      {children}
+                      {/* PWA 설치 프롬프트 */}
+                      <InstallPrompt />
+                    </ThemeProvider>
                   </FactoryProvider>
                 </AuthProvider>
               </QueryProvider>

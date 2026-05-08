@@ -1285,7 +1285,7 @@ function UiTab({ formData, updateFormData, onSave, onReset, isSubmitting }: TabC
             >
               <option value="light">{t('settings.options.themeLight')}</option>
               <option value="dark">{t('settings.options.themeDark')}</option>
-              <option value="system">{t('settings.options.themeSystem')}</option>
+              <option value="auto">{t('settings.options.themeSystem')}</option>
             </select>
           </Field>
           <Field id="sidebarState" label={t('settings.fields.sidebarState')}>

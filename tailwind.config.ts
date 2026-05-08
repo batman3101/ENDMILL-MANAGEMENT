@@ -25,40 +25,56 @@ const config: Config = {
       colors: {
         // ====================================================================
         // The Quiet Instrument — semantic tokens (DESIGN.md canonical)
+        // CSS 변수 기반: light는 :root, dark는 .dark 셀렉터에서 정의 (globals.css)
         // ====================================================================
         "gauge-cobalt": {
-          DEFAULT: "#1e3a8a",
-          strong: "#1e40af",
-          soft: "#dbeafe",
+          DEFAULT: "rgb(var(--color-gauge-cobalt) / <alpha-value>)",
+          strong: "rgb(var(--color-gauge-cobalt-strong) / <alpha-value>)",
+          soft: "rgb(var(--color-gauge-cobalt-soft) / <alpha-value>)",
         },
         paper: {
-          DEFAULT: "#fdfdfe",
-          warm: "#f8f9fb",
+          DEFAULT: "rgb(var(--color-paper) / <alpha-value>)",
+          warm: "rgb(var(--color-paper-warm) / <alpha-value>)",
         },
-        divider: "#e6e8ee",
+        divider: "rgb(var(--color-divider) / <alpha-value>)",
         ink: {
-          DEFAULT: "#1a2236",
-          soft: "#475569",
-          mute: "#94a3b8",
+          DEFAULT: "rgb(var(--color-ink) / <alpha-value>)",
+          soft: "rgb(var(--color-ink-soft) / <alpha-value>)",
+          mute: "rgb(var(--color-ink-mute) / <alpha-value>)",
+        },
+
+        // ====================================================================
+        // Sidebar-only tokens — light/dark 모드 무관하게 항상 동일한 어두운 톤 (옵션 A)
+        // (사이드바 색은 모드 무관 고정 — 시각 검증의 핵심 항목)
+        // CSS 변수 기반: :root 와 .dark 양쪽에서 동일 값으로 정의됨
+        // ====================================================================
+        sidebar: {
+          DEFAULT: "rgb(var(--color-sidebar-bg) / <alpha-value>)",
+          fg: "rgb(var(--color-sidebar-fg) / <alpha-value>)",
+          "fg-soft": "rgb(var(--color-sidebar-fg-soft) / <alpha-value>)",
+          border: "rgb(var(--color-sidebar-border) / <alpha-value>)",
+          hover: "rgb(var(--color-sidebar-hover) / <alpha-value>)",
+          active: "rgb(var(--color-sidebar-active) / <alpha-value>)",
         },
         "signal-go": {
-          DEFAULT: "#10b981",
-          soft: "#d1fae5",
-          strong: "#047857",
+          DEFAULT: "rgb(var(--color-signal-go) / <alpha-value>)",
+          soft: "rgb(var(--color-signal-go-soft) / <alpha-value>)",
+          strong: "rgb(var(--color-signal-go-strong) / <alpha-value>)",
         },
         "signal-watch": {
-          DEFAULT: "#f59e0b",
-          soft: "#fef3c7",
-          strong: "#b45309",
+          DEFAULT: "rgb(var(--color-signal-watch) / <alpha-value>)",
+          soft: "rgb(var(--color-signal-watch-soft) / <alpha-value>)",
+          strong: "rgb(var(--color-signal-watch-strong) / <alpha-value>)",
         },
         "signal-stop": {
-          DEFAULT: "#ef4444",
-          soft: "#fee2e2",
-          strong: "#b91c1c",
+          DEFAULT: "rgb(var(--color-signal-stop) / <alpha-value>)",
+          soft: "rgb(var(--color-signal-stop-soft) / <alpha-value>)",
+          strong: "rgb(var(--color-signal-stop-strong) / <alpha-value>)",
         },
 
         // ====================================================================
         // Backward compat aliases (existing components reference these)
+        // primary/secondary 계열은 hex 그대로 (브랜드 아이덴티티 유지)
         // ====================================================================
         primary: {
           DEFAULT: "#1e3a8a",
@@ -96,26 +112,27 @@ const config: Config = {
           DEFAULT: "#ef4444",
           foreground: "#fdfdfe",
         },
-        border: "#e6e8ee",
-        input: "#e6e8ee",
-        ring: "#1e3a8a",
-        background: "#fdfdfe",
-        foreground: "#1a2236",
+        // 표면/텍스트 계열은 CSS 변수 참조로 전환 — 다크모드에서 자동 반전
+        border: "rgb(var(--color-divider) / <alpha-value>)",
+        input: "rgb(var(--color-divider) / <alpha-value>)",
+        ring: "rgb(var(--color-gauge-cobalt) / <alpha-value>)",
+        background: "rgb(var(--color-paper) / <alpha-value>)",
+        foreground: "rgb(var(--color-ink) / <alpha-value>)",
         muted: {
-          DEFAULT: "#f8f9fb",
-          foreground: "#475569",
+          DEFAULT: "rgb(var(--color-paper-warm) / <alpha-value>)",
+          foreground: "rgb(var(--color-ink-soft) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "#dbeafe",
-          foreground: "#1e40af",
+          DEFAULT: "rgb(var(--color-gauge-cobalt-soft) / <alpha-value>)",
+          foreground: "rgb(var(--color-gauge-cobalt-strong) / <alpha-value>)",
         },
         popover: {
-          DEFAULT: "#fdfdfe",
-          foreground: "#1a2236",
+          DEFAULT: "rgb(var(--color-paper) / <alpha-value>)",
+          foreground: "rgb(var(--color-ink) / <alpha-value>)",
         },
         card: {
-          DEFAULT: "#f8f9fb",
-          foreground: "#1a2236",
+          DEFAULT: "rgb(var(--color-paper-warm) / <alpha-value>)",
+          foreground: "rgb(var(--color-ink) / <alpha-value>)",
         },
       },
       borderRadius: {
