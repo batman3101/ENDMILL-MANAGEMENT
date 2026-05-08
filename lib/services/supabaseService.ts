@@ -175,7 +175,19 @@ export class EquipmentService {
     return data
   }
 
-  // 실시간 구독
+  /**
+   * 실시간 변경 구독.
+   *
+   * **호출자 책임**: 반환된 RealtimeChannel을 컴포넌트 언마운트 시
+   * `channel.unsubscribe()` 또는 `supabase.removeChannel(channel)`로
+   * 반드시 정리해야 합니다. cleanup을 잊으면 메모리 누수 + 중복 구독으로
+   * 콜백이 N번 실행될 수 있습니다.
+   *
+   * 일반적으로 직접 호출하지 말고 `useRealtime` / `useMultiTableRealtime`
+   * 훅을 사용하세요 — 훅은 useEffect의 cleanup 반환값으로 자동 정리합니다.
+   *
+   * @returns 구독된 RealtimeChannel (호출자가 unsubscribe 책임)
+   */
   subscribeToChanges(callback: (payload: any) => void) {
     return this.supabase
       .channel('equipment_changes')
@@ -264,7 +276,19 @@ export class EndmillTypeService {
     return data
   }
 
-  // 실시간 구독
+  /**
+   * 실시간 변경 구독.
+   *
+   * **호출자 책임**: 반환된 RealtimeChannel을 컴포넌트 언마운트 시
+   * `channel.unsubscribe()` 또는 `supabase.removeChannel(channel)`로
+   * 반드시 정리해야 합니다. cleanup을 잊으면 메모리 누수 + 중복 구독으로
+   * 콜백이 N번 실행될 수 있습니다.
+   *
+   * 일반적으로 직접 호출하지 말고 `useRealtime` / `useMultiTableRealtime`
+   * 훅을 사용하세요 — 훅은 useEffect의 cleanup 반환값으로 자동 정리합니다.
+   *
+   * @returns 구독된 RealtimeChannel (호출자가 unsubscribe 책임)
+   */
   subscribeToChanges(callback: (payload: any) => void) {
     return this.supabase
       .channel('endmill_types_changes')
@@ -455,7 +479,19 @@ export class InventoryService {
     }
   }
 
-  // 실시간 구독
+  /**
+   * 실시간 변경 구독.
+   *
+   * **호출자 책임**: 반환된 RealtimeChannel을 컴포넌트 언마운트 시
+   * `channel.unsubscribe()` 또는 `supabase.removeChannel(channel)`로
+   * 반드시 정리해야 합니다. cleanup을 잊으면 메모리 누수 + 중복 구독으로
+   * 콜백이 N번 실행될 수 있습니다.
+   *
+   * 일반적으로 직접 호출하지 말고 `useRealtime` / `useMultiTableRealtime`
+   * 훅을 사용하세요 — 훅은 useEffect의 cleanup 반환값으로 자동 정리합니다.
+   *
+   * @returns 구독된 RealtimeChannel (호출자가 unsubscribe 책임)
+   */
   subscribeToChanges(callback: (payload: any) => void) {
     return this.supabase
       .channel('inventory_changes')
@@ -729,7 +765,19 @@ export class ToolChangeService {
     return count || 0
   }
 
-  // 실시간 구독
+  /**
+   * 실시간 변경 구독.
+   *
+   * **호출자 책임**: 반환된 RealtimeChannel을 컴포넌트 언마운트 시
+   * `channel.unsubscribe()` 또는 `supabase.removeChannel(channel)`로
+   * 반드시 정리해야 합니다. cleanup을 잊으면 메모리 누수 + 중복 구독으로
+   * 콜백이 N번 실행될 수 있습니다.
+   *
+   * 일반적으로 직접 호출하지 말고 `useRealtime` / `useMultiTableRealtime`
+   * 훅을 사용하세요 — 훅은 useEffect의 cleanup 반환값으로 자동 정리합니다.
+   *
+   * @returns 구독된 RealtimeChannel (호출자가 unsubscribe 책임)
+   */
   subscribeToChanges(callback: (payload: any) => void) {
     return this.supabase
       .channel('tool_changes')
@@ -863,7 +911,19 @@ export class CAMSheetService {
     return true
   }
 
-  // 실시간 구독
+  /**
+   * 실시간 변경 구독.
+   *
+   * **호출자 책임**: 반환된 RealtimeChannel을 컴포넌트 언마운트 시
+   * `channel.unsubscribe()` 또는 `supabase.removeChannel(channel)`로
+   * 반드시 정리해야 합니다. cleanup을 잊으면 메모리 누수 + 중복 구독으로
+   * 콜백이 N번 실행될 수 있습니다.
+   *
+   * 일반적으로 직접 호출하지 말고 `useRealtime` / `useMultiTableRealtime`
+   * 훅을 사용하세요 — 훅은 useEffect의 cleanup 반환값으로 자동 정리합니다.
+   *
+   * @returns 구독된 RealtimeChannel (호출자가 unsubscribe 책임)
+   */
   subscribeToChanges(callback: (payload: any) => void) {
     return this.supabase
       .channel('cam_sheets_changes')
@@ -963,7 +1023,19 @@ export class UserProfileService {
     return data
   }
 
-  // 실시간 구독
+  /**
+   * 실시간 변경 구독.
+   *
+   * **호출자 책임**: 반환된 RealtimeChannel을 컴포넌트 언마운트 시
+   * `channel.unsubscribe()` 또는 `supabase.removeChannel(channel)`로
+   * 반드시 정리해야 합니다. cleanup을 잊으면 메모리 누수 + 중복 구독으로
+   * 콜백이 N번 실행될 수 있습니다.
+   *
+   * 일반적으로 직접 호출하지 말고 `useRealtime` / `useMultiTableRealtime`
+   * 훅을 사용하세요 — 훅은 useEffect의 cleanup 반환값으로 자동 정리합니다.
+   *
+   * @returns 구독된 RealtimeChannel (호출자가 unsubscribe 책임)
+   */
   subscribeToChanges(callback: (payload: any) => void) {
     return this.supabase
       .channel('user_profiles_changes')
@@ -1007,7 +1079,19 @@ export class UserRolesService {
     return data
   }
 
-  // 실시간 구독
+  /**
+   * 실시간 변경 구독.
+   *
+   * **호출자 책임**: 반환된 RealtimeChannel을 컴포넌트 언마운트 시
+   * `channel.unsubscribe()` 또는 `supabase.removeChannel(channel)`로
+   * 반드시 정리해야 합니다. cleanup을 잊으면 메모리 누수 + 중복 구독으로
+   * 콜백이 N번 실행될 수 있습니다.
+   *
+   * 일반적으로 직접 호출하지 말고 `useRealtime` / `useMultiTableRealtime`
+   * 훅을 사용하세요 — 훅은 useEffect의 cleanup 반환값으로 자동 정리합니다.
+   *
+   * @returns 구독된 RealtimeChannel (호출자가 unsubscribe 책임)
+   */
   subscribeToChanges(callback: (payload: any) => void) {
     return this.supabase
       .channel('user_roles_changes')
