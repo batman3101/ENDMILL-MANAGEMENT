@@ -1135,7 +1135,7 @@ const resources = {
         maintenanceCompleteTitle: '정비 완료',
         maintenanceCompleteMessage: '앤드밀 정비가 완료되었습니다.',
         templateDownloadTitle: '템플릿 다운로드',
-        templateDownloadMessage: '파일이 다운로드되었습니다.',
+        templateDownloadMessage: '{{fileName}} 파일이 다운로드되었습니다.',
         downloadFailed: '다운로드 실패',
         downloadError: '템플릿 다운로드 중 오류가 발생했습니다.',
         uploadComplete: '업로드 완료',
@@ -1155,6 +1155,12 @@ const resources = {
         count: '개',
         previousButton: '이전',
         nextButton: '다음',
+        // impeccable/endmill-27 — 토큰화/StatusBadge/단위 라벨
+        statusLabel: '상태',
+        statusUnknown: '알 수 없음',
+        flutesSuffix: '날',
+        replacementFrequencySuffix: '회/월',
+        timesSuffix: '회',
         // 공급업체별 단가표
         supplierPriceList: '공급업체별 단가표',
         supplierPriceListTooltip: '보유 중인 모든 앤드밀의 공급업체별 단가표를 엑셀로 다운로드합니다',
@@ -2419,7 +2425,7 @@ const resources = {
         maintenanceCompleteTitle: 'Hoàn thành bảo trì',
         maintenanceCompleteMessage: 'Đã hoàn thành bảo trì dao phay.',
         templateDownloadTitle: 'Tải mẫu',
-        templateDownloadMessage: 'Đã tải tệp.',
+        templateDownloadMessage: 'Đã tải tệp {{fileName}}.',
         downloadFailed: 'Tải xuống thất bại',
         downloadError: 'Đã xảy ra lỗi khi tải mẫu.',
         uploadComplete: 'Tải lên hoàn tất',
@@ -2439,6 +2445,12 @@ const resources = {
         count: 'cái',
         previousButton: 'Trước',
         nextButton: 'Sau',
+        // impeccable/endmill-27 — 토큰화/StatusBadge/단위 라벨
+        statusLabel: 'Trạng thái',
+        statusUnknown: 'Không xác định',
+        flutesSuffix: 'cánh',
+        replacementFrequencySuffix: 'lần/tháng',
+        timesSuffix: 'lần',
         // 공급업체별 단가표
         supplierPriceList: 'Bảng giá theo nhà cung cấp',
         supplierPriceListTooltip: 'Tải xuống bảng giá theo nhà cung cấp của tất cả dao phay hiện có dạng Excel',
