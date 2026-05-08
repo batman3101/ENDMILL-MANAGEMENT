@@ -11,6 +11,88 @@
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
+
+  /* ====================================================================
+     The Quiet Instrument — semantic color tokens (LIGHT MODE)
+     RGB 채널 형태 (Tailwind <alpha-value> 호환).
+     ==================================================================== */
+  /* Brand */
+  --color-gauge-cobalt: 30 58 138;            /* #1e3a8a */
+  --color-gauge-cobalt-strong: 30 64 175;     /* #1e40af */
+  --color-gauge-cobalt-soft: 219 234 254;     /* #dbeafe */
+
+  /* Surface / Text */
+  --color-paper: 253 253 254;                 /* #fdfdfe */
+  --color-paper-warm: 248 249 251;            /* #f8f9fb */
+  --color-divider: 230 232 238;               /* #e6e8ee */
+  --color-ink: 26 34 54;                      /* #1a2236 */
+  --color-ink-soft: 71 85 105;                /* #475569 */
+  --color-ink-mute: 148 163 184;              /* #94a3b8 */
+
+  /* Signals */
+  --color-signal-go: 16 185 129;              /* #10b981 */
+  --color-signal-go-soft: 209 250 229;        /* #d1fae5 */
+  --color-signal-go-strong: 4 120 87;         /* #047857 */
+  --color-signal-watch: 245 158 11;           /* #f59e0b */
+  --color-signal-watch-soft: 254 243 199;     /* #fef3c7 */
+  --color-signal-watch-strong: 180 83 9;      /* #b45309 */
+  --color-signal-stop: 239 68 68;             /* #ef4444 */
+  --color-signal-stop-soft: 254 226 226;      /* #fee2e2 */
+  --color-signal-stop-strong: 185 28 28;      /* #b91c1c */
+
+  /* ====================================================================
+     Sidebar-only color tokens — light/dark 모드 무관 항상 동일한 어두운 톤
+     - 다크모드 적용 시에도 사이드바 색은 절대 변경되지 않도록 보호
+     - 값은 기존 ink/paper 토큰의 hex와 1:1 매칭
+       #1a2236 -> 26 34 54  (sidebar bg = bg-ink)
+       #fdfdfe -> 253 253 254 (sidebar fg = text-paper)
+       #bac0cc -> 186 192 204 (sidebar fg-soft = text-paper/75 근사값)
+       #1e3a8a -> 30 58 138 (sidebar active = bg-gauge-cobalt)
+     ==================================================================== */
+  --color-sidebar-bg: 26 34 54;
+  --color-sidebar-fg: 253 253 254;
+  --color-sidebar-fg-soft: 186 192 204;
+  --color-sidebar-border: 253 253 254;       /* paper @ alpha 0.10 사용 */
+  --color-sidebar-hover: 253 253 254;        /* paper @ alpha 0.10 사용 */
+  --color-sidebar-active: 30 58 138;         /* gauge-cobalt */
+}
+
+/* ====================================================================
+   DARK MODE — 콘텐츠/표면 토큰만 반전, 사이드바 토큰은 light와 동일
+   (사이드바는 모드 무관 고정 — 별도 토큰 보호)
+   ==================================================================== */
+.dark {
+  /* Brand — 다크에서 약간 밝게 보정 */
+  --color-gauge-cobalt: 96 165 250;           /* #60a5fa */
+  --color-gauge-cobalt-strong: 147 197 253;   /* #93c5fd */
+  --color-gauge-cobalt-soft: 30 58 138;       /* #1e3a8a */
+
+  /* Surface / Text — 반전 */
+  --color-paper: 15 23 42;                    /* #0f172a */
+  --color-paper-warm: 26 34 54;               /* #1a2236 */
+  --color-divider: 51 65 85;                  /* #334155 */
+  --color-ink: 248 250 252;                   /* #f8fafc */
+  --color-ink-soft: 203 213 225;              /* #cbd5e1 */
+  --color-ink-mute: 100 116 139;              /* #64748b */
+
+  /* Signals — 약간 밝게 */
+  --color-signal-go: 52 211 153;              /* #34d399 */
+  --color-signal-go-soft: 6 95 70;            /* #065f46 */
+  --color-signal-go-strong: 167 243 208;      /* #a7f3d0 */
+  --color-signal-watch: 251 191 36;           /* #fbbf24 */
+  --color-signal-watch-soft: 120 53 15;       /* #78350f */
+  --color-signal-watch-strong: 253 230 138;   /* #fde68a */
+  --color-signal-stop: 248 113 113;           /* #f87171 */
+  --color-signal-stop-soft: 127 29 29;        /* #7f1d1d */
+  --color-signal-stop-strong: 254 202 202;    /* #fecaca */
+
+  /* 사이드바 — light와 정확히 동일 (보호) */
+  --color-sidebar-bg: 26 34 54;
+  --color-sidebar-fg: 253 253 254;
+  --color-sidebar-fg-soft: 186 192 204;
+  --color-sidebar-border: 253 253 254;
+  --color-sidebar-hover: 253 253 254;
+  --color-sidebar-active: 30 58 138;
 }
 
 @layer base {
