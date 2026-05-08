@@ -1,6 +1,28 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  Users,
+  UserCheck,
+  Lock,
+  Plus,
+  Upload,
+  X,
+  Eye,
+  Pencil,
+  Trash2,
+  RotateCcw,
+  AlertTriangle,
+  Search,
+  Save,
+  UserPlus,
+  Building2,
+  CalendarClock,
+  Target,
+  ChevronRight,
+  CheckCircle2,
+} from 'lucide-react'
 import { useUsers } from '../../../lib/hooks/useUsers'
 import { User, UserRole } from '../../../lib/types/users'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
@@ -13,6 +35,77 @@ import { useAuth } from '../../../lib/hooks/useAuth'
 import type { BulkUploadResult } from '../../../lib/utils/userExcelTemplate'
 // userExcelTemplate functions are dynamically imported when needed
 import { useFactory } from '../../../lib/hooks/useFactory'
+import { StatusBadge } from '@/components/ui/status-badge'
+import { NoBreak } from '@/components/ui/no-break'
+import {
+  UserListCard,
+  type UserListCardItem,
+  type UserListCardLabels,
+  type UserListCardRoleType,
+} from '@/components/features/users/user-list-card'
+
+type PermissionFormState = Record<string, string[]>
+
+type ActionKey = 'create' | 'read' | 'update' | 'delete' | 'manage'
+
+const ACTION_KEYS: ActionKey[] = ['create', 'read', 'update', 'delete', 'manage']
+
+function ActionIcon({ action, className }: { action: string; className?: string }) {
+  const cls = className ?? 'h-4 w-4'
+  switch (action) {
+    case 'create':
+      return <Plus className={cls} aria-hidden="true" />
+    case 'read':
+      return <Eye className={cls} aria-hidden="true" />
+    case 'update':
+      return <Pencil className={cls} aria-hidden="true" />
+    case 'delete':
+      return <Trash2 className={cls} aria-hidden="true" />
+    case 'manage':
+      return <RotateCcw className={cls} aria-hidden="true" />
+    default:
+      return <span className={cls} aria-hidden="true">·</span>
+  }
+}
+
+function actionTone(action: string): string {
+  switch (action) {
+    case 'create':
+      return 'text-gauge-cobalt-strong'
+    case 'read':
+      return 'text-signal-go-strong'
+    case 'update':
+      return 'text-signal-watch-strong'
+    case 'delete':
+      return 'text-ink-soft'
+    case 'manage':
+      return 'text-gauge-cobalt-strong'
+    default:
+      return 'text-ink-mute'
+  }
+}
+
+function roleType(roleId: string, roles: UserRole[]): UserListCardRoleType {
+  const role = roles.find(r => r.id === roleId)
+  if (!role) return 'unknown'
+  if (role.type === 'system_admin') return 'system_admin'
+  if (role.type === 'admin') return 'admin'
+  if (role.type === 'user') return 'user'
+  return 'unknown'
+}
+
+function roleBadgeClass(t: UserListCardRoleType): string {
+  switch (t) {
+    case 'system_admin':
+      return 'bg-gauge-cobalt-soft text-gauge-cobalt-strong'
+    case 'admin':
+      return 'bg-signal-watch-soft text-signal-watch-strong'
+    case 'user':
+      return 'bg-paper text-ink-soft border border-divider'
+    default:
+      return 'bg-paper-warm text-ink-mute border border-divider'
+  }
+}
 
 export default function UsersPage() {
   return (
@@ -23,6 +116,7 @@ export default function UsersPage() {
 }
 
 function UsersPageContent() {
+  const { t } = useTranslation()
   const {
     getUserStats,
     getFilteredUsers,
@@ -32,39 +126,39 @@ function UsersPageContent() {
     updateUser,
     deleteUser,
     toggleUserStatus,
-    loadUsers
+    loadUsers,
   } = useUsers()
 
   const confirmation = useConfirmation()
   const { showSuccess, showError } = useToast()
   const { user: currentUser, refreshSession } = useAuth()
   const { currentFactory } = useFactory()
-  
+
   // 필터 상태
   const [searchTerm, setSearchTerm] = useState('')
   const [departmentFilter, setDepartmentFilter] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  
+
   // 모달 상태
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  
+
   // 권한 편집 모달 상태
   const [showPermissionModal, setShowPermissionModal] = useState(false)
   const [selectedUserForPermission, setSelectedUserForPermission] = useState<User | null>(null)
-  const [permissionFormData, setPermissionFormData] = useState<any>({})
-  
+  const [permissionFormData, setPermissionFormData] = useState<PermissionFormState>({})
+
   // 권한 템플릿 관련 상태
   const [showTemplateModal, setShowTemplateModal] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<UserRole | null>(null)
   const [selectedUsersForTemplate, setSelectedUsersForTemplate] = useState<string[]>([])
-  
+
   // 탭 상태
   const [activeTab, setActiveTab] = useState<'list' | 'permissions'>('list')
-  
+
   // 폼 상태
   const [editFormData, setEditFormData] = useState<Partial<User>>({})
   const [addFormData, setAddFormData] = useState({
@@ -77,7 +171,7 @@ function UsersPageContent() {
     roleId: '',
     shift: '',
     phone: '',
-    isActive: true
+    isActive: true,
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -97,25 +191,26 @@ function UsersPageContent() {
   const itemsPerPage = 20
 
   // 정렬 핸들러
-  const handleSort = useCallback((field: string) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortDirection('asc')
-    }
-    setCurrentPage(1)
-  }, [sortField])
+  const handleSort = useCallback(
+    (field: string) => {
+      if (sortField === field) {
+        setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'))
+      } else {
+        setSortField(field)
+        setSortDirection('asc')
+      }
+      setCurrentPage(1)
+    },
+    [sortField]
+  )
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">👥</span>
-            </div>
-            <p className="text-gray-600">사용자 데이터를 불러오는 중...</p>
+          <div className="rounded-md border border-divider bg-paper-warm px-6 py-8 text-center">
+            <Users className="h-8 w-8 text-gauge-cobalt-strong mx-auto mb-3" aria-hidden="true" />
+            <p className="text-base text-ink-soft">{t('users.loadingData')}</p>
           </div>
         </div>
       </div>
@@ -123,31 +218,27 @@ function UsersPageContent() {
   }
 
   const stats = getUserStats()
-  
+
   // 필터링된 사용자 목록 가져오기
   const allUsers = getFilteredUsers()
-  
+
   // 클라이언트 사이드 필터링
   const filteredUsers = allUsers.filter(user => {
     const userRole = roles.find(role => role.id === user.roleId)
-    
-    // 검색어 필터
-    const matchesSearch = searchTerm === '' || 
+
+    const matchesSearch =
+      searchTerm === '' ||
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.employeeId.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    // 부서 필터
+
     const matchesDepartment = departmentFilter === '' || user.department === departmentFilter
-    
-    // 권한 필터
     const matchesRole = roleFilter === '' || (userRole && userRole.type === roleFilter)
-    
-    // 상태 필터
-    const matchesStatus = statusFilter === '' || 
+    const matchesStatus =
+      statusFilter === '' ||
       (statusFilter === 'active' && user.isActive) ||
       (statusFilter === 'inactive' && !user.isActive)
-    
+
     return matchesSearch && matchesDepartment && matchesRole && matchesStatus
   })
 
@@ -156,23 +247,16 @@ function UsersPageContent() {
     const aValue = a[sortField as keyof User] || ''
     const bValue = b[sortField as keyof User] || ''
 
-    // 역할 이름으로 정렬하는 경우
     if (sortField === 'roleId') {
       const aRole = roles.find(r => r.id === a.roleId)
       const bRole = roles.find(r => r.id === b.roleId)
       const aRoleName = aRole ? aRole.name : ''
       const bRoleName = bRole ? bRole.name : ''
-
-      if (sortDirection === 'asc') {
-        return aRoleName.localeCompare(bRoleName, 'ko')
-      }
+      if (sortDirection === 'asc') return aRoleName.localeCompare(bRoleName, 'ko')
       return bRoleName.localeCompare(aRoleName, 'ko')
     }
 
-    // 일반 정렬
-    if (sortDirection === 'asc') {
-      return String(aValue).localeCompare(String(bValue), 'ko')
-    }
+    if (sortDirection === 'asc') return String(aValue).localeCompare(String(bValue), 'ko')
     return String(bValue).localeCompare(String(aValue), 'ko')
   })
 
@@ -182,55 +266,33 @@ function UsersPageContent() {
   const endIndex = startIndex + itemsPerPage
   const paginatedUsers = sortedUsers.slice(startIndex, endIndex)
 
-  // 사용자의 역할 정보 가져오기
-  const getUserRole = (roleId: string) => {
-    return roles.find(role => role.id === roleId)
-  }
+  const getUserRole = (roleId: string) => roles.find(role => role.id === roleId)
 
-  // 권한 배지 스타일
-  const getRoleBadge = (roleType: string) => {
-    switch (roleType) {
+  const getRoleName = (typeStr: string) => {
+    switch (typeStr) {
       case 'system_admin':
-        return 'bg-purple-100 text-purple-800'
+        return t('users.roleSystemAdmin')
       case 'admin':
-        return 'bg-orange-100 text-orange-800'
+        return t('users.roleAdmin')
       case 'user':
-        return 'bg-blue-100 text-blue-800'
+        return t('users.roleUser')
       default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  // 권한 이름 표시
-  const getRoleName = (roleType: string) => {
-    switch (roleType) {
-      case 'system_admin':
-        return '시스템 관리자'
-      case 'admin':
-        return '관리자'
-      case 'user':
-        return '사용자'
-      default:
-        return '알 수 없음'
+        return t('users.roleUnknown')
     }
   }
 
   // CRUD 핸들러 함수들
-  
-  // 사용자 상세 보기
   const handleViewDetail = (user: User) => {
     setSelectedUser(user)
     setShowDetailModal(true)
   }
 
-  // 사용자 수정 시작
   const handleEdit = (user: User) => {
     setSelectedUser(user)
     setEditFormData(user)
     setShowEditModal(true)
   }
 
-  // 사용자 수정 저장
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedUser) return
@@ -239,94 +301,79 @@ function UsersPageContent() {
     try {
       const updatedUser = await updateUser(selectedUser.id, editFormData)
       if (updatedUser) {
-        showSuccess('수정 완료', `${updatedUser?.name || '사용자'}의 정보가 성공적으로 수정되었습니다.`)
+        showSuccess(
+          t('users.editComplete'),
+          `${updatedUser?.name || ''} ${t('users.editComplete')}`
+        )
         setShowEditModal(false)
         setSelectedUser(null)
         setEditFormData({})
       } else {
-        showError('수정 실패', '사용자 정보 수정에 실패했습니다.')
+        showError(t('users.editFailed'), t('users.editError'))
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '사용자 정보 수정 중 오류가 발생했습니다.'
-      showError('수정 실패', errorMessage)
+      const message = error instanceof Error ? error.message : t('users.editError')
+      showError(t('users.editFailed'), message)
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // 사용자 삭제
   const handleDelete = async (user: User) => {
     const confirmed = await confirmation.showConfirmation({
       type: 'delete',
-      title: '사용자 삭제',
+      title: t('users.deleteTitle'),
       message: (
         <div>
-          <p className="mb-2">정말로 <strong>{user.name}</strong> 사용자를 삭제하시겠습니까?</p>
-          <p className="text-sm text-gray-600">이 작업은 되돌릴 수 없습니다.</p>
+          <p className="mb-2 text-base text-ink">
+            {t('users.deleteConfirmPrefix')}
+            <strong>{user.name}</strong>
+            {t('users.deleteConfirmSuffix')}
+          </p>
+          <p className="text-caption text-ink-soft">{t('users.deleteWarning')}</p>
         </div>
       ),
-      confirmText: '삭제',
-      cancelText: '취소',
-      isDangerous: true
+      confirmText: t('users.actionDelete'),
+      cancelText: t('users.cancel'),
+      isDangerous: true,
     })
 
     if (confirmed) {
       try {
         const success = await deleteUser(user.id)
         if (success) {
-          showSuccess('삭제 완료', `${user.name} 사용자가 성공적으로 삭제되었습니다.`)
+          showSuccess(t('users.deleteComplete'), `${user.name} - ${t('users.deleteSuccess')}`)
         } else {
-          showError('삭제 실패', '사용자 삭제에 실패했습니다.')
+          showError(t('users.deleteFailed'), t('users.deleteError'))
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : '사용자 삭제 중 오류가 발생했습니다.'
-        showError('삭제 실패', errorMessage)
+        const message = error instanceof Error ? error.message : t('users.deleteError')
+        showError(t('users.deleteFailed'), message)
       }
     }
   }
 
-  // 새 사용자 추가
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!addFormData.name.trim()) {
-      showError('입력 오류', '이름을 입력해주세요.')
-      return
-    }
-    
-    if (!addFormData.email.trim()) {
-      showError('입력 오류', '이메일을 입력해주세요.')
-      return
-    }
 
-    if (!addFormData.password.trim()) {
-      showError('입력 오류', '비밀번호를 입력해주세요.')
-      return
-    }
-
-    if (addFormData.password.length < 6) {
-      showError('입력 오류', '비밀번호는 최소 6자 이상이어야 합니다.')
-      return
-    }
-
-    if (!addFormData.employeeId.trim()) {
-      showError('입력 오류', '사번을 입력해주세요.')
-      return
-    }
-
-    if (!addFormData.roleId) {
-      showError('입력 오류', '권한을 선택해주세요.')
-      return
-    }
+    if (!addFormData.name.trim()) return showError(t('users.inputError'), t('users.nameRequired'))
+    if (!addFormData.email.trim()) return showError(t('users.inputError'), t('users.emailRequired'))
+    if (!addFormData.password.trim())
+      return showError(t('users.inputError'), t('users.passwordRequired'))
+    if (addFormData.password.length < 6)
+      return showError(t('users.inputError'), t('users.passwordMin'))
+    if (!addFormData.employeeId.trim())
+      return showError(t('users.inputError'), t('users.employeeIdRequired'))
+    if (!addFormData.roleId) return showError(t('users.inputError'), t('users.roleRequired'))
 
     setIsSubmitting(true)
     try {
       const newUser = await createUser({
         ...addFormData,
-        createdBy: 'admin' // 실제로는 현재 로그인한 사용자 ID
+        createdBy: 'admin',
       })
-      
-      showSuccess('추가 완료', `${newUser.name} 사용자가 성공적으로 추가되었습니다.`)
+
+      showSuccess(t('users.addComplete'), `${newUser.name} - ${t('users.addSuccess')}`)
       setShowAddModal(false)
       setAddFormData({
         name: '',
@@ -338,20 +385,19 @@ function UsersPageContent() {
         roleId: '',
         shift: '',
         phone: '',
-        isActive: true
+        isActive: true,
       })
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '사용자 추가 중 오류가 발생했습니다.'
-      showError('추가 실패', errorMessage)
+      const message = error instanceof Error ? error.message : t('users.addError')
+      showError(t('users.addFailed'), message)
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // 일괄 등록 핸들러
   const handleBulkUpload = async () => {
     if (!bulkUploadFile) {
-      showError('파일 없음', 'Excel 파일을 선택해주세요.')
+      showError(t('users.bulkNoFileTitle'), t('users.bulkNoFile'))
       return
     }
 
@@ -360,16 +406,16 @@ function UsersPageContent() {
     setBulkValidationErrors([])
 
     try {
-      // 파싱
-      const { parseUserExcel, validateUserData } = await import('../../../lib/utils/userExcelTemplate')
+      const { parseUserExcel, validateUserData } = await import(
+        '../../../lib/utils/userExcelTemplate'
+      )
       const parsedData = await parseUserExcel(bulkUploadFile)
       if (parsedData.length === 0) {
-        showError('데이터 없음', '업로드할 사용자 데이터가 없습니다.')
+        showError(t('users.bulkNoDataTitle'), t('users.bulkNoData'))
         setIsBulkUploading(false)
         return
       }
 
-      // 클라이언트 검증
       const validation = validateUserData(parsedData)
       if (!validation.isValid) {
         setBulkValidationErrors(validation.errors)
@@ -377,7 +423,6 @@ function UsersPageContent() {
         return
       }
 
-      // API 호출
       const response = await fetch('/api/users/bulk-upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -390,7 +435,7 @@ function UsersPageContent() {
       const result = await response.json()
 
       if (!response.ok) {
-        showError('업로드 실패', result.error || '서버 오류가 발생했습니다.')
+        showError(t('users.bulkUploadFailed'), result.error || t('users.bulkServerError'))
         setIsBulkUploading(false)
         return
       }
@@ -398,16 +443,25 @@ function UsersPageContent() {
       setBulkUploadResult(result)
 
       if (result.successCount > 0) {
-        showSuccess('일괄 등록 완료', `${result.successCount}명 등록 성공`)
+        showSuccess(
+          t('users.bulkUploadComplete'),
+          t('users.bulkSuccessCount', { count: result.successCount })
+        )
         loadUsers()
       }
 
       if (result.failedCount > 0 || result.duplicateCount > 0) {
-        showError('일부 실패', `실패: ${result.failedCount}건, 중복: ${result.duplicateCount}건`)
+        showError(
+          t('users.bulkPartialError'),
+          t('users.bulkPartialFailure', {
+            failed: result.failedCount,
+            duplicate: result.duplicateCount,
+          })
+        )
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '일괄 등록 중 오류가 발생했습니다.'
-      showError('업로드 실패', errorMessage)
+      const message = error instanceof Error ? error.message : t('users.bulkUploadError')
+      showError(t('users.bulkUploadFailed'), message)
     } finally {
       setIsBulkUploading(false)
     }
@@ -420,43 +474,43 @@ function UsersPageContent() {
     setBulkValidationErrors([])
   }
 
-  // 사용자 상태 토글
   const handleToggleStatus = async (user: User) => {
-    const action = user.isActive ? '비활성화' : '활성화'
+    const action = user.isActive ? t('users.actionDeactivate') : t('users.actionActivate')
     const confirmed = await confirmation.showConfirmation({
       type: 'update',
-      title: `사용자 ${action}`,
-      message: `${user.name} 사용자를 ${action}하시겠습니까?`,
+      title: `${t('users.statusChangePrefix')}${action}`,
+      message: `${user.name} - ${action}${t('users.statusChangeMessage')}`,
       confirmText: action,
-      cancelText: '취소'
+      cancelText: t('users.cancel'),
     })
 
     if (confirmed) {
       try {
         const updatedUser = await toggleUserStatus(user.id)
         if (updatedUser) {
-          showSuccess(`${action} 완료`, `${user.name} 사용자가 ${action}되었습니다.`)
+          showSuccess(
+            `${action} ${t('users.statusChangeComplete')}`,
+            `${user.name} - ${action}`
+          )
         } else {
-          showError(`${action} 실패`, `사용자 ${action}에 실패했습니다.`)
+          showError(`${action} ${t('users.statusChangeFailed')}`, t('users.editError'))
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : `사용자 ${action} 중 오류가 발생했습니다.`
-        showError(`${action} 실패`, errorMessage)
+        const message =
+          error instanceof Error ? error.message : t('users.statusChangeError')
+        showError(`${action} ${t('users.statusChangeFailed')}`, message)
       }
     }
   }
 
-  // 권한 편집 관련 핸들러 (시스템 관리자만 가능)
   const handleEditPermissions = (user: User) => {
-    // 시스템 관리자만 권한 편집 가능
     if (currentUser?.role !== 'system_admin') {
-      showError('권한 없음', '권한 편집은 시스템 관리자만 가능합니다.')
+      showError(t('users.permissionDenied'), t('users.permissionDeniedMsg'))
       return
     }
 
     setSelectedUserForPermission(user)
-    // 사용자 개인 권한 사용 (user.permissions)
-    setPermissionFormData(user.permissions || {})
+    setPermissionFormData((user.permissions as PermissionFormState) || {})
     setShowPermissionModal(true)
   }
 
@@ -466,63 +520,62 @@ function UsersPageContent() {
 
     setIsSubmitting(true)
     try {
-      // API를 통해 권한 업데이트
-      const response = await fetch(`/api/users/${selectedUserForPermission.id}/permissions`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          permissions: permissionFormData
-        })
-      })
+      const response = await fetch(
+        `/api/users/${selectedUserForPermission.id}/permissions`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ permissions: permissionFormData }),
+        }
+      )
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || '권한 업데이트에 실패했습니다.')
+        throw new Error(errorData.error || t('users.permissionUpdateError'))
       }
 
       const result = await response.json()
 
       if (result.success) {
-        showSuccess('권한 업데이트 완료', `${selectedUserForPermission.name}의 권한이 성공적으로 업데이트되었습니다.`)
+        showSuccess(
+          t('users.permissionUpdateComplete'),
+          `${selectedUserForPermission.name}${t('users.permissionUpdateMsg')}`
+        )
         setShowPermissionModal(false)
         setSelectedUserForPermission(null)
         setPermissionFormData({})
 
-        // 사용자 목록 새로고침
         await loadUsers()
 
-        // 현재 로그인한 사용자의 권한을 수정한 경우, 세션을 새로고침하여 user 객체 업데이트
         if (currentUser && selectedUserForPermission.id === currentUser.id) {
           await refreshSession()
         }
       } else {
-        throw new Error(result.error || '권한 업데이트에 실패했습니다.')
+        throw new Error(result.error || t('users.permissionUpdateError'))
       }
     } catch (error) {
-      showError('권한 업데이트 실패', error instanceof Error ? error.message : '권한 업데이트 중 오류가 발생했습니다.')
+      const message =
+        error instanceof Error ? error.message : t('users.permissionUpdateError')
+      showError(t('users.permissionUpdateFailed'), message)
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handlePermissionChange = (module: string, action: string, checked: boolean) => {
-    setPermissionFormData((prev: any) => {
+    setPermissionFormData((prev: PermissionFormState) => {
       const modulePermissions = prev[module] || []
-      let newPermissions
+      let newPermissions: string[]
 
       if (checked) {
-        // 권한 추가
         newPermissions = [...modulePermissions, action]
       } else {
-        // 권한 제거
         newPermissions = modulePermissions.filter((a: string) => a !== action)
       }
 
       return {
         ...prev,
-        [module]: newPermissions
+        [module]: newPermissions,
       }
     })
   }
@@ -535,43 +588,16 @@ function UsersPageContent() {
 
   const handleUserSelectionForTemplate = (userId: string, checked: boolean) => {
     setSelectedUsersForTemplate(prev => {
-      if (checked) {
-        return [...prev, userId]
-      } else {
-        return prev.filter(id => id !== userId)
-      }
+      if (checked) return [...prev, userId]
+      return prev.filter(id => id !== userId)
     })
   }
 
-  const handleApplyTemplateToUsers = async (e: React.FormEvent) => {
+  // MN2: 정직한 안내 — 일괄 적용 API 미구현, 토스트만 정직하게.
+  const handleApplyTemplateToUsers = (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedTemplate || selectedUsersForTemplate.length === 0) return
-
-    setIsSubmitting(true)
-    try {
-      // 선택된 사용자들에게 템플릿 권한 적용
-      const updatedCount = selectedUsersForTemplate.length
-      
-      // 실제로는 API 호출해야 하지만 지금은 로컬 업데이트
-      // TODO: API 연동 필요
-      for (const userId of selectedUsersForTemplate) {
-        const user = allUsers.find(u => u.id === userId)
-        if (user) {
-          // 사용자의 역할을 선택된 템플릿으로 변경
-          // changeUserRole(userId, selectedTemplate.id)
-        }
-      }
-      
-      showSuccess('템플릿 적용 완료', `${updatedCount}명의 사용자에게 "${selectedTemplate.name}" 권한이 적용되었습니다.`)
-      setShowTemplateModal(false)
-      setSelectedTemplate(null)
-      setSelectedUsersForTemplate([])
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '권한 템플릿 적용 중 오류가 발생했습니다.'
-      showError('템플릿 적용 실패', errorMessage)
-    } finally {
-      setIsSubmitting(false)
-    }
+    showError(t('users.permissionUpdateFailed'), t('users.templateNotImplemented'))
   }
 
   const getTemplateUsageCount = (roleId: string): number => {
@@ -582,630 +608,675 @@ function UsersPageContent() {
   const departments = ['종합관리실', '공구관리실', 'Engineer']
   // 교대 목록 (A조, B조)
   const shifts = ['A', 'B']
-  
-  // 권한 매트릭스 관련 함수들
+
+  // 모듈 라벨
   const getModuleDisplayName = (module: string): string => {
-    const moduleNames: Record<string, string> = {
-      dashboard: '대시보드',
-      equipment: '설비관리',
-      endmills: '엔드밀관리',
-      inventory: '재고관리',
-      cam_sheets: 'CAM시트',
-      tool_changes: '교체이력',
-      endmill_disposals: '폐기관리',
-      reports: '보고서',
-      settings: '설정',
-      users: '사용자관리'
+    const map: Record<string, string> = {
+      dashboard: t('users.moduleDashboard'),
+      equipment: t('users.moduleEquipment'),
+      endmills: t('users.moduleEndmills'),
+      inventory: t('users.moduleInventory'),
+      cam_sheets: t('users.moduleCamSheets'),
+      tool_changes: t('users.moduleToolChanges'),
+      endmill_disposals: t('users.moduleEndmillDisposals'),
+      reports: t('users.moduleReports'),
+      settings: t('users.moduleSettings'),
+      users: t('users.moduleUsers'),
+      ai_insights: t('users.moduleAiInsights'),
     }
-    return moduleNames[module] || module
-  }
-  
-  const getActionDisplayName = (action: string): string => {
-    const actionNames: Record<string, string> = {
-      create: '생성',
-      read: '조회',
-      update: '수정',
-      delete: '삭제',
-      manage: '관리'
-    }
-    return actionNames[action] || action
-  }
-  
-  const getActionIcon = (action: string): string => {
-    const actionIcons: Record<string, string> = {
-      create: '+',
-      read: '●',
-      update: '✏',
-      delete: '🗑',
-      manage: '↻'
-    }
-    return actionIcons[action] || '?'
+    return map[module] || module
   }
 
-  const getActionColor = (action: string): string => {
-    const actionColors: Record<string, string> = {
-      create: 'text-blue-600',
-      read: 'text-green-600',
-      update: 'text-orange-600',
-      delete: 'text-gray-600',
-      manage: 'text-blue-600'
+  const getActionDisplayName = (action: string): string => {
+    const map: Record<string, string> = {
+      create: t('users.actionCreate'),
+      read: t('users.actionRead'),
+      update: t('users.actionUpdate'),
+      delete: t('users.actionDelete'),
+      manage: t('users.actionManage'),
     }
-    return actionColors[action] || 'text-gray-600'
+    return map[action] || action
   }
-  
+
   const getUserPermissionLevel = (user: User): string => {
     const role = getUserRole(user.roleId)
-    if (!role) return '알 수 없음'
-    
-    // 전체 권한 수 계산
+    if (!role) return t('users.roleUnknown')
     const uniqueActions = new Set(Object.values(role.permissions).flat()).size
-    
-    if (uniqueActions >= 4) return '전체 권한'
-    if (uniqueActions >= 3) return '고급 권한'
-    if (uniqueActions >= 2) return '일반 권한'
-    return '제한 권한'
+    if (uniqueActions >= 4) return t('users.permissionLevelFull')
+    if (uniqueActions >= 3) return t('users.permissionLevelAdvanced')
+    if (uniqueActions >= 2) return t('users.permissionLevelGeneral')
+    return t('users.permissionLevelLimited')
   }
 
+  // 카드 라벨 (모바일)
+  const cardLabels: UserListCardLabels = {
+    employeeId: t('users.employeeId'),
+    email: t('users.email'),
+    department: t('users.department'),
+    position: t('users.position'),
+    role: t('users.role'),
+    detail: t('users.actionDetail'),
+    edit: t('users.actionEdit'),
+    permissions: t('users.actionPermissions'),
+    delete: t('users.actionDelete'),
+    toggleActivate: t('users.actionActivate'),
+    toggleDeactivate: t('users.actionDeactivate'),
+    statusActive: t('users.statusActive'),
+    statusInactive: t('users.statusInactive'),
+  }
+
+  const toCardItem = (user: User): UserListCardItem => {
+    const userRole = getUserRole(user.roleId)
+    const t1: UserListCardRoleType = userRole
+      ? userRole.type === 'system_admin'
+        ? 'system_admin'
+        : userRole.type === 'admin'
+          ? 'admin'
+          : 'user'
+      : 'unknown'
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      employeeId: user.employeeId,
+      department: user.department,
+      position: user.position,
+      isActive: user.isActive,
+      roleType: t1,
+      roleLabel: userRole ? getRoleName(userRole.type) : t('users.roleUnknown'),
+    }
+  }
+
+  const formatDateTime = (value: string | undefined): string => {
+    if (!value) return '—'
+    try {
+      return new Date(value).toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    } catch {
+      return value
+    }
+  }
+
+  const isAnyFilterActive = Boolean(searchTerm || departmentFilter || roleFilter || statusFilter)
+  const canEditPermissions = currentUser?.role === 'system_admin'
+
   return (
-    <div className="space-y-6">
-      {/* 상단 사용자 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-              👥
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">전체 사용자</p>
-              <p className="text-xl font-bold text-gray-900">{stats.total}명</p>
-            </div>
-          </div>
+    <div className="space-y-6 animate-fadeIn">
+      {/* === Stat Strip === */}
+      <section className="rounded-md border border-divider bg-paper-warm">
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-y divide-divider lg:divide-y-0 lg:divide-x lg:divide-divider">
+          <StatCell label={t('users.totalUsers')} value={stats.total.toLocaleString()} unit={t('users.userUnit')} />
+          <StatCell
+            label={t('users.systemAdmins')}
+            value={stats.systemAdmins.toLocaleString()}
+            unit={t('users.userUnit')}
+            tone="cobalt"
+          />
+          <StatCell
+            label={t('users.admins')}
+            value={stats.admins.toLocaleString()}
+            unit={t('users.userUnit')}
+            tone="watch"
+          />
+          <StatCell
+            label={t('users.activeUsers')}
+            value={stats.activeUsers.toLocaleString()}
+            unit={t('users.userUnit')}
+            tone="go"
+          />
         </div>
-        
-        <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-              👑
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">시스템 관리자</p>
-              <p className="text-xl font-bold text-purple-600">{stats.systemAdmins}명</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-              🛡️
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">관리자</p>
-              <p className="text-xl font-bold text-orange-600">{stats.admins}명</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-              ✅
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">활성 사용자</p>
-              <p className="text-xl font-bold text-green-600">{stats.activeUsers}명</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
 
-      {/* 탭 네비게이션 */}
-      <div className="bg-white rounded-lg shadow-sm border">
-        <div className="border-b border-gray-200">
-          <nav className="flex" aria-label="사용자 관리 탭">
-            <button
-              onClick={() => setActiveTab('list')}
-              className={`flex-1 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'list'
-                  ? 'border-blue-500 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center justify-center space-x-2">
-                <span className="text-lg">👥</span>
-                <span>사용자 목록</span>
-                <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
-                  {filteredUsers.length}명
-                </span>
-              </div>
-            </button>
-            
-            <button
-              onClick={() => setActiveTab('permissions')}
-              className={`flex-1 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'permissions'
-                  ? 'border-blue-500 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center justify-center space-x-2">
-                <span className="text-lg">🔐</span>
-                <span>권한 매트릭스</span>
-                <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
-                  {AVAILABLE_RESOURCES.length}개 모듈
-                </span>
-              </div>
-            </button>
-          </nav>
-        </div>
-      </div>
+      {/* === 탭 === */}
+      <section className="rounded-md border border-divider bg-paper-warm">
+        <nav className="flex" aria-label={t('users.title')}>
+          <TabButton
+            active={activeTab === 'list'}
+            onClick={() => setActiveTab('list')}
+            icon={<Users className="h-4 w-4" />}
+            label={t('users.tabList')}
+            count={`${filteredUsers.length}${t('users.userUnit')}`}
+          />
+          <TabButton
+            active={activeTab === 'permissions'}
+            onClick={() => setActiveTab('permissions')}
+            icon={<Lock className="h-4 w-4" />}
+            label={t('users.tabPermissions')}
+            count={`${AVAILABLE_RESOURCES.length} ${t('users.moduleSuffix')}`}
+          />
+        </nav>
+      </section>
 
-      {/* 필터 및 검색 - 사용자 목록 탭에서만 표시 */}
+      {/* === 사용자 목록 탭 === */}
       {activeTab === 'list' && (
-      <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="이름, 이메일, 사번으로 검색..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <select 
-              value={departmentFilter}
-              onChange={(e) => setDepartmentFilter(e.target.value)}
-              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">모든 부서</option>
-              {departments.map(department => (
-                <option key={department} value={department}>{department}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <select 
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">모든 권한</option>
-              <option value="system_admin">시스템 관리자</option>
-              <option value="admin">관리자</option>
-              <option value="user">사용자</option>
-            </select>
-          </div>
-          <div>
-            <select 
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">모든 상태</option>
-              <option value="active">활성</option>
-              <option value="inactive">비활성</option>
-            </select>
-          </div>
-          
-          {/* 필터 초기화 버튼 */}
-          {(searchTerm || departmentFilter || roleFilter || statusFilter) && (
-            <button 
-              onClick={() => {
-                setSearchTerm('')
-                setDepartmentFilter('')
-                setRoleFilter('')
-                setStatusFilter('')
-              }}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-            >
-              필터 초기화
-            </button>
-          )}
-          
-          {/* 새 사용자 추가 버튼 */}
-          <button 
-            onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            + 사용자 추가
-          </button>
-          <button
-            onClick={() => setShowBulkUploadModal(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-          >
-            Excel 일괄 등록
-          </button>
-        </div>
-      </div>
-      )}
+        <>
+          {/* 필터/검색 */}
+          <section className="rounded-md border border-divider bg-paper-warm p-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-1 sm:gap-2">
+                <input
+                  type="text"
+                  placeholder={t('users.searchPlaceholder')}
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="min-h-touch flex-1 rounded-sm border border-divider bg-paper px-3 text-base text-ink placeholder-ink-mute transition-colors focus:border-gauge-cobalt focus:outline-none"
+                />
+                <select
+                  value={departmentFilter}
+                  onChange={e => setDepartmentFilter(e.target.value)}
+                  className="min-h-touch rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none"
+                >
+                  <option value="">{t('users.allDepartments')}</option>
+                  {departments.map(d => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={roleFilter}
+                  onChange={e => setRoleFilter(e.target.value)}
+                  className="min-h-touch rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none"
+                >
+                  <option value="">{t('users.allRoles')}</option>
+                  <option value="system_admin">{t('users.roleSystemAdmin')}</option>
+                  <option value="admin">{t('users.roleAdmin')}</option>
+                  <option value="user">{t('users.roleUser')}</option>
+                </select>
+                <select
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value)}
+                  className="min-h-touch rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none"
+                >
+                  <option value="">{t('users.allStatuses')}</option>
+                  <option value="active">{t('users.statusActive')}</option>
+                  <option value="inactive">{t('users.statusInactive')}</option>
+                </select>
+              </div>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:gap-2">
+                {isAnyFilterActive && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchTerm('')
+                      setDepartmentFilter('')
+                      setRoleFilter('')
+                      setStatusFilter('')
+                    }}
+                    className="inline-flex min-h-touch items-center justify-center rounded-sm border border-divider bg-paper px-3 text-caption font-medium text-gauge-cobalt-strong transition-colors hover:bg-paper-warm"
+                  >
+                    {t('users.filterReset')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowBulkUploadModal(true)}
+                  className="inline-flex min-h-touch items-center justify-center gap-1.5 rounded-sm border border-divider bg-paper px-4 text-label font-medium text-ink transition-colors hover:bg-paper-warm"
+                >
+                  <Upload className="h-4 w-4" />
+                  {t('users.bulkUpload')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(true)}
+                  className="inline-flex min-h-touch items-center justify-center gap-1.5 rounded-sm bg-gauge-cobalt px-4 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t('users.addUser')}
+                </button>
+              </div>
+            </div>
+          </section>
 
-      {/* 사용자 리스트 테이블 - 사용자 목록 탭에서만 표시 */}
-      {activeTab === 'list' && (
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-200">
-        <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">
-            사용자 목록 ({filteredUsers.length}명)
-          </h2>
-          <p className="text-sm text-gray-500 mt-1">
-            {searchTerm || departmentFilter || roleFilter || statusFilter 
-              ? `전체 ${allUsers.length}명 중 ${filteredUsers.length}명 표시` 
-              : '시스템 사용자 계정 및 권한 정보'}
-          </p>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <SortableTableHeader
-                  label="부서"
-                  field="department"
-                  currentSortField={sortField}
-                  currentSortOrder={sortDirection}
-                  onSort={handleSort}
+          {/* 사용자 목록 */}
+          <section className="space-y-3">
+            <header className="flex items-center justify-between gap-3">
+              <h2 className="text-title font-semibold text-ink no-break">
+                {t('users.listHeading')}
+              </h2>
+              <p className="text-caption text-ink-soft tabular">
+                <span className="font-medium text-ink">{filteredUsers.length}</span>
+                {t('users.userUnit')}
+              </p>
+            </header>
+
+            {/* 모바일 카드 */}
+            <div className="lg:hidden space-y-3">
+              {paginatedUsers.length === 0 ? (
+                <EmptyFilterState
+                  message={isAnyFilterActive ? t('users.emptyMatching') : t('users.emptyAll')}
+                  resetLabel={t('users.filterReset')}
+                  onReset={() => {
+                    setSearchTerm('')
+                    setDepartmentFilter('')
+                    setRoleFilter('')
+                    setStatusFilter('')
+                    setCurrentPage(1)
+                  }}
+                  showReset={isAnyFilterActive}
                 />
-                <SortableTableHeader
-                  label="직위"
-                  field="position"
-                  currentSortField={sortField}
-                  currentSortOrder={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label="이름"
-                  field="name"
-                  currentSortField={sortField}
-                  currentSortOrder={sortDirection}
-                  onSort={handleSort}
-                />
-                <SortableTableHeader
-                  label="권한"
-                  field="roleId"
-                  currentSortField={sortField}
-                  currentSortOrder={sortDirection}
-                  onSort={handleSort}
-                />
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  작업
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedUsers.length > 0 ? (
-                paginatedUsers.map((user) => {
-                  const userRole = getUserRole(user.roleId)
-                  return (
-                    <tr key={user.id} className="hover:bg-gray-50">
-                      {/* 부서 */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{user.department}</div>
-                      </td>
-                      
-                      {/* 직위 */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{user.position}</div>
-                      </td>
-                      
-                      {/* 이름 */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-8 w-8">
-                            <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                              user.isActive ? 'bg-blue-100' : 'bg-gray-100'
-                            }`}>
-                              <span className={`text-sm font-medium ${
-                                user.isActive ? 'text-blue-600' : 'text-gray-400'
-                              }`}>
-                                {user.name.charAt(0)}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="ml-3">
-                            <div className={`text-sm font-medium ${
-                              user.isActive ? 'text-gray-900' : 'text-gray-400'
-                            }`}>
-                              {user.name}
-                              {!user.isActive && (
-                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                                  비활성
+              ) : (
+                paginatedUsers.map(user => (
+                  <UserListCard
+                    key={user.id}
+                    item={toCardItem(user)}
+                    labels={cardLabels}
+                    canEditPermissions={canEditPermissions}
+                    onViewDetail={id => {
+                      const u = allUsers.find(x => x.id === id)
+                      if (u) handleViewDetail(u)
+                    }}
+                    onEdit={id => {
+                      const u = allUsers.find(x => x.id === id)
+                      if (u) handleEdit(u)
+                    }}
+                    onEditPermissions={id => {
+                      const u = allUsers.find(x => x.id === id)
+                      if (u) handleEditPermissions(u)
+                    }}
+                    onToggleStatus={id => {
+                      const u = allUsers.find(x => x.id === id)
+                      if (u) handleToggleStatus(u)
+                    }}
+                    onDelete={id => {
+                      const u = allUsers.find(x => x.id === id)
+                      if (u) handleDelete(u)
+                    }}
+                  />
+                ))
+              )}
+            </div>
+
+            {/* 데스크톱 표 */}
+            <div className="hidden lg:block rounded-md border border-divider bg-paper-warm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead className="bg-paper border-b border-divider">
+                    <tr>
+                      <SortableTableHeader
+                        label={t('users.department')}
+                        field="department"
+                        currentSortField={sortField}
+                        currentSortOrder={sortDirection}
+                        onSort={handleSort}
+                      />
+                      <SortableTableHeader
+                        label={t('users.position')}
+                        field="position"
+                        currentSortField={sortField}
+                        currentSortOrder={sortDirection}
+                        onSort={handleSort}
+                      />
+                      <SortableTableHeader
+                        label={t('users.nameLabel')}
+                        field="name"
+                        currentSortField={sortField}
+                        currentSortOrder={sortDirection}
+                        onSort={handleSort}
+                      />
+                      <SortableTableHeader
+                        label={t('users.role')}
+                        field="roleId"
+                        currentSortField={sortField}
+                        currentSortOrder={sortDirection}
+                        onSort={handleSort}
+                      />
+                      <th className="px-4 py-3 text-left text-label font-medium text-ink-soft no-break">
+                        {t('users.statusActive')}
+                      </th>
+                      <th className="px-4 py-3 text-right text-label font-medium text-ink-soft no-break">
+                        {t('users.actions')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-divider">
+                    {paginatedUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-12 text-center">
+                          <Search
+                            className="mx-auto mb-2 h-6 w-6 text-ink-mute"
+                            aria-hidden="true"
+                          />
+                          <p className="text-base text-ink-soft">
+                            {isAnyFilterActive ? t('users.emptyMatching') : t('users.emptyAll')}
+                          </p>
+                          {isAnyFilterActive && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSearchTerm('')
+                                setDepartmentFilter('')
+                                setRoleFilter('')
+                                setStatusFilter('')
+                                setCurrentPage(1)
+                              }}
+                              className="mt-2 inline-flex items-center text-label font-medium text-gauge-cobalt-strong transition-colors hover:underline"
+                            >
+                              {t('users.filterReset')}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedUsers.map(user => {
+                        const userRole = getUserRole(user.roleId)
+                        const rt = roleType(user.roleId, roles)
+                        return (
+                          <tr key={user.id} className="transition-colors hover:bg-paper">
+                            <td className="px-4 py-3 text-base text-ink no-break">
+                              <NoBreak>{user.department || '—'}</NoBreak>
+                            </td>
+                            <td className="px-4 py-3 text-base text-ink no-break">
+                              <NoBreak>{user.position || '—'}</NoBreak>
+                            </td>
+                            <td className="px-4 py-3">
+                              <button
+                                type="button"
+                                onClick={() => handleViewDetail(user)}
+                                className="text-left"
+                              >
+                                <p
+                                  className={`text-base font-medium no-break transition-colors hover:underline ${
+                                    user.isActive ? 'text-gauge-cobalt-strong' : 'text-ink-mute'
+                                  }`}
+                                >
+                                  <NoBreak>{user.name}</NoBreak>
+                                </p>
+                                <p className="text-caption text-ink-soft truncate">{user.email}</p>
+                              </button>
+                            </td>
+                            <td className="px-4 py-3">
+                              {userRole ? (
+                                <span
+                                  className={`inline-flex items-center rounded-sm px-2 py-0.5 text-caption font-medium no-break ${roleBadgeClass(rt)}`}
+                                >
+                                  <NoBreak>{getRoleName(userRole.type)}</NoBreak>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-sm border border-divider bg-paper-warm px-2 py-0.5 text-caption text-ink-mute">
+                                  {t('users.roleUnknown')}
                                 </span>
                               )}
-                            </div>
-                            <div className="text-sm text-gray-500">{user.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      
-                      {/* 권한 */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {userRole ? (
-                          <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadge(userRole.type)}`}>
-                            {getRoleName(userRole.type)}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                            알 수 없음
-                          </span>
-                        )}
-                      </td>
-                      
-                      {/* 작업 */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="flex space-x-2">
-                          <button 
-                            onClick={() => handleViewDetail(user)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            상세
-                          </button>
-                          <button 
-                            onClick={() => handleEdit(user)}
-                            className="text-green-600 hover:text-green-900"
-                          >
-                            수정
-                          </button>
-                          <button 
-                            onClick={() => handleToggleStatus(user)}
-                            className={`${user.isActive ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}`}
-                          >
-                            {user.isActive ? '비활성화' : '활성화'}
-                          </button>
-                          <button 
-                            onClick={() => handleDelete(user)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                    <div className="flex flex-col items-center">
-                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
-                        <span className="text-xl">🔍</span>
-                      </div>
-                      <p className="text-sm">
-                        {searchTerm || departmentFilter || roleFilter || statusFilter 
-                          ? '검색 조건에 맞는 사용자가 없습니다' 
-                          : '등록된 사용자가 없습니다'}
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* 페이지네이션 */}
-        {sortedUsers.length > 0 && (
-          <div className="px-6 py-4 border-t bg-gray-50">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                전체 {sortedUsers.length}개 중 {startIndex + 1}-{Math.min(endIndex, sortedUsers.length)}개 표시
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  이전
-                </button>
-                <div className="flex items-center space-x-1">
-                  {(() => {
-                    const pageNumbers = []
-                    const maxVisiblePages = 5
-
-                    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
-                    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
-
-                    if (endPage - startPage < maxVisiblePages - 1) {
-                      startPage = Math.max(1, endPage - maxVisiblePages + 1)
-                    }
-
-                    for (let i = startPage; i <= endPage; i++) {
-                      pageNumbers.push(
-                        <button
-                          key={i}
-                          onClick={() => setCurrentPage(i)}
-                          className={`px-3 py-1 text-sm font-medium rounded-md ${
-                            currentPage === i
-                              ? 'bg-blue-600 text-white'
-                              : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          {i}
-                        </button>
-                      )
-                    }
-
-                    return pageNumbers
-                  })()}
-                </div>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  다음
-                </button>
+                            </td>
+                            <td className="px-4 py-3">
+                              <StatusBadge
+                                variant={user.isActive ? 'go' : 'neutral'}
+                                label={
+                                  user.isActive
+                                    ? t('users.statusActive')
+                                    : t('users.statusInactive')
+                                }
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-end gap-1">
+                                <IconActionButton
+                                  onClick={() => handleViewDetail(user)}
+                                  label={t('users.actionDetail')}
+                                  icon={<Eye className="h-4 w-4" />}
+                                />
+                                <IconActionButton
+                                  onClick={() => handleEdit(user)}
+                                  label={t('users.actionEdit')}
+                                  icon={<Pencil className="h-4 w-4" />}
+                                />
+                                {canEditPermissions && (
+                                  <IconActionButton
+                                    onClick={() => handleEditPermissions(user)}
+                                    label={t('users.actionPermissions')}
+                                    icon={<Lock className="h-4 w-4" />}
+                                  />
+                                )}
+                                <IconActionButton
+                                  onClick={() => handleToggleStatus(user)}
+                                  label={
+                                    user.isActive
+                                      ? t('users.actionDeactivate')
+                                      : t('users.actionActivate')
+                                  }
+                                  icon={<RotateCcw className="h-4 w-4" />}
+                                />
+                                <IconActionButton
+                                  onClick={() => handleDelete(user)}
+                                  label={t('users.actionDelete')}
+                                  icon={<Trash2 className="h-4 w-4" />}
+                                  tone="danger"
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+
+            {/* 페이지네이션 */}
+            {totalPages > 1 && (
+              <div className="rounded-md border border-divider bg-paper-warm px-4 py-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-caption text-ink-soft tabular">
+                    {t('users.showingFrom')}{' '}
+                    <span className="font-medium text-ink">{sortedUsers.length}</span>
+                    {t('users.showingMid')}{' '}
+                    <span className="font-medium text-ink">{startIndex + 1}-{Math.min(endIndex, sortedUsers.length)}</span>
+                    {' '}
+                    {t('users.showingTo')}
+                  </p>
+                  <nav
+                    className="inline-flex items-center gap-1 self-end sm:self-auto"
+                    aria-label={t('users.page')}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      aria-label={t('users.previous')}
+                      className="inline-flex min-h-touch min-w-touch items-center justify-center rounded-sm border border-divider bg-paper px-3 text-label font-medium text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      ‹
+                    </button>
+                    {(() => {
+                      const buttons = []
+                      const maxVisible = 5
+                      let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+                      const endPage = Math.min(totalPages, startPage + maxVisible - 1)
+                      if (endPage - startPage < maxVisible - 1) {
+                        startPage = Math.max(1, endPage - maxVisible + 1)
+                      }
+                      for (let i = startPage; i <= endPage; i++) {
+                        const isActive = currentPage === i
+                        buttons.push(
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setCurrentPage(i)}
+                            aria-current={isActive ? 'page' : undefined}
+                            className={
+                              isActive
+                                ? 'inline-flex min-h-touch min-w-touch items-center justify-center rounded-sm border border-gauge-cobalt bg-gauge-cobalt px-3 text-label font-medium text-paper tabular'
+                                : 'inline-flex min-h-touch min-w-touch items-center justify-center rounded-sm border border-divider bg-paper px-3 text-label font-medium text-ink-soft tabular transition-colors hover:bg-paper-warm hover:text-ink'
+                            }
+                          >
+                            {i}
+                          </button>
+                        )
+                      }
+                      return buttons
+                    })()}
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      aria-label={t('users.next')}
+                      className="inline-flex min-h-touch min-w-touch items-center justify-center rounded-sm border border-divider bg-paper px-3 text-label font-medium text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      ›
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            )}
+          </section>
+        </>
       )}
 
-      {/* 권한 매트릭스 탭 내용 */}
+      {/* === 권한 매트릭스 탭 === */}
       {activeTab === 'permissions' && (
         <div className="space-y-6">
-          {/* 권한 매트릭스 헤더 */}
-          <div className="bg-white rounded-lg shadow-sm border">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
+          {/* 헤더 + 범례 */}
+          <section className="rounded-md border border-divider bg-paper-warm">
+            <div className="px-4 py-4 border-b border-divider sm:px-5 sm:py-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">🔐 사용자 권한 매트릭스</h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    각 사용자별 모듈 접근 권한을 한눈에 확인할 수 있습니다
-                  </p>
+                  <h2 className="text-title font-semibold text-ink no-break">
+                    {t('users.permissionsTitle')}
+                  </h2>
+                  <p className="mt-1 text-base text-ink-soft">{t('users.permissionsSubtitle')}</p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                    {filteredUsers.length}명 사용자
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center rounded-sm border border-divider bg-paper px-2.5 py-1 text-caption font-medium text-ink-soft">
+                    {filteredUsers.length} {t('users.usersCountSuffix')}
                   </span>
-                  <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
-                    {AVAILABLE_RESOURCES.length}개 모듈
+                  <span className="inline-flex items-center rounded-sm border border-divider bg-paper px-2.5 py-1 text-caption font-medium text-ink-soft">
+                    {AVAILABLE_RESOURCES.length} {t('users.moduleSuffix')}
                   </span>
                 </div>
               </div>
             </div>
-            
-            {/* 권한 범례 */}
-            <div className="px-6 py-4 bg-gray-50">
-              <h3 className="text-sm font-medium text-gray-900 mb-3">권한 범례</h3>
-              <div className="flex flex-wrap gap-4">
-                <div className="flex items-center space-x-2">
-                  <span className={`text-sm font-bold ${getActionColor('create')}`}>{getActionIcon('create')}</span>
-                  <span className="text-xs text-gray-600">{getActionDisplayName('create')}</span>
+            <div className="px-4 py-4 bg-paper sm:px-5">
+              <h3 className="text-label font-medium text-ink mb-3 no-break">
+                {t('users.legendTitle')}
+              </h3>
+              <div className="flex flex-wrap gap-x-4 gap-y-2">
+                {ACTION_KEYS.map(action => (
+                  <div key={action} className="flex items-center gap-1.5">
+                    <ActionIcon action={action} className={`h-3.5 w-3.5 ${actionTone(action)}`} />
+                    <span className="text-caption text-ink-soft">{getActionDisplayName(action)}</span>
+                  </div>
+                ))}
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-signal-go-strong" aria-hidden="true" />
+                  <span className="text-caption text-ink-soft">{t('users.legendReadOnly')}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className={`text-sm font-bold ${getActionColor('read')}`}>{getActionIcon('read')}</span>
-                  <span className="text-xs text-gray-600">{getActionDisplayName('read')}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className={`text-sm font-bold ${getActionColor('update')}`}>{getActionIcon('update')}</span>
-                  <span className="text-xs text-gray-600">{getActionDisplayName('update')}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className={`text-sm font-bold ${getActionColor('delete')}`}>{getActionIcon('delete')}</span>
-                  <span className="text-xs text-gray-600">{getActionDisplayName('delete')}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className={`text-sm font-bold ${getActionColor('manage')}`}>{getActionIcon('manage')}</span>
-                  <span className="text-xs text-gray-600">{getActionDisplayName('manage')}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xl text-green-600 font-bold">✓</span>
-                  <span className="text-xs text-gray-600">조회만</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xl text-red-500 font-bold">✕</span>
-                  <span className="text-xs text-gray-600">권한 없음</span>
+                <div className="flex items-center gap-1.5">
+                  <X className="h-3.5 w-3.5 text-signal-stop-strong" aria-hidden="true" />
+                  <span className="text-caption text-ink-soft">{t('users.legendNoAccess')}</span>
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* 권한 매트릭스 테이블 */}
-          <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-200">
+          {/* 매트릭스 표 */}
+          <section className="rounded-md border border-divider bg-paper-warm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-paper border-b border-divider">
                   <tr>
-                    <th className="sticky left-0 z-10 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                      사용자
+                    <th className="sticky left-0 z-10 bg-paper px-4 py-3 text-left text-label font-medium text-ink-soft border-r border-divider no-break">
+                      {t('users.userColumn')}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                      권한 레벨
+                    <th className="px-4 py-3 text-left text-label font-medium text-ink-soft border-r border-divider no-break">
+                      {t('users.permissionLevel')}
                     </th>
                     {AVAILABLE_RESOURCES.map(module => (
-                      <th key={module} className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                        <div className="flex flex-col items-center space-y-1">
-                          <span className="text-sm">{getModuleDisplayName(module)}</span>
-                        </div>
+                      <th
+                        key={module}
+                        className="px-3 py-3 text-center text-label font-medium text-ink-soft border-r border-divider no-break"
+                      >
+                        <NoBreak>{getModuleDisplayName(module)}</NoBreak>
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredUsers.map((user) => {
+                <tbody className="divide-y divide-divider">
+                  {filteredUsers.map(user => {
                     const userRole = getUserRole(user.roleId)
+                    const rt = roleType(user.roleId, roles)
                     return (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        {/* 사용자 정보 (고정 컬럼) */}
-                        <td className="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                          <div
-                            className={`flex items-center space-x-3 rounded-lg p-2 -m-2 transition-colors ${
-                              currentUser?.role === 'system_admin'
-                                ? 'cursor-pointer hover:bg-blue-50'
+                      <tr key={user.id} className="transition-colors hover:bg-paper">
+                        <td className="sticky left-0 z-10 bg-paper-warm px-4 py-3 border-r border-divider">
+                          <button
+                            type="button"
+                            onClick={() => canEditPermissions && handleEditPermissions(user)}
+                            disabled={!canEditPermissions}
+                            title={
+                              canEditPermissions
+                                ? t('users.permissionEditTooltip')
+                                : t('users.permissionEditDisabledTooltip')
+                            }
+                            className={`text-left transition-colors ${
+                              canEditPermissions
+                                ? 'hover:text-gauge-cobalt-strong'
                                 : 'cursor-not-allowed opacity-60'
                             }`}
-                            onClick={() => currentUser?.role === 'system_admin' && handleEditPermissions(user)}
-                            title={currentUser?.role === 'system_admin' ? '클릭하여 권한 편집' : '시스템 관리자만 권한 편집 가능'}
                           >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              user.isActive ? 'bg-blue-100' : 'bg-gray-100'
-                            }`}>
-                              <span className={`text-sm font-bold ${
-                                user.isActive ? 'text-blue-600' : 'text-gray-400'
-                              }`}>
-                                {user.name.charAt(0)}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                              <div className="text-xs text-gray-500">
-                                {user.department} • {user.position}
-                              </div>
-                            </div>
-                            <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <span className="text-xs text-blue-600">✏️</span>
-                            </div>
-                          </div>
+                            <p
+                              className={`text-base font-medium no-break ${
+                                user.isActive ? 'text-ink' : 'text-ink-mute'
+                              }`}
+                            >
+                              <NoBreak>{user.name}</NoBreak>
+                            </p>
+                            <p className="text-caption text-ink-soft no-break">
+                              {user.department} · {user.position}
+                            </p>
+                          </button>
                         </td>
-                        
-                        {/* 권한 레벨 */}
-                        <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                          <div className="flex flex-col items-center space-y-1">
+                        <td className="px-4 py-3 border-r border-divider">
+                          <div className="flex flex-col items-start gap-1">
                             {userRole && (
-                              <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadge(userRole.type)}`}>
-                                {getRoleName(userRole.type)}
+                              <span
+                                className={`inline-flex items-center rounded-sm px-2 py-0.5 text-caption font-medium no-break ${roleBadgeClass(rt)}`}
+                              >
+                                <NoBreak>{getRoleName(userRole.type)}</NoBreak>
                               </span>
                             )}
-                            <span className="text-xs text-gray-500">
+                            <span className="text-caption text-ink-soft no-break">
                               {getUserPermissionLevel(user)}
                             </span>
                           </div>
                         </td>
-                        
-                        {/* 모듈별 권한 */}
                         {AVAILABLE_RESOURCES.map(module => {
-                          // 시스템 관리자는 "*" 권한을 가질 수 있음
-                          const hasWildcardPermission = user.permissions?.['*']
-                          const modulePermissions = hasWildcardPermission || user.permissions?.[module] || []
-
+                          const hasWildcard = user.permissions?.['*']
+                          const modulePermissions =
+                            (hasWildcard as string[] | undefined) ||
+                            (user.permissions?.[module] as string[] | undefined) ||
+                            []
                           return (
-                            <td key={module} className="px-4 py-4 text-center border-r border-gray-200">
-                              <div className="flex flex-wrap justify-center gap-1">
+                            <td
+                              key={module}
+                              className="px-3 py-3 text-center border-r border-divider"
+                            >
+                              <div className="flex flex-wrap items-center justify-center gap-1">
                                 {modulePermissions.length > 0 ? (
-                                  // 읽기 권한만 있는 경우
-                                  modulePermissions.length === 1 && modulePermissions[0] === 'read' ? (
-                                    <span className="inline-flex items-center justify-center w-6 h-6 text-xl text-green-600" title="조회">
-                                      ✓
-                                    </span>
+                                  modulePermissions.length === 1 &&
+                                  modulePermissions[0] === 'read' ? (
+                                    <CheckCircle2
+                                      className="h-4 w-4 text-signal-go-strong"
+                                      aria-hidden="true"
+                                    />
                                   ) : (
-                                    // 여러 권한이 있는 경우
                                     modulePermissions.map((action: string) => (
-                                      <span
+                                      <ActionIcon
                                         key={action}
-                                        className={`inline-flex items-center justify-center w-6 h-6 text-sm font-bold ${getActionColor(action)}`}
-                                        title={getActionDisplayName(action)}
-                                      >
-                                        {getActionIcon(action)}
-                                      </span>
+                                        action={action}
+                                        className={`h-3.5 w-3.5 ${actionTone(action)}`}
+                                      />
                                     ))
                                   )
                                 ) : (
-                                  <span className="inline-flex items-center justify-center w-6 h-6 text-xl text-red-500" title="권한 없음">
-                                    ✕
-                                  </span>
+                                  <X
+                                    className="h-3.5 w-3.5 text-signal-stop-strong"
+                                    aria-hidden="true"
+                                  />
                                 )}
                               </div>
                             </td>
@@ -1217,646 +1288,654 @@ function UsersPageContent() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
 
           {/* 권한 요약 카드 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* 역할별 통계 */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">👑 역할별 분포</h3>
-              <div className="space-y-3">
-                {['system_admin', 'admin', 'user'].map(roleType => {
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* 역할별 분포 */}
+            <section className="rounded-md border border-divider bg-paper-warm p-4 sm:p-5">
+              <h3 className="text-title font-semibold text-ink no-break">
+                {t('users.roleDistribution')}
+              </h3>
+              <div className="mt-3 space-y-2">
+                {(['system_admin', 'admin', 'user'] as const).map(typeStr => {
                   const count = filteredUsers.filter(user => {
                     const role = getUserRole(user.roleId)
-                    return role?.type === roleType
+                    return role?.type === typeStr
                   }).length
-                  
+                  const rt: UserListCardRoleType = typeStr
                   return (
-                    <div key={roleType} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadge(roleType)}`}>
-                          {getRoleName(roleType)}
-                        </span>
-                      </div>
-                      <span className="text-sm font-medium text-gray-900">{count}명</span>
+                    <div
+                      key={typeStr}
+                      className="flex items-center justify-between gap-3 rounded-sm border border-divider bg-paper px-3 py-2.5"
+                    >
+                      <span
+                        className={`inline-flex items-center rounded-sm px-2 py-0.5 text-caption font-medium no-break ${roleBadgeClass(rt)}`}
+                      >
+                        {getRoleName(typeStr)}
+                      </span>
+                      <span className="text-base font-medium text-ink tabular">
+                        {count}
+                        {t('users.userUnit')}
+                      </span>
                     </div>
                   )
                 })}
               </div>
-            </div>
-            
-            {/* 모듈별 접근 현황 */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 모듈별 접근률</h3>
-              <div className="space-y-3">
+            </section>
+
+            {/* 모듈별 접근률 */}
+            <section className="rounded-md border border-divider bg-paper-warm p-4 sm:p-5">
+              <h3 className="text-title font-semibold text-ink no-break">
+                {t('users.moduleAccessRate')}
+              </h3>
+              <div className="mt-3 space-y-3">
                 {AVAILABLE_RESOURCES.slice(0, 5).map(module => {
                   const accessCount = filteredUsers.filter(user => {
                     const hasWildcard = user.permissions?.['*']
                     const modulePerms = user.permissions?.[module]
                     return hasWildcard || (modulePerms && modulePerms.length > 0)
                   }).length
-                  const percentage = Math.round((accessCount / filteredUsers.length) * 100)
-                  
+                  const percentage =
+                    filteredUsers.length === 0
+                      ? 0
+                      : Math.round((accessCount / filteredUsers.length) * 100)
                   return (
-                    <div key={module} className="space-y-2">
+                    <div key={module} className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-700">{getModuleDisplayName(module)}</span>
-                        <span className="text-sm font-medium text-gray-900">{percentage}%</span>
+                        <span className="text-base text-ink no-break">
+                          <NoBreak>{getModuleDisplayName(module)}</NoBreak>
+                        </span>
+                        <span className="text-base font-medium text-ink tabular">{percentage}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                          style={{width: `${percentage}%`}}
-                        ></div>
+                      <div className="h-1.5 w-full rounded-full bg-paper">
+                        <div
+                          className="h-1.5 rounded-full bg-gauge-cobalt"
+                          style={{ width: `${percentage}%` }}
+                          aria-hidden="true"
+                        />
                       </div>
                     </div>
                   )
                 })}
               </div>
-            </div>
-            
+            </section>
+
             {/* 보안 상태 */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">🔒 보안 상태</h3>
-              <div className="space-y-3">
+            <section className="rounded-md border border-divider bg-paper-warm p-4 sm:p-5">
+              <h3 className="text-title font-semibold text-ink no-break">
+                {t('users.securityStatus')}
+              </h3>
+              <dl className="mt-3 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">활성 사용자</span>
-                  <span className="text-sm font-medium text-green-600">
-                    {filteredUsers.filter(u => u.isActive).length}명
-                  </span>
+                  <dt className="text-base text-ink-soft no-break">
+                    {t('users.activeUserCount')}
+                  </dt>
+                  <dd className="text-base font-medium text-signal-go-strong tabular">
+                    {filteredUsers.filter(u => u.isActive).length}
+                    {t('users.userUnit')}
+                  </dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">비활성 사용자</span>
-                  <span className="text-sm font-medium text-gray-600">
-                    {filteredUsers.filter(u => !u.isActive).length}명
-                  </span>
+                  <dt className="text-base text-ink-soft no-break">
+                    {t('users.inactiveUserCount')}
+                  </dt>
+                  <dd className="text-base font-medium text-ink-soft tabular">
+                    {filteredUsers.filter(u => !u.isActive).length}
+                    {t('users.userUnit')}
+                  </dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">관리자 계정</span>
-                  <span className="text-sm font-medium text-purple-600">
-                    {filteredUsers.filter(user => {
-                      const role = getUserRole(user.roleId)
-                      return role?.type === 'system_admin' || role?.type === 'admin'
-                    }).length}명
-                  </span>
+                  <dt className="text-base text-ink-soft no-break">
+                    {t('users.adminAccountCount')}
+                  </dt>
+                  <dd className="text-base font-medium text-gauge-cobalt-strong tabular">
+                    {
+                      filteredUsers.filter(user => {
+                        const role = getUserRole(user.roleId)
+                        return role?.type === 'system_admin' || role?.type === 'admin'
+                      }).length
+                    }
+                    {t('users.userUnit')}
+                  </dd>
                 </div>
-                <div className="pt-2 mt-3 border-t">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    <span className="text-xs text-gray-600">보안 상태 양호</span>
-                  </div>
-                </div>
+              </dl>
+              <div className="mt-3 pt-3 border-t border-divider flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-signal-go" aria-hidden="true" />
+                <span className="text-caption text-ink-soft">{t('users.securityHealthy')}</span>
               </div>
-            </div>
+            </section>
           </div>
 
-          {/* 권한 템플릿 관리 섹션 */}
-          <div className="bg-white rounded-lg shadow-sm border">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
+          {/* 권한 템플릿 관리 */}
+          <section className="rounded-md border border-divider bg-paper-warm">
+            <div className="px-4 py-4 border-b border-divider sm:px-5 sm:py-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">📋 권한 템플릿 관리</h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    역할별 권한 템플릿을 관리하고 사용자에게 일괄 적용할 수 있습니다
-                  </p>
+                  <h2 className="text-title font-semibold text-ink no-break">
+                    {t('users.templateTitle')}
+                  </h2>
+                  <p className="mt-1 text-base text-ink-soft">{t('users.templateSubtitle')}</p>
                 </div>
-                <div className="text-sm text-gray-500">
-                  {roles.length}개 템플릿 사용 가능
-                </div>
+                <p className="text-caption text-ink-soft tabular">
+                  {roles.length} {t('users.templateAvailable')}
+                </p>
               </div>
             </div>
-            
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {roles.map(role => (
-                  <div key={role.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                    {/* 템플릿 헤더 */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadge(role.type)}`}>
+            <div className="p-4 sm:p-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {roles.map(role => {
+                  const rt: UserListCardRoleType = role.type
+                  return (
+                    <article
+                      key={role.id}
+                      className="rounded-sm border border-divider bg-paper p-4 transition-shadow hover:shadow-hover-lift"
+                    >
+                      <header className="flex items-center justify-between">
+                        <span
+                          className={`inline-flex items-center rounded-sm px-2 py-0.5 text-caption font-medium no-break ${roleBadgeClass(rt)}`}
+                        >
                           {getRoleName(role.type)}
                         </span>
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {getTemplateUsageCount(role.id)}명 사용 중
-                      </div>
-                    </div>
-                    
-                    {/* 템플릿 이름 및 설명 */}
-                    <div className="mb-3">
-                      <h3 className="text-md font-semibold text-gray-900">{role.name}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{role.description}</p>
-                    </div>
-                    
-                    {/* 권한 요약 */}
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">포함된 권한:</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {Object.entries(role.permissions).filter(([, actions]) => actions.length > 0).slice(0, 4).map(([module, actions]) => (
-                          <span key={module} className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
-                            {getModuleDisplayName(module)} ({actions.length})
-                          </span>
-                        ))}
-                        {Object.entries(role.permissions).filter(([, actions]) => actions.length > 0).length > 4 && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
-                            +{Object.entries(role.permissions).filter(([, actions]) => actions.length > 0).length - 4}개 더
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* 권한 상세 정보 */}
-                    <div className="mb-4 bg-gray-50 rounded p-2">
-                      <div className="text-xs text-gray-600">
-                        <div className="flex justify-between">
-                          <span>총 모듈 수:</span>
-                          <span className="font-medium">{Object.keys(role.permissions).length}개</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>활성 권한:</span>
-                          <span className="font-medium">
-                            {Object.values(role.permissions).reduce((sum, actions) => sum + actions.length, 0)}개
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>접근 레벨:</span>
-                          <span className="font-medium">
-                            {role.type === 'system_admin' ? '최고' : 
-                             role.type === 'admin' ? '관리자' : '일반'}
-                          </span>
+                        <span className="text-caption text-ink-soft tabular">
+                          {getTemplateUsageCount(role.id)} {t('users.templateUsage')}
+                        </span>
+                      </header>
+
+                      <h3 className="mt-3 text-title font-semibold text-ink no-break">
+                        <NoBreak>{role.name}</NoBreak>
+                      </h3>
+                      <p className="mt-1 text-caption text-ink-soft">{role.description}</p>
+
+                      <div className="mt-3">
+                        <p className="text-caption text-ink-soft mb-1.5">
+                          {t('users.templatePermissionsLabel')}
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {Object.entries(role.permissions)
+                            .filter(([, actions]) => actions.length > 0)
+                            .slice(0, 4)
+                            .map(([module, actions]) => (
+                              <span
+                                key={module}
+                                className="inline-flex items-center rounded-sm border border-divider bg-paper-warm px-2 py-0.5 text-caption text-ink-soft no-break"
+                              >
+                                <NoBreak>
+                                  {getModuleDisplayName(module)} ({actions.length})
+                                </NoBreak>
+                              </span>
+                            ))}
+                          {Object.entries(role.permissions).filter(
+                            ([, actions]) => actions.length > 0
+                          ).length > 4 && (
+                            <span className="inline-flex items-center rounded-sm border border-divider bg-paper-warm px-2 py-0.5 text-caption text-ink-mute">
+                              +
+                              {Object.entries(role.permissions).filter(
+                                ([, actions]) => actions.length > 0
+                              ).length - 4}{' '}
+                              {t('users.templateMore')}
+                            </span>
+                          )}
                         </div>
                       </div>
-                    </div>
-                    
-                    {/* 템플릿 작업 버튼 */}
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleApplyTemplate(role)}
-                        className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-                      >
-                        🎯 사용자에게 적용
-                      </button>
-                      <button
-                        onClick={() => {
-                          // 권한 상세보기 (현재는 간단한 알림으로 대체)
-                          alert(`${role.name} 권한 상세:\n\n${Object.entries(role.permissions).map(([module, actions]) => 
-                            `${getModuleDisplayName(module)}: ${actions.length > 0 ? actions.map((a: string) => getActionDisplayName(a)).join(', ') : '권한 없음'}`
-                          ).join('\n')}`)
-                        }}
-                        className="px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 transition-colors"
-                        title="권한 상세보기"
-                      >
-                        👁️
-                      </button>
-                    </div>
-                  </div>
-                ))}
+
+                      <dl className="mt-3 rounded-sm bg-paper-warm p-3 text-caption text-ink-soft space-y-1">
+                        <div className="flex justify-between">
+                          <dt>{t('users.templateModuleCount')}</dt>
+                          <dd className="font-medium text-ink tabular">
+                            {Object.keys(role.permissions).length}
+                          </dd>
+                        </div>
+                        <div className="flex justify-between">
+                          <dt>{t('users.templateActiveCount')}</dt>
+                          <dd className="font-medium text-ink tabular">
+                            {Object.values(role.permissions).reduce(
+                              (sum, actions) => sum + actions.length,
+                              0
+                            )}
+                          </dd>
+                        </div>
+                        <div className="flex justify-between">
+                          <dt>{t('users.templateAccessLevel')}</dt>
+                          <dd className="font-medium text-ink no-break">
+                            {role.type === 'system_admin'
+                              ? t('users.levelTop')
+                              : role.type === 'admin'
+                                ? t('users.levelAdmin')
+                                : t('users.levelGeneral')}
+                          </dd>
+                        </div>
+                      </dl>
+
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={() => handleApplyTemplate(role)}
+                          className="inline-flex w-full min-h-touch items-center justify-center gap-1.5 rounded-sm bg-gauge-cobalt px-3 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong"
+                        >
+                          <Target className="h-4 w-4" />
+                          {t('users.applyToUsers')}
+                        </button>
+                      </div>
+                    </article>
+                  )
+                })}
               </div>
             </div>
-          </div>
+          </section>
         </div>
       )}
 
-      {/* 사용자 상세보기 모달 */}
+      {/* === 사용자 상세 모달 === */}
       {showDetailModal && selectedUser && (
-        <div className="mobile-modal-container" onClick={() => { setShowDetailModal(false); setSelectedUser(null); }}>
-          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
-            {/* 모달 헤더 */}
+        <div
+          className="mobile-modal-container"
+          onClick={() => {
+            setShowDetailModal(false)
+            setSelectedUser(null)
+          }}
+        >
+          <div
+            className="mobile-modal-content md:max-w-2xl"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="mobile-modal-header">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-lg font-bold text-blue-600">
-                    {selectedUser.name.charAt(0)}
-                  </span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">사용자 상세 정보</h3>
-                  <p className="text-sm text-gray-500">{selectedUser.name}의 계정 정보</p>
-                </div>
-              </div>
+              <h3 className="text-title font-semibold text-ink no-break">
+                {t('users.detailTitle')}
+                <span className="mx-2 text-ink-mute">·</span>
+                <NoBreak>{selectedUser.name}</NoBreak>
+              </h3>
               <button
+                type="button"
                 onClick={() => {
                   setShowDetailModal(false)
                   setSelectedUser(null)
                 }}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                aria-label={t('users.close')}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-sm text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* 모달 내용 */}
-            <div className="mobile-modal-body space-y-6">
-              {/* 기본 정보 섹션 */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                  <span className="mr-2">👤</span>
-                  기본 정보
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">이름</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedUser.name}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">사번</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedUser.employeeId}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">이메일</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedUser.email}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">연락처</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedUser.phone || '등록되지 않음'}</p>
-                  </div>
+            <div className="mobile-modal-body space-y-4">
+              {/* 기본 정보 */}
+              <DetailSection icon={<UserCheck className="h-4 w-4" />} title={t('users.sectionBasicInfo')}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <DetailField label={t('users.nameLabel')} value={selectedUser.name} />
+                  <DetailField label={t('users.employeeId')} value={selectedUser.employeeId} />
+                  <DetailField label={t('users.email')} value={selectedUser.email} />
+                  <DetailField
+                    label={t('users.phoneLabel')}
+                    value={selectedUser.phone || t('users.phoneEmpty')}
+                  />
                 </div>
-              </div>
+              </DetailSection>
 
-              {/* 조직 정보 섹션 */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                  <span className="mr-2">🏢</span>
-                  조직 정보
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* 조직 정보 */}
+              <DetailSection icon={<Building2 className="h-4 w-4" />} title={t('users.sectionOrgInfo')}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <DetailField label={t('users.department')} value={selectedUser.department} />
+                  <DetailField label={t('users.position')} value={selectedUser.position} />
+                  <DetailField
+                    label={t('users.shift')}
+                    value={`${selectedUser.shift}${t('users.shiftSuffix')}`}
+                  />
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">부서</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedUser.department}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">직위</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedUser.position}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">교대</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedUser.shift}교대</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">계정 상태</label>
+                    <p className="text-caption text-ink-soft no-break">
+                      {t('users.accountStatus')}
+                    </p>
                     <div className="mt-1">
-                      <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
-                        selectedUser.isActive 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {selectedUser.isActive ? '✅ 활성' : '❌ 비활성'}
-                      </span>
+                      <StatusBadge
+                        variant={selectedUser.isActive ? 'go' : 'neutral'}
+                        label={
+                          selectedUser.isActive
+                            ? t('users.statusActive')
+                            : t('users.statusInactive')
+                        }
+                      />
                     </div>
                   </div>
                 </div>
-              </div>
+              </DetailSection>
 
-              {/* 권한 정보 섹션 */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                  <span className="mr-2">🔐</span>
-                  권한 정보
-                </h4>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">역할</label>
-                    <div className="mt-1">
-                      {(() => {
-                        const userRole = getUserRole(selectedUser.roleId)
-                        return userRole ? (
-                          <span className={`inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full ${getRoleBadge(userRole.type)}`}>
-                            {getRoleName(userRole.type)}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-500">알 수 없는 역할</span>
-                        )
-                      })()}
-                    </div>
-                  </div>
-                  
-                  {(() => {
-                    const userRole = getUserRole(selectedUser.roleId)
-                    return userRole && (
+              {/* 권한 정보 */}
+              <DetailSection icon={<Lock className="h-4 w-4" />} title={t('users.sectionPermissionInfo')}>
+                {(() => {
+                  const userRole = getUserRole(selectedUser.roleId)
+                  const rt = roleType(selectedUser.roleId, roles)
+                  return (
+                    <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">접근 가능한 모듈</label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                          {Object.entries(userRole.permissions).map(([module, actions]) => (
-                            actions.length > 0 && (
-                              <div key={module} className="flex items-center space-x-2 text-xs">
-                                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                <span className="text-gray-700 capitalize">{module}</span>
-                                <span className="text-gray-500">({actions.join(', ')})</span>
-                              </div>
-                            )
-                          ))}
+                        <p className="text-caption text-ink-soft no-break">{t('users.role')}</p>
+                        <div className="mt-1">
+                          {userRole ? (
+                            <span
+                              className={`inline-flex items-center rounded-sm px-2 py-0.5 text-caption font-medium no-break ${roleBadgeClass(rt)}`}
+                            >
+                              {getRoleName(userRole.type)}
+                            </span>
+                          ) : (
+                            <span className="text-base text-ink-mute">
+                              {t('users.unknownRole')}
+                            </span>
+                          )}
                         </div>
                       </div>
-                    )
-                  })()}
-                </div>
-              </div>
+                      {userRole && (
+                        <div className="mt-3">
+                          <p className="text-caption text-ink-soft mb-2 no-break">
+                            {t('users.accessibleModules')}
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                            {Object.entries(userRole.permissions).map(
+                              ([module, actions]) =>
+                                actions.length > 0 && (
+                                  <div
+                                    key={module}
+                                    className="flex items-center gap-1.5 rounded-sm border border-divider bg-paper px-2 py-1"
+                                  >
+                                    <ChevronRight
+                                      className="h-3 w-3 text-gauge-cobalt-strong"
+                                      aria-hidden="true"
+                                    />
+                                    <span className="text-caption text-ink-soft no-break">
+                                      <NoBreak>
+                                        {getModuleDisplayName(module)} ({actions.join(', ')})
+                                      </NoBreak>
+                                    </span>
+                                  </div>
+                                )
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
+              </DetailSection>
 
-              {/* 시스템 정보 섹션 */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                  <span className="mr-2">📅</span>
-                  시스템 정보
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">등록일</label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }) : '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">최종 수정일</label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {selectedUser.updatedAt ? new Date(selectedUser.updatedAt).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }) : '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">등록자</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedUser.createdBy}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">최종 로그인</label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {selectedUser.lastLogin 
-                        ? new Date(selectedUser.lastLogin).toLocaleDateString('ko-KR', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })
-                        : '로그인 기록 없음'
-                      }
-                    </p>
-                  </div>
+              {/* 시스템 정보 */}
+              <DetailSection icon={<CalendarClock className="h-4 w-4" />} title={t('users.sectionSystemInfo')}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <DetailField label={t('users.registeredAt')} value={formatDateTime(selectedUser.createdAt ?? undefined)} tabular />
+                  <DetailField label={t('users.modifiedAt')} value={formatDateTime(selectedUser.updatedAt ?? undefined)} tabular />
+                  <DetailField label={t('users.registeredBy')} value={selectedUser.createdBy ?? '—'} />
+                  <DetailField
+                    label={t('users.lastLogin')}
+                    value={selectedUser.lastLogin ? formatDateTime(selectedUser.lastLogin) : t('users.loginNone')}
+                    tabular
+                  />
                 </div>
-              </div>
+              </DetailSection>
             </div>
-            
-            {/* 모달 푸터 */}
-            <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+
+            <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
               <button
+                type="button"
                 onClick={() => {
                   setShowDetailModal(false)
                   setSelectedUser(null)
                 }}
-                className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                className="inline-flex min-h-touch items-center justify-center rounded-sm border border-divider bg-paper px-4 text-label font-medium text-ink transition-colors hover:bg-paper-warm"
               >
-                닫기
+                {t('users.close')}
               </button>
               <button
+                type="button"
                 onClick={() => {
                   setShowDetailModal(false)
                   handleEdit(selectedUser)
                 }}
-                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="inline-flex min-h-touch items-center justify-center gap-1.5 rounded-sm bg-gauge-cobalt px-4 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong"
               >
-                수정하기
+                <Pencil className="h-4 w-4" />
+                {t('users.editAction')}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 사용자 수정 모달 */}
+      {/* === 사용자 수정 모달 === */}
       {showEditModal && selectedUser && (
-        <div className="mobile-modal-container" onClick={() => { setShowEditModal(false); setSelectedUser(null); }}>
-          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
-            {/* 모달 헤더 */}
+        <div
+          className="mobile-modal-container"
+          onClick={() => {
+            setShowEditModal(false)
+            setSelectedUser(null)
+          }}
+        >
+          <div
+            className="mobile-modal-content md:max-w-2xl"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="mobile-modal-header">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-lg">✏️</span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">사용자 정보 수정</h3>
-                  <p className="text-sm text-gray-500">{selectedUser.name}의 정보를 수정합니다</p>
-                </div>
-              </div>
+              <h3 className="text-title font-semibold text-ink no-break">
+                {t('users.editTitle')}
+                <span className="mx-2 text-ink-mute">·</span>
+                <NoBreak>{selectedUser.name}</NoBreak>
+              </h3>
               <button
+                type="button"
                 onClick={() => {
                   setShowEditModal(false)
                   setSelectedUser(null)
                   setEditFormData({})
                 }}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                aria-label={t('users.close')}
                 disabled={isSubmitting}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-sm text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink disabled:opacity-40"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* 수정 폼 */}
             <form onSubmit={handleSaveEdit} className="flex flex-col flex-1 overflow-hidden">
-              <div className="mobile-modal-body space-y-6">
-              {/* 기본 정보 섹션 */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                  <span className="mr-2">👤</span>
-                  기본 정보
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      이름 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={editFormData.name || ''}
-                      onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="이름을 입력하세요"
-                      disabled={isSubmitting}
-                      required
-                    />
+              <div className="mobile-modal-body space-y-4">
+                {/* 기본 정보 */}
+                <FormSection icon={<UserCheck className="h-4 w-4" />} title={t('users.sectionBasicInfo')}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <FormField id="edit_name" label={t('users.nameLabel')} required>
+                      <input
+                        type="text"
+                        id="edit_name"
+                        value={editFormData.name || ''}
+                        onChange={e =>
+                          setEditFormData(prev => ({ ...prev, name: e.target.value }))
+                        }
+                        placeholder={t('users.namePlaceholder')}
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 text-base text-ink placeholder-ink-mute transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      />
+                    </FormField>
+                    <FormField id="edit_employee_id" label={t('users.employeeId')} required>
+                      <input
+                        type="text"
+                        id="edit_employee_id"
+                        value={editFormData.employeeId || ''}
+                        onChange={e =>
+                          setEditFormData(prev => ({ ...prev, employeeId: e.target.value }))
+                        }
+                        placeholder={t('users.employeeIdPlaceholder')}
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 text-base text-ink placeholder-ink-mute transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      />
+                    </FormField>
+                    <FormField id="edit_email" label={t('users.email')} required>
+                      <input
+                        type="email"
+                        id="edit_email"
+                        value={editFormData.email || ''}
+                        onChange={e =>
+                          setEditFormData(prev => ({ ...prev, email: e.target.value }))
+                        }
+                        placeholder={t('users.emailPlaceholder')}
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 text-base text-ink placeholder-ink-mute transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      />
+                    </FormField>
+                    <FormField id="edit_phone" label={t('users.phoneLabel')}>
+                      <input
+                        type="tel"
+                        id="edit_phone"
+                        value={editFormData.phone || ''}
+                        onChange={e =>
+                          setEditFormData(prev => ({ ...prev, phone: e.target.value }))
+                        }
+                        placeholder={t('users.phonePlaceholder')}
+                        disabled={isSubmitting}
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 text-base text-ink placeholder-ink-mute transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      />
+                    </FormField>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      사번 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={editFormData.employeeId || ''}
-                      onChange={(e) => setEditFormData(prev => ({ ...prev, employeeId: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="사번을 입력하세요"
-                      disabled={isSubmitting}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      이메일 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      value={editFormData.email || ''}
-                      onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="이메일을 입력하세요"
-                      disabled={isSubmitting}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      연락처
-                    </label>
-                    <input
-                      type="tel"
-                      value={editFormData.phone || ''}
-                      onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="연락처를 입력하세요"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                </div>
-              </div>
+                </FormSection>
 
-              {/* 조직 정보 섹션 */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                  <span className="mr-2">🏢</span>
-                  조직 정보
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      부서 <span className="text-red-500">*</span>
-                    </label>
+                {/* 조직 정보 */}
+                <FormSection icon={<Building2 className="h-4 w-4" />} title={t('users.sectionOrgInfo')}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <FormField id="edit_department" label={t('users.department')} required>
+                      <select
+                        id="edit_department"
+                        value={editFormData.department || ''}
+                        onChange={e =>
+                          setEditFormData(prev => ({ ...prev, department: e.target.value }))
+                        }
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      >
+                        <option value="">{t('users.departmentSelect')}</option>
+                        {departments.map(d => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                    </FormField>
+                    <FormField id="edit_position" label={t('users.position')} required>
+                      <input
+                        type="text"
+                        id="edit_position"
+                        value={editFormData.position || ''}
+                        onChange={e =>
+                          setEditFormData(prev => ({ ...prev, position: e.target.value }))
+                        }
+                        placeholder={t('users.positionPlaceholder')}
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 text-base text-ink placeholder-ink-mute transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      />
+                    </FormField>
+                    <FormField id="edit_shift" label={t('users.shift')} required>
+                      <select
+                        id="edit_shift"
+                        value={editFormData.shift || ''}
+                        onChange={e =>
+                          setEditFormData(prev => ({ ...prev, shift: e.target.value }))
+                        }
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      >
+                        <option value="">{t('users.shiftSelect')}</option>
+                        {shifts.map(s => (
+                          <option key={s} value={s}>
+                            {s}
+                            {t('users.shiftSuffix')}
+                          </option>
+                        ))}
+                      </select>
+                    </FormField>
+                    <FormField id="edit_is_active" label={t('users.accountStatus')} required>
+                      <select
+                        id="edit_is_active"
+                        value={
+                          editFormData.isActive !== undefined
+                            ? editFormData.isActive
+                              ? 'true'
+                              : 'false'
+                            : ''
+                        }
+                        onChange={e =>
+                          setEditFormData(prev => ({
+                            ...prev,
+                            isActive: e.target.value === 'true',
+                          }))
+                        }
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      >
+                        <option value="">{t('users.statusSelect')}</option>
+                        <option value="true">{t('users.statusActive')}</option>
+                        <option value="false">{t('users.statusInactive')}</option>
+                      </select>
+                    </FormField>
+                  </div>
+                </FormSection>
+
+                {/* 권한 정보 */}
+                <FormSection icon={<Lock className="h-4 w-4" />} title={t('users.sectionPermissionInfo')}>
+                  <FormField id="edit_role" label={t('users.role')} required>
                     <select
-                      value={editFormData.department || ''}
-                      onChange={(e) => setEditFormData(prev => ({ ...prev, department: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="edit_role"
+                      value={editFormData.roleId || ''}
+                      onChange={e =>
+                        setEditFormData(prev => ({ ...prev, roleId: e.target.value }))
+                      }
                       disabled={isSubmitting}
                       required
+                      className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
                     >
-                      <option value="">부서 선택</option>
-                      {departments.map(dept => (
-                        <option key={dept} value={dept}>{dept}</option>
+                      <option value="">{t('users.roleSelect')}</option>
+                      {roles.map(role => (
+                        <option key={role.id} value={role.id}>
+                          {getRoleName(role.type)} - {role.name}
+                        </option>
                       ))}
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      직위 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={editFormData.position || ''}
-                      onChange={(e) => setEditFormData(prev => ({ ...prev, position: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="직위를 입력하세요"
-                      disabled={isSubmitting}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      교대 <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={editFormData.shift || ''}
-                      onChange={(e) => setEditFormData(prev => ({ ...prev, shift: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={isSubmitting}
-                      required
-                    >
-                      <option value="">교대 선택</option>
-                      {shifts.map(shift => (
-                        <option key={shift} value={shift}>{shift}교대</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      계정 상태 <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={editFormData.isActive !== undefined ? (editFormData.isActive ? 'true' : 'false') : ''}
-                      onChange={(e) => setEditFormData(prev => ({ ...prev, isActive: e.target.value === 'true' }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={isSubmitting}
-                      required
-                    >
-                      <option value="">상태 선택</option>
-                      <option value="true">활성</option>
-                      <option value="false">비활성</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+                  </FormField>
 
-              {/* 권한 정보 섹션 */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                  <span className="mr-2">🔐</span>
-                  권한 정보
-                </h4>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    역할 <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={editFormData.roleId || ''}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, roleId: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isSubmitting}
-                    required
-                  >
-                    <option value="">역할 선택</option>
-                    {roles.map(role => (
-                      <option key={role.id} value={role.id}>
-                        {getRoleName(role.type)} - {role.name}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  {/* 선택된 역할의 권한 미리보기 */}
-                  {editFormData.roleId && (() => {
-                    const selectedRole = roles.find(role => role.id === editFormData.roleId)
-                    return selectedRole && (
-                      <div className="mt-3 p-3 bg-blue-50 rounded-md">
-                        <p className="text-sm font-medium text-blue-900 mb-2">이 역할의 권한:</p>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
-                          {Object.entries(selectedRole.permissions).map(([module, actions]) => (
-                            actions.length > 0 && (
-                              <div key={module} className="text-xs text-blue-700">
-                                <span className="font-medium capitalize">{module}</span>: {actions.join(', ')}
-                              </div>
-                            )
-                          ))}
+                  {editFormData.roleId &&
+                    (() => {
+                      const sel = roles.find(role => role.id === editFormData.roleId)
+                      if (!sel) return null
+                      return (
+                        <div className="mt-3 rounded-sm border border-divider bg-paper p-3">
+                          <p className="text-caption font-medium text-ink mb-2 no-break">
+                            {t('users.rolePermissions')}
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                            {Object.entries(sel.permissions).map(
+                              ([module, actions]) =>
+                                actions.length > 0 && (
+                                  <p
+                                    key={module}
+                                    className="text-caption text-ink-soft no-break"
+                                  >
+                                    <span className="font-medium text-ink">
+                                      {getModuleDisplayName(module)}
+                                    </span>
+                                    : {actions.join(', ')}
+                                  </p>
+                                )
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })()}
+                      )
+                    })()}
+                </FormSection>
+
+                <div className="rounded-sm border border-divider bg-paper p-3">
+                  <p className="text-caption text-ink-soft">{t('users.editNotice')}</p>
                 </div>
               </div>
 
-              {/* 수정 일시 표시 */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <p className="text-sm text-yellow-800">
-                  <span className="font-medium">💡 안내:</span> 수정 사항은 즉시 적용되며, 수정 일시가 자동으로 기록됩니다.
-                </p>
-              </div>
-              </div>
-
-              {/* 모달 푸터 - 폼 내부 */}
-              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -1864,20 +1943,22 @@ function UsersPageContent() {
                     setSelectedUser(null)
                     setEditFormData({})
                   }}
-                  className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
                   disabled={isSubmitting}
+                  className="inline-flex min-h-touch items-center justify-center rounded-sm border border-divider bg-paper px-4 text-label font-medium text-ink transition-colors hover:bg-paper-warm disabled:opacity-40"
                 >
-                  취소
+                  {t('users.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
                   disabled={isSubmitting}
+                  className="inline-flex min-h-touch items-center justify-center gap-1.5 rounded-sm bg-gauge-cobalt px-4 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong disabled:opacity-40"
                 >
-                  {isSubmitting && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  {isSubmitting ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-paper" />
+                  ) : (
+                    <Save className="h-4 w-4" />
                   )}
-                  {isSubmitting ? '저장 중...' : '💾 변경사항 저장'}
+                  {isSubmitting ? t('users.saving') : t('users.saveChanges')}
                 </button>
               </div>
             </form>
@@ -1885,22 +1966,20 @@ function UsersPageContent() {
         </div>
       )}
 
-      {/* 사용자 추가 모달 */}
+      {/* === 사용자 추가 모달 === */}
       {showAddModal && (
-        <div className="mobile-modal-container" onClick={() => !isSubmitting && setShowAddModal(false)}>
-          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
-            {/* 모달 헤더 */}
+        <div
+          className="mobile-modal-container"
+          onClick={() => !isSubmitting && setShowAddModal(false)}
+        >
+          <div
+            className="mobile-modal-content md:max-w-2xl"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="mobile-modal-header">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-lg">➕</span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">새 사용자 추가</h3>
-                  <p className="text-sm text-gray-500">새로운 사용자 계정을 생성합니다</p>
-                </div>
-              </div>
+              <h3 className="text-title font-semibold text-ink no-break">{t('users.addTitle')}</h3>
               <button
+                type="button"
                 onClick={() => {
                   setShowAddModal(false)
                   setAddFormData({
@@ -1913,238 +1992,236 @@ function UsersPageContent() {
                     roleId: '',
                     shift: '',
                     phone: '',
-                    isActive: true
+                    isActive: true,
                   })
                 }}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                aria-label={t('users.close')}
                 disabled={isSubmitting}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-sm text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink disabled:opacity-40"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* 추가 폼 */}
             <form onSubmit={handleAddUser} className="flex flex-col flex-1 overflow-hidden">
-              <div className="mobile-modal-body space-y-6">
-              {/* 기본 정보 섹션 */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                  <span className="mr-2">👤</span>
-                  기본 정보
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      이름 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={addFormData.name}
-                      onChange={(e) => setAddFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="사용자 이름을 입력하세요"
-                      disabled={isSubmitting}
-                      required
-                    />
+              <div className="mobile-modal-body space-y-4">
+                <FormSection icon={<UserCheck className="h-4 w-4" />} title={t('users.sectionBasicInfo')}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <FormField id="add_name" label={t('users.nameLabel')} required>
+                      <input
+                        type="text"
+                        id="add_name"
+                        value={addFormData.name}
+                        onChange={e =>
+                          setAddFormData(prev => ({ ...prev, name: e.target.value }))
+                        }
+                        placeholder={t('users.addNamePlaceholder')}
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 text-base text-ink placeholder-ink-mute transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      />
+                    </FormField>
+                    <FormField id="add_employee_id" label={t('users.employeeId')} required>
+                      <input
+                        type="text"
+                        id="add_employee_id"
+                        value={addFormData.employeeId}
+                        onChange={e =>
+                          setAddFormData(prev => ({ ...prev, employeeId: e.target.value }))
+                        }
+                        placeholder={t('users.addEmployeeIdPlaceholder')}
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 text-base text-ink placeholder-ink-mute transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      />
+                    </FormField>
+                    <FormField id="add_email" label={t('users.email')} required>
+                      <input
+                        type="email"
+                        id="add_email"
+                        value={addFormData.email}
+                        onChange={e =>
+                          setAddFormData(prev => ({ ...prev, email: e.target.value }))
+                        }
+                        placeholder={t('users.emailPlaceholder')}
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 text-base text-ink placeholder-ink-mute transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      />
+                    </FormField>
+                    <FormField id="add_password" label={t('users.passwordLabel')} required>
+                      <input
+                        type="password"
+                        id="add_password"
+                        value={addFormData.password}
+                        onChange={e =>
+                          setAddFormData(prev => ({ ...prev, password: e.target.value }))
+                        }
+                        placeholder={t('users.passwordPlaceholder')}
+                        disabled={isSubmitting}
+                        required
+                        minLength={6}
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 text-base text-ink placeholder-ink-mute transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      />
+                      <p className="mt-1 text-caption text-ink-mute">{t('users.passwordHint')}</p>
+                    </FormField>
+                    <FormField id="add_phone" label={t('users.phoneLabel')}>
+                      <input
+                        type="tel"
+                        id="add_phone"
+                        value={addFormData.phone}
+                        onChange={e =>
+                          setAddFormData(prev => ({ ...prev, phone: e.target.value }))
+                        }
+                        placeholder={t('users.addPhonePlaceholder')}
+                        disabled={isSubmitting}
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 text-base text-ink placeholder-ink-mute transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      />
+                    </FormField>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      사번 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={addFormData.employeeId}
-                      onChange={(e) => setAddFormData(prev => ({ ...prev, employeeId: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="사번을 입력하세요 (예: EMP001)"
-                      disabled={isSubmitting}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      이메일 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      value={addFormData.email}
-                      onChange={(e) => setAddFormData(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="이메일을 입력하세요"
-                      disabled={isSubmitting}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      비밀번호 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      value={addFormData.password}
-                      onChange={(e) => setAddFormData(prev => ({ ...prev, password: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="비밀번호 (최소 6자)"
-                      disabled={isSubmitting}
-                      required
-                      minLength={6}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">최초 로그인 시 사용할 비밀번호입니다.</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      연락처
-                    </label>
-                    <input
-                      type="tel"
-                      value={addFormData.phone}
-                      onChange={(e) => setAddFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="연락처를 입력하세요 (선택사항)"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                </div>
-              </div>
+                </FormSection>
 
-              {/* 조직 정보 섹션 */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                  <span className="mr-2">🏢</span>
-                  조직 정보
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      부서 <span className="text-red-500">*</span>
-                    </label>
+                <FormSection icon={<Building2 className="h-4 w-4" />} title={t('users.sectionOrgInfo')}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <FormField id="add_department" label={t('users.department')} required>
+                      <select
+                        id="add_department"
+                        value={addFormData.department}
+                        onChange={e =>
+                          setAddFormData(prev => ({ ...prev, department: e.target.value }))
+                        }
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      >
+                        <option value="">{t('users.departmentSelectPrompt')}</option>
+                        {departments.map(d => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                    </FormField>
+                    <FormField id="add_position" label={t('users.position')} required>
+                      <input
+                        type="text"
+                        id="add_position"
+                        value={addFormData.position}
+                        onChange={e =>
+                          setAddFormData(prev => ({ ...prev, position: e.target.value }))
+                        }
+                        placeholder={t('users.positionAddPlaceholder')}
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 text-base text-ink placeholder-ink-mute transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      />
+                    </FormField>
+                    <FormField id="add_shift" label={t('users.shift')} required>
+                      <select
+                        id="add_shift"
+                        value={addFormData.shift}
+                        onChange={e =>
+                          setAddFormData(prev => ({ ...prev, shift: e.target.value }))
+                        }
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      >
+                        <option value="">{t('users.shiftSelectPrompt')}</option>
+                        {shifts.map(s => (
+                          <option key={s} value={s}>
+                            {s}
+                            {t('users.shiftSuffix')}
+                          </option>
+                        ))}
+                      </select>
+                    </FormField>
+                    <FormField id="add_is_active" label={t('users.accountStatus')} required>
+                      <select
+                        id="add_is_active"
+                        value={addFormData.isActive ? 'true' : 'false'}
+                        onChange={e =>
+                          setAddFormData(prev => ({
+                            ...prev,
+                            isActive: e.target.value === 'true',
+                          }))
+                        }
+                        disabled={isSubmitting}
+                        required
+                        className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
+                      >
+                        <option value="true">{t('users.statusActiveOption')}</option>
+                        <option value="false">{t('users.statusInactiveOption')}</option>
+                      </select>
+                    </FormField>
+                  </div>
+                </FormSection>
+
+                <FormSection icon={<Lock className="h-4 w-4" />} title={t('users.sectionPermissionInfo')}>
+                  <FormField id="add_role" label={t('users.role')} required>
                     <select
-                      value={addFormData.department}
-                      onChange={(e) => setAddFormData(prev => ({ ...prev, department: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="add_role"
+                      value={addFormData.roleId}
+                      onChange={e =>
+                        setAddFormData(prev => ({ ...prev, roleId: e.target.value }))
+                      }
                       disabled={isSubmitting}
                       required
+                      className="min-h-touch w-full rounded-sm border border-divider bg-paper px-3 pr-8 text-base text-ink transition-colors focus:border-gauge-cobalt focus:outline-none disabled:bg-paper-warm"
                     >
-                      <option value="">부서를 선택하세요</option>
-                      {departments.map(dept => (
-                        <option key={dept} value={dept}>{dept}</option>
+                      <option value="">{t('users.roleSelectPrompt')}</option>
+                      {roles.map(role => (
+                        <option key={role.id} value={role.id}>
+                          {getRoleName(role.type)} - {role.name}
+                        </option>
                       ))}
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      직위 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={addFormData.position}
-                      onChange={(e) => setAddFormData(prev => ({ ...prev, position: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="직위를 입력하세요 (예: 팀장, 대리, 사원)"
-                      disabled={isSubmitting}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      교대 <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={addFormData.shift}
-                      onChange={(e) => setAddFormData(prev => ({ ...prev, shift: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={isSubmitting}
-                      required
-                    >
-                      <option value="">교대를 선택하세요</option>
-                      {shifts.map(shift => (
-                        <option key={shift} value={shift}>{shift}교대</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      계정 상태 <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={addFormData.isActive ? 'true' : 'false'}
-                      onChange={(e) => setAddFormData(prev => ({ ...prev, isActive: e.target.value === 'true' }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={isSubmitting}
-                      required
-                    >
-                      <option value="true">활성 (즉시 사용 가능)</option>
-                      <option value="false">비활성 (추후 활성화)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+                  </FormField>
 
-              {/* 권한 정보 섹션 */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                  <span className="mr-2">🔐</span>
-                  권한 설정
-                </h4>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    역할 <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={addFormData.roleId}
-                    onChange={(e) => setAddFormData(prev => ({ ...prev, roleId: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isSubmitting}
-                    required
-                  >
-                    <option value="">사용자 역할을 선택하세요</option>
-                    {roles.map(role => (
-                      <option key={role.id} value={role.id}>
-                        {getRoleName(role.type)} - {role.name}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  {/* 선택된 역할의 권한 미리보기 */}
-                  {addFormData.roleId && (() => {
-                    const selectedRole = roles.find(role => role.id === addFormData.roleId)
-                    return selectedRole && (
-                      <div className="mt-3 p-3 bg-blue-50 rounded-md">
-                        <p className="text-sm font-medium text-blue-900 mb-2">선택된 역할의 권한:</p>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
-                          {Object.entries(selectedRole.permissions).map(([module, actions]) => (
-                            actions.length > 0 && (
-                              <div key={module} className="text-xs text-blue-700">
-                                <span className="font-medium capitalize">{module}</span>: {actions.join(', ')}
-                              </div>
-                            )
-                          ))}
+                  {addFormData.roleId &&
+                    (() => {
+                      const sel = roles.find(role => role.id === addFormData.roleId)
+                      if (!sel) return null
+                      return (
+                        <div className="mt-3 rounded-sm border border-divider bg-paper p-3">
+                          <p className="text-caption font-medium text-ink mb-2 no-break">
+                            {t('users.selectedRolePermissions')}
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                            {Object.entries(sel.permissions).map(
+                              ([module, actions]) =>
+                                actions.length > 0 && (
+                                  <p
+                                    key={module}
+                                    className="text-caption text-ink-soft no-break"
+                                  >
+                                    <span className="font-medium text-ink">
+                                      {getModuleDisplayName(module)}
+                                    </span>
+                                    : {actions.join(', ')}
+                                  </p>
+                                )
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })()}
+                      )
+                    })()}
+                </FormSection>
+
+                <div className="rounded-sm border border-divider bg-paper p-3">
+                  <p className="text-caption font-medium text-ink mb-1.5 no-break">
+                    {t('users.addCautionTitle')}
+                  </p>
+                  <ul className="text-caption text-ink-soft space-y-0.5">
+                    <li>· {t('users.addCaution1')}</li>
+                    <li>· {t('users.addCaution2')}</li>
+                    <li>· {t('users.addCaution3')}</li>
+                    <li>· {t('users.addCaution4')}</li>
+                  </ul>
                 </div>
               </div>
 
-              {/* 주의사항 안내 */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <div className="flex items-start space-x-2">
-                  <span className="text-yellow-600 mt-0.5">⚠️</span>
-                  <div className="text-sm text-yellow-800">
-                    <p className="font-medium mb-1">새 계정 생성 시 주의사항:</p>
-                    <ul className="space-y-1 text-xs">
-                      <li>• 사번은 고유값이어야 하며, 중복될 수 없습니다</li>
-                      <li>• 이메일 주소는 계정 식별 및 알림 전송에 사용됩니다</li>
-                      <li>• 계정 생성 후 초기 비밀번호는 별도로 설정해야 합니다</li>
-                      <li>• 역할에 따라 시스템 접근 권한이 결정됩니다</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-              </div>
-
-              {/* 모달 푸터 */}
-              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -2159,23 +2236,25 @@ function UsersPageContent() {
                       roleId: '',
                       shift: '',
                       phone: '',
-                      isActive: true
+                      isActive: true,
                     })
                   }}
-                  className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
                   disabled={isSubmitting}
+                  className="inline-flex min-h-touch items-center justify-center rounded-sm border border-divider bg-paper px-4 text-label font-medium text-ink transition-colors hover:bg-paper-warm disabled:opacity-40"
                 >
-                  취소
+                  {t('users.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="w-full sm:w-auto px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center justify-center"
                   disabled={isSubmitting}
+                  className="inline-flex min-h-touch items-center justify-center gap-1.5 rounded-sm bg-gauge-cobalt px-4 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong disabled:opacity-40"
                 >
-                  {isSubmitting && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  {isSubmitting ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-paper" />
+                  ) : (
+                    <UserPlus className="h-4 w-4" />
                   )}
-                  {isSubmitting ? '생성 중...' : '👤 사용자 생성'}
+                  {isSubmitting ? t('users.creating') : t('users.createUser')}
                 </button>
               </div>
             </form>
@@ -2183,192 +2262,188 @@ function UsersPageContent() {
         </div>
       )}
 
-      {/* 권한 편집 모달 */}
+      {/* === 권한 편집 모달 === */}
       {showPermissionModal && selectedUserForPermission && (
-        <div className="mobile-modal-container" onClick={() => !isSubmitting && setShowPermissionModal(false)}>
-          <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
-            {/* 모달 헤더 */}
+        <div
+          className="mobile-modal-container"
+          onClick={() => !isSubmitting && setShowPermissionModal(false)}
+        >
+          <div
+            className="mobile-modal-content md:max-w-4xl"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="mobile-modal-header">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span className="text-lg">🔐</span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">사용자 권한 편집</h3>
-                  <p className="text-sm text-gray-500">{selectedUserForPermission.name}의 모듈별 접근 권한 설정</p>
-                </div>
-              </div>
+              <h3 className="text-title font-semibold text-ink no-break">
+                {t('users.permissionEditTitle')}
+                <span className="mx-2 text-ink-mute">·</span>
+                <NoBreak>{selectedUserForPermission.name}</NoBreak>
+              </h3>
               <button
+                type="button"
                 onClick={() => {
                   setShowPermissionModal(false)
                   setSelectedUserForPermission(null)
                   setPermissionFormData({})
                 }}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                aria-label={t('users.close')}
                 disabled={isSubmitting}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-sm text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink disabled:opacity-40"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* 모달 내용 */}
             <form onSubmit={handleSavePermissions} className="flex flex-col flex-1 overflow-hidden">
-              <div className="mobile-modal-body space-y-6">
-              {/* 사용자 정보 요약 */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-lg font-bold text-blue-600">
-                      {selectedUserForPermission.name.charAt(0)}
+              <div className="mobile-modal-body space-y-4">
+                {/* 사용자 요약 */}
+                <div className="rounded-sm border border-divider bg-paper p-3">
+                  <p className="text-base font-medium text-ink no-break">
+                    <NoBreak>{selectedUserForPermission.name}</NoBreak>
+                  </p>
+                  <p className="text-caption text-ink-soft no-break">
+                    {selectedUserForPermission.department} · {selectedUserForPermission.position}
+                    <span className="mx-1.5 text-ink-mute">·</span>
+                    {t('users.currentPermissionLevel')}:{' '}
+                    <span className="font-medium text-ink">
+                      {getUserPermissionLevel(selectedUserForPermission)}
                     </span>
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-900">{selectedUserForPermission.name}</h4>
-                    <p className="text-sm text-gray-600">
-                      {selectedUserForPermission.department} • {selectedUserForPermission.position} • 
-                      현재 권한 레벨: <span className="font-medium">{getUserPermissionLevel(selectedUserForPermission)}</span>
-                    </p>
-                  </div>
+                  </p>
                 </div>
-              </div>
 
-              {/* 권한 매트릭스 */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-lg font-semibold text-gray-900">모듈별 권한 설정</h4>
-                  <div className="text-sm text-gray-500">
-                    체크박스를 통해 각 모듈의 작업 권한을 개별적으로 설정할 수 있습니다
+                {/* 권한 매트릭스 */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <h4 className="text-title font-semibold text-ink no-break">
+                      {t('users.moduleSettingsTitle')}
+                    </h4>
+                    <p className="text-caption text-ink-soft">{t('users.moduleSettingsHint')}</p>
                   </div>
-                </div>
-                
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
-                          모듈
-                        </th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          생성 {getActionIcon('create')}
-                        </th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          조회 {getActionIcon('read')}
-                        </th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          수정 {getActionIcon('update')}
-                        </th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          삭제 {getActionIcon('delete')}
-                        </th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          관리 {getActionIcon('manage')}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {AVAILABLE_RESOURCES.map(module => (
-                        <tr key={module} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <span className="text-sm font-medium text-gray-900">
-                                {getModuleDisplayName(module)}
-                              </span>
-                            </div>
-                          </td>
-                          {['create', 'read', 'update', 'delete', 'manage'].map(action => (
-                            <td key={action} className="px-4 py-4 whitespace-nowrap text-center">
-                              <input
-                                type="checkbox"
-                                checked={(permissionFormData[module] || []).includes(action)}
-                                onChange={(e) => {
-                                  e.stopPropagation()
-                                  handlePermissionChange(module, action, e.target.checked)
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  const currentlyChecked = (permissionFormData[module] || []).includes(action)
-                                  handlePermissionChange(module, action, !currentlyChecked)
-                                }}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
-                                disabled={isSubmitting}
-                              />
-                            </td>
+
+                  <div className="rounded-sm border border-divider bg-paper overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full">
+                        <thead className="bg-paper-warm border-b border-divider">
+                          <tr>
+                            <th className="px-3 py-2.5 text-left text-label font-medium text-ink-soft no-break">
+                              {t('users.moduleColumn')}
+                            </th>
+                            {ACTION_KEYS.map(action => (
+                              <th
+                                key={action}
+                                className="px-3 py-2.5 text-center text-label font-medium text-ink-soft no-break"
+                              >
+                                <div className="inline-flex items-center gap-1">
+                                  <ActionIcon
+                                    action={action}
+                                    className={`h-3.5 w-3.5 ${actionTone(action)}`}
+                                  />
+                                  <span>{getActionDisplayName(action)}</span>
+                                </div>
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-divider">
+                          {AVAILABLE_RESOURCES.map(module => (
+                            <tr key={module} className="transition-colors hover:bg-paper-warm">
+                              <td className="px-3 py-2.5 text-base text-ink no-break">
+                                <NoBreak>{getModuleDisplayName(module)}</NoBreak>
+                              </td>
+                              {ACTION_KEYS.map(action => (
+                                <td key={action} className="px-3 py-2.5 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={(permissionFormData[module] || []).includes(action)}
+                                    onChange={e =>
+                                      handlePermissionChange(module, action, e.target.checked)
+                                    }
+                                    disabled={isSubmitting}
+                                    className="h-4 w-4 rounded-sm border-divider text-gauge-cobalt focus:ring-gauge-cobalt cursor-pointer disabled:opacity-40"
+                                  />
+                                </td>
+                              ))}
+                            </tr>
                           ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              {/* 권한 프리셋 (빠른 설정) */}
-              <div className="bg-blue-50 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-3">빠른 권한 설정</h4>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const allPermissions: any = {}
-                      AVAILABLE_RESOURCES.forEach(module => {
-                        allPermissions[module] = ['create', 'read', 'update', 'delete', 'manage']
-                      })
-                      setPermissionFormData(allPermissions)
-                    }}
-                    className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-md hover:bg-green-200"
-                    disabled={isSubmitting}
-                  >
-                    모든 권한 부여
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const readOnlyPermissions: any = {}
-                      AVAILABLE_RESOURCES.forEach(module => {
-                        readOnlyPermissions[module] = ['read']
-                      })
-                      setPermissionFormData(readOnlyPermissions)
-                    }}
-                    className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-md hover:bg-blue-200"
-                    disabled={isSubmitting}
-                  >
-                    읽기 전용
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const noPermissions: any = {}
-                      AVAILABLE_RESOURCES.forEach(module => {
-                        noPermissions[module] = []
-                      })
-                      setPermissionFormData(noPermissions)
-                    }}
-                    className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200"
-                    disabled={isSubmitting}
-                  >
-                    모든 권한 제거
-                  </button>
+                {/* 빠른 권한 설정 */}
+                <div className="rounded-sm border border-divider bg-paper p-3">
+                  <p className="text-label font-medium text-ink mb-2 no-break">
+                    {t('users.quickSetTitle')}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const all: PermissionFormState = {}
+                        AVAILABLE_RESOURCES.forEach(module => {
+                          all[module] = ['create', 'read', 'update', 'delete', 'manage']
+                        })
+                        setPermissionFormData(all)
+                      }}
+                      disabled={isSubmitting}
+                      className="inline-flex min-h-touch items-center rounded-sm border border-divider bg-paper-warm px-3 text-caption font-medium text-signal-go-strong transition-colors hover:bg-signal-go-soft disabled:opacity-40"
+                    >
+                      {t('users.grantAll')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const ro: PermissionFormState = {}
+                        AVAILABLE_RESOURCES.forEach(module => {
+                          ro[module] = ['read']
+                        })
+                        setPermissionFormData(ro)
+                      }}
+                      disabled={isSubmitting}
+                      className="inline-flex min-h-touch items-center rounded-sm border border-divider bg-paper-warm px-3 text-caption font-medium text-gauge-cobalt-strong transition-colors hover:bg-paper disabled:opacity-40"
+                    >
+                      {t('users.readOnlyOnly')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const none: PermissionFormState = {}
+                        AVAILABLE_RESOURCES.forEach(module => {
+                          none[module] = []
+                        })
+                        setPermissionFormData(none)
+                      }}
+                      disabled={isSubmitting}
+                      className="inline-flex min-h-touch items-center rounded-sm border border-divider bg-paper-warm px-3 text-caption font-medium text-ink-soft transition-colors hover:bg-paper disabled:opacity-40"
+                    >
+                      {t('users.revokeAll')}
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* 주의사항 */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <div className="flex items-start space-x-2">
-                  <span className="text-yellow-600 mt-0.5">⚠️</span>
-                  <div className="text-sm text-yellow-800">
-                    <p className="font-medium mb-1">권한 변경 시 주의사항:</p>
-                    <ul className="space-y-1 text-xs">
-                      <li>• 권한 변경은 즉시 적용되며, 사용자가 다음 로그인 시부터 반영됩니다</li>
-                      <li>• 관리 권한은 해당 모듈의 모든 기능에 대한 접근을 허용합니다</li>
-                      <li>• 시스템 관리자 권한 변경은 신중하게 검토하여 진행하세요</li>
-                      <li>• 권한 변경 내역은 시스템 로그에 기록됩니다</li>
-                    </ul>
+                {/* 주의사항 */}
+                <div className="rounded-sm border border-divider bg-paper p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle
+                      className="h-4 w-4 text-signal-watch-strong mt-0.5 flex-shrink-0"
+                      aria-hidden="true"
+                    />
+                    <div>
+                      <p className="text-caption font-medium text-ink mb-1 no-break">
+                        {t('users.permissionCautionTitle')}
+                      </p>
+                      <ul className="text-caption text-ink-soft space-y-0.5">
+                        <li>· {t('users.permissionCaution1')}</li>
+                        <li>· {t('users.permissionCaution2')}</li>
+                        <li>· {t('users.permissionCaution3')}</li>
+                        <li>· {t('users.permissionCaution4')}</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
-              </div>
 
-              {/* 모달 푸터 */}
-              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -2376,20 +2451,22 @@ function UsersPageContent() {
                     setSelectedUserForPermission(null)
                     setPermissionFormData({})
                   }}
-                  className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
                   disabled={isSubmitting}
+                  className="inline-flex min-h-touch items-center justify-center rounded-sm border border-divider bg-paper px-4 text-label font-medium text-ink transition-colors hover:bg-paper-warm disabled:opacity-40"
                 >
-                  취소
+                  {t('users.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="w-full sm:w-auto px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center"
                   disabled={isSubmitting}
+                  className="inline-flex min-h-touch items-center justify-center gap-1.5 rounded-sm bg-gauge-cobalt px-4 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong disabled:opacity-40"
                 >
-                  {isSubmitting && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  {isSubmitting ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-paper" />
+                  ) : (
+                    <Lock className="h-4 w-4" />
                   )}
-                  {isSubmitting ? '저장 중...' : '🔐 권한 업데이트'}
+                  {isSubmitting ? t('users.saving') : t('users.permissionUpdate')}
                 </button>
               </div>
             </form>
@@ -2397,163 +2474,198 @@ function UsersPageContent() {
         </div>
       )}
 
-      {/* 권한 템플릿 적용 모달 */}
+      {/* === 권한 템플릿 적용 모달 (MN2: 준비 중) === */}
       {showTemplateModal && selectedTemplate && (
-        <div className="mobile-modal-container" onClick={() => !isSubmitting && setShowTemplateModal(false)}>
-          <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
-            {/* 모달 헤더 */}
+        <div
+          className="mobile-modal-container"
+          onClick={() => !isSubmitting && setShowTemplateModal(false)}
+        >
+          <div
+            className="mobile-modal-content md:max-w-4xl"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="mobile-modal-header">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-lg">🎯</span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">권한 템플릿 적용</h3>
-                  <p className="text-sm text-gray-500">&quot;{selectedTemplate.name}&quot; 템플릿을 사용자에게 적용</p>
-                </div>
-              </div>
+              <h3 className="text-title font-semibold text-ink no-break">
+                {t('users.templateApplyTitle')}
+                <span className="mx-2 text-ink-mute">·</span>
+                <NoBreak>{selectedTemplate.name}</NoBreak>
+              </h3>
               <button
+                type="button"
                 onClick={() => {
                   setShowTemplateModal(false)
                   setSelectedTemplate(null)
                   setSelectedUsersForTemplate([])
                 }}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                aria-label={t('users.close')}
                 disabled={isSubmitting}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-sm text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink disabled:opacity-40"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* 모달 내용 */}
             <form onSubmit={handleApplyTemplateToUsers} className="flex flex-col flex-1 overflow-hidden">
-              <div className="mobile-modal-body space-y-6">
-              {/* 템플릿 정보 요약 */}
-              <div className="bg-green-50 rounded-lg p-4">
-                <div className="flex items-center space-x-4">
-                  <div className={`px-3 py-1 text-sm font-semibold rounded-full ${getRoleBadge(selectedTemplate.type)}`}>
-                    {getRoleName(selectedTemplate.type)}
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-900">{selectedTemplate.name}</h4>
-                    <p className="text-sm text-gray-600">{selectedTemplate.description}</p>
-                  </div>
-                </div>
-                
-                {/* 템플릿 권한 미리보기 */}
-                <div className="mt-3 p-3 bg-white rounded border">
-                  <h5 className="text-sm font-medium text-gray-900 mb-2">적용될 권한:</h5>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {Object.entries(selectedTemplate.permissions).map(([module, actions]) => (
-                      <div key={module} className="text-xs">
-                        <span className="font-medium">{getModuleDisplayName(module)}:</span>
-                        <div className="ml-2 text-gray-600">
-                          {actions.length > 0 ? actions.map((action: string) => getActionDisplayName(action)).join(', ') : '권한 없음'}
-                        </div>
-                      </div>
-                    ))}
+              <div className="mobile-modal-body space-y-4">
+                {/* MN2: 정직한 안내 */}
+                <div className="rounded-sm border border-divider bg-signal-watch-soft p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle
+                      className="h-4 w-4 text-signal-watch-strong mt-0.5 flex-shrink-0"
+                      aria-hidden="true"
+                    />
+                    <p className="text-caption text-ink no-break">
+                      {t('users.templateNotImplemented')}
+                    </p>
                   </div>
                 </div>
-              </div>
 
-              {/* 사용자 선택 */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-lg font-semibold text-gray-900">적용할 사용자 선택</h4>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedUsersForTemplate(filteredUsers.map(u => u.id))}
-                      className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-md hover:bg-blue-200"
-                      disabled={isSubmitting}
+                {/* 템플릿 미리보기 */}
+                <div className="rounded-sm border border-divider bg-paper p-3">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-sm px-2 py-0.5 text-caption font-medium no-break ${roleBadgeClass(selectedTemplate.type)}`}
                     >
-                      전체 선택
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedUsersForTemplate([])}
-                      className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200"
-                      disabled={isSubmitting}
-                    >
-                      선택 해제
-                    </button>
+                      {getRoleName(selectedTemplate.type)}
+                    </span>
+                    <p className="text-base font-medium text-ink no-break">
+                      <NoBreak>{selectedTemplate.name}</NoBreak>
+                    </p>
+                  </div>
+                  <p className="mt-1 text-caption text-ink-soft">{selectedTemplate.description}</p>
+
+                  <div className="mt-3 rounded-sm border border-divider bg-paper-warm p-3">
+                    <p className="text-caption font-medium text-ink mb-2 no-break">
+                      {t('users.templateApplyPermissions')}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                      {Object.entries(selectedTemplate.permissions).map(([module, actions]) => (
+                        <p key={module} className="text-caption text-ink-soft no-break">
+                          <span className="font-medium text-ink">
+                            {getModuleDisplayName(module)}
+                          </span>
+                          :{' '}
+                          {actions.length > 0
+                            ? actions.map((a: string) => getActionDisplayName(a)).join(', ')
+                            : t('users.templateNoPermission')}
+                        </p>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                
-                <div className="bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {filteredUsers.map(user => {
-                      const userRole = getUserRole(user.roleId)
-                      const isCurrentTemplate = user.roleId === selectedTemplate.id
-                      
-                      return (
-                        <label 
-                          key={user.id} 
-                          className={`flex items-center space-x-3 p-2 rounded border cursor-pointer transition-colors ${
-                            selectedUsersForTemplate.includes(user.id) 
-                              ? 'bg-blue-50 border-blue-200' 
-                              : 'bg-white border-gray-200 hover:bg-gray-50'
-                          } ${isCurrentTemplate ? 'opacity-50' : ''}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedUsersForTemplate.includes(user.id)}
-                            onChange={(e) => handleUserSelectionForTemplate(user.id, e.target.checked)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            disabled={isSubmitting || isCurrentTemplate}
-                          />
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            user.isActive ? 'bg-blue-100' : 'bg-gray-100'
-                          }`}>
-                            <span className={`text-sm font-bold ${
-                              user.isActive ? 'text-blue-600' : 'text-gray-400'
-                            }`}>
-                              {user.name.charAt(0)}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-gray-900 truncate">{user.name}</div>
-                            <div className="text-xs text-gray-500 truncate">
-                              {user.department} • {user.position}
-                              {isCurrentTemplate && <span className="ml-2 text-blue-600">(현재 템플릿)</span>}
+
+                {/* 사용자 선택 */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-title font-semibold text-ink no-break">
+                      {t('users.templateUserSelect')}
+                    </h4>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedUsersForTemplate(filteredUsers.map(u => u.id))
+                        }
+                        disabled={isSubmitting}
+                        className="inline-flex items-center rounded-sm border border-divider bg-paper px-2.5 py-1 text-caption font-medium text-gauge-cobalt-strong transition-colors hover:bg-paper-warm disabled:opacity-40"
+                      >
+                        {t('users.selectAll')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedUsersForTemplate([])}
+                        disabled={isSubmitting}
+                        className="inline-flex items-center rounded-sm border border-divider bg-paper px-2.5 py-1 text-caption font-medium text-ink-soft transition-colors hover:bg-paper-warm disabled:opacity-40"
+                      >
+                        {t('users.deselectAll')}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-sm border border-divider bg-paper-warm p-3 max-h-64 overflow-y-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {filteredUsers.map(user => {
+                        const userRole = getUserRole(user.roleId)
+                        const isCurrent = user.roleId === selectedTemplate.id
+                        const checked = selectedUsersForTemplate.includes(user.id)
+                        const rt = roleType(user.roleId, roles)
+                        return (
+                          <label
+                            key={user.id}
+                            className={`flex items-center gap-2 rounded-sm border px-2.5 py-2 cursor-pointer transition-colors ${
+                              checked
+                                ? 'border-gauge-cobalt bg-paper'
+                                : 'border-divider bg-paper hover:bg-paper-warm'
+                            } ${isCurrent ? 'opacity-50' : ''}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={e =>
+                                handleUserSelectionForTemplate(user.id, e.target.checked)
+                              }
+                              disabled={isSubmitting || isCurrent}
+                              className="h-4 w-4 rounded-sm border-divider text-gauge-cobalt focus:ring-gauge-cobalt"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-base font-medium text-ink truncate no-break">
+                                <NoBreak>{user.name}</NoBreak>
+                              </p>
+                              <p className="text-caption text-ink-soft truncate">
+                                {user.department} · {user.position}
+                                {isCurrent && (
+                                  <span className="ml-1 text-gauge-cobalt-strong">
+                                    {t('users.currentTemplate')}
+                                  </span>
+                                )}
+                              </p>
                             </div>
-                          </div>
-                          {userRole && (
-                            <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadge(userRole.type)}`}>
-                              {getRoleName(userRole.type)}
-                            </span>
-                          )}
-                        </label>
-                      )
-                    })}
+                            {userRole && (
+                              <span
+                                className={`inline-flex items-center rounded-sm px-2 py-0.5 text-caption font-medium no-break ${roleBadgeClass(rt)}`}
+                              >
+                                {getRoleName(userRole.type)}
+                              </span>
+                            )}
+                          </label>
+                        )
+                      })}
+                    </div>
                   </div>
+
+                  <p className="text-caption text-ink-soft tabular">
+                    {t('users.selectedUsersLabel')}{' '}
+                    <span className="font-medium text-ink">
+                      {selectedUsersForTemplate.length}
+                    </span>{' '}
+                    / {t('users.totalUsersLabel')}{' '}
+                    <span className="font-medium text-ink">{filteredUsers.length}</span>
+                  </p>
                 </div>
-                
-                <div className="text-sm text-gray-600">
-                  선택된 사용자: <span className="font-medium">{selectedUsersForTemplate.length}명</span> / 
-                  전체: <span className="font-medium">{filteredUsers.length}명</span>
+
+                {/* 주의사항 */}
+                <div className="rounded-sm border border-divider bg-paper p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle
+                      className="h-4 w-4 text-signal-watch-strong mt-0.5 flex-shrink-0"
+                      aria-hidden="true"
+                    />
+                    <div>
+                      <p className="text-caption font-medium text-ink mb-1 no-break">
+                        {t('users.templateCautionTitle')}
+                      </p>
+                      <ul className="text-caption text-ink-soft space-y-0.5">
+                        <li>· {t('users.templateCaution1')}</li>
+                        <li>· {t('users.templateCaution2')}</li>
+                        <li>· {t('users.templateCaution3')}</li>
+                        <li>· {t('users.templateCaution4')}</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* 주의사항 */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <div className="flex items-start space-x-2">
-                  <span className="text-yellow-600 mt-0.5">⚠️</span>
-                  <div className="text-sm text-yellow-800">
-                    <p className="font-medium mb-1">템플릿 적용 시 주의사항:</p>
-                    <ul className="space-y-1 text-xs">
-                      <li>• 선택된 사용자들의 기존 권한이 템플릿 권한으로 완전히 교체됩니다</li>
-                      <li>• 권한 변경은 사용자가 다음 로그인 시부터 반영됩니다</li>
-                      <li>• 현재 동일한 템플릿을 사용하는 사용자는 선택할 수 없습니다</li>
-                      <li>• 템플릿 적용 내역은 시스템 로그에 기록됩니다</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-              </div>
-
-              {/* 모달 푸터 */}
-              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -2561,20 +2673,19 @@ function UsersPageContent() {
                     setSelectedTemplate(null)
                     setSelectedUsersForTemplate([])
                   }}
-                  className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
                   disabled={isSubmitting}
+                  className="inline-flex min-h-touch items-center justify-center rounded-sm border border-divider bg-paper px-4 text-label font-medium text-ink transition-colors hover:bg-paper-warm disabled:opacity-40"
                 >
-                  취소
+                  {t('users.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="w-full sm:w-auto px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center justify-center"
-                  disabled={isSubmitting || selectedUsersForTemplate.length === 0}
+                  disabled
+                  className="inline-flex min-h-touch items-center justify-center gap-1.5 rounded-sm bg-gauge-cobalt px-4 text-label font-medium text-paper opacity-40 cursor-not-allowed"
                 >
-                  {isSubmitting && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  )}
-                  {isSubmitting ? '적용 중...' : `🎯 ${selectedUsersForTemplate.length}명에게 템플릿 적용`}
+                  <Target className="h-4 w-4" />
+                  {selectedUsersForTemplate.length}
+                  {t('users.userUnit')} {t('users.templateApplyButton')}
                 </button>
               </div>
             </form>
@@ -2582,7 +2693,152 @@ function UsersPageContent() {
         </div>
       )}
 
-      {/* 승인 모달 */}
+      {/* === 일괄 등록 모달 === */}
+      {showBulkUploadModal && (
+        <div
+          className="mobile-modal-container"
+          onClick={() => !isBulkUploading && handleCloseBulkUploadModal()}
+        >
+          <div
+            className="mobile-modal-content md:max-w-lg"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="mobile-modal-header">
+              <h3 className="text-title font-semibold text-ink no-break">{t('users.bulkTitle')}</h3>
+              <button
+                type="button"
+                onClick={handleCloseBulkUploadModal}
+                aria-label={t('users.close')}
+                disabled={isBulkUploading}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-sm text-ink-soft transition-colors hover:bg-paper-warm hover:text-ink disabled:opacity-40"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mobile-modal-body space-y-4">
+              {/* 템플릿 다운로드 */}
+              <div className="rounded-sm border border-divider bg-paper p-3">
+                <p className="text-caption text-ink-soft mb-2">{t('users.bulkTemplateHint')}</p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const { downloadUserTemplate } = await import(
+                      '../../../lib/utils/userExcelTemplate'
+                    )
+                    downloadUserTemplate()
+                  }}
+                  className="inline-flex min-h-touch items-center gap-1.5 rounded-sm border border-divider bg-paper-warm px-3 text-label font-medium text-gauge-cobalt-strong transition-colors hover:bg-paper"
+                >
+                  <Upload className="h-4 w-4" />
+                  {t('users.bulkTemplateDownload')}
+                </button>
+              </div>
+
+              {/* 파일 선택 */}
+              <div>
+                <label className="block text-label font-medium text-ink mb-1.5 no-break">
+                  {t('users.bulkFileLabel')}
+                </label>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={e => {
+                    setBulkUploadFile(e.target.files?.[0] || null)
+                    setBulkUploadResult(null)
+                    setBulkValidationErrors([])
+                  }}
+                  className="block w-full text-label text-ink-soft file:mr-3 file:min-h-touch file:rounded-sm file:border file:border-divider file:bg-paper-warm file:px-3 file:text-label file:font-medium file:text-gauge-cobalt-strong hover:file:bg-paper"
+                />
+              </div>
+
+              {/* 검증 에러 */}
+              {bulkValidationErrors.length > 0 && (
+                <div className="rounded-sm border border-divider bg-signal-stop-soft p-3 max-h-48 overflow-y-auto">
+                  <p className="text-caption font-medium text-signal-stop-strong mb-1.5 no-break">
+                    {t('users.bulkValidationErrors')}
+                  </p>
+                  <ul className="text-caption text-ink space-y-0.5">
+                    {bulkValidationErrors.map((error, i) => (
+                      <li key={i}>· {error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 업로드 결과 */}
+              {bulkUploadResult && (
+                <div className="space-y-2">
+                  {bulkUploadResult.success.length > 0 && (
+                    <div className="rounded-sm border border-divider bg-signal-go-soft p-3">
+                      <p className="text-caption font-medium text-signal-go-strong">
+                        {t('users.bulkSuccess')}: {bulkUploadResult.success.length}
+                        {t('users.userUnit')}
+                      </p>
+                    </div>
+                  )}
+                  {bulkUploadResult.duplicates.length > 0 && (
+                    <div className="rounded-sm border border-divider bg-signal-watch-soft p-3 max-h-32 overflow-y-auto">
+                      <p className="text-caption font-medium text-signal-watch-strong mb-1">
+                        {t('users.bulkDuplicate')}: {bulkUploadResult.duplicates.length}
+                      </p>
+                      <ul className="text-caption text-ink-soft">
+                        {bulkUploadResult.duplicates.map((d, i) => (
+                          <li key={i}>
+                            {t('users.bulkRowPrefix')} {d.row}: {d.name} ({d.field}: {d.value})
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {bulkUploadResult.failed.length > 0 && (
+                    <div className="rounded-sm border border-divider bg-signal-stop-soft p-3 max-h-32 overflow-y-auto">
+                      <p className="text-caption font-medium text-signal-stop-strong mb-1">
+                        {t('users.bulkFailed')}: {bulkUploadResult.failed.length}
+                      </p>
+                      <ul className="text-caption text-ink-soft">
+                        {bulkUploadResult.failed.map((f, i) => (
+                          <li key={i}>
+                            {t('users.bulkRowPrefix')} {f.row}: {f.name} - {f.reason}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleCloseBulkUploadModal}
+                disabled={isBulkUploading}
+                className="inline-flex min-h-touch items-center justify-center rounded-sm border border-divider bg-paper px-4 text-label font-medium text-ink transition-colors hover:bg-paper-warm disabled:opacity-40"
+              >
+                {t('users.close')}
+              </button>
+              {!bulkUploadResult && (
+                <button
+                  type="button"
+                  onClick={handleBulkUpload}
+                  disabled={!bulkUploadFile || isBulkUploading}
+                  className="inline-flex min-h-touch items-center justify-center gap-1.5 rounded-sm bg-gauge-cobalt px-4 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isBulkUploading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-paper" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  {isBulkUploading ? t('users.bulkUploading') : t('users.bulkSubmit')}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* === 승인 모달 === */}
       {confirmation.config && (
         <ConfirmationModal
           isOpen={confirmation.isOpen}
@@ -2592,121 +2848,182 @@ function UsersPageContent() {
           loading={confirmation.loading}
         />
       )}
+    </div>
+  )
+}
 
-      {/* 일괄 등록 모달 */}
-      {showBulkUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
-            <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h3 className="text-lg font-medium text-gray-900">사용자 Excel 일괄 등록</h3>
-              <button
-                onClick={handleCloseBulkUploadModal}
-                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-              >
-                &times;
-              </button>
-            </div>
+// ===== Sub components =====
 
-            <div className="px-6 py-4 space-y-4">
-              {/* 템플릿 다운로드 */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800 mb-2">
-                  먼저 템플릿을 다운로드하여 사용자 정보를 입력해주세요.
-                </p>
-                <button
-                  onClick={async () => { const { downloadUserTemplate } = await import('../../../lib/utils/userExcelTemplate'); downloadUserTemplate() }}
-                  className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-                >
-                  템플릿 다운로드
-                </button>
-              </div>
+interface StatCellProps {
+  label: string
+  value: string
+  unit?: string
+  tone?: 'go' | 'watch' | 'stop' | 'cobalt' | 'default'
+}
 
-              {/* 파일 업로드 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Excel 파일 선택
-                </label>
-                <input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(e) => {
-                    setBulkUploadFile(e.target.files?.[0] || null)
-                    setBulkUploadResult(null)
-                    setBulkValidationErrors([])
-                  }}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
-              </div>
+function StatCell({ label, value, unit, tone = 'default' }: StatCellProps) {
+  const valueColor =
+    tone === 'go'
+      ? 'text-signal-go-strong'
+      : tone === 'watch'
+        ? 'text-signal-watch-strong'
+        : tone === 'stop'
+          ? 'text-signal-stop-strong'
+          : tone === 'cobalt'
+            ? 'text-gauge-cobalt-strong'
+            : 'text-ink'
+  return (
+    <div className="px-4 py-4 sm:px-5 sm:py-5">
+      <p className="text-caption text-ink-soft no-break">{label}</p>
+      <div className="mt-1 flex items-baseline gap-1">
+        <p className={`text-headline font-semibold tabular ${valueColor}`}>{value}</p>
+        {unit && <p className="text-caption text-ink-soft no-break">{unit}</p>}
+      </div>
+    </div>
+  )
+}
 
-              {/* 검증 에러 표시 */}
-              {bulkValidationErrors.length > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-h-48 overflow-y-auto">
-                  <p className="text-sm font-medium text-red-800 mb-2">검증 오류:</p>
-                  <ul className="text-sm text-red-700 space-y-1">
-                    {bulkValidationErrors.map((error, i) => (
-                      <li key={i}>• {error}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+interface TabButtonProps {
+  active: boolean
+  onClick: () => void
+  icon: React.ReactNode
+  label: string
+  count: string
+}
 
-              {/* 업로드 결과 표시 */}
-              {bulkUploadResult && (
-                <div className="space-y-3">
-                  {bulkUploadResult.success.length > 0 && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <p className="text-sm font-medium text-green-800">
-                        성공: {bulkUploadResult.success.length}명
-                      </p>
-                    </div>
-                  )}
-                  {bulkUploadResult.duplicates.length > 0 && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 max-h-32 overflow-y-auto">
-                      <p className="text-sm font-medium text-yellow-800 mb-1">
-                        중복: {bulkUploadResult.duplicates.length}건
-                      </p>
-                      <ul className="text-xs text-yellow-700">
-                        {bulkUploadResult.duplicates.map((d, i) => (
-                          <li key={i}>행 {d.row}: {d.name} ({d.field}: {d.value})</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {bulkUploadResult.failed.length > 0 && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 max-h-32 overflow-y-auto">
-                      <p className="text-sm font-medium text-red-800 mb-1">
-                        실패: {bulkUploadResult.failed.length}건
-                      </p>
-                      <ul className="text-xs text-red-700">
-                        {bulkUploadResult.failed.map((f, i) => (
-                          <li key={i}>행 {f.row}: {f.name} - {f.reason}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+function TabButton({ active, onClick, icon, label, count }: TabButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex-1 inline-flex items-center justify-center gap-2 px-4 min-h-touch text-label font-medium border-b-2 transition-colors ${
+        active
+          ? 'border-gauge-cobalt text-gauge-cobalt-strong bg-paper'
+          : 'border-transparent text-ink-soft hover:text-ink hover:bg-paper'
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+      <span className="inline-flex items-center rounded-full border border-divider bg-paper px-2 py-0.5 text-caption text-ink-soft tabular">
+        {count}
+      </span>
+    </button>
+  )
+}
 
-            <div className="flex justify-end gap-3 px-6 py-4 border-t">
-              <button
-                onClick={handleCloseBulkUploadModal}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-              >
-                닫기
-              </button>
-              {!bulkUploadResult && (
-                <button
-                  onClick={handleBulkUpload}
-                  disabled={!bulkUploadFile || isBulkUploading}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isBulkUploading ? '업로드 중...' : '일괄 등록'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+interface FormFieldProps {
+  id: string
+  label: string
+  required?: boolean
+  children: React.ReactNode
+}
+
+function FormField({ id, label, required, children }: FormFieldProps) {
+  return (
+    <div>
+      <label htmlFor={id} className="block text-label font-medium text-ink mb-1.5 no-break">
+        {label}
+        {required && <span className="ml-1 text-signal-stop">*</span>}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+interface FormSectionProps {
+  icon: React.ReactNode
+  title: string
+  children: React.ReactNode
+}
+
+function FormSection({ icon, title, children }: FormSectionProps) {
+  return (
+    <section className="rounded-sm border border-divider bg-paper p-3">
+      <header className="flex items-center gap-1.5 mb-2.5">
+        <span className="inline-flex h-5 w-5 items-center justify-center text-gauge-cobalt-strong">
+          {icon}
+        </span>
+        <h4 className="text-label font-semibold text-ink no-break">{title}</h4>
+      </header>
+      {children}
+    </section>
+  )
+}
+
+function DetailSection({ icon, title, children }: FormSectionProps) {
+  return (
+    <section className="rounded-sm border border-divider bg-paper p-3">
+      <header className="flex items-center gap-1.5 mb-2.5">
+        <span className="inline-flex h-5 w-5 items-center justify-center text-gauge-cobalt-strong">
+          {icon}
+        </span>
+        <h4 className="text-label font-semibold text-ink no-break">{title}</h4>
+      </header>
+      {children}
+    </section>
+  )
+}
+
+interface DetailFieldProps {
+  label: string
+  value: string | null | undefined
+  tabular?: boolean
+}
+
+function DetailField({ label, value, tabular = false }: DetailFieldProps) {
+  return (
+    <div>
+      <p className="text-caption text-ink-soft no-break">{label}</p>
+      <p className={`mt-0.5 text-base text-ink ${tabular ? 'tabular' : ''}`}>{value || '—'}</p>
+    </div>
+  )
+}
+
+interface IconActionButtonProps {
+  onClick: () => void
+  label: string
+  icon: React.ReactNode
+  tone?: 'default' | 'danger'
+}
+
+function IconActionButton({ onClick, label, icon, tone = 'default' }: IconActionButtonProps) {
+  const colorClass =
+    tone === 'danger'
+      ? 'text-ink-soft hover:bg-signal-stop-soft hover:text-signal-stop-strong'
+      : 'text-ink-soft hover:bg-paper hover:text-ink'
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-sm transition-colors ${colorClass}`}
+    >
+      {icon}
+    </button>
+  )
+}
+
+interface EmptyFilterStateProps {
+  message: string
+  resetLabel: string
+  onReset: () => void
+  showReset: boolean
+}
+
+function EmptyFilterState({ message, resetLabel, onReset, showReset }: EmptyFilterStateProps) {
+  return (
+    <div className="rounded-md border border-divider bg-paper-warm px-4 py-12 text-center">
+      <Search className="mx-auto mb-2 h-6 w-6 text-ink-mute" aria-hidden="true" />
+      <p className="text-base text-ink-soft">{message}</p>
+      {showReset && (
+        <button
+          type="button"
+          onClick={onReset}
+          className="mt-2 inline-flex items-center text-label font-medium text-gauge-cobalt-strong transition-colors hover:underline"
+        >
+          {resetLabel}
+        </button>
       )}
     </div>
   )
