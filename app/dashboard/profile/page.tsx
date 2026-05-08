@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Info, Loader2 } from 'lucide-react'
 import { useAuth } from '../../../lib/hooks/useAuth'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { useToast } from '../../../components/shared/Toast'
@@ -28,28 +29,27 @@ export default function ProfilePage() {
   const { showSuccess, showError } = useToast()
   const supabase = createBrowserClient()
   const { t } = useTranslation()
-  
+
   const [profileData, setProfileData] = useState<ProfileFormData>({
     name: '',
     email: '',
     department: '',
     position: '',
     shift: '',
-    language: 'ko'
+    language: 'ko',
   })
-  
+
   const [passwordData, setPasswordData] = useState<PasswordFormData>({
     currentPassword: '',
     newPassword: '',
-    confirmPassword: ''
+    confirmPassword: '',
   })
-  
+
   const [loading, setLoading] = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile')
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // 사용자 정보 로드
   useEffect(() => {
     if (user) {
       setProfileData({
@@ -58,75 +58,54 @@ export default function ProfilePage() {
         department: user.department || '',
         position: user.position || '',
         shift: user.shift || '',
-        language: user.language || 'ko'
+        language: user.language || 'ko',
       })
     }
   }, [user])
 
-  // 프로필 유효성 검사
   const validateProfile = (data: ProfileFormData): Record<string, string> => {
-    const errors: Record<string, string> = {}
-
-    if (!data.name.trim()) {
-      errors.name = t('profile.nameRequired')
-    }
-
+    const errs: Record<string, string> = {}
+    if (!data.name.trim()) errs.name = t('profile.nameRequired')
     if (!data.email.trim()) {
-      errors.email = t('profile.emailRequired')
+      errs.email = t('profile.emailRequired')
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-      errors.email = t('profile.invalidEmail')
+      errs.email = t('profile.invalidEmail')
     }
-
-    return errors
+    return errs
   }
 
-  // 비밀번호 유효성 검사
   const validatePassword = (data: PasswordFormData): Record<string, string> => {
-    const errors: Record<string, string> = {}
-
-    if (!data.currentPassword) {
-      errors.currentPassword = t('profile.currentPasswordRequired')
-    }
-
+    const errs: Record<string, string> = {}
+    if (!data.currentPassword) errs.currentPassword = t('profile.currentPasswordRequired')
     if (!data.newPassword) {
-      errors.newPassword = t('profile.newPasswordRequired')
+      errs.newPassword = t('profile.newPasswordRequired')
     } else if (data.newPassword.length < 8) {
-      errors.newPassword = t('profile.passwordTooShort')
+      errs.newPassword = t('profile.passwordTooShort')
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(data.newPassword)) {
-      errors.newPassword = t('profile.passwordComplexity')
+      errs.newPassword = t('profile.passwordComplexity')
     }
-
     if (data.newPassword !== data.confirmPassword) {
-      errors.confirmPassword = t('profile.passwordMismatch')
+      errs.confirmPassword = t('profile.passwordMismatch')
     }
-
-    return errors
+    return errs
   }
 
-  // 프로필 업데이트
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     const validationErrors = validateProfile(profileData)
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return
     }
-
     setLoading(true)
     setErrors({})
-
     try {
       const response = await fetch('/api/profile', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(profileData)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileData),
       })
-
       const result = await response.json()
-
       if (!response.ok) {
         showError(t('profile.profileUpdateError'), result.error || t('profile.profileUpdateError'))
       } else {
@@ -141,45 +120,32 @@ export default function ProfilePage() {
     }
   }
 
-  // 비밀번호 변경
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     const validationErrors = validatePassword(passwordData)
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return
     }
-    
     setPasswordLoading(true)
     setErrors({})
-    
     try {
-      // 현재 비밀번호 확인
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user?.email || '',
-        password: passwordData.currentPassword
+        password: passwordData.currentPassword,
       })
-      
       if (signInError) {
         setErrors({ currentPassword: t('profile.currentPasswordIncorrect') })
         return
       }
-
-      // 새 비밀번호로 업데이트
       const { error } = await supabase.auth.updateUser({
-        password: passwordData.newPassword
+        password: passwordData.newPassword,
       })
-
       if (error) {
         showError(t('profile.passwordChangeError'), error.message)
       } else {
         showSuccess(t('common.success'), t('profile.passwordChangeSuccess'))
-        setPasswordData({
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
-        })
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
       }
     } catch (error) {
       clientLogger.error('비밀번호 변경 오류:', error)
@@ -191,114 +157,92 @@ export default function ProfilePage() {
 
   return (
     <PermissionGuard>
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">{t('profile.title')}</h1>
-            <p className="text-sm text-gray-600 mt-1">{t('profile.subtitle')}</p>
-          </div>
-          
-          {/* 탭 네비게이션 */}
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8 px-6">
-              <button
+      <div className="mx-auto max-w-4xl">
+        <div className="overflow-hidden rounded-md border border-divider bg-paper-warm">
+          {/* 탭 네비 — 사이드바 메뉴 + sticky 헤더가 페이지 타이틀을 운반하므로 본문 24px 헤딩+subtitle 제거 */}
+          <div className="border-b border-divider">
+            <nav className="-mb-px flex gap-2 px-4 sm:px-6">
+              <TabButton
+                active={activeTab === 'profile'}
                 onClick={() => setActiveTab('profile')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'profile'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {t('profile.personalInfo')}
-              </button>
-              <button
+                label={t('profile.personalInfo')}
+              />
+              <TabButton
+                active={activeTab === 'password'}
                 onClick={() => setActiveTab('password')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'password'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {t('profile.changePassword')}
-              </button>
+                label={t('profile.changePassword')}
+              />
             </nav>
           </div>
-          
-          <div className="p-6">
+
+          <div className="p-4 sm:p-6">
             {activeTab === 'profile' && (
               <form onSubmit={handleProfileSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('common.name')} *
-                    </label>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+                  <Field
+                    id="name"
+                    label={t('common.name')}
+                    required
+                    error={errors.name}
+                  >
                     <input
                       type="text"
                       id="name"
                       value={profileData.name}
                       onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.name ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      className={inputClass(!!errors.name)}
                       disabled={loading}
                     />
-                    {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('auth.email')} *
-                    </label>
+                  </Field>
+
+                  <Field
+                    id="email"
+                    label={t('auth.email')}
+                    required
+                    error={errors.email}
+                  >
                     <input
                       type="email"
                       id="email"
                       value={profileData.email}
                       onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.email ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      className={inputClass(!!errors.email)}
                       disabled={loading}
                     />
-                    {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('profile.department')}
-                    </label>
+                  </Field>
+
+                  <Field id="department" label={t('profile.department')}>
                     <input
                       type="text"
                       id="department"
                       value={profileData.department}
-                      onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) =>
+                        setProfileData({ ...profileData, department: e.target.value })
+                      }
+                      className={inputClass(false)}
                       disabled={loading}
                     />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('profile.position')}
-                    </label>
+                  </Field>
+
+                  <Field id="position" label={t('profile.position')}>
                     <input
                       type="text"
                       id="position"
                       value={profileData.position}
-                      onChange={(e) => setProfileData({ ...profileData, position: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) =>
+                        setProfileData({ ...profileData, position: e.target.value })
+                      }
+                      className={inputClass(false)}
                       disabled={loading}
                     />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="shift" className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('profile.shift')}
-                    </label>
+                  </Field>
+
+                  <Field id="shift" label={t('profile.shift')}>
                     <select
                       id="shift"
                       value={profileData.shift}
                       onChange={(e) => setProfileData({ ...profileData, shift: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={inputClass(false)}
                       disabled={loading}
                     >
                       <option value="">{t('profile.selectShift')}</option>
@@ -306,112 +250,103 @@ export default function ProfilePage() {
                       <option value="night">{t('profile.nightShift')}</option>
                       <option value="rotating">{t('profile.rotatingShift')}</option>
                     </select>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('profile.language')}
-                    </label>
+                  </Field>
+
+                  <Field id="language" label={t('profile.language')}>
                     <select
                       id="language"
                       value={profileData.language}
-                      onChange={(e) => setProfileData({ ...profileData, language: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) =>
+                        setProfileData({ ...profileData, language: e.target.value })
+                      }
+                      className={inputClass(false)}
                       disabled={loading}
                     >
                       <option value="ko">{t('profile.korean')}</option>
-                      <option value="en">{t('profile.english')}</option>
+                      <option value="vi">{t('profile.vietnamese')}</option>
                     </select>
-                  </div>
+                  </Field>
                 </div>
-                
+
                 <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
-                        {t('profile.updating')}
-                      </>
-                    ) : (
-                      t('profile.profileUpdate')
-                    )}
-                  </button>
+                  <PrimaryButton type="submit" disabled={loading} loading={loading}>
+                    {loading ? t('profile.updating') : t('profile.profileUpdate')}
+                  </PrimaryButton>
                 </div>
               </form>
             )}
-            
+
             {activeTab === 'password' && (
               <form onSubmit={handlePasswordSubmit} className="space-y-6">
                 <div className="max-w-md space-y-4">
-                  <div>
-                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('profile.currentPassword')} *
-                    </label>
+                  <Field
+                    id="currentPassword"
+                    label={t('profile.currentPassword')}
+                    required
+                    error={errors.currentPassword}
+                  >
                     <input
                       type="password"
                       id="currentPassword"
                       value={passwordData.currentPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.currentPassword ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      onChange={(e) =>
+                        setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                      }
+                      className={inputClass(!!errors.currentPassword)}
                       disabled={passwordLoading}
                     />
-                    {errors.currentPassword && <p className="text-red-500 text-sm mt-1">{errors.currentPassword}</p>}
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('profile.newPassword')} *
-                    </label>
+                  </Field>
+
+                  <Field
+                    id="newPassword"
+                    label={t('profile.newPassword')}
+                    required
+                    error={errors.newPassword}
+                  >
                     <input
                       type="password"
                       id="newPassword"
                       value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.newPassword ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      onChange={(e) =>
+                        setPasswordData({ ...passwordData, newPassword: e.target.value })
+                      }
+                      className={inputClass(!!errors.newPassword)}
                       disabled={passwordLoading}
                       placeholder={t('profile.passwordPlaceholder')}
                     />
-                    {errors.newPassword && <p className="text-red-500 text-sm mt-1">{errors.newPassword}</p>}
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('profile.confirmPassword')} *
-                    </label>
+                  </Field>
+
+                  <Field
+                    id="confirmPassword"
+                    label={t('profile.confirmPassword')}
+                    required
+                    error={errors.confirmPassword}
+                  >
                     <input
                       type="password"
                       id="confirmPassword"
                       value={passwordData.confirmPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      onChange={(e) =>
+                        setPasswordData({ ...passwordData, confirmPassword: e.target.value })
+                      }
+                      className={inputClass(!!errors.confirmPassword)}
                       disabled={passwordLoading}
                     />
-                    {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
-                  </div>
+                  </Field>
                 </div>
-                
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm text-blue-800">
-                        <strong>{t('profile.passwordRequirements')}</strong>
+
+                {/* 비밀번호 안내 — info 칩 */}
+                <div className="rounded-sm border border-divider bg-gauge-cobalt-soft p-3">
+                  <div className="flex gap-2">
+                    <Info
+                      className="mt-0.5 h-4 w-4 flex-shrink-0 text-gauge-cobalt-strong"
+                      aria-hidden="true"
+                    />
+                    <div className="text-caption">
+                      <p className="font-semibold text-gauge-cobalt-strong">
+                        {t('profile.passwordRequirements')}
                       </p>
-                      <ul className="text-sm text-blue-700 mt-1 list-disc list-inside">
+                      <ul className="mt-1 list-inside list-disc text-ink-soft">
                         <li>{t('profile.minLength')}</li>
                         <li>{t('profile.upperLower')}</li>
                         <li>{t('profile.includeNumber')}</li>
@@ -419,22 +354,15 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-end">
-                  <button
+                  <PrimaryButton
                     type="submit"
                     disabled={passwordLoading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    loading={passwordLoading}
                   >
-                    {passwordLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
-                        {t('profile.changing')}
-                      </>
-                    ) : (
-                      t('profile.changePassword')
-                    )}
-                  </button>
+                    {passwordLoading ? t('profile.changing') : t('profile.changePassword')}
+                  </PrimaryButton>
                 </div>
               </form>
             )}
@@ -442,5 +370,78 @@ export default function ProfilePage() {
         </div>
       </div>
     </PermissionGuard>
+  )
+}
+
+// === 서브 컴포넌트 ===
+
+function inputClass(hasError: boolean): string {
+  const base =
+    'w-full min-h-touch rounded-sm border bg-paper px-3 py-2 text-label text-ink focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60'
+  return hasError
+    ? `${base} border-signal-stop-strong focus:border-signal-stop-strong focus:ring-signal-stop-strong`
+    : `${base} border-divider focus:border-gauge-cobalt focus:ring-gauge-cobalt`
+}
+
+interface TabButtonProps {
+  active: boolean
+  onClick: () => void
+  label: string
+}
+
+function TabButton({ active, onClick, label }: TabButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        active
+          ? 'border-b-2 border-gauge-cobalt px-3 py-3 text-label font-semibold text-gauge-cobalt-strong transition-colors no-break'
+          : 'border-b-2 border-transparent px-3 py-3 text-label font-medium text-ink-soft transition-colors hover:border-divider hover:text-ink no-break'
+      }
+    >
+      {label}
+    </button>
+  )
+}
+
+interface FieldProps {
+  id: string
+  label: string
+  required?: boolean
+  error?: string
+  children: React.ReactNode
+}
+
+function Field({ id, label, required, error, children }: FieldProps) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1 block text-caption font-medium text-ink-soft">
+        {label}
+        {required && <span className="ml-0.5 text-signal-stop-strong">*</span>}
+      </label>
+      {children}
+      {error && <p className="mt-1 text-caption text-signal-stop-strong">{error}</p>}
+    </div>
+  )
+}
+
+interface PrimaryButtonProps {
+  type?: 'submit' | 'button'
+  disabled?: boolean
+  loading?: boolean
+  children: React.ReactNode
+}
+
+function PrimaryButton({ type = 'button', disabled, loading, children }: PrimaryButtonProps) {
+  return (
+    <button
+      type={type}
+      disabled={disabled}
+      className="inline-flex min-h-touch items-center gap-2 rounded-sm bg-gauge-cobalt px-4 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+      {children}
+    </button>
   )
 }
