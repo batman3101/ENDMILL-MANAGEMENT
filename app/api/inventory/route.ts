@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { logger } from '@/lib/utils/logger';
 import { createClient } from '@/lib/supabase/server';
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions';
+import { InventorySettings } from '@/lib/utils/settingsHelper';
 
 // 동적 라우트로 명시적 설정 (cookies 사용으로 인해 필요)
 export const dynamic = 'force-dynamic'
@@ -68,13 +69,16 @@ export async function GET(request: NextRequest) {
     // Supabase에서 재고 데이터 조회 (앤드밀 타입과 카테고리 정보 포함)
     const inventory = await serverSupabaseService.inventory.getAll({ factoryId: factoryId || undefined })
 
+    // 사용자 설정 기반 재고 상태 임계값 (settings.inventory.stockThresholds)
+    const stockThresholds = await InventorySettings.getStockThresholds()
+
     // 필터 적용
     let filteredInventory = inventory
 
     if (statusFilter) {
       filteredInventory = filteredInventory.filter(item => {
         // 재고 상태 계산
-        const status = getStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0)
+        const status = getStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0, stockThresholds)
         return status === statusFilter
       })
     }
@@ -88,7 +92,7 @@ export async function GET(request: NextRequest) {
 
     if (lowStock) {
       filteredInventory = filteredInventory.filter(item => {
-        const status = getStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0)
+        const status = getStockStatus(item.current_stock || 0, item.min_stock || 0, item.max_stock || 0, stockThresholds)
         return status === 'low' || status === 'critical'
       })
     }
@@ -376,9 +380,18 @@ export async function DELETE(request: NextRequest) {
 }
 
 // 재고 상태 계산 함수
-function getStockStatus(current: number, min: number, _max: number): 'sufficient' | 'low' | 'critical' {
-  if (current <= min) return 'critical';
-  if (current <= min * 1.5) return 'low';
+// thresholds: settings.inventory.stockThresholds — criticalPercent / lowPercent (%)
+// 사용자 설정에 따라 사용자별로 분류 강도가 달라짐 (기본 50% / 100%).
+function getStockStatus(
+  current: number,
+  min: number,
+  _max: number,
+  thresholds: { criticalPercent: number; lowPercent: number }
+): 'sufficient' | 'low' | 'critical' {
+  const criticalLine = min * (thresholds.criticalPercent / 100);
+  const lowLine = min * (thresholds.lowPercent / 100);
+  if (current <= criticalLine) return 'critical';
+  if (current <= lowLine) return 'low';
   return 'sufficient';
 }
 
