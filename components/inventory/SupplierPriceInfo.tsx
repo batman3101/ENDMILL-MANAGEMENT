@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Star } from 'lucide-react'
 import { clientLogger } from '@/lib/utils/logger'
 
 interface SupplierPriceInfoProps {
@@ -57,16 +58,16 @@ export default function SupplierPriceInfo({ endmillTypeId }: SupplierPriceInfoPr
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">{t('common.loading')}</span>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gauge-cobalt"></div>
+        <span className="ml-2 text-ink-soft">{t('common.loading')}</span>
       </div>
     )
   }
 
   if (supplierPrices.length === 0) {
     return (
-      <div className="text-center p-4 bg-gray-50 rounded-lg">
-        <p className="text-gray-500">{t('endmill.noSupplierInfo')}</p>
+      <div className="text-center p-4 bg-paper-warm rounded-md">
+        <p className="text-ink-mute">{t('endmill.noSupplierInfo')}</p>
       </div>
     )
   }
@@ -76,28 +77,29 @@ export default function SupplierPriceInfo({ endmillTypeId }: SupplierPriceInfoPr
       {supplierPrices.map((item) => (
         <div
           key={item.id}
-          className={`flex justify-between items-center p-3 rounded-lg border ${
-            item.is_preferred ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+          className={`flex justify-between items-center p-3 rounded-md border ${
+            item.is_preferred ? 'bg-gauge-cobalt-soft border-divider' : 'bg-paper-warm border-divider'
           }`}
         >
           <div>
             <div className="flex items-center">
-              <span className="font-medium text-gray-900">{item.supplier.name}</span>
+              <span className="font-medium text-ink">{item.supplier.name}</span>
               {item.is_preferred && (
-                <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                <span className="ml-2 px-2 py-1 text-caption bg-gauge-cobalt-soft text-gauge-cobalt-strong rounded-full">
                   {t('endmill.preferred')}
                 </span>
               )}
-              <span className="ml-2 text-xs text-gray-500">
-                ⭐ {item.quality_rating || item.supplier.quality_rating}/10
+              <span className="ml-2 text-caption text-ink-mute inline-flex items-center gap-1">
+                <Star className="w-3 h-3 text-signal-watch-strong fill-signal-watch-strong" aria-hidden="true" />
+                {item.quality_rating || item.supplier.quality_rating}/10
               </span>
             </div>
-            <div className="text-sm text-gray-500 mt-1">
+            <div className="text-label text-ink-soft mt-1">
               {t('endmill.stockLabel')}: {item.current_stock}{t('endmill.pieces')} | {t('endmill.minOrder')}: {item.min_order_quantity}{t('endmill.pieces')} |
               {t('endmill.leadTimeDays')}: {item.lead_time_days}{t('endmill.days')}
             </div>
           </div>
-          <span className="font-mono text-gray-900 font-bold">
+          <span className="font-mono text-ink font-bold">
             {item.unit_price.toLocaleString()} VND
           </span>
         </div>

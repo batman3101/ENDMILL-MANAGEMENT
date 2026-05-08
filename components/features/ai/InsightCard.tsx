@@ -35,11 +35,11 @@ interface InsightCardProps {
   className?: string
 }
 
-// 우선순위별 색상
+// 우선순위별 색상 (시맨틱 시그널 토큰)
 const priorityColors = {
-  high: 'bg-red-100 text-red-800 border-red-200',
-  medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  low: 'bg-blue-100 text-blue-800 border-blue-200',
+  high: 'bg-signal-stop-soft text-signal-stop-strong border-divider',
+  medium: 'bg-signal-watch-soft text-signal-watch-strong border-divider',
+  low: 'bg-gauge-cobalt-soft text-gauge-cobalt-strong border-divider',
 }
 
 // 우선순위별 아이콘
@@ -49,13 +49,14 @@ const priorityIcons = {
   low: Info,
 }
 
-// 카테고리별 색상
+// 카테고리별 색상 (시맨틱 시그널 토큰)
+// 각 카테고리는 의미적으로 가까운 시그널/액션 토큰에 매핑
 const categoryColors: Record<string, string> = {
-  파손: 'bg-red-50 text-red-700 border-red-200',
-  재고: 'bg-orange-50 text-orange-700 border-orange-200',
-  비용: 'bg-green-50 text-green-700 border-green-200',
-  효율성: 'bg-blue-50 text-blue-700 border-blue-200',
-  유지보수: 'bg-purple-50 text-purple-700 border-purple-200',
+  파손: 'bg-signal-stop-soft text-signal-stop-strong border-divider',
+  재고: 'bg-signal-watch-soft text-signal-watch-strong border-divider',
+  비용: 'bg-signal-go-soft text-signal-go-strong border-divider',
+  효율성: 'bg-gauge-cobalt-soft text-gauge-cobalt-strong border-divider',
+  유지보수: 'bg-paper-warm text-ink-soft border-divider',
 }
 
 export function InsightCard({
@@ -90,7 +91,7 @@ export function InsightCard({
                 variant="outline"
                 className={cn(
                   categoryColors[insight.category] ||
-                    'bg-gray-50 text-gray-700 border-gray-200'
+                    'bg-paper-warm text-ink-soft border-divider'
                 )}
               >
                 {t(`aiInsights.${insight.category}`) || insight.category}

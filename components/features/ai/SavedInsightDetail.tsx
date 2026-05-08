@@ -127,13 +127,13 @@ export function SavedInsightDetail({
     return (
       <Card className={className}>
         <CardHeader>
-          <div className="h-8 bg-gray-200 rounded w-3/4 animate-pulse" />
+          <div className="h-8 bg-paper-warm rounded w-3/4 animate-pulse" />
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="h-4 bg-gray-200 rounded animate-pulse" />
-            <div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse" />
-            <div className="h-4 bg-gray-200 rounded w-4/6 animate-pulse" />
+            <div className="h-4 bg-paper-warm rounded animate-pulse" />
+            <div className="h-4 bg-paper-warm rounded w-5/6 animate-pulse" />
+            <div className="h-4 bg-paper-warm rounded w-4/6 animate-pulse" />
           </div>
         </CardContent>
       </Card>
@@ -305,7 +305,7 @@ export function SavedInsightDetail({
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-signal-stop-strong hover:opacity-90 text-paper"
             >
               삭제
             </AlertDialogAction>

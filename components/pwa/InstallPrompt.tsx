@@ -78,16 +78,17 @@ export function InstallPrompt() {
 
   return (
     <div className="fixed bottom-20 left-4 right-4 md:bottom-4 md:left-auto md:right-4 md:w-96 z-40 animate-slide-up">
-      <div className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
+      <div className="bg-paper rounded-md shadow-hover-lift border border-divider overflow-hidden">
         {/* 헤더 */}
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-white">
+        <div className="bg-gauge-cobalt px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-paper">
             <Smartphone className="w-5 h-5" />
             <span className="font-semibold">{t('pwa.installApp')}</span>
           </div>
           <button
             onClick={handleDismiss}
-            className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
+            className="text-paper/80 hover:text-paper p-1 rounded-full hover:bg-paper/10 transition-colors"
+            aria-label="닫기"
           >
             <X className="w-5 h-5" />
           </button>
@@ -95,13 +96,13 @@ export function InstallPrompt() {
 
         {/* 본문 */}
         <div className="p-4">
-          <p className="text-gray-700 mb-4">
+          <p className="text-ink mb-4">
             {t('pwa.installDescription')}
           </p>
 
           {isIOS ? (
             // iOS 설치 안내
-            <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
+            <div className="bg-paper-warm rounded-md p-3 text-label text-ink-soft">
               <p className="font-medium mb-2">{t('pwa.iosInstallTitle')}</p>
               <ol className="space-y-1 list-decimal list-inside">
                 <li>{t('pwa.iosStep1')}</li>
@@ -113,14 +114,14 @@ export function InstallPrompt() {
             // Android/Desktop 설치 버튼
             <button
               onClick={handleInstall}
-              className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors font-medium"
+              className="w-full flex items-center justify-center gap-2 bg-gauge-cobalt text-paper py-3 px-4 rounded-md hover:bg-gauge-cobalt-strong transition-colors font-medium min-h-touch"
             >
               <Download className="w-5 h-5" />
               {t('pwa.installButton')}
             </button>
           )}
 
-          <p className="text-xs text-gray-400 mt-3 text-center">
+          <p className="text-caption text-ink-mute mt-3 text-center">
             {t('pwa.offlineAvailable')}
           </p>
         </div>

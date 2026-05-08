@@ -116,13 +116,16 @@ export default function AddSupplierPriceModal({
     }
   }
 
+  const inputClass =
+    'w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink'
+
   return (
     <div className="mobile-modal-container" onClick={onClose}>
       <div className="mobile-modal-content md:max-w-lg" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header flex-col items-start">
-          <h3 className="text-lg font-medium">{t('endmill.addSupplierPriceTitle')}</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            {t('endmill.endmillCodeLabel')}: <span className="font-medium">{endmillCode}</span>
+          <h3 className="text-title font-medium text-ink">{t('endmill.addSupplierPriceTitle')}</h3>
+          <p className="text-label text-ink-soft mt-1">
+            {t('endmill.endmillCodeLabel')}: <span className="font-medium text-ink">{endmillCode}</span>
           </p>
         </div>
 
@@ -130,16 +133,16 @@ export default function AddSupplierPriceModal({
           <div className="mobile-modal-body space-y-4">
           {/* 공급업체 선택 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('endmill.supplierRequired')} <span className="text-red-500">{t('endmill.required')}</span>
+            <label className="block text-label font-medium text-ink mb-1">
+              {t('endmill.supplierRequired')} <span className="text-signal-stop-strong">{t('endmill.required')}</span>
             </label>
             {loadingSuppliers ? (
-              <div className="text-sm text-gray-500">{t('endmill.loadingSuppliers')}</div>
+              <div className="text-label text-ink-mute">{t('endmill.loadingSuppliers')}</div>
             ) : suppliers.length > 0 ? (
               <select
                 value={selectedSupplierId}
                 onChange={(e) => setSelectedSupplierId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
                 required
               >
                 <option value="">{t('endmill.selectSupplierOption')}</option>
@@ -150,20 +153,20 @@ export default function AddSupplierPriceModal({
                 ))}
               </select>
             ) : (
-              <div className="text-sm text-gray-500">{t('endmill.noSuppliersAvailable')}</div>
+              <div className="text-label text-ink-mute">{t('endmill.noSuppliersAvailable')}</div>
             )}
           </div>
 
           {/* 단가 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('endmill.unitPriceRequired')} <span className="text-red-500">{t('endmill.required')}</span>
+            <label className="block text-label font-medium text-ink mb-1">
+              {t('endmill.unitPriceRequired')} <span className="text-signal-stop-strong">{t('endmill.required')}</span>
             </label>
             <input
               type="number"
               value={unitPrice}
               onChange={(e) => setUnitPrice(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder={t('endmill.unitPricePlaceholder')}
               required
               min="1"
@@ -172,14 +175,14 @@ export default function AddSupplierPriceModal({
 
           {/* 최소 주문 수량 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-label font-medium text-ink mb-1">
               {t('endmill.minOrderQuantity')}
             </label>
             <input
               type="number"
               value={minOrderQuantity}
               onChange={(e) => setMinOrderQuantity(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder={t('endmill.minOrderPlaceholder')}
               min="1"
             />
@@ -187,14 +190,14 @@ export default function AddSupplierPriceModal({
 
           {/* 납기일 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-label font-medium text-ink mb-1">
               {t('endmill.leadTimeDays')}
             </label>
             <input
               type="number"
               value={leadTimeDays}
               onChange={(e) => setLeadTimeDays(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder={t('endmill.leadTimePlaceholder')}
               min="1"
             />
@@ -202,14 +205,14 @@ export default function AddSupplierPriceModal({
 
           {/* 현재 재고 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-label font-medium text-ink mb-1">
               {t('endmill.currentStockLabel')}
             </label>
             <input
               type="number"
               value={currentStock}
               onChange={(e) => setCurrentStock(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder={t('endmill.currentStockPlaceholder')}
               min="0"
             />
@@ -217,19 +220,19 @@ export default function AddSupplierPriceModal({
 
           {/* 품질등급 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-label font-medium text-ink mb-1">
               {t('endmill.qualityRatingLabel')}
             </label>
             <input
               type="number"
               value={qualityRating}
               onChange={(e) => setQualityRating(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder={t('endmill.qualityRatingPlaceholder')}
               min="1"
               max="10"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-caption text-ink-mute mt-1">
               {t('endmill.qualityRatingHelp')}
             </p>
           </div>
@@ -241,9 +244,9 @@ export default function AddSupplierPriceModal({
               id="isPreferred"
               checked={isPreferred}
               onChange={(e) => setIsPreferred(e.target.checked)}
-              className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="mr-2 rounded border-divider text-gauge-cobalt focus:ring-gauge-cobalt"
             />
-            <label htmlFor="isPreferred" className="text-sm text-gray-700">
+            <label htmlFor="isPreferred" className="text-label text-ink">
               {t('endmill.setAsPreferred')}
             </label>
           </div>
@@ -255,14 +258,14 @@ export default function AddSupplierPriceModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="w-full sm:w-auto px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2 text-ink bg-paper-warm border border-divider rounded-md hover:bg-paper disabled:opacity-50 min-h-touch"
             >
               {t('endmill.cancelButton')}
             </button>
             <button
               type="submit"
               disabled={loading || !selectedSupplierId || !unitPrice}
-              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2 bg-gauge-cobalt text-paper rounded-md hover:bg-gauge-cobalt-strong disabled:opacity-50 min-h-touch"
             >
               {loading ? t('endmill.submitting') : t('endmill.submitButton')}
             </button>

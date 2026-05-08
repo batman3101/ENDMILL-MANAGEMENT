@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { X, FolderOpen, Upload, Download, FileText, AlertTriangle, CheckCircle2, XCircle, RotateCcw, Sparkles, Info } from 'lucide-react'
 import ExcelJS from 'exceljs'
 import { CAMSheet, EndmillInfo, useCAMSheets } from '../../lib/hooks/useCAMSheets'
 import { downloadExcelTemplate, validateExcelData } from '../../lib/utils/excelTemplate'
@@ -278,22 +279,26 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
     <div className="mobile-modal-container" onClick={onClose}>
       <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header">
-          <h3 className="text-lg font-medium">📁 {t('camSheets.excelBulkUploadTitle')}</h3>
+          <h3 className="text-title font-medium text-ink inline-flex items-center gap-2">
+            <FolderOpen className="w-5 h-5" aria-hidden="true" />
+            {t('camSheets.excelBulkUploadTitle')}
+          </h3>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+            className="p-2 text-ink-mute hover:text-ink-soft hover:bg-paper-warm rounded-full"
+            aria-label="닫기"
           >
-            ✕
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
         <div className="mobile-modal-body">
           {/* 파일 업로드 영역 */}
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              isDragOver 
-                ? 'border-blue-400 bg-blue-50' 
-                : 'border-gray-300 hover:border-gray-400'
+            className={`border-2 border-dashed rounded-md p-8 text-center transition-colors ${
+              isDragOver
+                ? 'border-gauge-cobalt bg-gauge-cobalt-soft'
+                : 'border-divider hover:border-ink-mute'
             }`}
             onDrop={handleDrop}
             onDragOver={(e) => {
@@ -303,28 +308,26 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
             onDragLeave={() => setIsDragOver(false)}
           >
             <div className="mb-4">
-              <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <Upload className="mx-auto h-12 w-12 text-ink-mute" aria-hidden="true" />
             </div>
-            
+
             <div className="mb-4">
-              <p className="text-lg font-medium text-gray-900">
+              <p className="text-title font-medium text-ink">
                 {t('camSheets.dragDropUpload')}
               </p>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-label text-ink-mute mt-2">
                 {t('camSheets.fileSupport')}
               </p>
             </div>
 
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="px-4 py-2 bg-gauge-cobalt text-paper rounded-md hover:bg-gauge-cobalt-strong min-h-touch"
               disabled={isProcessing}
             >
               {isProcessing ? t('camSheets.processing') : t('camSheets.selectFile')}
             </button>
-            
+
             <input
               ref={fileInputRef}
               type="file"
@@ -335,27 +338,31 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
           </div>
 
           {/* 예상 데이터 형식 가이드 */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <div className="mt-6 p-4 bg-gauge-cobalt-soft rounded-md">
             <div className="flex justify-between items-center mb-2">
-              <h4 className="font-medium text-blue-900">📋 {t('camSheets.expectedDataFormat')}</h4>
+              <h4 className="font-medium text-gauge-cobalt-strong inline-flex items-center gap-2">
+                <FileText className="w-4 h-4" aria-hidden="true" />
+                {t('camSheets.expectedDataFormat')}
+              </h4>
               <button
                 onClick={downloadExcelTemplate}
-                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                className="inline-flex items-center gap-1 px-3 py-1 bg-gauge-cobalt text-paper text-label rounded-md hover:bg-gauge-cobalt-strong"
               >
-                📥 {t('camSheets.downloadTemplate')}
+                <Download className="w-3 h-3" aria-hidden="true" />
+                {t('camSheets.downloadTemplate')}
               </button>
             </div>
-            <div className="text-sm text-blue-800">
+            <div className="text-label text-gauge-cobalt-strong">
               <p className="mb-2">{t('camSheets.excelColumnsInfo')}</p>
               <div className="grid grid-cols-2 gap-2">
-                <div><code className="bg-blue-200 px-1 rounded">Model</code> - {t('camSheets.modelName')}</div>
-                <div><code className="bg-blue-200 px-1 rounded">Process</code> - {t('camSheets.processName')}</div>
-                <div><code className="bg-blue-200 px-1 rounded">CAM Version</code> - {t('camSheets.camVersionName')}</div>
-                <div><code className="bg-blue-200 px-1 rounded">T Number</code> - {t('camSheets.tNumberName')}</div>
-                <div><code className="bg-blue-200 px-1 rounded">Endmill Code</code> - {t('camSheets.endmillCodeName')}</div>
-                <div><code className="bg-blue-200 px-1 rounded">Category</code> - {t('camSheets.endmillTypeName')}</div>
-                <div><code className="bg-blue-200 px-1 rounded">Endmill Name</code> - {t('camSheets.specificationsName')}</div>
-                <div><code className="bg-blue-200 px-1 rounded">Tool Life</code> - {t('camSheets.toolLifeName')}</div>
+                <div><code className="bg-gauge-cobalt/20 px-1 rounded-sm">Model</code> - {t('camSheets.modelName')}</div>
+                <div><code className="bg-gauge-cobalt/20 px-1 rounded-sm">Process</code> - {t('camSheets.processName')}</div>
+                <div><code className="bg-gauge-cobalt/20 px-1 rounded-sm">CAM Version</code> - {t('camSheets.camVersionName')}</div>
+                <div><code className="bg-gauge-cobalt/20 px-1 rounded-sm">T Number</code> - {t('camSheets.tNumberName')}</div>
+                <div><code className="bg-gauge-cobalt/20 px-1 rounded-sm">Endmill Code</code> - {t('camSheets.endmillCodeName')}</div>
+                <div><code className="bg-gauge-cobalt/20 px-1 rounded-sm">Category</code> - {t('camSheets.endmillTypeName')}</div>
+                <div><code className="bg-gauge-cobalt/20 px-1 rounded-sm">Endmill Name</code> - {t('camSheets.specificationsName')}</div>
+                <div><code className="bg-gauge-cobalt/20 px-1 rounded-sm">Tool Life</code> - {t('camSheets.toolLifeName')}</div>
               </div>
             </div>
           </div>
@@ -364,9 +371,12 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
           {validationResult && (
             <div className="mt-6">
               {validationResult.errors.length > 0 && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
-                  <h4 className="font-medium text-red-900 mb-2">❌ {t('camSheets.errors')} ({validationResult.errors.length}{t('camSheets.items')})</h4>
-                  <ul className="text-sm text-red-800 space-y-1">
+                <div className="p-4 bg-signal-stop-soft border border-divider rounded-md mb-4">
+                  <h4 className="font-medium text-signal-stop-strong mb-2 inline-flex items-center gap-2">
+                    <XCircle className="w-4 h-4" aria-hidden="true" />
+                    {t('camSheets.errors')} ({validationResult.errors.length}{t('camSheets.items')})
+                  </h4>
+                  <ul className="text-label text-signal-stop-strong space-y-1">
                     {validationResult.errors.map((error, index) => (
                       <li key={index}>• {error}</li>
                     ))}
@@ -375,9 +385,12 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
               )}
 
               {validationResult.warnings.length > 0 && (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
-                  <h4 className="font-medium text-yellow-900 mb-2">⚠️ {t('camSheets.warnings')} ({validationResult.warnings.length}{t('camSheets.items')})</h4>
-                  <ul className="text-sm text-yellow-800 space-y-1">
+                <div className="p-4 bg-signal-watch-soft border border-divider rounded-md mb-4">
+                  <h4 className="font-medium text-signal-watch-strong mb-2 inline-flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+                    {t('camSheets.warnings')} ({validationResult.warnings.length}{t('camSheets.items')})
+                  </h4>
+                  <ul className="text-label text-signal-watch-strong space-y-1">
                     {validationResult.warnings.map((warning, index) => (
                       <li key={index}>• {warning}</li>
                     ))}
@@ -386,9 +399,12 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
               )}
 
               {validationResult.isValid && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg mb-4">
-                  <h4 className="font-medium text-green-900">✅ {t('camSheets.validationPassed')}</h4>
-                  <p className="text-sm text-green-800">{t('camSheets.validationPassedMessage')}</p>
+                <div className="p-4 bg-signal-go-soft border border-divider rounded-md mb-4">
+                  <h4 className="font-medium text-signal-go-strong inline-flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                    {t('camSheets.validationPassed')}
+                  </h4>
+                  <p className="text-label text-signal-go-strong">{t('camSheets.validationPassedMessage')}</p>
                 </div>
               )}
             </div>
@@ -398,14 +414,15 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
           {duplicateInfo && (
             <div className="mt-6">
               {duplicateInfo.duplicates.length > 0 && (
-                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg mb-4">
-                  <h4 className="font-medium text-orange-900 mb-2">
-                    🔄 {t('camSheets.duplicateFound')} ({duplicateInfo.duplicates.length}{t('camSheets.items')})
+                <div className="p-4 bg-signal-watch-soft border border-divider rounded-md mb-4">
+                  <h4 className="font-medium text-signal-watch-strong mb-2 inline-flex items-center gap-2">
+                    <RotateCcw className="w-4 h-4" aria-hidden="true" />
+                    {t('camSheets.duplicateFound')} ({duplicateInfo.duplicates.length}{t('camSheets.items')})
                   </h4>
-                  <p className="text-sm text-orange-800 mb-2">
+                  <p className="text-label text-signal-watch-strong mb-2">
                     {t('camSheets.duplicateExcluded')}
                   </p>
-                  <ul className="text-sm text-orange-800 space-y-1">
+                  <ul className="text-label text-signal-watch-strong space-y-1">
                     {duplicateInfo.duplicates.map((duplicate, index) => (
                       <li key={index}>• {duplicate}</li>
                     ))}
@@ -414,22 +431,24 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
               )}
 
               {duplicateInfo.newSheets.length > 0 && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
-                  <h4 className="font-medium text-blue-900">
-                    ✨ {t('camSheets.newSheetsToRegister')} ({duplicateInfo.newSheets.length}{t('camSheets.items')})
+                <div className="p-4 bg-gauge-cobalt-soft border border-divider rounded-md mb-4">
+                  <h4 className="font-medium text-gauge-cobalt-strong inline-flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" aria-hidden="true" />
+                    {t('camSheets.newSheetsToRegister')} ({duplicateInfo.newSheets.length}{t('camSheets.items')})
                   </h4>
-                  <p className="text-sm text-blue-800">
+                  <p className="text-label text-gauge-cobalt-strong">
                     {t('camSheets.existingDataKept')}
                   </p>
                 </div>
               )}
 
               {duplicateInfo.newSheets.length === 0 && duplicateInfo.duplicates.length > 0 && (
-                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg mb-4">
-                  <h4 className="font-medium text-gray-900">
-                    ℹ️ {t('camSheets.noNewSheets')}
+                <div className="p-4 bg-paper-warm border border-divider rounded-md mb-4">
+                  <h4 className="font-medium text-ink inline-flex items-center gap-2">
+                    <Info className="w-4 h-4" aria-hidden="true" />
+                    {t('camSheets.noNewSheets')}
                   </h4>
-                  <p className="text-sm text-gray-700">
+                  <p className="text-label text-ink-soft">
                     {t('camSheets.allDuplicates')}
                   </p>
                 </div>
@@ -440,23 +459,23 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
           {/* 미리보기 데이터 */}
           {previewData.length > 0 && (
             <div className="mt-6">
-              <h4 className="font-medium text-gray-900 mb-3">📊 {t('camSheets.dataPreview')}</h4>
+              <h4 className="font-medium text-ink mb-3">{t('camSheets.dataPreview')}</h4>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-divider border border-divider rounded-md">
+                  <thead className="bg-paper-warm">
                     <tr>
                       {Object.keys(previewData[0] || {}).map(key => (
-                        <th key={key} className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th key={key} className="px-4 py-2 text-left text-caption font-medium text-ink-soft uppercase">
                           {key}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-paper divide-y divide-divider">
                     {previewData.map((row, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
+                      <tr key={index} className="hover:bg-paper-warm">
                         {Object.values(row).map((value: any, colIndex) => (
-                          <td key={colIndex} className="px-4 py-2 text-sm text-gray-900 whitespace-nowrap">
+                          <td key={colIndex} className="px-4 py-2 text-label text-ink whitespace-nowrap">
                             {String(value)}
                           </td>
                         ))}
@@ -471,23 +490,23 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
           {/* 변환된 CAM Sheet 미리보기 */}
           {parsedCAMSheets.length > 0 && (
             <div className="mt-6">
-              <h4 className="font-medium text-gray-900 mb-3">
-                🔄 {t('camSheets.convertedSheets')} ({parsedCAMSheets.length}{t('camSheets.items')})
+              <h4 className="font-medium text-ink mb-3">
+                {t('camSheets.convertedSheets')} ({parsedCAMSheets.length}{t('camSheets.items')})
               </h4>
               <div className="space-y-4">
                 {parsedCAMSheets.map((sheet, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4">
+                  <div key={index} className="border border-divider rounded-md p-4 bg-paper">
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h5 className="font-medium text-gray-900">
+                        <h5 className="font-medium text-ink">
                           {sheet.model} - {sheet.process} ({sheet.cam_version})
                         </h5>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-label text-ink-mute">
                           {sheet.cam_sheet_endmills?.length || 0}{t('camSheets.endmillsRegistered')}
                         </p>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-label text-ink-soft">
                       {t('camSheets.tNumberName')}: {sheet.cam_sheet_endmills?.map((e: any) => `T${e.t_number.toString().padStart(2, '0')}`).join(', ') || '-'}
                     </div>
                   </div>
@@ -502,18 +521,18 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
         <div className="mobile-modal-footer flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+            className="w-full sm:w-auto px-4 py-2 bg-paper-warm text-ink border border-divider rounded-md hover:bg-paper min-h-touch"
           >
             {t('camSheets.cancel')}
           </button>
           {parsedCAMSheets.length > 0 && (
             <button
               onClick={handleImport}
-              className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              className="w-full sm:w-auto px-4 py-2 bg-signal-go-strong text-paper rounded-md hover:opacity-90 min-h-touch"
             >
               {parsedCAMSheets.length}{t('camSheets.registerNewSheets')}
               {duplicateInfo?.duplicates && duplicateInfo.duplicates.length > 0 &&
-                ` (${duplicateInfo.duplicates.length}{t('camSheets.duplicatesExcluded')})`
+                ` (${duplicateInfo.duplicates.length}${t('camSheets.duplicatesExcluded')})`
               }
             </button>
           )}

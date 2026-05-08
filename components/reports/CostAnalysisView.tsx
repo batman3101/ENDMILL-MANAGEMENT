@@ -134,7 +134,7 @@ export default function CostAnalysisView({ data }: CostAnalysisViewProps) {
           </div>
         </div>
 
-        <div className="bg-white rounded-md p-6 border border-divider">
+        <div className="bg-paper rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-ink-soft">비용 트렌드</span>
             <span className="text-2xl">{trendDisplay.icon}</span>
@@ -208,7 +208,7 @@ export default function CostAnalysisView({ data }: CostAnalysisViewProps) {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-divider">
+            <tbody className="bg-paper divide-y divide-divider">
               {sortedPeriodData.map((item, index) => (
                 <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
@@ -250,9 +250,9 @@ export default function CostAnalysisView({ data }: CostAnalysisViewProps) {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div className="flex-1 bg-paper-warm rounded-full h-2">
                       <div
-                        className="bg-blue-600 h-2 rounded-full"
+                        className="bg-gauge-cobalt h-2 rounded-full"
                         style={{ width: `${item.costPercentage}%` }}
                       />
                     </div>
@@ -287,9 +287,9 @@ export default function CostAnalysisView({ data }: CostAnalysisViewProps) {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div className="flex-1 bg-paper-warm rounded-full h-2">
                       <div
-                        className="bg-green-600 h-2 rounded-full"
+                        className="bg-signal-go-strong h-2 rounded-full"
                         style={{ width: `${item.costPercentage}%` }}
                       />
                     </div>
@@ -367,7 +367,7 @@ export default function CostAnalysisView({ data }: CostAnalysisViewProps) {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-divider">
+            <tbody className="bg-paper divide-y divide-divider">
               {sortedEfficiencyData.map((item, index) => (
                 <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap">

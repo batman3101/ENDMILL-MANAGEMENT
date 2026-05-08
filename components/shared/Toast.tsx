@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createContext, useContext, ReactNode } from 'react'
+import { CheckCircle2, XCircle, AlertTriangle, Info, Megaphone, X } from 'lucide-react'
 import { useSettings } from '@/lib/hooks/useSettings'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
@@ -135,41 +136,60 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
     setTimeout(() => onRemove(toast.id), 300)
   }
 
+  // 시맨틱 토큰 기반 — 4종 type별로 좌측 border 강조 + 아이콘 색상으로 명확히 구분
+  // 배경은 공통 bg-paper-warm 사용, 텍스트는 type별 signal-strong 으로 차별화
   const getToastStyles = () => {
-    const baseStyles = "flex items-start p-4 rounded-lg shadow-lg border min-w-80 max-w-96 transform transition-all duration-300 ease-in-out"
-    
-    if (isLeaving) {
-      return `${baseStyles} translate-x-full opacity-0`
-    }
-    
-    if (!isVisible) {
+    const baseStyles =
+      'flex items-start p-4 rounded-md border-l-4 border border-divider bg-paper-warm min-w-80 max-w-96 transform transition-all duration-300 ease-in-out shadow-hover-lift'
+
+    if (isLeaving || !isVisible) {
       return `${baseStyles} translate-x-full opacity-0`
     }
 
-    const typeStyles = {
-      success: "bg-white border-green-200 text-green-800",
-      error: "bg-white border-red-200 text-red-800", 
-      warning: "bg-white border-yellow-200 text-yellow-800",
-      info: "bg-white border-blue-200 text-blue-800"
+    const typeStyles: Record<ToastType, string> = {
+      success: 'border-l-signal-go-strong text-signal-go-strong',
+      error: 'border-l-signal-stop-strong text-signal-stop-strong',
+      warning: 'border-l-signal-watch-strong text-signal-watch-strong',
+      info: 'border-l-gauge-cobalt-strong text-gauge-cobalt-strong',
     }
 
     return `${baseStyles} translate-x-0 opacity-100 ${typeStyles[toast.type]}`
   }
 
   const getIcon = () => {
-    const iconStyles = "flex-shrink-0 w-5 h-5 mr-3 mt-0.5"
-    
+    const iconWrapper = 'flex-shrink-0 mr-3 mt-0.5'
+
     switch (toast.type) {
       case 'success':
-        return <div className={`${iconStyles} text-green-500`}>✅</div>
+        return (
+          <span className={`${iconWrapper} text-signal-go-strong`}>
+            <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
+          </span>
+        )
       case 'error':
-        return <div className={`${iconStyles} text-red-500`}>❌</div>
+        return (
+          <span className={`${iconWrapper} text-signal-stop-strong`}>
+            <XCircle className="w-5 h-5" aria-hidden="true" />
+          </span>
+        )
       case 'warning':
-        return <div className={`${iconStyles} text-yellow-500`}>⚠️</div>
+        return (
+          <span className={`${iconWrapper} text-signal-watch-strong`}>
+            <AlertTriangle className="w-5 h-5" aria-hidden="true" />
+          </span>
+        )
       case 'info':
-        return <div className={`${iconStyles} text-blue-500`}>ℹ️</div>
+        return (
+          <span className={`${iconWrapper} text-gauge-cobalt-strong`}>
+            <Info className="w-5 h-5" aria-hidden="true" />
+          </span>
+        )
       default:
-        return <div className={`${iconStyles} text-gray-500`}>📢</div>
+        return (
+          <span className={`${iconWrapper} text-ink-mute`}>
+            <Megaphone className="w-5 h-5" aria-hidden="true" />
+          </span>
+        )
     }
   }
 
@@ -177,22 +197,23 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
     <div className={getToastStyles()}>
       {getIcon()}
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium">
+        <div className="text-label font-medium text-ink">
           {toast.title}
         </div>
         {toast.message && (
-          <div className="text-sm opacity-90 mt-1">
+          <div className="text-caption text-ink-soft mt-1">
             {toast.message}
           </div>
         )}
       </div>
       <button
         onClick={handleClose}
-        className="flex-shrink-0 ml-3 text-gray-400 hover:text-gray-600 transition-colors"
+        className="flex-shrink-0 ml-3 text-ink-mute hover:text-ink-soft transition-colors"
+        aria-label="닫기"
       >
         <span className="sr-only">닫기</span>
-        ✕
+        <X className="w-4 h-4" aria-hidden="true" />
       </button>
     </div>
   )
-} 
+}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { X, CheckCircle2 } from 'lucide-react'
 import { useInventorySearch } from '../../lib/hooks/useInventory'
 import { useToast } from '../../components/shared/Toast'
 import { useSettings } from '../../lib/hooks/useSettings'
@@ -163,14 +164,15 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
     <div className="mobile-modal-container" onClick={onCancel}>
       <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header">
-          <h3 className="text-lg font-medium">
+          <h3 className="text-title font-medium text-ink">
             {initialData ? t('camSheets.camSheetFormEditTitle') : t('camSheets.camSheetFormTitle')}
           </h3>
           <button
             onClick={onCancel}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+            className="p-2 text-ink-mute hover:text-ink-soft hover:bg-paper-warm rounded-full"
+            aria-label="닫기"
           >
-            ✕
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
@@ -179,27 +181,27 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
           {/* 기본 정보 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('camSheets.modelLabel')} <span className="text-red-500">*</span>
+              <label className="block text-label font-medium text-ink mb-2">
+                {t('camSheets.modelLabel')} <span className="text-signal-stop-strong">*</span>
               </label>
               <input
                 type="text"
                 placeholder="PA-001"
                 value={formData.model}
                 onChange={(e) => setFormData({...formData, model: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('camSheets.processLabel')} <span className="text-red-500">*</span>
+              <label className="block text-label font-medium text-ink mb-2">
+                {t('camSheets.processLabel')} <span className="text-signal-stop-strong">*</span>
               </label>
               <select
                 value={formData.process}
                 onChange={(e) => setFormData({...formData, process: e.target.value})}
-                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 pr-8 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
                 required
               >
                 <option value="">{t('camSheets.selectProcess')}</option>
@@ -210,45 +212,45 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('camSheets.camVersionLabel')} <span className="text-red-500">*</span>
+              <label className="block text-label font-medium text-ink mb-2">
+                {t('camSheets.camVersionLabel')} <span className="text-signal-stop-strong">*</span>
               </label>
               <input
                 type="text"
                 placeholder="v1.0"
                 value={formData.camVersion}
                 onChange={(e) => setFormData({...formData, camVersion: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-label font-medium text-ink mb-2">
                 {t('camSheets.versionDateLabel')}
               </label>
               <input
                 type="date"
                 value={formData.versionDate}
                 onChange={(e) => setFormData({...formData, versionDate: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
               />
             </div>
           </div>
 
           {/* 앤드밀 등록 섹션 */}
-          <div className="border-t pt-6">
-            <h4 className="text-lg font-semibold mb-4">{t('camSheets.endmillInfoRegistration')}</h4>
+          <div className="border-t border-divider pt-6">
+            <h4 className="text-title font-semibold text-ink mb-4">{t('camSheets.endmillInfoRegistration')}</h4>
 
             {/* 앤드밀 추가 폼 */}
-            <div className="bg-gray-50 p-4 rounded-lg mb-6">
+            <div className="bg-paper-warm p-4 rounded-md mb-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('camSheets.tNumberLabel')}</label>
+                  <label className="block text-label font-medium text-ink mb-1">{t('camSheets.tNumberLabel')}</label>
                   <select
                     value={newEndmill.tNumber}
                     onChange={(e) => setNewEndmill({...newEndmill, tNumber: parseInt(e.target.value) || 1})}
-                    className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 pr-8 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
                   >
                     {Array.from({length: 21}, (_, i) => i + 1).map(num => (
                       <option key={num} value={num} disabled={formData.endmills.some(e => e.tNumber === num)}>
@@ -259,30 +261,33 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('camSheets.endmillCodeLabel')}</label>
+                  <label className="block text-label font-medium text-ink mb-1">{t('camSheets.endmillCodeLabel')}</label>
                   <input
                     type="text"
                     placeholder="AT001"
                     value={newEndmill.endmillCode}
                     onChange={(e) => handleEndmillCodeChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
                   />
                   {errorMessage && (
-                    <p className="text-red-600 text-xs mt-1">{errorMessage}</p>
+                    <p className="text-signal-stop-strong text-caption mt-1">{errorMessage}</p>
                   )}
                   {autoLoadedInfo && (
-                    <p className="text-green-600 text-xs mt-1">✓ {t('camSheets.autoLoaded')}</p>
+                    <p className="text-signal-go-strong text-caption mt-1 inline-flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
+                      {t('camSheets.autoLoaded')}
+                    </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('camSheets.toolLifeLabel')}</label>
+                  <label className="block text-label font-medium text-ink mb-1">{t('camSheets.toolLifeLabel')}</label>
                   <input
                     type="number"
                     placeholder="2000"
                     value={newEndmill.toolLife}
                     onChange={(e) => setNewEndmill({...newEndmill, toolLife: parseInt(e.target.value) || 2000})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
                     min="1"
                   />
                 </div>
@@ -290,33 +295,33 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <label className="block text-label font-medium text-ink mb-1">Category</label>
                   <input
                     type="text"
                     placeholder="DRILL, FLAT, BALL 등"
                     value={newEndmill.specifications}
                     onChange={(e) => setNewEndmill({...newEndmill, specifications: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt bg-paper text-ink"
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Endmill Name</label>
+                  <label className="block text-label font-medium text-ink mb-1">Endmill Name</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       placeholder="D2 DR, D8x18FL FLAT EM 등"
                       value={newEndmill.endmillName}
                       onChange={(e) => setNewEndmill({...newEndmill, endmillName: e.target.value})}
-                      className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        autoLoadedInfo ? 'bg-green-50' : ''
+                      className={`flex-1 px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-gauge-cobalt text-ink ${
+                        autoLoadedInfo ? 'bg-signal-go-soft' : 'bg-paper'
                       }`}
                       readOnly={!!autoLoadedInfo}
                     />
                     <button
                       type="button"
                       onClick={handleAddEndmill}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 whitespace-nowrap"
+                      className="px-4 py-2 bg-signal-go-strong text-paper rounded-md hover:opacity-90 whitespace-nowrap min-h-touch"
                     >
                       {t('camSheets.addButton')}
                     </button>
@@ -328,30 +333,30 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
             {/* 등록된 앤드밀 목록 */}
             {formData.endmills.length > 0 && (
               <div className="mb-6">
-                <h5 className="text-md font-medium mb-3">{t('camSheets.registered')} ({formData.endmills.length}{t('camSheets.items')})</h5>
+                <h5 className="text-label font-medium text-ink mb-3">{t('camSheets.registered')} ({formData.endmills.length}{t('camSheets.items')})</h5>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full divide-y divide-divider border border-divider rounded-md">
+                    <thead className="bg-paper-warm">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.tNumberLabel')}</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.endmillCodeLabel')}</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.endmillNameLabel')}</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.toolLifeLabel')}</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('camSheets.actions')}</th>
+                        <th className="px-4 py-2 text-left text-caption font-medium text-ink-soft uppercase">{t('camSheets.tNumberLabel')}</th>
+                        <th className="px-4 py-2 text-left text-caption font-medium text-ink-soft uppercase">{t('camSheets.endmillCodeLabel')}</th>
+                        <th className="px-4 py-2 text-left text-caption font-medium text-ink-soft uppercase">{t('camSheets.endmillNameLabel')}</th>
+                        <th className="px-4 py-2 text-left text-caption font-medium text-ink-soft uppercase">{t('camSheets.toolLifeLabel')}</th>
+                        <th className="px-4 py-2 text-left text-caption font-medium text-ink-soft uppercase">{t('camSheets.actions')}</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-paper divide-y divide-divider">
                       {formData.endmills.sort((a, b) => a.tNumber - b.tNumber).map((endmill) => (
-                        <tr key={endmill.tNumber} className="hover:bg-gray-50">
-                          <td className="px-4 py-2 text-sm font-medium">T{endmill.tNumber.toString().padStart(2, '0')}</td>
-                          <td className="px-4 py-2 text-sm">{endmill.endmillCode}</td>
-                          <td className="px-4 py-2 text-sm">{endmill.endmillName}</td>
-                          <td className="px-4 py-2 text-sm">{endmill.toolLife.toLocaleString()}{t('camSheets.times')}</td>
-                          <td className="px-4 py-2 text-sm">
+                        <tr key={endmill.tNumber} className="hover:bg-paper-warm">
+                          <td className="px-4 py-2 text-label font-medium text-ink">T{endmill.tNumber.toString().padStart(2, '0')}</td>
+                          <td className="px-4 py-2 text-label text-ink">{endmill.endmillCode}</td>
+                          <td className="px-4 py-2 text-label text-ink">{endmill.endmillName}</td>
+                          <td className="px-4 py-2 text-label text-ink">{endmill.toolLife.toLocaleString()}{t('camSheets.times')}</td>
+                          <td className="px-4 py-2 text-label">
                             <button
                               type="button"
                               onClick={() => handleRemoveEndmill(endmill.tNumber)}
-                              className="text-red-600 hover:text-red-800"
+                              className="text-signal-stop-strong hover:opacity-80"
                             >
                               {t('camSheets.deleteButton')}
                             </button>
@@ -372,13 +377,13 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
             <button
               type="button"
               onClick={onCancel}
-              className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              className="w-full sm:w-auto px-4 py-2 bg-paper-warm text-ink border border-divider rounded-md hover:bg-paper min-h-touch"
             >
               {t('camSheets.cancelButton')}
             </button>
             <button
               type="submit"
-              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="w-full sm:w-auto px-4 py-2 bg-gauge-cobalt text-paper rounded-md hover:bg-gauge-cobalt-strong min-h-touch"
             >
               {initialData ? t('camSheets.updateButton') : t('camSheets.saveButton')}
             </button>

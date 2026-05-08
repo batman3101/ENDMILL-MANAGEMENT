@@ -175,7 +175,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-divider">
+            <tbody className="bg-paper divide-y divide-divider">
               {sortedModelData.map((item, index) => (
                 <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
@@ -246,7 +246,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-divider">
+            <tbody className="bg-paper divide-y divide-divider">
               {sortedCategoryData.map((item, index) => (
                 <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
@@ -308,7 +308,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-divider">
+            <tbody className="bg-paper divide-y divide-divider">
               {sortedReasonData.map((item, index) => (
                 <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
@@ -385,7 +385,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-divider">
+            <tbody className="bg-paper divide-y divide-divider">
               {sortedToolData.map((tool, index) => (
                 <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">

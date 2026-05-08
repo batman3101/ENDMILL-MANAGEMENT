@@ -130,15 +130,16 @@ export function MobileBottomNav() {
           />
 
           {/* 메뉴 패널 - 하단 네비게이션 위에 표시, 스크롤 가능 */}
-          <div className="absolute bottom-16 left-0 right-0 max-h-[70vh] bg-white rounded-t-2xl shadow-2xl overflow-hidden animate-slide-up">
+          <div className="absolute bottom-16 left-0 right-0 max-h-[70vh] bg-paper rounded-t-2xl shadow-hover-lift overflow-hidden animate-slide-up">
             {/* 헤더 - 고정 */}
-            <div className="sticky top-0 bg-white px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">{t('common.menu')}</h3>
+            <div className="sticky top-0 bg-paper px-4 py-3 border-b border-divider flex items-center justify-between">
+              <h3 className="font-semibold text-ink">{t('common.menu')}</h3>
               <button
                 onClick={() => setShowMore(false)}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                className="p-2 rounded-full hover:bg-paper-warm transition-colors"
+                aria-label="닫기"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5 text-ink-soft" />
               </button>
             </div>
 
@@ -150,14 +151,14 @@ export function MobileBottomNav() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setShowMore(false)}
-                    className={`flex flex-col items-center p-3 rounded-xl transition-all ${
+                    className={`flex flex-col items-center p-3 rounded-md transition-all ${
                       isActive(item.href)
-                        ? 'bg-primary-100 text-primary-600'
-                        : 'hover:bg-gray-100 text-gray-600'
+                        ? 'bg-gauge-cobalt-soft text-gauge-cobalt-strong'
+                        : 'hover:bg-paper-warm text-ink-soft'
                     }`}
                   >
                     {item.icon}
-                    <span className="text-xs mt-1.5 text-center line-clamp-2">{item.label}</span>
+                    <span className="text-caption mt-1.5 text-center line-clamp-2">{item.label}</span>
                   </Link>
                 ))}
               </div>
@@ -167,7 +168,7 @@ export function MobileBottomNav() {
       )}
 
       {/* 하단 네비게이션 바 */}
-      <nav className="mobile-bottom-nav bg-white border-t border-gray-200 z-50 md:hidden safe-area-bottom">
+      <nav className="mobile-bottom-nav bg-paper border-t border-divider z-50 md:hidden safe-area-bottom">
         <div className="flex items-center justify-around h-16">
           {mainItems.map((item) => (
             <Link
@@ -175,8 +176,8 @@ export function MobileBottomNav() {
               href={item.href}
               className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
                 isActive(item.href)
-                  ? 'text-primary-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'text-gauge-cobalt-strong'
+                  : 'text-ink-mute hover:text-ink-soft'
               }`}
             >
               {item.icon}
@@ -189,8 +190,8 @@ export function MobileBottomNav() {
             onClick={() => setShowMore(true)}
             className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
               showMore || isMoreActive
-                ? 'text-primary-600'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-gauge-cobalt-strong'
+                : 'text-ink-mute hover:text-ink-soft'
             }`}
           >
             <MoreHorizontal className="w-5 h-5" />
