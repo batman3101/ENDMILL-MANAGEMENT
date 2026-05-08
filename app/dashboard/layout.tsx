@@ -27,6 +27,7 @@ import {
 import { useTranslation } from '../../lib/hooks/useTranslations'
 import { useAuth } from '../../lib/hooks/useAuth'
 import { usePermissions } from '../../lib/hooks/usePermissions'
+import { useSettings } from '../../lib/hooks/useSettings'
 import Breadcrumb from '../../components/shared/Breadcrumb'
 import { MobileBottomNav } from '../../components/mobile'
 import { clientLogger } from '@/lib/utils/logger'
@@ -54,6 +55,7 @@ export default function DashboardLayout({
   const { t, currentLanguage, changeLanguage } = useTranslation()
   const { user, signOut, loading } = useAuth()
   const { canAccessPage, isAdmin } = usePermissions()
+  const { settings } = useSettings()
   // 자동 로그아웃: settings.system.autoLogout = true 이고
   // sessionTimeout(분) 동안 무동작 시 자동 signOut
   useIdleTimeout()
@@ -67,18 +69,30 @@ export default function DashboardLayout({
   const SIDEBAR_MAX = 420
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT)
   const isResizing = useRef(false)
+  // sidebar 초기화는 단 한 번만 (localStorage 우선 → settings.ui.sidebarCollapsed fallback)
+  const sidebarInitializedRef = useRef(false)
 
-  // 저장된 폭 복원
+  // 사이드바 폭 초기화: localStorage 우선, 없으면 settings.ui.sidebarCollapsed 따름
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || sidebarInitializedRef.current) return
     const saved = window.localStorage.getItem('sidebar-width')
     if (saved) {
       const n = parseInt(saved, 10)
       if (!Number.isNaN(n) && n >= SIDEBAR_MIN && n <= SIDEBAR_MAX) {
         setSidebarWidth(n)
+        sidebarInitializedRef.current = true
+        return
       }
     }
-  }, [])
+    // localStorage 미저장: settings.ui.sidebarCollapsed=true이면 좁게 시작
+    if (settings?.ui) {
+      if (settings.ui.sidebarCollapsed) {
+        setSidebarWidth(SIDEBAR_MIN)
+      }
+      // expanded는 default(SIDEBAR_DEFAULT)이므로 그대로 유지
+      sidebarInitializedRef.current = true
+    }
+  }, [settings?.ui])
 
   // 마우스 드래그 핸들러
   const handleResizeStart = (e: React.MouseEvent) => {
