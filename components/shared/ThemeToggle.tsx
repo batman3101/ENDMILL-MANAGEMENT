@@ -16,9 +16,9 @@ interface Option {
 }
 
 const OPTIONS: Option[] = [
-  { value: 'light', labelKey: 'settings.themeLight', Icon: Sun },
-  { value: 'dark', labelKey: 'settings.themeDark', Icon: Moon },
-  { value: 'auto', labelKey: 'settings.themeSystem', Icon: Monitor },
+  { value: 'light', labelKey: 'settings.options.themeLight', Icon: Sun },
+  { value: 'dark', labelKey: 'settings.options.themeDark', Icon: Moon },
+  { value: 'auto', labelKey: 'settings.options.themeSystem', Icon: Monitor },
 ]
 
 interface ThemeToggleProps {

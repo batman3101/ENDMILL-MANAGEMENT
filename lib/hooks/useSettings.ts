@@ -257,7 +257,14 @@ export function useSettings(): UseSettingsReturn {
           changedBy,
           reason
         })
-        setSettings(prev => ({ ...prev, ...result.data }))
+        // PUT /api/settings는 category 인자가 있으면 그 카테고리 내부 객체만 반환한다.
+        // (route.ts: data: category ? parsedSettings[category] : parsedSettings)
+        // 따라서 settings 최상위에 spread하면 ui.theme 같은 중첩 값이 갱신되지 않으므로
+        // 카테고리 키로 감싸 기존 값과 병합해야 한다.
+        setSettings(prev => ({
+          ...prev,
+          [category]: { ...(prev as any)[category], ...result.data }
+        }))
       } catch (apiError) {
         logger.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
@@ -300,7 +307,12 @@ export function useSettings(): UseSettingsReturn {
           changedBy,
           reason
         })
-        setSettings(prev => ({ ...prev, ...result.data }))
+        // updateCategorySettings와 동일 — PUT 응답이 카테고리 내부 객체이므로
+        // 카테고리 키로 감싸 prev[category]와 병합해야 ThemeProvider 등 구독자가 변경 감지 가능
+        setSettings(prev => ({
+          ...prev,
+          [category]: { ...(prev as any)[category], ...result.data }
+        }))
       } catch (apiError) {
         logger.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
