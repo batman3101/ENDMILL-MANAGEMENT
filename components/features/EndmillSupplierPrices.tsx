@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Plus } from 'lucide-react'
+import { NoBreak } from '@/components/ui/no-break'
 import { useToast } from '../shared/Toast'
 import AddSupplierPriceModal from './AddSupplierPriceModal'
 import EditSupplierPriceModal from './EditSupplierPriceModal'
@@ -162,10 +164,12 @@ export default function EndmillSupplierPrices({ endmillId, endmillCode }: Endmil
           )}
         </div>
         <button
+          type="button"
           onClick={() => setShowAddForm(true)}
-          className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="inline-flex min-h-touch items-center gap-2 rounded-sm bg-gauge-cobalt px-4 py-2 text-label font-medium text-paper transition-colors hover:bg-gauge-cobalt-strong"
         >
-          {t('endmill.addPriceButton')}
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          <NoBreak>{t('endmill.addPriceButton')}</NoBreak>
         </button>
       </div>
 
