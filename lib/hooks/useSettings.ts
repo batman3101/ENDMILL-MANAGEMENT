@@ -200,6 +200,27 @@ export function useSettings(): UseSettingsReturn {
     return result
   }, [])
 
+  // 다른 useSettings 인스턴스(ThemeProvider, 헤더 토글 등)에 변경 사항을 브로드캐스트.
+  // useSettings는 hook이므로 호출 컴포넌트마다 독립된 state를 가진다.
+  // 한 곳에서 update 하면 settingsUpdated CustomEvent를 발행해 다른 인스턴스도 동기화한다.
+  // queueMicrotask로 지연 — 호출 측이 setSettings updater 안에서 broadcast해도
+  // dispatchEvent의 동기 리스너 실행으로 인한 setState 중첩을 피한다.
+  const broadcastSettingsUpdate = useCallback((next: SystemSettings) => {
+    if (typeof window === 'undefined') return
+    const dispatch = () => {
+      try {
+        window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: next }))
+      } catch {
+        // CustomEvent 미지원 환경 — 무시
+      }
+    }
+    if (typeof queueMicrotask === 'function') {
+      queueMicrotask(dispatch)
+    } else {
+      Promise.resolve().then(dispatch)
+    }
+  }, [])
+
   // 설정 업데이트 (API 연결)
   const updateSettings = useCallback(async (
     updates: Partial<SystemSettings>,
@@ -219,13 +240,16 @@ export function useSettings(): UseSettingsReturn {
           reason
         })
         setSettings(result.data)
+        broadcastSettingsUpdate(result.data)
       } catch (apiError) {
         logger.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
         settingsManagerRef.current?.updateSettings(updates, changedBy, reason)
-        setSettings(settingsManagerRef.current?.getSettings() || settings)
+        const next = settingsManagerRef.current?.getSettings() || settings
+        setSettings(next)
+        broadcastSettingsUpdate(next)
       }
-      
+
       setHasUnsavedChanges(false)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '설정 업데이트 실패'
@@ -235,7 +259,7 @@ export function useSettings(): UseSettingsReturn {
       setIsLoading(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [callSettingsAPI])
+  }, [callSettingsAPI, broadcastSettingsUpdate])
 
   // 카테고리별 설정 업데이트 (API 연결)
   const updateCategorySettings = useCallback(async <T extends SettingsCategory>(
@@ -261,18 +285,23 @@ export function useSettings(): UseSettingsReturn {
         // (route.ts: data: category ? parsedSettings[category] : parsedSettings)
         // 따라서 settings 최상위에 spread하면 ui.theme 같은 중첩 값이 갱신되지 않으므로
         // 카테고리 키로 감싸 기존 값과 병합해야 한다.
-        setSettings(prev => ({
-          ...prev,
-          [category]: { ...(prev as any)[category], ...result.data }
-        }))
+        setSettings(prev => {
+          const next = {
+            ...prev,
+            [category]: { ...(prev as any)[category], ...result.data }
+          } as SystemSettings
+          broadcastSettingsUpdate(next)
+          return next
+        })
       } catch (apiError) {
         logger.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
         settingsManagerRef.current?.updateCategorySettings(category, updates, changedBy, reason)
         const newSettings = settingsManagerRef.current?.getSettings() || settings
         setSettings(newSettings)
+        broadcastSettingsUpdate(newSettings)
       }
-      
+
       setHasUnsavedChanges(false)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '설정 업데이트 실패'
@@ -282,7 +311,7 @@ export function useSettings(): UseSettingsReturn {
       setIsLoading(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [callSettingsAPI])
+  }, [callSettingsAPI, broadcastSettingsUpdate])
 
   // 특정 설정값 업데이트 (API 연결)
   const updateSetting = useCallback(async <T extends SettingsCategory, K extends keyof SystemSettings[T]>(
@@ -309,17 +338,23 @@ export function useSettings(): UseSettingsReturn {
         })
         // updateCategorySettings와 동일 — PUT 응답이 카테고리 내부 객체이므로
         // 카테고리 키로 감싸 prev[category]와 병합해야 ThemeProvider 등 구독자가 변경 감지 가능
-        setSettings(prev => ({
-          ...prev,
-          [category]: { ...(prev as any)[category], ...result.data }
-        }))
+        setSettings(prev => {
+          const next = {
+            ...prev,
+            [category]: { ...(prev as any)[category], ...result.data }
+          } as SystemSettings
+          broadcastSettingsUpdate(next)
+          return next
+        })
       } catch (apiError) {
         logger.warn('API 호출 실패, 로컬 저장소 사용:', apiError)
         // API 실패 시 로컬 저장소 사용
         settingsManagerRef.current?.updateSetting(category, key, value, changedBy, reason)
-        setSettings(settingsManagerRef.current?.getSettings() || settings)
+        const next = settingsManagerRef.current?.getSettings() || settings
+        setSettings(next)
+        broadcastSettingsUpdate(next)
       }
-      
+
       setHasUnsavedChanges(false)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '설정 업데이트 실패'
@@ -329,7 +364,7 @@ export function useSettings(): UseSettingsReturn {
       setIsLoading(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [callSettingsAPI])
+  }, [callSettingsAPI, broadcastSettingsUpdate])
 
   // 설정 초기화 (API 연결)
   const resetSettings = useCallback(async (

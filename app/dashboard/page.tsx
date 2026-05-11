@@ -11,6 +11,7 @@ import { StatusBadge } from '../../components/ui/status-badge'
 import {
   useDashboard,
   formatVND,
+  formatNumber,
   getTrendIcon,
   getTrendColor
 } from '../../lib/hooks/useDashboard'
@@ -166,19 +167,19 @@ export default function DashboardPage() {
             <div>
               <p className="text-caption text-ink-mute">{t('dashboard.normalLife')}</p>
               <p className="text-base font-semibold text-signal-go-strong tabular-nums">
-                {data?.endmillUsage?.normalLife || 0}{t('dashboard.cases')}
+                {formatNumber(data?.endmillUsage?.normalLife || 0)}{t('dashboard.cases')}
               </p>
             </div>
             <div>
               <p className="text-caption text-ink-mute">{t('dashboard.broken')}</p>
               <p className="text-base font-semibold text-signal-stop-strong tabular-nums">
-                {data?.endmillUsage?.broken || 0}{t('dashboard.cases')}
+                {formatNumber(data?.endmillUsage?.broken || 0)}{t('dashboard.cases')}
               </p>
             </div>
             <div>
               <p className="text-caption text-ink-mute">{t('dashboard.premature')}</p>
               <p className="text-base font-semibold text-signal-watch-strong tabular-nums">
-                {data?.endmillUsage?.premature || 0}{t('dashboard.cases')}
+                {formatNumber(data?.endmillUsage?.premature || 0)}{t('dashboard.cases')}
               </p>
             </div>
           </div>
@@ -220,19 +221,19 @@ export default function DashboardPage() {
             <div>
               <p className="text-caption text-ink-mute">{t('equipment.operating')}</p>
               <p className="text-base font-semibold text-gauge-cobalt-strong tabular-nums">
-                {data?.equipment?.active || 0}{t('dashboard.equipmentCount')}
+                {formatNumber(data?.equipment?.active || 0)}{t('dashboard.equipmentCount')}
               </p>
             </div>
             <div>
               <p className="text-caption text-ink-mute">{t('equipment.maintenance')}</p>
               <p className="text-base font-semibold text-signal-watch-strong tabular-nums">
-                {data?.equipment?.maintenance || 0}{t('dashboard.equipmentCount')}
+                {formatNumber(data?.equipment?.maintenance || 0)}{t('dashboard.equipmentCount')}
               </p>
             </div>
             <div>
               <p className="text-caption text-ink-mute">{t('equipment.setup')}</p>
               <p className="text-base font-semibold text-ink-soft tabular-nums">
-                {data?.equipment?.setup || 0}{t('dashboard.equipmentCount')}
+                {formatNumber(data?.equipment?.setup || 0)}{t('dashboard.equipmentCount')}
               </p>
             </div>
           </div>
@@ -249,7 +250,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between p-3 bg-signal-go-soft rounded-md">
               <StatusBadge variant="go" label={t('inventory.sufficient')} />
               <span className="text-base font-bold text-signal-go-strong tabular-nums">
-                {data?.inventory?.sufficient || 0}{t('dashboard.pieceCount')}
+                {formatNumber(data?.inventory?.sufficient || 0)}{t('dashboard.pieceCount')}
               </span>
             </div>
 
@@ -257,7 +258,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between p-3 bg-signal-watch-soft rounded-md">
               <StatusBadge variant="watch" label={t('inventory.low')} />
               <span className="text-base font-bold text-signal-watch-strong tabular-nums">
-                {data?.inventory?.low || 0}{t('dashboard.pieceCount')}
+                {formatNumber(data?.inventory?.low || 0)}{t('dashboard.pieceCount')}
               </span>
             </div>
 
@@ -265,7 +266,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between p-3 bg-signal-stop-soft rounded-md">
               <StatusBadge variant="stop" label={t('inventory.critical')} />
               <span className="text-base font-bold text-signal-stop-strong tabular-nums">
-                {data?.inventory?.critical || 0}{t('dashboard.pieceCount')}
+                {formatNumber(data?.inventory?.critical || 0)}{t('dashboard.pieceCount')}
               </span>
             </div>
           </div>
@@ -335,8 +336,8 @@ export default function DashboardPage() {
                 <div key={index} className="flex justify-between items-center text-base">
                   <span className="text-ink-soft">{item.series}:</span>
                   <div className="text-right">
-                    <div className="font-semibold tabular-nums">{item.count}회</div>
-                    <div className="text-caption text-ink-mute tabular-nums">{item.avgInterval}일/회</div>
+                    <div className="font-semibold tabular-nums">{formatNumber(item.count)}회</div>
+                    <div className="text-caption text-ink-mute tabular-nums">{formatNumber(item.avgInterval)}일/회</div>
                   </div>
                 </div>
               ))}
@@ -371,7 +372,7 @@ export default function DashboardPage() {
               {(data?.topBrokenEndmills || []).map((item: any, index: number) => (
                 <div key={index} className="flex justify-between items-center text-base p-2 bg-paper-warm rounded-md border border-divider">
                   <span className="font-medium text-ink-soft">{index + 1}{t('dashboard.rank')}: {item.code}</span>
-                  <span className="font-bold text-signal-stop-strong tabular-nums">{item.count}{t('dashboard.times')}</span>
+                  <span className="font-bold text-signal-stop-strong tabular-nums">{formatNumber(item.count)}{t('dashboard.times')}</span>
                 </div>
               ))}
             </div>
@@ -427,14 +428,14 @@ export default function DashboardPage() {
           </div>
           <div className="text-center">
             <p className="text-headline font-semibold text-gauge-cobalt-strong tabular-nums" style={{ fontSize: '1.875rem' }}>
-              {data?.toolChanges?.today || 0}
+              {formatNumber(data?.toolChanges?.today || 0)}
             </p>
             <p className="text-base text-ink-mute">{t('dashboard.pieceCount')} {t('common.success')}</p>
             <div className="mt-3 flex justify-between text-caption">
               <span className={`tabular-nums ${getTrendColor(data?.toolChanges?.trend || '+8')}`}>
                 {getTrendIcon(data?.toolChanges?.trend || '0')} {t('dashboard.vsPreviousDay')} {data?.toolChanges?.trend || '0'}
               </span>
-              <span className="text-ink-mute tabular-nums">{t('dashboard.target')}: {data?.toolChanges?.target || 0}{t('dashboard.pieceCount')}</span>
+              <span className="text-ink-mute tabular-nums">{t('dashboard.target')}: {formatNumber(data?.toolChanges?.target || 0)}{t('dashboard.pieceCount')}</span>
             </div>
           </div>
         </div>
@@ -463,8 +464,8 @@ export default function DashboardPage() {
                     <div className="text-caption text-ink-mute truncate">{item.endmillName}</div>
                   </div>
                   <div className="text-right ml-2">
-                    <div className="font-bold text-gauge-cobalt-strong tabular-nums">{item.equipmentCount}{t('dashboard.equipmentCount')}</div>
-                    <div className="text-caption text-ink-mute tabular-nums">{item.totalPositions}{t('dashboard.positions')}</div>
+                    <div className="font-bold text-gauge-cobalt-strong tabular-nums">{formatNumber(item.equipmentCount)}{t('dashboard.equipmentCount')}</div>
+                    <div className="text-caption text-ink-mute tabular-nums">{formatNumber(item.totalPositions)}{t('dashboard.positions')}</div>
                   </div>
                 </div>
               ))}
@@ -497,10 +498,10 @@ export default function DashboardPage() {
                   <span className="font-medium text-ink">{item.model}</span>
                   <div className="text-right">
                     <div className="font-bold text-signal-go-strong tabular-nums">
-                      {item.endmillCount}{t('dashboard.endmill')}
+                      {formatNumber(item.endmillCount)}{t('dashboard.endmill')}
                     </div>
                     <div className="text-caption text-ink-mute tabular-nums">
-                      {item.equipmentCount}{t('dashboard.equipment')} ({t('dashboard.average')} {item.avgEndmillPerEquipment}{t('dashboard.perUnit')})
+                      {formatNumber(item.equipmentCount)}{t('dashboard.equipment')} ({t('dashboard.average')} {item.avgEndmillPerEquipment}{t('dashboard.perUnit')})
                     </div>
                   </div>
                 </div>
@@ -546,7 +547,7 @@ export default function DashboardPage() {
                         (item as any).changeCount >= 10 ? 'text-signal-watch-strong' :
                         'text-signal-go-strong'
                       }`} style={{ fontSize: '1.5rem' }}>
-                        {(item as any).changeCount}
+                        {formatNumber((item as any).changeCount)}
                       </span>
                       <div className="text-caption text-ink-mute mt-0.5">{t('dashboard.changeCount')}</div>
                     </div>
@@ -600,16 +601,16 @@ export default function DashboardPage() {
 
                 if (alert.type === 'abnormal_wear') {
                   title = t('dashboard.abnormalWear')
-                  message = `${alert.equipmentNumber || 'Unknown'} ${t('equipment.title')} T${alert.tNumber} - ${t('dashboard.wearMessage')} (${alert.actualLife}${t('dashboard.productionAfter')}, ${t('dashboard.standard')}: ${alert.standardLife}${t('dashboard.pieceCount')})`
+                  message = `${alert.equipmentNumber || 'Unknown'} ${t('equipment.title')} T${alert.tNumber} - ${t('dashboard.wearMessage')} (${formatNumber(alert.actualLife ?? 0)}${t('dashboard.productionAfter')}, ${t('dashboard.standard')}: ${formatNumber(alert.standardLife ?? 0)}${t('dashboard.pieceCount')})`
                 } else if (alert.type === 'abnormal_damage') {
                   title = t('dashboard.abnormalDamage')
                   message = `${alert.equipmentNumber || 'Unknown'} ${t('equipment.title')} T${alert.tNumber} - ${t('dashboard.damageMessage')}`
                 } else if (alert.type === 'low_stock') {
                   title = `${t('inventory.critical')} ${t('common.warning')}`
-                  message = `${alert.endmillCode || 'Unknown'} ${alert.endmillName || ''} - ${t('inventory.stockStatus')} ${alert.currentStock}${t('dashboard.pieceCount')} (${t('dashboard.minStock')} ${alert.minStock}${t('dashboard.pieceCount')})`
+                  message = `${alert.endmillCode || 'Unknown'} ${alert.endmillName || ''} - ${t('inventory.stockStatus')} ${formatNumber(alert.currentStock ?? 0)}${t('dashboard.pieceCount')} (${t('dashboard.minStock')} ${formatNumber(alert.minStock ?? 0)}${t('dashboard.pieceCount')})`
                 } else if (alert.type === 'trend_increase') {
                   title = t('dashboard.trendIncrease')
-                  message = `${alert.equipmentNumber || 'Unknown'} ${t('equipment.title')} - ${t('dashboard.recentDays')} ${alert.recentCount}${t('dashboard.cases')} (${t('dashboard.vsLastWeek')} +${alert.increase}%)`
+                  message = `${alert.equipmentNumber || 'Unknown'} ${t('equipment.title')} - ${t('dashboard.recentDays')} ${formatNumber(alert.recentCount ?? 0)}${t('dashboard.cases')} (${t('dashboard.vsLastWeek')} +${alert.increase}%)`
                 }
 
                 // 추세 분석은 실시간이 아니므로 "최근 7일" 표시
