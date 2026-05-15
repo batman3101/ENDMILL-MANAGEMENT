@@ -16,6 +16,7 @@ import { useToast } from '@/components/shared/Toast'
 import { useStickyContext } from '@/lib/hooks/useStickyContext'
 import { useTranslations } from '@/lib/hooks/useTranslations'
 import { clientLogger } from '@/lib/utils/logger'
+import { getToolChangeReasonLabel } from '@/lib/utils/toolChangeReasonLabels'
 import { cn } from '@/lib/utils'
 
 interface AvailableUser {
@@ -351,8 +352,8 @@ export default function NewToolChangePage() {
     }))
   }, [availableTNumbers])
   const reasonOptions: SmartDropdownOption[] = useMemo(
-    () => reasons.map((r: string) => ({ value: r, label: r })),
-    [reasons]
+    () => reasons.map((r: string) => ({ value: r, label: getToolChangeReasonLabel(r, t) })),
+    [reasons, t]
   )
   const userOptions: SmartDropdownOption[] = useMemo(
     () =>

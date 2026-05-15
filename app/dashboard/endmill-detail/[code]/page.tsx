@@ -22,6 +22,7 @@ import { useTranslations } from '../../../../lib/hooks/useTranslations'
 import { NoBreak } from '@/components/ui/no-break'
 import EndmillSupplierPrices from '../../../../components/features/EndmillSupplierPrices'
 import { clientLogger } from '@/lib/utils/logger'
+import { getToolChangeReasonLabel } from '@/lib/utils/toolChangeReasonLabels'
 
 const EndmillMasterUploader = dynamic(
   () => import('../../../../components/features/EndmillMasterUploader'),
@@ -698,7 +699,7 @@ export default function EndmillDetailPage() {
                     <span className="text-caption text-ink-soft tabular">{change.changeDate}</span>
                   </div>
                   <p className="mb-0.5 text-caption text-ink-soft">
-                    T{change.tNumber?.toString().padStart(2, '0')} - {change.changeReason}
+                    T{change.tNumber?.toString().padStart(2, '0')} - {getToolChangeReasonLabel(change.changeReason, t)}
                   </p>
                   <p className="text-caption text-ink-mute tabular">
                     {t('endmill.changedBy')}: {change.changedBy} | {t('endmill.previousLifeLabel')}:{' '}

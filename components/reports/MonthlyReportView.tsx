@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MonthlyReportData } from '../../lib/types/reports'
 import { formatCurrency, formatNumber } from '../../lib/utils/reportCalculations'
+import { getToolChangeReasonLabel } from '../../lib/utils/toolChangeReasonLabels'
 
 interface MonthlyReportViewProps {
   data: MonthlyReportData
@@ -12,6 +14,8 @@ type SortField = 'model' | 'count' | 'cost' | 'percentage' | 'category' | 'reaso
 type SortOrder = 'asc' | 'desc'
 
 export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
+  const { t } = useTranslation()
+
   // 모델별 정렬 상태
   const [modelSortField, setModelSortField] = useState<SortField>('count')
   const [modelSortOrder, setModelSortOrder] = useState<SortOrder>('desc')
@@ -182,7 +186,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                     {item.model}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
-                    {formatNumber(item.count)}건
+                    {formatNumber(item.count)}{t('toolChanges.cases')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                     {formatCurrency(item.cost)}
@@ -273,7 +277,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
       {/* 교체 사유별 현황 */}
       <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b">
-          <h3 className="text-lg font-semibold text-ink">교체 사유별 현황</h3>
+          <h3 className="text-lg font-semibold text-ink">{t('reports.changeReasonBreakdown')}</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-divider">
@@ -284,7 +288,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   onClick={() => handleSort('reason', reasonSortField, reasonSortOrder, setReasonSortField, setReasonSortOrder)}
                 >
                   <div className="flex items-center">
-                    사유
+                    {t('reports.reason')}
                     <SortIcon field="reason" currentField={reasonSortField} currentOrder={reasonSortOrder} />
                   </div>
                 </th>
@@ -293,7 +297,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   onClick={() => handleSort('count', reasonSortField, reasonSortOrder, setReasonSortField, setReasonSortOrder)}
                 >
                   <div className="flex items-center justify-end">
-                    건수
+                    {t('reports.count')}
                     <SortIcon field="count" currentField={reasonSortField} currentOrder={reasonSortOrder} />
                   </div>
                 </th>
@@ -302,7 +306,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
                   onClick={() => handleSort('percentage', reasonSortField, reasonSortOrder, setReasonSortField, setReasonSortOrder)}
                 >
                   <div className="flex items-center justify-end">
-                    비율
+                    {t('reports.percentage')}
                     <SortIcon field="percentage" currentField={reasonSortField} currentOrder={reasonSortOrder} />
                   </div>
                 </th>
@@ -312,7 +316,7 @@ export default function MonthlyReportView({ data }: MonthlyReportViewProps) {
               {sortedReasonData.map((item, index) => (
                 <tr key={index} className="hover:bg-paper">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
-                    {item.reason}
+                    {getToolChangeReasonLabel(item.reason, t)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                     {formatNumber(item.count)}건

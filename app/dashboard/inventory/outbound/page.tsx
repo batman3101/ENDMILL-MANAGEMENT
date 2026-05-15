@@ -10,6 +10,7 @@ import { useTranslations } from '../../../../lib/hooks/useTranslations'
 import { useFactory } from '../../../../lib/hooks/useFactory'
 import { supabase } from '../../../../lib/supabase/client'
 import { clientLogger } from '../../../../lib/utils/logger'
+import { getToolChangeReasonLabel } from '../../../../lib/utils/toolChangeReasonLabels'
 import { OutboundHistoryCard } from '../../../../components/features/inventory/outbound-history-card'
 // outboundExcelExport is dynamically imported when needed
 
@@ -81,19 +82,7 @@ export default function OutboundPage() {
   const tNumberRange = settings.toolChanges.tNumberRange
   const toolChangesReasons = settings.toolChanges.reasons
 
-  // 교체 사유 번역 맵핑
-  const reasonTranslations: Record<string, string> = {
-    '수명완료': t('toolChanges.lifeCompleted'),
-    '파손': t('toolChanges.broken'),
-    '마모': t('toolChanges.wear'),
-    '예방교체': t('toolChanges.preventive'),
-    '예발교체': t('toolChanges.preventive'), // 오타 케이스 대응
-    '모델교체': t('toolChanges.modelChange'),
-    '모델변경': t('toolChanges.modelChange'),
-    '추가SETUP': t('toolChanges.additionalSetup'),
-    '공구테스트': t('toolChanges.toolTest'),
-    '기타': t('toolChanges.other'),
-  }
+  const translateReason = (reason: string) => getToolChangeReasonLabel(reason, t)
 
   // 앤드밀 마스터 데이터 로드
   const loadAvailableEndmills = async () => {
@@ -842,7 +831,7 @@ export default function OutboundPage() {
                   >
                     <option value="">{t('inventory.selectPurpose')}</option>
                     {toolChangesReasons.map(reason => (
-                      <option key={reason} value={reason}>{reasonTranslations[reason] || reason}</option>
+                      <option key={reason} value={reason}>{translateReason(reason)}</option>
                     ))}
                   </select>
                   <p className="text-caption text-ink-mute mt-1">{t('inventory.purposeOptionalHint')}</p>
@@ -1036,7 +1025,7 @@ export default function OutboundPage() {
                     edit: t('common.edit'),
                     delete: t('common.delete'),
                   }}
-                  translatePurpose={(p) => reasonTranslations[p] || p}
+                  translatePurpose={translateReason}
                   onEdit={handleEditOutbound}
                   onDelete={handleDeleteOutbound}
                 />
@@ -1066,7 +1055,7 @@ export default function OutboundPage() {
                         <td className="px-4 py-4 whitespace-nowrap text-base font-medium text-ink tabular">{item.endmillCode}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-base text-ink">{item.endmillName}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-base text-ink tabular">{item.quantity}</td>
-                        <td className="px-4 py-4 whitespace-nowrap text-base text-ink-soft">{reasonTranslations[item.purpose] || item.purpose || '—'}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-base text-ink-soft">{item.purpose ? translateReason(item.purpose) : '—'}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-base font-semibold text-signal-go-strong tabular">{item.totalValue.toLocaleString()}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-base text-ink-soft">{item.processedBy}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-label">
@@ -1192,7 +1181,7 @@ export default function OutboundPage() {
                 >
                   <option value="">{t('inventory.selectPurpose')}</option>
                   {toolChangesReasons.map(reason => (
-                    <option key={reason} value={reason}>{reasonTranslations[reason] || reason}</option>
+                    <option key={reason} value={reason}>{translateReason(reason)}</option>
                   ))}
                 </select>
               </div>

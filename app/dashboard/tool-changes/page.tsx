@@ -15,6 +15,7 @@ import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { ToolChangeListCard } from '@/components/features/tool-changes/tool-change-list-card'
 import { clientLogger } from '@/lib/utils/logger'
 import { useFactory } from '@/lib/hooks/useFactory'
+import { getToolChangeReasonLabel } from '@/lib/utils/toolChangeReasonLabels'
 import type { ToolChangeExcelData } from '@/lib/utils/toolChangesExcelTemplate'
 // toolChangesExcelTemplate functions are dynamically imported when needed
 
@@ -75,20 +76,7 @@ export default function ToolChangesPage() {
 
   // 교체사유 번역 매핑 함수
   const getReasonTranslation = (reason: string) => {
-    const reasonMap: Record<string, string> = {
-      '정기교체': t('toolChanges.regularReplacement'),
-      '수명완료': t('toolChanges.lifeCompleted'),
-      '파손': t('toolChanges.broken'),
-      '마모': t('toolChanges.wear'),
-      '모델변경': t('toolChanges.modelChange'),
-      '모델교체': t('toolChanges.modelChange'),
-      '품질불량': t('toolChanges.qualityDefect'),
-      '품질테스트': t('toolChanges.qualityDefect'),
-      '공구테스트': t('toolChanges.toolTest'),
-      '예방교체': t('toolChanges.preventive'),
-      '기타': t('toolChanges.other'),
-    }
-    return reasonMap[reason] || reason
+    return getToolChangeReasonLabel(reason, t)
   }
 
   // 필터 업데이트 함수들

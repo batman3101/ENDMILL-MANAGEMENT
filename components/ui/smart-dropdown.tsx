@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Check, ChevronDown, Search } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import {
   BottomSheet,
@@ -76,6 +77,7 @@ export const SmartDropdown = React.forwardRef<HTMLDivElement, SmartDropdownProps
     },
     ref
   ) => {
+    const { t } = useTranslation()
     const useNative = options.length < threshold
     const [open, setOpen] = React.useState(false)
     const [search, setSearch] = React.useState('')
@@ -136,12 +138,12 @@ export const SmartDropdown = React.forwardRef<HTMLDivElement, SmartDropdownProps
               )}
             >
               <span className="truncate text-left">
-                {selected?.label ?? placeholder ?? '선택'}
+                {selected?.label ?? placeholder ?? t('common.select')}
               </span>
               <ChevronDown className="ml-2 h-4 w-4 flex-shrink-0 text-ink-soft" />
             </button>
           </BottomSheetTrigger>
-          <BottomSheetContent title={title ?? placeholder ?? '선택'}>
+          <BottomSheetContent title={title ?? placeholder ?? t('common.select')}>
             <div className="sticky top-0 z-10 border-b border-divider bg-paper p-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-mute" />
@@ -149,7 +151,7 @@ export const SmartDropdown = React.forwardRef<HTMLDivElement, SmartDropdownProps
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="검색"
+                  placeholder={t('common.search')}
                   className="h-11 w-full rounded-sm border border-divider bg-paper-warm pl-9 pr-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
@@ -158,7 +160,7 @@ export const SmartDropdown = React.forwardRef<HTMLDivElement, SmartDropdownProps
             {recentOptions.length > 0 && (
               <div className="border-b border-divider">
                 <div className="px-4 pt-3 pb-1 text-caption font-semibold text-ink-soft">
-                  최근 사용
+                  {t('common.recent')}
                 </div>
                 <ul role="listbox" className="pb-2">
                   {recentOptions.map((opt) => (
@@ -175,7 +177,7 @@ export const SmartDropdown = React.forwardRef<HTMLDivElement, SmartDropdownProps
 
             <ul role="listbox" className="py-2">
               {restOptions.length === 0 && recentOptions.length === 0 ? (
-                <li className="px-4 py-8 text-center text-ink-mute">결과 없음</li>
+                <li className="px-4 py-8 text-center text-ink-mute">{t('common.noResults')}</li>
               ) : (
                 restOptions.map((opt) => (
                   <DropdownItem

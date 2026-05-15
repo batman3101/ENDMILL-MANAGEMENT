@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Lightbulb } from 'lucide-react'
 import { ToolLifeAnalysisData } from '../../lib/types/reports'
+import { getToolChangeReasonLabel } from '../../lib/utils/toolChangeReasonLabels'
 
 interface ToolLifeAnalysisViewProps {
   data: ToolLifeAnalysisData
@@ -12,6 +14,7 @@ type SortField = 'toolName' | 'toolCode' | 'category' | 'averageLife' | 'standar
 type SortOrder = 'asc' | 'desc'
 
 export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps) {
+  const { t } = useTranslation()
   const { summary, lifeByTool, lifeByReason, lifeTrend, lifeDistribution, prematureFailureAnalysis } = data
 
   // 정렬 상태
@@ -146,14 +149,14 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
 
         <div className="bg-paper-warm rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-signal-stop-strong">조기 파손</span>
+            <span className="text-sm font-medium text-signal-stop-strong">{t('reports.prematureFailure')}</span>
             <span className="text-2xl">⚠️</span>
           </div>
           <div className="text-3xl font-bold text-signal-stop-strong">
-            {summary.prematureFailures}건
+            {summary.prematureFailures}{t('toolChanges.cases')}
           </div>
           <div className="text-sm text-signal-stop-strong mt-1">
-            표준 수명 50% 미만
+            {t('reports.standardLifeBelow50')}
           </div>
         </div>
 
@@ -291,14 +294,14 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
         {/* 교체 사유별 수명 */}
         <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
           <div className="px-6 py-4 border-b bg-paper">
-            <h3 className="text-lg font-semibold text-ink">교체 사유별 평균 수명</h3>
+            <h3 className="text-lg font-semibold text-ink">{t('reports.averageLifeByChangeReason')}</h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
               {lifeByReason.map((item, index) => (
                 <div key={index}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-ink-soft">{item.reason}</span>
+                    <span className="text-sm font-medium text-ink-soft">{getToolChangeReasonLabel(item.reason, t)}</span>
                     <span className="text-sm font-bold text-ink">{item.averageLife.toFixed(0)}</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -313,7 +316,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     </span>
                   </div>
                   <div className="text-xs text-ink-soft mt-1">
-                    {item.count}건
+                    {item.count}{t('toolChanges.cases')}
                   </div>
                 </div>
               ))}
@@ -413,7 +416,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
       {prematureFailureAnalysis.length > 0 && (
         <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
           <div className="px-6 py-4 border-b bg-paper-warm">
-            <h3 className="text-lg font-semibold text-signal-stop-strong">조기 파손 분석</h3>
+            <h3 className="text-lg font-semibold text-signal-stop-strong">{t('reports.prematureFailureAnalysis')}</h3>
             <p className="text-sm text-signal-stop-strong mt-1">표준 수명의 50% 미만으로 교체된 공구</p>
           </div>
           <div className="overflow-x-auto">
@@ -434,7 +437,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     onClick={() => handleSort('failureCount', failureSortField, failureSortOrder, setFailureSortField, setFailureSortOrder)}
                   >
                     <div className="flex items-center">
-                      파손 건수
+                      {t('reports.failureCount')}
                       <SortIcon field="failureCount" currentField={failureSortField} currentOrder={failureSortOrder} />
                     </div>
                   </th>
@@ -470,7 +473,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     onClick={() => handleSort('mainReason', failureSortField, failureSortOrder, setFailureSortField, setFailureSortOrder)}
                   >
                     <div className="flex items-center">
-                      주요 원인
+                      {t('reports.mainReason')}
                       <SortIcon field="mainReason" currentField={failureSortField} currentOrder={failureSortOrder} />
                     </div>
                   </th>
@@ -485,7 +488,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-signal-stop-soft text-signal-stop-strong">
-                        {item.failureCount}건
+                        {item.failureCount}{t('toolChanges.cases')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
@@ -500,7 +503,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-soft">
-                      {item.mainReason}
+                      {getToolChangeReasonLabel(item.mainReason, t)}
                     </td>
                   </tr>
                 ))}
@@ -521,7 +524,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
             <div className="mt-2 text-sm text-gauge-cobalt-strong">
               <ul className="list-disc list-inside space-y-1">
                 {summary.prematureFailures > 0 && (
-                  <li>조기 파손이 {summary.prematureFailures}건 발생했습니다. 가공 조건 및 공구 품질을 검토하세요.</li>
+                  <li>{t('reports.prematureFailureRecommendation', { count: summary.prematureFailures })}</li>
                 )}
                 {summary.standardLifeAchievement < 70 && (
                   <li>표준 수명 달성률이 {summary.standardLifeAchievement.toFixed(1)}%로 낮습니다. 공구 사용 방법을 개선하세요.</li>

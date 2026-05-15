@@ -11,7 +11,9 @@ import { useCAMSheets } from '@/lib/hooks/useCAMSheets'
 import { useSettings } from '@/lib/hooks/useSettings'
 import { useToast } from '@/components/shared/Toast'
 import type { ToolChange } from '@/lib/hooks/useToolChanges'
+import { useTranslations } from '@/lib/hooks/useTranslations'
 import { clientLogger } from '@/lib/utils/logger'
+import { getToolChangeReasonLabel } from '@/lib/utils/toolChangeReasonLabels'
 import { cn } from '@/lib/utils'
 
 const SESSION_CACHE_KEY = (id: string) => `tool-change-edit::${id}`
@@ -64,6 +66,7 @@ export default function EditToolChangePage() {
   const { camSheets, getAvailableModels } = useCAMSheets()
   const { settings } = useSettings()
   const { showSuccess, showError } = useToast()
+  const { t } = useTranslations()
 
   const [record, setRecord] = useState<ToolChange | null>(null)
   const [form, setForm] = useState<FormState | null>(null)
@@ -249,8 +252,8 @@ export default function EditToolChangePage() {
     }))
   }, [availableTNumbers])
   const reasonOptions: SmartDropdownOption[] = useMemo(
-    () => reasons.map((r: string) => ({ value: r, label: r })),
-    [reasons]
+    () => reasons.map((r: string) => ({ value: r, label: getToolChangeReasonLabel(r, t) })),
+    [reasons, t]
   )
   const userOptions: SmartDropdownOption[] = useMemo(
     () =>
@@ -444,13 +447,13 @@ export default function EditToolChangePage() {
           </Field>
         </div>
 
-        <Field label="교체 사유" htmlFor="change_reason">
+        <Field label={t('toolChanges.changeReasonLabel')} htmlFor="change_reason">
           <SmartDropdown
-            title="교체 사유 선택"
+            title={t('toolChanges.selectReplaceReason')}
             options={reasonOptions}
             value={form.change_reason}
             onChange={(v) => updateField('change_reason', v)}
-            placeholder="선택"
+            placeholder={t('toolChanges.selectShort')}
             required
           />
         </Field>

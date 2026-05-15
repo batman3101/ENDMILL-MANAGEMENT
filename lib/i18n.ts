@@ -37,6 +37,8 @@ const resources = {
         menu: '메뉴',
         more: '더보기',
         template: '템플릿',
+        select: '선택',
+        recent: '최근 사용',
 
         // 상태
         status: '상태',
@@ -583,6 +585,7 @@ const resources = {
         additionalSetup: '추가SETUP',
         qualityDefect: '품질불량',
         toolTest: '공구테스트',
+        notSpecified: '미지정',
         other: '기타',
 
         // 통계 카드
@@ -1902,6 +1905,18 @@ const resources = {
         endDate: '종료일',
         generateSuccess: '리포트가 생성되었습니다',
         generateError: '리포트 생성에 실패했습니다',
+        changeReasonBreakdown: '교체 사유별 현황',
+        averageLifeByChangeReason: '교체 사유별 평균 수명',
+        reason: '사유',
+        count: '건수',
+        percentage: '비율',
+        mainReason: '주요 원인',
+        prematureFailure: '조기 파손',
+        prematureFailureAnalysis: '조기 파손 분석',
+        standardLifeBelow50: '표준 수명 50% 미만',
+        failureCount: '파손 건수',
+        prematureFailureRecommendation: '조기 파손이 {{count}}건 발생했습니다. 가공 조건 및 공구 품질을 검토하세요.',
+        equipmentPrematureFailureRecommendation: '조기 파손이 발생한 설비가 있습니다. 가공 조건과 공구 품질을 점검하세요.',
       },
 
       // 앤드밀 폐기 (신규)
@@ -2364,6 +2379,8 @@ const resources = {
         menu: 'Menu',
         more: 'Thêm',
         template: 'Mẫu',
+        select: 'Chọn',
+        recent: 'Gần đây',
 
         // 상태
         status: 'Trạng thái',
@@ -3672,6 +3689,7 @@ const resources = {
         additionalSetup: 'SETUP bổ sung',
         qualityDefect: 'Lỗi chất lượng',
         toolTest: 'Kiểm tra công cụ',
+        notSpecified: 'Chưa xác định',
         other: 'Khác',
 
         // 통계 카드
@@ -3885,6 +3903,18 @@ const resources = {
         endDate: 'Ngày kết thúc',
         generateSuccess: 'Báo cáo đã được tạo',
         generateError: 'Tạo báo cáo thất bại',
+        changeReasonBreakdown: 'Tình trạng theo lý do thay thế',
+        averageLifeByChangeReason: 'Tuổi thọ trung bình theo lý do thay thế',
+        reason: 'Lý do',
+        count: 'Số lượng',
+        percentage: 'Tỷ lệ',
+        mainReason: 'Nguyên nhân chính',
+        prematureFailure: 'Hỏng sớm',
+        prematureFailureAnalysis: 'Phân tích hỏng sớm',
+        standardLifeBelow50: 'Dưới 50% tuổi thọ tiêu chuẩn',
+        failureCount: 'Số lần hỏng',
+        prematureFailureRecommendation: 'Đã xảy ra {{count}} trường hợp hỏng sớm. Vui lòng kiểm tra điều kiện gia công và chất lượng dụng cụ.',
+        equipmentPrematureFailureRecommendation: 'Có thiết bị phát sinh hỏng sớm. Vui lòng kiểm tra điều kiện gia công và chất lượng dụng cụ.',
       },
 
       // 사용자 관리

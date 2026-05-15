@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Lightbulb } from 'lucide-react'
 import { PerformanceReportData } from '../../lib/types/reports'
 import { formatCurrency } from '../../lib/utils/reportCalculations'
@@ -13,6 +14,7 @@ type SortField = 'ranking' | 'equipmentNumber' | 'model' | 'location' | 'totalCh
 type SortOrder = 'asc' | 'desc'
 
 export default function PerformanceReportView({ data }: PerformanceReportViewProps) {
+  const { t } = useTranslation()
   const {
     summary,
     equipmentPerformance,
@@ -272,7 +274,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('prematureFailures', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
-                    조기 파손
+                    {t('reports.prematureFailure')}
                     <SortIcon field="prematureFailures" currentField={equipmentSortField} currentOrder={equipmentSortOrder} />
                   </div>
                 </th>
@@ -321,7 +323,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   <td className="px-6 py-4 whitespace-nowrap">
                     {item.prematureFailures > 0 ? (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-signal-stop-soft text-signal-stop-strong">
-                        {item.prematureFailures}건
+                        {item.prematureFailures}{t('toolChanges.cases')}
                       </span>
                     ) : (
                       <span className="text-sm text-ink-mute">-</span>
@@ -667,7 +669,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   <li>일부 설비의 성능이 매우 저조합니다. 해당 설비의 가동 조건 및 공구 선택을 재검토하세요.</li>
                 )}
                 {equipmentPerformance.some(e => e.prematureFailures > 0) && (
-                  <li>조기 파손이 발생한 설비가 있습니다. 가공 조건과 공구 품질을 점검하세요.</li>
+                  <li>{t('reports.equipmentPrematureFailureRecommendation')}</li>
                 )}
                 {modelComparison.length > 1 && (
                   <li>모델별 성능 차이가 있습니다. 최고 성능 모델의 관리 방법을 다른 모델에도 적용하세요.</li>
