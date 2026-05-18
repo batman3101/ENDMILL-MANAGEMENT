@@ -61,8 +61,14 @@ export default function AIInsightsPage() {
                 {t('aiInsights.subtitle')}
               </p>
               <div className="text-sm text-muted-foreground space-y-0.5">
-                <p>• 첫 질문 후 연관된 질문을 이어서 진행 가능합니다.</p>
-                <p>• 새로운 인사이트가 필요하면 <span className="font-medium text-purple-600">[새로운 질문 시작]</span> 버튼을 클릭하세요.</p>
+                <p>{t('aiInsights.hintLine1')}</p>
+                <p>
+                  {t('aiInsights.hintLine2Prefix')}
+                  <span className="font-medium text-purple-600">
+                    {t('aiInsights.hintLine2Action')}
+                  </span>
+                  {t('aiInsights.hintLine2Suffix')}
+                </p>
               </div>
             </div>
           </div>
@@ -113,7 +119,7 @@ export default function AIInsightsPage() {
       {conversationHistory.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-muted-foreground">
-            이전 대화 ({conversationHistory.length})
+            {t('aiInsights.previousConversation')} ({conversationHistory.length})
           </h3>
           <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
             {conversationHistory.slice(0, -1).map((item, index) => (
@@ -186,7 +192,7 @@ export default function AIInsightsPage() {
                 className="w-full justify-between text-muted-foreground hover:text-foreground"
               >
                 <span className="text-xs">
-                  {showAdvanced ? '고급 정보 숨기기' : '고급 정보 보기'}
+                  {showAdvanced ? t('aiInsights.hideAdvanced') : t('aiInsights.showAdvanced')}
                 </span>
                 {showAdvanced ? (
                   <ChevronUp className="h-4 w-4" />
@@ -244,7 +250,7 @@ export default function AIInsightsPage() {
               {t('aiInsights.autoInsights')}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              자동 인사이트의 갱신은 2시간 마다 이루어집니다
+              {t('aiInsights.autoInsightsRefreshInfo')}
             </p>
           </div>
 

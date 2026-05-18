@@ -141,15 +141,18 @@ export default function DashboardLayout({
     }
   }
 
-  // 실시간 시계
+  // 실시간 시계 — 현재 UI 언어에 맞는 로케일로 포맷.
+  // 'ko'는 12시간제(오전/오후), 그 외(vi 포함)는 24시간제로 표기해 베트남어 환경에서
+  // "오전" 같은 한국어 잔재가 노출되지 않도록 한다.
   useEffect(() => {
+    const locale = currentLanguage === 'vi' ? 'vi-VN' : 'ko-KR'
     const updateTime = () => {
-      setCurrentTime(new Date().toLocaleTimeString('ko-KR'))
+      setCurrentTime(new Date().toLocaleTimeString(locale))
     }
     updateTime()
     const timer = setInterval(updateTime, 1000)
     return () => clearInterval(timer)
-  }, [])
+  }, [currentLanguage])
 
   const handleLanguageChange = (language: 'ko' | 'vi') => {
     changeLanguage(language)

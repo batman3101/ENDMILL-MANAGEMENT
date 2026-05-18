@@ -191,11 +191,48 @@ ${dataJson}
 
   /**
    * 데이터에서 인사이트 발견
+   * @param lang 'ko' | 'vi' — 응답 본문(title/summary)에 사용할 언어. category 키는 한국어로 고정해
+   *             클라이언트의 i18n 사전(`aiInsights.파손` 등)과 호환되도록 한다.
    */
-  async analyzeDataForInsights(data: any[] | Record<string, any>): Promise<Insight[]> {
+  async analyzeDataForInsights(
+    data: any[] | Record<string, any>,
+    lang: 'ko' | 'vi' = 'ko'
+  ): Promise<Insight[]> {
     const dataJson = JSON.stringify(data, null, 2)
 
-    const prompt = `
+    const prompt = lang === 'vi'
+      ? `
+Bạn là chuyên gia phân tích dữ liệu quản lý dụng cụ CNC.
+Hãy phân tích dữ liệu sau và đưa ra 3-5 insight cốt lõi.
+
+## Dữ liệu
+${dataJson}
+
+## Loại insight (theo thứ tự ưu tiên)
+1. Khẩn cấp: Mô hình/dao phay có tỷ lệ hỏng cao (priority: high)
+2. Quan trọng: Mặt hàng thiếu tồn kho (priority: high/medium)
+3. Cải thiện: Cơ hội tiết kiệm chi phí (priority: medium)
+4. Tham khảo: Đề xuất cải thiện hiệu suất (priority: low)
+
+## Quy tắc phản hồi
+- Bắt buộc trả về đúng 3-5 insight
+- Mỗi insight phải chứa con số cụ thể
+- title và summary BẮT BUỘC viết bằng tiếng Việt
+- Chỉ trả về mảng JSON (không kèm giải thích)
+- Trường "category" PHẢI giữ nguyên bằng tiếng Hàn (파손|재고|비용|효율성) để tương thích với i18n phía client
+
+## Định dạng phản hồi
+[
+  {
+    "title": "Tiêu đề insight (dưới 20 ký tự, tiếng Việt)",
+    "summary": "Tóm tắt 2-3 câu kèm số liệu cụ thể (tiếng Việt)",
+    "priority": "high|medium|low",
+    "category": "파손|재고|비용|효율성",
+    "data": {}
+  }
+]
+`.trim()
+      : `
 당신은 CNC 공구 관리 데이터 분석 전문가입니다.
 다음 데이터를 분석하여 3-5개의 핵심 인사이트를 발견하세요.
 

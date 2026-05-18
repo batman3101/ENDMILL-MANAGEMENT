@@ -41,7 +41,7 @@ export function QuickQueryInput({ onResult, onReset, className, chatHistory = []
     // console.log('[QuickQueryInput] chatHistory length:', chatHistory.length)
 
     if (!question.trim()) {
-      toast.error('질문을 입력하세요.')
+      toast.error(t('aiInsights.questionRequired'))
       return
     }
 
@@ -65,7 +65,7 @@ export function QuickQueryInput({ onResult, onReset, className, chatHistory = []
 
       // 캐시 여부 표시
       if (result.cached) {
-        toast.success('캐시된 결과입니다 ⚡')
+        toast.success(t('aiInsights.cachedResultToast'))
       }
     } catch (error: any) {
       console.error('[QuickQueryInput] API 에러:', error)
@@ -144,7 +144,7 @@ export function QuickQueryInput({ onResult, onReset, className, chatHistory = []
             {/* 힌트 및 새로운 질문 시작 버튼 */}
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
-                Ctrl + Enter를 눌러 질문 전송
+                {t('aiInsights.ctrlEnterHint')}
               </p>
               {onReset && (
                 <Button
@@ -153,7 +153,7 @@ export function QuickQueryInput({ onResult, onReset, className, chatHistory = []
                   className="gap-2 bg-gradient-to-br from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white"
                 >
                   <RotateCcw className="h-3 w-3" />
-                  새로운 질문 시작
+                  {t('aiInsights.newQuestionStart')}
                 </Button>
               )}
             </div>

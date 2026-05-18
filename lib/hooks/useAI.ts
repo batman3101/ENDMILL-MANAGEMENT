@@ -4,6 +4,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { useFactory } from './useFactory'
 
 // 타입 정의
@@ -150,11 +151,19 @@ export function useChatHistory(sessionId: string) {
  */
 export function useInsights() {
   const { currentFactory } = useFactory()
+  const { i18n } = useTranslation()
   const factoryId = currentFactory?.id
+  // 현재 UI 언어를 'ko' | 'vi' 로 정규화 (그 외는 ko 로 폴백)
+  const lang: 'ko' | 'vi' = i18n.language?.startsWith('vi') ? 'vi' : 'ko'
+
   return useQuery<InsightsResponse>({
-    queryKey: ['insights', factoryId],
+    // 언어 변경 시에도 새 결과를 받기 위해 queryKey 에 lang 포함
+    queryKey: ['insights', factoryId, lang],
     queryFn: async () => {
-      const response = await fetch(`/api/ai/insights${factoryId ? `?factoryId=${factoryId}` : ''}`)
+      const params = new URLSearchParams()
+      if (factoryId) params.append('factoryId', factoryId)
+      params.append('lang', lang)
+      const response = await fetch(`/api/ai/insights?${params.toString()}`)
 
       if (!response.ok) {
         throw new Error('인사이트 조회 실패')

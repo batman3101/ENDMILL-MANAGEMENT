@@ -2219,18 +2219,36 @@ const resources = {
         title: 'AI 인사이트',
         subtitle: '자연어로 데이터를 질문하고 AI 기반 인사이트를 받아보세요',
 
+        // 사용 안내
+        hintLine1: '• 첫 질문 후 연관된 질문을 이어서 진행 가능합니다.',
+        hintLine2Prefix: '• 새로운 인사이트가 필요하면 ',
+        hintLine2Action: '[새로운 질문 시작]',
+        hintLine2Suffix: ' 버튼을 클릭하세요.',
+
         // 메인 기능
         askQuestion: '질문하기',
         quickQuery: '빠른 질문',
         chat: '대화하기',
         autoInsights: '자동 인사이트',
+        autoInsightsRefreshInfo: '자동 인사이트의 갱신은 2시간 마다 이루어집니다',
         savedInsights: '저장된 인사이트',
+
+        // 대화 기록
+        previousConversation: '이전 대화',
 
         // 질문 입력
         questionPlaceholder: '예: 최근 한달간 파손이 많았던 모델은?',
         askAI: 'AI에게 질문',
         asking: '질문 중...',
         exampleQuestions: '예시 질문',
+        ctrlEnterHint: 'Ctrl + Enter를 눌러 질문 전송',
+        newQuestionStart: '새로운 질문 시작',
+        questionRequired: '질문을 입력하세요.',
+        cachedResultToast: '캐시된 결과입니다 ⚡',
+
+        // 고급 정보 토글
+        showAdvanced: '고급 정보 보기',
+        hideAdvanced: '고급 정보 숨기기',
 
         // 예시 질문들
         exampleQ1: '최근 한달간 파손이 많았던 모델은?',
@@ -4558,18 +4576,36 @@ const resources = {
         title: 'AI Insights',
         subtitle: 'Hỏi dữ liệu bằng ngôn ngữ tự nhiên và nhận insights dựa trên AI',
 
+        // Hướng dẫn sử dụng
+        hintLine1: '• Sau câu hỏi đầu tiên, bạn có thể tiếp tục đặt các câu hỏi liên quan.',
+        hintLine2Prefix: '• Nếu cần insight mới, hãy nhấn nút ',
+        hintLine2Action: '[Bắt đầu câu hỏi mới]',
+        hintLine2Suffix: '.',
+
         // Chức năng chính
         askQuestion: 'Đặt câu hỏi',
         quickQuery: 'Truy vấn nhanh',
         chat: 'Trò chuyện',
         autoInsights: 'Insights tự động',
+        autoInsightsRefreshInfo: 'Insights tự động được cập nhật mỗi 2 giờ',
         savedInsights: 'Insights đã lưu',
+
+        // Lịch sử trò chuyện
+        previousConversation: 'Cuộc trò chuyện trước',
 
         // Nhập câu hỏi
         questionPlaceholder: 'Ví dụ: Mô hình nào có nhiều hỏng hóc nhất trong tháng qua?',
         askAI: 'Hỏi AI',
         asking: 'Đang hỏi...',
         exampleQuestions: 'Câu hỏi mẫu',
+        ctrlEnterHint: 'Nhấn Ctrl + Enter để gửi câu hỏi',
+        newQuestionStart: 'Bắt đầu câu hỏi mới',
+        questionRequired: 'Vui lòng nhập câu hỏi.',
+        cachedResultToast: 'Kết quả được lưu trong cache ⚡',
+
+        // Bật/tắt thông tin nâng cao
+        showAdvanced: 'Xem thông tin nâng cao',
+        hideAdvanced: 'Ẩn thông tin nâng cao',
 
         // Câu hỏi mẫu
         exampleQ1: 'Mô hình nào có nhiều hỏng hóc nhất trong tháng qua?',

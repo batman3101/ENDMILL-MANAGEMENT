@@ -65,9 +65,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 4. factoryId 파라미터 추출
+    // 4. factoryId / lang 파라미터 추출
     const { searchParams } = new URL(request.url)
     const factoryId = searchParams.get('factoryId') || undefined
+    const langParam = searchParams.get('lang')
+    const lang: 'ko' | 'vi' = langParam === 'vi' ? 'vi' : 'ko'
 
     // 최근 7일 데이터 조회 (공장 근무시간 기준)
     const factoryToday = getFactoryToday()
@@ -228,9 +230,9 @@ export async function GET(request: NextRequest) {
       },
     }
 
-    // 5. Gemini로 인사이트 분석 (요약된 데이터 사용)
+    // 5. Gemini로 인사이트 분석 (요약된 데이터 + 현재 사용자 언어)
     const geminiService = getGeminiService()
-    const insights = await geminiService.analyzeDataForInsights(summarizedData as any)
+    const insights = await geminiService.analyzeDataForInsights(summarizedData as any, lang)
 
     return NextResponse.json({
       insights,
@@ -305,7 +307,8 @@ export async function POST(request: NextRequest) {
 
     // 4. 요청 바디에서 데이터 추출
     const body = await request.json()
-    const { data } = body
+    const { data, lang: bodyLang } = body
+    const lang: 'ko' | 'vi' = bodyLang === 'vi' ? 'vi' : 'ko'
 
     if (!data || !Array.isArray(data)) {
       return NextResponse.json(
@@ -316,7 +319,7 @@ export async function POST(request: NextRequest) {
 
     // 5. Gemini로 인사이트 분석
     const geminiService = getGeminiService()
-    const insights = await geminiService.analyzeDataForInsights(data)
+    const insights = await geminiService.analyzeDataForInsights(data, lang)
 
     return NextResponse.json({
       insights,
