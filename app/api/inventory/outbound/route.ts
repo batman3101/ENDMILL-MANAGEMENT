@@ -103,6 +103,22 @@ export async function POST(request: NextRequest) {
       factory_id
     } = body
 
+    // factory_id 필수: 공장 미선택 출고는 거부 (DB UNIQUE 보호와 일치)
+    if (!factory_id) {
+      return NextResponse.json(
+        { error: '공장이 선택되지 않았습니다. 헤더에서 공장을 선택해 주세요.' },
+        { status: 400 }
+      )
+    }
+
+    // 수량 검증
+    if (!quantity || quantity <= 0) {
+      return NextResponse.json(
+        { error: '유효한 출고 수량을 입력해 주세요.' },
+        { status: 400 }
+      )
+    }
+
     // 앤드밀 타입 조회
     const { data: endmillType, error: endmillError } = await supabase
       .from('endmill_types')
@@ -117,23 +133,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 재고 조회 (해당 공장의 재고에서만)
-    let inventoryQuery = supabase
+    // 재고 조회: (endmill_type_id, factory_id) UNIQUE이므로 정확히 1행
+    const { data: inventory, error: inventoryError } = await supabase
       .from('inventory')
       .select('*')
       .eq('endmill_type_id', endmillType.id)
+      .eq('factory_id', factory_id)
+      .maybeSingle()
 
-    if (factory_id) {
-      inventoryQuery = inventoryQuery.eq('factory_id', factory_id)
-    } else {
-      inventoryQuery = inventoryQuery.is('factory_id', null)
+    if (inventoryError) {
+      logger.error('재고 조회 오류:', inventoryError)
+      return NextResponse.json(
+        { error: '재고 정보 조회 중 오류가 발생했습니다.' },
+        { status: 500 }
+      )
     }
 
-    const { data: inventory, error: inventoryError } = await inventoryQuery.single()
-
-    if (inventoryError || !inventory) {
+    if (!inventory) {
       return NextResponse.json(
-        { error: '재고 정보를 찾을 수 없습니다.' },
+        { error: '해당 공장에 이 앤드밀의 재고 항목이 없습니다. 먼저 입고 처리를 해주세요.' },
         { status: 400 }
       )
     }
@@ -147,21 +165,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 설비 정보 조회 (있는 경우, factory_id 필터 포함)
+    // 설비 정보 조회 (있는 경우, 공장별 단일 매칭)
     let equipmentId = null
     if (equipment_number) {
       const equipmentNum = equipment_number.replace(/^C/i, '')
-      let equipmentQuery = supabase
+      const { data: equipment } = await supabase
         .from('equipment')
         .select('id')
         .eq('equipment_number', equipmentNum)
-
-      if (factory_id) {
-        equipmentQuery = equipmentQuery.eq('factory_id', factory_id)
-      }
-
-      const { data: equipment } = await equipmentQuery.single()
-      equipmentId = equipment?.id
+        .eq('factory_id', factory_id)
+        .maybeSingle()
+      equipmentId = equipment?.id ?? null
     }
 
     // notes 생성 - 설비번호가 있는 경우와 없는 경우 구분
@@ -172,12 +186,40 @@ export async function POST(request: NextRequest) {
       transactionNotes = '미리 출고 (설비 미지정)'
     }
 
-    // 트랜잭션 시작 - inventory_id 사용
+    // 재고 차감을 먼저 안전하게 (동시 출고 race condition 방어: stock>=quantity 조건부 UPDATE)
+    const { data: updatedInventory, error: updateError } = await supabase
+      .from('inventory')
+      .update({
+        current_stock: currentStock - quantity,
+        last_updated: new Date().toISOString()
+      })
+      .eq('id', inventory.id)
+      .gte('current_stock', quantity)
+      .select('id, current_stock')
+      .maybeSingle()
+
+    if (updateError) {
+      logger.error('재고 차감 오류:', updateError)
+      return NextResponse.json(
+        { error: '재고 차감 중 오류가 발생했습니다.' },
+        { status: 500 }
+      )
+    }
+
+    if (!updatedInventory) {
+      // 다른 동시 요청이 stock을 소진시켰을 가능성 (조건부 UPDATE 매치 실패)
+      return NextResponse.json(
+        { error: '재고가 부족하여 출고할 수 없습니다. 화면을 새로고침 후 다시 시도해 주세요.' },
+        { status: 409 }
+      )
+    }
+
+    // 차감 성공 후 트랜잭션 기록 (재고 정합성 우선)
     const { data: transaction, error: transactionError } = await supabase
       .from('inventory_transactions')
       .insert({
-        inventory_id: inventory.id, // inventory_id 사용
-        transaction_type: 'outbound', // 소문자로 변경
+        inventory_id: inventory.id,
+        transaction_type: 'outbound',
         quantity: quantity,
         equipment_id: equipmentId,
         t_number: t_number || null,
@@ -187,7 +229,7 @@ export async function POST(request: NextRequest) {
         unit_price: endmillType.unit_cost || 0,
         total_amount: quantity * (endmillType.unit_cost || 0),
         processed_at: new Date().toISOString(),
-        factory_id: factory_id || null
+        factory_id: factory_id
       })
       .select(`
         *,
@@ -203,31 +245,16 @@ export async function POST(request: NextRequest) {
 
     if (transactionError) {
       logger.error('출고 트랜잭션 생성 오류:', transactionError)
+      // 차감 롤백 (트랜잭션 기록 실패 시 stock 원복)
+      await supabase
+        .from('inventory')
+        .update({
+          current_stock: currentStock,
+          last_updated: new Date().toISOString()
+        })
+        .eq('id', inventory.id)
       return NextResponse.json(
         { error: '출고 처리 중 오류가 발생했습니다.' },
-        { status: 500 }
-      )
-    }
-
-    // 재고 차감
-    const { error: updateError } = await supabase
-      .from('inventory')
-      .update({
-        current_stock: currentStock - quantity,
-        last_updated: new Date().toISOString()
-      })
-      .eq('id', inventory.id)
-
-    if (updateError) {
-      logger.error('재고 업데이트 오류:', updateError)
-      // 트랜잭션 롤백 시도
-      await supabase
-        .from('inventory_transactions')
-        .delete()
-        .eq('id', transaction.id)
-
-      return NextResponse.json(
-        { error: '재고 업데이트 중 오류가 발생했습니다.' },
         { status: 500 }
       )
     }

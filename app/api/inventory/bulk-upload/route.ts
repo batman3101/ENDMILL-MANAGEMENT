@@ -32,6 +32,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { factory_id, ...restBody } = body;
 
+    // factory_id 필수: 공장 미선택 일괄 업로드는 거부
+    if (!factory_id) {
+      return NextResponse.json(
+        { success: false, error: '공장이 선택되지 않았습니다. 헤더에서 공장을 선택해 주세요.' },
+        { status: 400 }
+      );
+    }
+
     // 입력 데이터 검증
     const validatedData = bulkUploadSchema.parse(restBody);
 
@@ -126,12 +134,18 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // 3. 재고 항목 확인
-        const { data: existingInventory } = await supabase
+        // 3. 재고 항목 확인 (factory_id로 단일 행 보장)
+        const { data: existingInventory, error: lookupError } = await supabase
           .from('inventory')
           .select('id')
           .eq('endmill_type_id', endmillType.id)
-          .single();
+          .eq('factory_id', factory_id)
+          .maybeSingle();
+
+        if (lookupError) {
+          results.errors.push(`${item.code}: 재고 조회 실패 - ${lookupError.message}`);
+          continue;
+        }
 
         if (existingInventory) {
           // 재고 업데이트
@@ -152,16 +166,16 @@ export async function POST(request: NextRequest) {
             logger.info(`재고 업데이트: ${item.code}`);
           }
         } else {
-          // 새 재고 생성
+          // 새 재고 생성 (UPSERT로 race condition 안전)
           const { error: createError } = await supabase
             .from('inventory')
-            .insert({
+            .upsert({
               endmill_type_id: endmillType.id,
               current_stock: item.currentStock,
               min_stock: item.minStock,
               max_stock: item.maxStock,
-              factory_id: factory_id || null
-            });
+              factory_id: factory_id
+            }, { onConflict: 'endmill_type_id,factory_id' });
 
           if (createError) {
             results.errors.push(`${item.code}: 재고 생성 실패 - ${createError.message}`);

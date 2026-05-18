@@ -23,6 +23,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // factory_id 필수: 일괄 업로드는 반드시 공장 지정
+    if (!factory_id) {
+      return NextResponse.json(
+        { error: '공장이 선택되지 않았습니다. 헤더에서 공장을 선택해 주세요.' },
+        { status: 400 }
+      )
+    }
+
     const supabase = createServerClient()
 
     // 1. 데이터 정규화 및 그룹핑 - 엔드밀 타입 마스터 데이터만
@@ -293,18 +301,13 @@ async function upsertSupplierPrices(
   return data || []
 }
 
-async function createInventoryForNewEndmills(supabase: any, endmills: any[], factory_id: string | null) {
-  // 이미 인벤토리에 있는 엔드밀 확인 (공장별)
-  let inventoryQuery = supabase
+async function createInventoryForNewEndmills(supabase: any, endmills: any[], factory_id: string) {
+  // 이미 해당 공장에 있는 엔드밀만 제외 (factory_id 필수)
+  const { data: existingInventory } = await supabase
     .from('inventory')
     .select('endmill_type_id')
     .in('endmill_type_id', endmills.map(e => e.id))
-
-  if (factory_id) {
-    inventoryQuery = inventoryQuery.eq('factory_id', factory_id)
-  }
-
-  const { data: existingInventory } = await inventoryQuery
+    .eq('factory_id', factory_id)
 
   const existingIds = new Set(existingInventory?.map((inv: any) => inv.endmill_type_id) || [])
 
@@ -317,13 +320,14 @@ async function createInventoryForNewEndmills(supabase: any, endmills: any[], fac
       max_stock: 50,
       status: 'critical',
       location: 'A동 공구창고',
-      factory_id: factory_id || null
+      factory_id: factory_id
     }))
 
   if (newInventoryData.length > 0) {
+    // UPSERT로 race condition 안전 (동시 요청 시 UNIQUE 제약과 함께 보호)
     const { error } = await supabase
       .from('inventory')
-      .insert(newInventoryData)
+      .upsert(newInventoryData, { onConflict: 'endmill_type_id,factory_id', ignoreDuplicates: true })
 
     if (error) {
       logger.warn('인벤토리 생성 오류:', error)

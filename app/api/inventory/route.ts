@@ -156,9 +156,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { factory_id, ...restBody } = body;
 
+    // factory_id 필수
+    if (!factory_id) {
+      return NextResponse.json(
+        { success: false, error: '공장이 선택되지 않았습니다. 헤더에서 공장을 선택해 주세요.' },
+        { status: 400 }
+      );
+    }
+
     // 입력 데이터 검증
     const validatedData = createInventorySchema.parse(restBody);
-    
+
     // 앤드밀 타입 존재 여부 확인
     const endmillType = await serverSupabaseService.endmillType.getByCode(validatedData.endmillCode)
     if (!endmillType) {
@@ -171,6 +179,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // (endmill_type_id, factory_id) 중복 체크 — 동일 공장에 이미 같은 앤드밀의 재고가 있으면 거부
+    const { data: existing, error: lookupError } = await supabase
+      .from('inventory')
+      .select('id')
+      .eq('endmill_type_id', endmillType.id)
+      .eq('factory_id', factory_id)
+      .maybeSingle()
+
+    if (lookupError) {
+      logger.error('재고 중복 확인 오류:', lookupError)
+      return NextResponse.json(
+        { success: false, error: '재고 중복 확인 중 오류가 발생했습니다.' },
+        { status: 500 }
+      )
+    }
+
+    if (existing) {
+      return NextResponse.json(
+        { success: false, error: '해당 공장에 이미 같은 앤드밀의 재고 항목이 존재합니다. 기존 항목의 "수정"으로 갱신해 주세요.' },
+        { status: 409 }
+      )
+    }
+
     // 새 재고 항목 생성 (Supabase에서 자동으로 status가 트리거로 계산됨)
     const newInventory = await serverSupabaseService.inventory.create({
       endmill_type_id: endmillType.id,
@@ -178,7 +209,7 @@ export async function POST(request: NextRequest) {
       min_stock: validatedData.minStock,
       max_stock: validatedData.maxStock,
       location: validatedData.location || 'A-001',
-      ...(factory_id && { factory_id: factory_id })
+      factory_id: factory_id
     } as any)
 
     return NextResponse.json({

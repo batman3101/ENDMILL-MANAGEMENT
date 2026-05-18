@@ -14,6 +14,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // factory_id 필수: 공장 미선택 신규 등록은 거부 (inventory NOT NULL + UNIQUE 보호)
+    if (!factory_id) {
+      return NextResponse.json(
+        { error: '공장이 선택되지 않았습니다. 헤더에서 공장을 선택해 주세요.' },
+        { status: 400 }
+      )
+    }
+
     // 코드 중복 검사
     const { data: existingEndmill, error: duplicateError } = await supabase
       .from('endmill_types')
@@ -81,7 +89,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 인벤토리에 기본 정보 추가 (공장별 분리)
+    // 인벤토리에 기본 정보 추가 (공장별, UPSERT로 race condition 안전)
     const inventoryData = {
       endmill_type_id: newEndmill.id,
       current_stock: 0,
@@ -89,12 +97,12 @@ export async function POST(request: NextRequest) {
       max_stock: 50,
       status: 'critical' as const,
       location: 'A동 공구창고',
-      factory_id: factory_id || null
+      factory_id: factory_id
     }
 
     const { error: inventoryError } = await supabase
       .from('inventory')
-      .insert(inventoryData)
+      .upsert(inventoryData, { onConflict: 'endmill_type_id,factory_id', ignoreDuplicates: true })
 
     if (inventoryError) {
       logger.warn('인벤토리 생성 경고:', inventoryError)

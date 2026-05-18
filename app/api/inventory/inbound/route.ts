@@ -96,6 +96,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // factory_id 필수: 공장 미선택 입고는 거부 (DB의 factory_id NOT NULL + UNIQUE 보호)
+    if (!factory_id) {
+      return NextResponse.json(
+        { error: '공장이 선택되지 않았습니다. 헤더에서 공장을 선택해 주세요.' },
+        { status: 400 }
+      )
+    }
+
     // 앤드밀 타입 조회
     const { data: endmillType, error: endmillError } = await supabase
       .from('endmill_types')
@@ -111,35 +119,37 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 재고 정보 조회 또는 생성 (factory_id 필터 적용)
-    let inventoryQuery = supabase
+    // 재고 정보 조회 (factory_id로 단일 행 보장 — DB UNIQUE: endmill_type_id, factory_id)
+    const { data: inventory, error } = await supabase
       .from('inventory')
       .select('id, current_stock')
       .eq('endmill_type_id', endmillType.id)
+      .eq('factory_id', factory_id)
+      .maybeSingle()
 
-    if (factory_id) {
-      inventoryQuery = inventoryQuery.eq('factory_id', factory_id)
-    } else {
-      inventoryQuery = inventoryQuery.is('factory_id', null)
+    if (error) {
+      logger.error('재고 정보 조회 오류:', error)
+      return NextResponse.json(
+        { error: '재고 정보 조회 중 오류가 발생했습니다.' },
+        { status: 500 }
+      )
     }
-
-    const { data: inventory, error } = await inventoryQuery.single()
 
     let finalInventory = inventory
 
-    if (error && error.code === 'PGRST116') {
-      // 재고 정보가 없으면 새로 생성
+    if (!inventory) {
+      // 재고 정보가 없으면 UPSERT로 안전 생성 (동시 요청 시 race condition 방지)
       const { data: newInventory, error: createError } = await supabase
         .from('inventory')
-        .insert({
+        .upsert({
           endmill_type_id: endmillType.id,
           current_stock: 0,
           min_stock: 50,
           max_stock: 500,
           status: 'sufficient',
           location: '창고A',
-          factory_id: factory_id || null
-        })
+          factory_id: factory_id
+        }, { onConflict: 'endmill_type_id,factory_id' })
         .select('id, current_stock')
         .single()
 
@@ -152,12 +162,6 @@ export async function POST(request: NextRequest) {
       }
 
       finalInventory = newInventory
-    } else if (error) {
-      logger.error('재고 정보 조회 오류:', error)
-      return NextResponse.json(
-        { error: '재고 정보 조회 중 오류가 발생했습니다.' },
-        { status: 500 }
-      )
     }
 
     // 입고 트랜잭션 생성
