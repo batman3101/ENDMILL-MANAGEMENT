@@ -17,6 +17,7 @@ import {
 import { useSettings } from '@/lib/hooks/useSettings'
 import { logger, clientLogger } from '@/lib/utils/logger'
 import { useFactory } from '@/lib/hooks/useFactory'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { NoBreak } from '@/components/ui/no-break'
 import {
@@ -53,6 +54,7 @@ function formatDateForLocale(value: string | null | undefined, locale: string): 
 
 export default function CAMSheetsPage() {
   const router = useRouter()
+  const dragRef = useDraggableModal()
   const { t, i18n } = useTranslation()
   const dateLocale = resolveDateLocale(i18n.language)
   const {
@@ -989,7 +991,7 @@ export default function CAMSheetsPage() {
       {selectedSheet && (
         <div className="mobile-modal-container" onClick={() => setSelectedSheet(null)}>
           <div
-            className="mobile-modal-content md:max-w-4xl"
+            ref={dragRef} className="mobile-modal-content md:max-w-4xl"
             onClick={e => e.stopPropagation()}
           >
             <div className="mobile-modal-header">

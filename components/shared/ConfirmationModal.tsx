@@ -128,7 +128,7 @@ export default function ConfirmationModal({
       aria-labelledby="confirmation-title"
       aria-describedby="confirmation-message"
     >
-      <div className="bg-paper rounded-md shadow-hover-lift max-w-md w-full transform transition-all">
+      <div className="bg-paper rounded-md border border-divider shadow-hover-lift max-w-md w-full transform transition-all">
         {/* 헤더 */}
         <div className="p-6 pb-4">
           <div className="flex items-start">

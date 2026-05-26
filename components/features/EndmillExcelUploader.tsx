@@ -6,6 +6,7 @@ import { X, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
 import ExcelJS from 'exceljs'
 import { validateEndmillExcelData, convertToEndmillDBFormat } from '../../lib/utils/endmillExcelTemplate'
 import { useToast } from '../shared/Toast'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { clientLogger } from '@/lib/utils/logger'
 
 interface EndmillExcelUploaderProps {
@@ -21,6 +22,7 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
   const [parsedData, setParsedData] = useState<any[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { showSuccess, showError, showWarning } = useToast()
+  const dragRef = useDraggableModal()
 
   // DB에서 동적으로 가져올 매핑 데이터
   const [, setCategoryMap] = useState<Record<string, string>>({})
@@ -209,7 +211,7 @@ export default function EndmillExcelUploader({ onUploadSuccess, onClose }: Endmi
 
   return (
     <div className="mobile-modal-container" onClick={onClose}>
-      <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
+      <div ref={dragRef} className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header">
           <h3 className="text-title font-medium text-ink">{t('endmill.bulkUploadTitle')}</h3>
           <button

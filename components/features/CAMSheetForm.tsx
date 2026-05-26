@@ -6,6 +6,7 @@ import { X, CheckCircle2 } from 'lucide-react'
 import { useInventorySearch } from '../../lib/hooks/useInventory'
 import { useToast } from '../../components/shared/Toast'
 import { useSettings } from '../../lib/hooks/useSettings'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 
 interface EndmillInfo {
   tNumber: number
@@ -35,6 +36,7 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
   const { searchByCode } = useInventorySearch()
   const { settings } = useSettings()
   const availableProcesses = settings.equipment.processes
+  const dragRef = useDraggableModal()
 
   const [formData, setFormData] = useState<CAMSheetFormData>({
     model: initialData?.model || '',
@@ -162,7 +164,7 @@ export default function CAMSheetForm({ onSubmit, onCancel, initialData }: CAMShe
 
   return (
     <div className="mobile-modal-container" onClick={onCancel}>
-      <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
+      <div ref={dragRef} className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header">
           <h3 className="text-title font-medium text-ink">
             {initialData ? t('camSheets.camSheetFormEditTitle') : t('camSheets.camSheetFormTitle')}

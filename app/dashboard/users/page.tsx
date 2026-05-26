@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import {
   Users,
   UserCheck,
@@ -117,6 +118,7 @@ export default function UsersPage() {
 
 function UsersPageContent() {
   const { t } = useTranslation()
+  const dragRef = useDraggableModal()
   const {
     getUserStats,
     getFilteredUsers,
@@ -1536,7 +1538,7 @@ function UsersPageContent() {
           }}
         >
           <div
-            className="mobile-modal-content md:max-w-2xl"
+            ref={dragRef} className="mobile-modal-content md:max-w-2xl"
             onClick={e => e.stopPropagation()}
           >
             <div className="mobile-modal-header">
@@ -1707,7 +1709,7 @@ function UsersPageContent() {
           }}
         >
           <div
-            className="mobile-modal-content md:max-w-2xl"
+            ref={dragRef} className="mobile-modal-content md:max-w-2xl"
             onClick={e => e.stopPropagation()}
           >
             <div className="mobile-modal-header">
@@ -1973,7 +1975,7 @@ function UsersPageContent() {
           onClick={() => !isSubmitting && setShowAddModal(false)}
         >
           <div
-            className="mobile-modal-content md:max-w-2xl"
+            ref={dragRef} className="mobile-modal-content md:max-w-2xl"
             onClick={e => e.stopPropagation()}
           >
             <div className="mobile-modal-header">
@@ -2269,7 +2271,7 @@ function UsersPageContent() {
           onClick={() => !isSubmitting && setShowPermissionModal(false)}
         >
           <div
-            className="mobile-modal-content md:max-w-4xl"
+            ref={dragRef} className="mobile-modal-content md:max-w-4xl"
             onClick={e => e.stopPropagation()}
           >
             <div className="mobile-modal-header">
@@ -2481,7 +2483,7 @@ function UsersPageContent() {
           onClick={() => !isSubmitting && setShowTemplateModal(false)}
         >
           <div
-            className="mobile-modal-content md:max-w-4xl"
+            ref={dragRef} className="mobile-modal-content md:max-w-4xl"
             onClick={e => e.stopPropagation()}
           >
             <div className="mobile-modal-header">
@@ -2700,7 +2702,7 @@ function UsersPageContent() {
           onClick={() => !isBulkUploading && handleCloseBulkUploadModal()}
         >
           <div
-            className="mobile-modal-content md:max-w-lg"
+            ref={dragRef} className="mobile-modal-content md:max-w-lg"
             onClick={e => e.stopPropagation()}
           >
             <div className="mobile-modal-header">

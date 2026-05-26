@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../shared/Toast'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { clientLogger } from '@/lib/utils/logger'
 
 interface Supplier {
@@ -36,6 +37,7 @@ export default function AddSupplierPriceModal({
   const [loading, setLoading] = useState(false)
   const [loadingSuppliers, setLoadingSuppliers] = useState(true)
   const { showError } = useToast()
+  const dragRef = useDraggableModal()
 
   // 공급업체 목록 로드
   useEffect(() => {
@@ -121,7 +123,7 @@ export default function AddSupplierPriceModal({
 
   return (
     <div className="mobile-modal-container" onClick={onClose}>
-      <div className="mobile-modal-content md:max-w-lg" onClick={(e) => e.stopPropagation()}>
+      <div ref={dragRef} className="mobile-modal-content md:max-w-lg" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header flex-col items-start">
           <h3 className="text-title font-medium text-ink">{t('endmill.addSupplierPriceTitle')}</h3>
           <p className="text-label text-ink-soft mt-1">

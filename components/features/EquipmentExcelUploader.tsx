@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { useSettings } from '../../lib/hooks/useSettings'
 import { useCAMSheets } from '../../lib/hooks/useCAMSheets'
 import { useFactory } from '../../lib/hooks/useFactory'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 
 interface EquipmentExcelUploaderProps {
   onUploadSuccess: () => void
@@ -31,6 +32,7 @@ export default function EquipmentExcelUploader({
   const [selectedFileName, setSelectedFileName] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { showSuccess, showError } = useToast()
+  const dragRef = useDraggableModal()
 
   // 현재 공장 정보
   const { currentFactory } = useFactory()
@@ -171,7 +173,7 @@ export default function EquipmentExcelUploader({
 
   return (
     <div className="mobile-modal-container" onClick={() => !isUploading && onCancel()}>
-      <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
+      <div ref={dragRef} className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
         {/* 헤더 */}
         <div className="mobile-modal-header">
           <h3 className="text-title font-semibold text-ink">

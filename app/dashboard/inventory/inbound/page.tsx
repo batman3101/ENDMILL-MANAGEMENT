@@ -7,6 +7,7 @@ import ConfirmationModal from '../../../../components/shared/ConfirmationModal'
 import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/useConfirmation'
 import { useTranslations } from '../../../../lib/hooks/useTranslations'
 import { useFactory } from '../../../../lib/hooks/useFactory'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { supabase } from '../../../../lib/supabase/client'
 import { clientLogger } from '../../../../lib/utils/logger'
 import { InboundHistoryCard } from '../../../../components/features/inventory/inbound-history-card'
@@ -36,6 +37,7 @@ interface InboundItem {
 
 export default function InboundPage() {
   const { t } = useTranslations()
+  const dragRef = useDraggableModal()
   const { showSuccess, showError } = useToast()
   const confirmation = useConfirmation()
   const { currentFactory } = useFactory()
@@ -976,7 +978,7 @@ export default function InboundPage() {
       {/* 수정 모달 */}
       {isEditModalOpen && editingItem && (
         <div className="mobile-modal-container" onClick={() => { setIsEditModalOpen(false); setEditingItem(null); }}>
-          <div className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
+          <div ref={dragRef} className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-modal-header">
               <h3 className="text-title font-semibold text-ink">{t('inventory.editInbound')}</h3>
               <button

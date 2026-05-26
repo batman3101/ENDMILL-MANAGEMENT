@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { useToast } from '../shared/Toast'
+import { useFactory } from '@/lib/hooks/useFactory'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { clientLogger } from '@/lib/utils/logger'
 
 interface EndmillFormData {
@@ -50,6 +52,8 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
   const [_showSupplierSection, setShowSupplierSection] = useState(!editData) // 신규 등록 시 기본 표시
   const [categories, setCategories] = useState<any[]>([])
   const { showSuccess, showError } = useToast()
+  const { currentFactory } = useFactory()
+  const dragRef = useDraggableModal()
 
   // 수정 모드일 때 초기 데이터 설정
   useEffect(() => {
@@ -214,7 +218,8 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
         },
         body: JSON.stringify({
           ...submitData,
-          supplier_prices: allSupplierPrices
+          supplier_prices: allSupplierPrices,
+          factory_id: currentFactory?.id
         }),
       })
 
@@ -238,7 +243,7 @@ export default function EndmillForm({ onSuccess, onClose, editData }: EndmillFor
 
   return (
     <div className="mobile-modal-container" onClick={onClose}>
-      <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+      <div ref={dragRef} className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header">
           <h3 className="text-title font-medium text-ink">
             {editData ? t('endmill.editEndmillTitle') : t('endmill.newEndmillTitle')}

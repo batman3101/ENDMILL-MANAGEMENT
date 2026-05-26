@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useToast } from '../shared/Toast'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { clientLogger } from '@/lib/utils/logger'
 
 interface SupplierPrice {
@@ -37,6 +38,7 @@ export default function EditSupplierPriceModal({
   onClose,
   onSuccess
 }: EditSupplierPriceModalProps) {
+  const dragRef = useDraggableModal()
   const [unitPrice, setUnitPrice] = useState(supplierPrice.unit_price.toString())
   const [minOrderQuantity, setMinOrderQuantity] = useState(supplierPrice.min_order_quantity.toString())
   const [leadTimeDays, setLeadTimeDays] = useState(supplierPrice.lead_time_days.toString())
@@ -91,7 +93,7 @@ export default function EditSupplierPriceModal({
 
   return (
     <div className="mobile-modal-container" onClick={onClose}>
-      <div className="mobile-modal-content md:max-w-lg" onClick={(e) => e.stopPropagation()}>
+      <div ref={dragRef} className="mobile-modal-content md:max-w-lg" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header flex-col items-start">
           <h3 className="text-title font-medium text-ink">공급업체 가격 수정</h3>
           <p className="text-label text-ink-soft mt-1">

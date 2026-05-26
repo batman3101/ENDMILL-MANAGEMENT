@@ -6,6 +6,7 @@ import { X, FolderOpen, Upload, Download, FileText, AlertTriangle, CheckCircle2,
 import ExcelJS from 'exceljs'
 import { CAMSheet, EndmillInfo, useCAMSheets } from '../../lib/hooks/useCAMSheets'
 import { downloadExcelTemplate, validateExcelData } from '../../lib/utils/excelTemplate'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { clientLogger } from '@/lib/utils/logger'
 
 interface ExcelUploaderProps {
@@ -34,6 +35,7 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
   const [validationResult, setValidationResult] = useState<{ isValid: boolean; errors: string[]; warnings: string[] } | null>(null)
   const [duplicateInfo, setDuplicateInfo] = useState<{ duplicates: string[]; newSheets: any[] } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const dragRef = useDraggableModal()
 
   const handleFileUpload = async (file: File) => {
     if (!file.name.match(/\.(xlsx|xls)$/)) {
@@ -277,7 +279,7 @@ export default function ExcelUploader({ onDataParsed, onClose }: ExcelUploaderPr
 
   return (
     <div className="mobile-modal-container" onClick={onClose}>
-      <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
+      <div ref={dragRef} className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header">
           <h3 className="text-title font-medium text-ink inline-flex items-center gap-2">
             <FolderOpen className="w-5 h-5" aria-hidden="true" />

@@ -6,6 +6,7 @@ import { X, FileText, Download, Upload, FolderOpen, BarChart3, CheckCircle2, Ale
 import ExcelJS from 'exceljs'
 import { downloadEndmillMasterTemplate, validateEndmillMasterData } from '../../lib/utils/excelTemplate'
 import { useToast } from '../shared/Toast'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { clientLogger } from '@/lib/utils/logger'
 
 interface EndmillMasterData {
@@ -39,6 +40,7 @@ interface EndmillMasterUploaderProps {
 export default function EndmillMasterUploader({ onDataParsed, onClose }: EndmillMasterUploaderProps) {
   const { t } = useTranslation()
   const { showSuccess, showError } = useToast()
+  const dragRef = useDraggableModal()
   const [dragActive, setDragActive] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [validationResult, setValidationResult] = useState<any>(null)
@@ -176,7 +178,7 @@ export default function EndmillMasterUploader({ onDataParsed, onClose }: Endmill
 
   return (
     <div className="mobile-modal-container" onClick={onClose}>
-      <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
+      <div ref={dragRef} className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
         <div className="mobile-modal-header">
           <h3 className="text-title font-medium text-ink">{t('endmill.bulkUpdateTitle')}</h3>
           <button

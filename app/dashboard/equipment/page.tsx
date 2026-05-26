@@ -14,6 +14,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { clientLogger } from '../../../lib/utils/logger'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import ConfirmationModal from '../../../components/shared/ConfirmationModal'
 import { useConfirmation } from '../../../lib/hooks/useConfirmation'
 import { useToast } from '../../../components/shared/Toast'
@@ -80,6 +81,7 @@ interface AddFormData {
 
 export default function EquipmentPage() {
   const router = useRouter()
+  const dragRef = useDraggableModal()
   const { t, i18n } = useTranslation()
   const dateLocale = resolveDateLocale(i18n.language)
   const [searchTerm, setSearchTerm] = useState('')
@@ -1014,7 +1016,7 @@ export default function EquipmentPage() {
           onClick={() => !isSubmitting && setShowAddModal(false)}
         >
           <div
-            className="mobile-modal-content md:max-w-md"
+            ref={dragRef} className="mobile-modal-content md:max-w-md"
             onClick={e => e.stopPropagation()}
           >
             <div className="mobile-modal-header">
@@ -1221,7 +1223,7 @@ export default function EquipmentPage() {
           onClick={() => !isSubmitting && setShowEditModal(false)}
         >
           <div
-            className="mobile-modal-content md:max-w-2xl"
+            ref={dragRef} className="mobile-modal-content md:max-w-2xl"
             onClick={e => e.stopPropagation()}
           >
             <div className="mobile-modal-header">

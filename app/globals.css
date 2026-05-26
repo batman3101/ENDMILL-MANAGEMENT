@@ -318,11 +318,13 @@
 
   .mobile-modal-container {
     @apply fixed inset-0 z-[9999] flex items-end md:items-center justify-center;
+    @apply bg-black/50 backdrop-blur-sm;
   }
 
   .mobile-modal-content {
-    @apply bg-paper w-full md:max-w-2xl md:mx-4 md:rounded-md;
+    @apply bg-paper w-full md:max-w-2xl md:mx-4;
     @apply rounded-t-2xl md:rounded-xl;
+    @apply border border-divider shadow-2xl overflow-hidden;
     max-height: 90vh;
     max-height: 90dvh;
     display: flex;
@@ -332,6 +334,7 @@
   .mobile-modal-header {
     @apply sticky top-0 bg-paper px-4 py-4 border-b border-divider flex items-center justify-between;
     @apply rounded-t-2xl md:rounded-t-xl;
+    @apply md:cursor-move md:select-none;
     flex-shrink: 0;
   }
 
@@ -341,8 +344,9 @@
   }
 
   .mobile-modal-footer {
-    @apply sticky bottom-0 bg-paper px-4 py-4 border-t border-divider;
-    @apply safe-area-bottom;
+    @apply sticky bottom-0 bg-paper px-4 pt-4 border-t border-divider;
+    /* safe-area-bottom 가 하단 패딩을 0 으로 덮어쓰지 않도록, 기본 여백에 안전영역을 더해준다 */
+    padding-bottom: calc(1.5rem + var(--safe-area-inset-bottom));
     flex-shrink: 0;
   }
 

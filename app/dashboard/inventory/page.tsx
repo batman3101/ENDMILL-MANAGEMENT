@@ -13,10 +13,12 @@ import { useTranslations } from '../../../lib/hooks/useTranslations'
 import { clientLogger } from '../../../lib/utils/logger'
 import { InventoryListCard } from '../../../components/features/inventory/inventory-list-card'
 import { StatusBadge, type StatusBadgeVariant } from '../../../components/ui/status-badge'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 // ExcelJS and inventory templates are dynamically imported when needed
 
 export default function InventoryPage() {
   const { t } = useTranslations()
+  const dragRef = useDraggableModal()
   const { showSuccess, showError, showWarning } = useToast()
   const confirmation = useConfirmation()
   const [searchTerm, setSearchTerm] = useState('')
@@ -1172,7 +1174,7 @@ export default function InventoryPage() {
       {/* 신규 앤드밀 추가 모달 */}
       {showAddModal && (
         <div className="mobile-modal-container" onClick={() => setShowAddModal(false)}>
-          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+          <div ref={dragRef} className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-modal-header">
               <h3 className="text-lg font-medium">{t('inventory.addNewEndmillModal')}</h3>
               <button
@@ -1369,7 +1371,7 @@ export default function InventoryPage() {
       {/* 상세보기 모달 */}
       {showDetailModal && selectedItem && (
         <div className="mobile-modal-container" onClick={() => setShowDetailModal(false)}>
-          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+          <div ref={dragRef} className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-modal-header">
               <h3 className="text-lg font-medium">{t('inventory.endmillDetail')}</h3>
               <button
@@ -1468,7 +1470,7 @@ export default function InventoryPage() {
       {/* 수정 모달 */}
       {showEditModal && editFormData && (
         <div className="mobile-modal-container" onClick={() => setShowEditModal(false)}>
-          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+          <div ref={dragRef} className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-modal-header">
               <h3 className="text-lg font-medium">{t('inventory.editEndmillInfo')}</h3>
               <button
@@ -1567,7 +1569,7 @@ export default function InventoryPage() {
       {/* 엑셀 업로드 모달 */}
       {showExcelUploadModal && (
         <div className="mobile-modal-container" onClick={() => setShowExcelUploadModal(false)}>
-          <div className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+          <div ref={dragRef} className="mobile-modal-content md:max-w-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-modal-header">
               <h3 className="text-lg font-medium">{t('inventory.excelMasterDataUpload')}</h3>
               <button
@@ -1669,7 +1671,7 @@ export default function InventoryPage() {
       {/* QR 스캐너 모달 */}
       {showQRScanner && (
         <div className="mobile-modal-container" onClick={() => setShowQRScanner(false)}>
-          <div className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
+          <div ref={dragRef} className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-modal-header">
               <h3 className="text-lg font-medium">{t('inventory.qrCodeScan')}</h3>
               <button

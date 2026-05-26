@@ -8,6 +8,7 @@ import { useConfirmation, createSaveConfirmation } from '../../../../lib/hooks/u
 import { useSettings } from '../../../../lib/hooks/useSettings'
 import { useTranslations } from '../../../../lib/hooks/useTranslations'
 import { useFactory } from '../../../../lib/hooks/useFactory'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { supabase } from '../../../../lib/supabase/client'
 import { clientLogger } from '../../../../lib/utils/logger'
 import { getToolChangeReasonLabel } from '../../../../lib/utils/toolChangeReasonLabels'
@@ -41,6 +42,7 @@ interface OutboundItem {
 
 export default function OutboundPage() {
   const { t } = useTranslations()
+  const dragRef = useDraggableModal()
   const { showSuccess, showError, showWarning } = useToast()
   const confirmation = useConfirmation()
   const { currentFactory } = useFactory()
@@ -1132,7 +1134,7 @@ export default function OutboundPage() {
       {/* 수정 모달 */}
       {isEditModalOpen && editingItem && (
         <div className="mobile-modal-container" onClick={() => { setIsEditModalOpen(false); setEditingItem(null); }}>
-          <div className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
+          <div ref={dragRef} className="mobile-modal-content md:max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-modal-header">
               <h3 className="text-title font-semibold text-ink">{t('inventory.editOutbound')}</h3>
               <button

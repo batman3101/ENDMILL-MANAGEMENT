@@ -27,6 +27,7 @@ import {
   X,
 } from 'lucide-react'
 import { useSettings } from '../../../lib/hooks/useSettings'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { SettingsCategory } from '../../../lib/types/settings'
 import { useToast } from '../../../components/shared/Toast'
 import { AdminGuard } from '../../../components/auth/PermissionGuard'
@@ -1671,13 +1672,14 @@ function CategoryModal({
   onSubmit,
 }: CategoryModalProps) {
   const { t } = useTranslation()
+  const dragRef = useDraggableModal()
   return (
     <div
       className="mobile-modal-container"
       onClick={() => !isLoading && onClose()}
     >
       <div
-        className="mobile-modal-content md:max-w-md"
+        ref={dragRef} className="mobile-modal-content md:max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mobile-modal-header flex items-center justify-between">
@@ -1796,13 +1798,14 @@ function SupplierModal({
   onSubmit,
 }: SupplierModalProps) {
   const { t } = useTranslation()
+  const dragRef = useDraggableModal()
   return (
     <div
       className="mobile-modal-container"
       onClick={() => !isLoading && onClose()}
     >
       <div
-        className="mobile-modal-content md:max-w-md"
+        ref={dragRef} className="mobile-modal-content md:max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mobile-modal-header flex items-center justify-between">

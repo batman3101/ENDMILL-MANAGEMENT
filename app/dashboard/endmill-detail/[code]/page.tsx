@@ -22,6 +22,7 @@ import { useTranslations } from '../../../../lib/hooks/useTranslations'
 import { NoBreak } from '@/components/ui/no-break'
 import EndmillSupplierPrices from '../../../../components/features/EndmillSupplierPrices'
 import { clientLogger } from '@/lib/utils/logger'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { getToolChangeReasonLabel } from '@/lib/utils/toolChangeReasonLabels'
 
 const EndmillMasterUploader = dynamic(
@@ -36,6 +37,7 @@ const ITEMS_PER_PAGE = 10
 
 export default function EndmillDetailPage() {
   const params = useParams()
+  const dragRef = useDraggableModal()
   const router = useRouter()
   const endmillCode = params.code as string
   const { showSuccess, showError } = useToast()
@@ -732,7 +734,7 @@ export default function EndmillDetailPage() {
           onClick={() => setShowEditModal(false)}
         >
           <div
-            className="mobile-modal-content md:max-w-2xl"
+            ref={dragRef} className="mobile-modal-content md:max-w-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mobile-modal-header">

@@ -15,12 +15,14 @@ import SortableTableHeader from '../../../components/shared/SortableTableHeader'
 import { ToolChangeListCard } from '@/components/features/tool-changes/tool-change-list-card'
 import { clientLogger } from '@/lib/utils/logger'
 import { useFactory } from '@/lib/hooks/useFactory'
+import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { getToolChangeReasonLabel } from '@/lib/utils/toolChangeReasonLabels'
 import type { ToolChangeExcelData } from '@/lib/utils/toolChangesExcelTemplate'
 // toolChangesExcelTemplate functions are dynamically imported when needed
 
 export default function ToolChangesPage() {
   const { t } = useTranslation()
+  const dragRef = useDraggableModal()
   const router = useRouter()
   const { showSuccess, showError } = useToast()
   const { camSheets, getAvailableModels } = useCAMSheets()
@@ -913,7 +915,7 @@ export default function ToolChangesPage() {
       {/* Excel 일괄 입력 모달 */}
       {showBulkUploadModal && (
         <div className="mobile-modal-container" onClick={handleCloseBulkUploadModal}>
-          <div className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
+          <div ref={dragRef} className="mobile-modal-content md:max-w-4xl" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-modal-header">
               <h3 className="text-lg font-medium text-ink">{t('toolChanges.bulkUploadTitle')}</h3>
               <button
