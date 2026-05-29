@@ -44,11 +44,6 @@ export async function GET(request: NextRequest) {
     const dateParam = searchParams.get('date') // YYYY-MM-DD 형식
     const factoryId = searchParams.get('factoryId') || undefined
 
-    // 공장 필터 필수 — 누락 시 전체(접근 가능) 공장 통계가 섞여 반환되는 것을 방지(fail-closed)
-    if (!factoryId) {
-      return NextResponse.json({ success: false, error: 'factoryId is required' }, { status: 400 })
-    }
-
     // 베트남 시간대(UTC+7) 기준, 08시를 기준으로 하루 구분
     const vietnamOffset = 7 * 60 // UTC+7 (분 단위)
     const now = new Date()

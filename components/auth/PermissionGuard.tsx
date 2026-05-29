@@ -1,9 +1,7 @@
 'use client'
 
-import { ReactNode, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { ReactNode } from 'react'
 import { useAuth } from '@/lib/hooks/useAuth'
-import { usePermissions } from '@/lib/hooks/usePermissions'
 
 interface PermissionGuardProps {
   children: ReactNode
@@ -48,18 +46,6 @@ export function AdminGuard({
   fallback,
 }: AdminGuardProps) {
   const { user, loading } = useAuth()
-  const { isAdmin } = usePermissions()
-  const router = useRouter()
-
-  // 관리자(admin/system_admin)만 접근 허용 — 메뉴 숨김과 별개로 URL 직접 진입도 차단
-  const allowed = !loading && !!user && isAdmin()
-
-  // 로그인했으나 관리자가 아니면 대시보드로 리다이렉트
-  useEffect(() => {
-    if (!loading && user && !allowed) {
-      router.replace('/dashboard')
-    }
-  }, [loading, user, allowed, router])
 
   if (loading) {
     return (
@@ -69,7 +55,8 @@ export function AdminGuard({
     )
   }
 
-  if (!allowed) {
+  // 내부 시스템이므로 로그인한 모든 사용자가 관리자로 간주
+  if (!user) {
     return fallback ? <>{fallback}</> : null
   }
 

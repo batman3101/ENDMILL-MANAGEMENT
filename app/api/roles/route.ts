@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createServerClient } from '@/lib/supabase/client'
 import { isAdmin, isSystemAdmin } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
 
 // GET /api/roles - 모든 역할 조회
 export async function GET(_request: NextRequest) {
   try {
-    // 쿠키 바인딩 클라이언트 — 요청자 JWT 세션 검증
-    const authClient = createClient()
-    // 서비스롤 클라이언트 — RLS 우회 DB 작업용
-    const adminClient = createAdminClient()
+    const supabase = createServerClient()
 
     // 현재 사용자 확인
-    const { data: { user }, error: authError } = await authClient.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -21,7 +18,7 @@ export async function GET(_request: NextRequest) {
     }
 
     // 사용자 프로필 조회 (권한 확인용)
-    const { data: currentUserProfile } = await authClient
+    const { data: currentUserProfile } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('user_id', user.id)
@@ -43,8 +40,8 @@ export async function GET(_request: NextRequest) {
       )
     }
 
-    // 역할 목록 조회 (RLS 우회 — 서비스롤 클라이언트 사용)
-    const { data: roles, error } = await adminClient
+    // 역할 목록 조회
+    const { data: roles, error } = await supabase
       .from('user_roles')
       .select('*')
       .order('created_at', { ascending: true })
@@ -57,10 +54,10 @@ export async function GET(_request: NextRequest) {
       )
     }
 
-    // 각 역할을 사용하는 사용자 수 계산 (서비스롤 클라이언트 사용)
+    // 각 역할을 사용하는 사용자 수 계산
     const rolesWithCount = await Promise.all(
       (roles || []).map(async (role) => {
-        const { count } = await adminClient
+        const { count } = await supabase
           .from('user_profiles')
           .select('id', { count: 'exact', head: true })
           .eq('role_id', role.id)
@@ -90,13 +87,10 @@ export async function GET(_request: NextRequest) {
 // POST /api/roles - 새 역할 생성
 export async function POST(request: NextRequest) {
   try {
-    // 쿠키 바인딩 클라이언트 — 요청자 JWT 세션 검증
-    const authClient = createClient()
-    // 서비스롤 클라이언트 — RLS 우회 DB 작업용
-    const adminClient = createAdminClient()
+    const supabase = createServerClient()
 
     // 현재 사용자 확인
-    const { data: { user }, error: authError } = await authClient.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -105,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 사용자 프로필 조회 (권한 확인용)
-    const { data: currentUserProfile } = await authClient
+    const { data: currentUserProfile } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('user_id', user.id)
@@ -147,8 +141,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 역할 생성 (RLS 우회 — 서비스롤 클라이언트 사용)
-    const { data: newRole, error: createError } = await adminClient
+    // 역할 생성
+    const { data: newRole, error: createError } = await supabase
       .from('user_roles')
       .insert({
         name,

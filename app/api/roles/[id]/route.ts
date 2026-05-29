@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createServerClient } from '@/lib/supabase/client'
 import { isAdmin, isSystemAdmin } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
 
@@ -9,14 +9,11 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // 쿠키 바인딩 클라이언트 — 요청자 JWT 세션 검증용
-    const authClient = createClient()
-    // 서비스롤 클라이언트 — DB 읽기용
-    const adminClient = createAdminClient()
+    const supabase = createServerClient()
     const roleId = params.id
 
-    // 현재 사용자 확인 (service-role getUser 는 항상 null → authClient 사용)
-    const { data: { user }, error: authError } = await authClient.auth.getUser()
+    // 현재 사용자 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -24,8 +21,8 @@ export async function GET(
       )
     }
 
-    // 사용자 프로필 조회 (권한 확인용) — authClient 사용
-    const { data: currentUserProfile } = await authClient
+    // 사용자 프로필 조회 (권한 확인용)
+    const { data: currentUserProfile } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('user_id', user.id)
@@ -47,8 +44,8 @@ export async function GET(
       )
     }
 
-    // 역할 조회 — adminClient 사용
-    const { data: role, error } = await adminClient
+    // 역할 조회
+    const { data: role, error } = await supabase
       .from('user_roles')
       .select('*')
       .eq('id', roleId)
@@ -62,8 +59,8 @@ export async function GET(
       )
     }
 
-    // 이 역할을 사용하는 사용자 수 — adminClient 사용
-    const { count } = await adminClient
+    // 이 역할을 사용하는 사용자 수
+    const { count } = await supabase
       .from('user_profiles')
       .select('id', { count: 'exact', head: true })
       .eq('role_id', roleId)
@@ -91,14 +88,11 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // 쿠키 바인딩 클라이언트 — 요청자 JWT 세션 검증용
-    const authClient = createClient()
-    // 서비스롤 클라이언트 — DB 읽기/쓰기용
-    const adminClient = createAdminClient()
+    const supabase = createServerClient()
     const roleId = params.id
 
-    // 현재 사용자 확인 (service-role getUser 는 항상 null → authClient 사용)
-    const { data: { user }, error: authError } = await authClient.auth.getUser()
+    // 현재 사용자 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -106,8 +100,8 @@ export async function PUT(
       )
     }
 
-    // 사용자 프로필 조회 (권한 확인용) — authClient 사용
-    const { data: currentUserProfile } = await authClient
+    // 사용자 프로필 조회 (권한 확인용)
+    const { data: currentUserProfile } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('user_id', user.id)
@@ -132,8 +126,8 @@ export async function PUT(
     const body = await request.json()
     const { name, type, description, permissions, isActive } = body
 
-    // 대상 역할 조회 — adminClient 사용
-    const { data: existingRole } = await adminClient
+    // 대상 역할 조회
+    const { data: existingRole } = await supabase
       .from('user_roles')
       .select('*')
       .eq('id', roleId)
@@ -167,8 +161,8 @@ export async function PUT(
     if (permissions !== undefined) updateData.permissions = permissions
     if (isActive !== undefined) updateData.is_active = isActive
 
-    // 역할 업데이트 — adminClient 사용
-    const { data: updatedRole, error: updateError } = await adminClient
+    // 역할 업데이트
+    const { data: updatedRole, error: updateError } = await supabase
       .from('user_roles')
       .update(updateData)
       .eq('id', roleId)
@@ -204,14 +198,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // 쿠키 바인딩 클라이언트 — 요청자 JWT 세션 검증용
-    const authClient = createClient()
-    // 서비스롤 클라이언트 — DB 읽기/삭제용
-    const adminClient = createAdminClient()
+    const supabase = createServerClient()
     const roleId = params.id
 
-    // 현재 사용자 확인 (service-role getUser 는 항상 null → authClient 사용)
-    const { data: { user }, error: authError } = await authClient.auth.getUser()
+    // 현재 사용자 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -219,8 +210,8 @@ export async function DELETE(
       )
     }
 
-    // 사용자 프로필 조회 (권한 확인용) — authClient 사용
-    const { data: currentUserProfile } = await authClient
+    // 사용자 프로필 조회 (권한 확인용)
+    const { data: currentUserProfile } = await supabase
       .from('user_profiles')
       .select('*, user_roles(*)')
       .eq('user_id', user.id)
@@ -242,8 +233,8 @@ export async function DELETE(
       )
     }
 
-    // 대상 역할 조회 — adminClient 사용
-    const { data: existingRole } = await adminClient
+    // 대상 역할 조회
+    const { data: existingRole } = await supabase
       .from('user_roles')
       .select('*')
       .eq('id', roleId)
@@ -264,8 +255,8 @@ export async function DELETE(
       )
     }
 
-    // 이 역할을 사용하는 사용자가 있는지 확인 — adminClient 사용
-    const { count } = await adminClient
+    // 이 역할을 사용하는 사용자가 있는지 확인
+    const { count } = await supabase
       .from('user_profiles')
       .select('id', { count: 'exact', head: true })
       .eq('role_id', roleId)
@@ -277,8 +268,8 @@ export async function DELETE(
       )
     }
 
-    // 역할 삭제 — adminClient 사용
-    const { error: deleteError } = await adminClient
+    // 역할 삭제
+    const { error: deleteError } = await supabase
       .from('user_roles')
       .delete()
       .eq('id', roleId)

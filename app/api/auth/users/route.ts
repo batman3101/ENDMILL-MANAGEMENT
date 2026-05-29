@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createServerClient } from '../../../../lib/supabase/client'
 import { z } from 'zod'
 import { logger } from '@/lib/utils/logger'
 import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
@@ -27,22 +27,21 @@ const updateUserSchema = z.object({
   isActive: z.boolean().optional(),
 })
 
-// 권한 체크 함수 — 쿠키 바인딩 createClient() 로 JWT 세션을 검증한다.
-// service-role 클라이언트의 getUser() 는 항상 null 을 반환하므로 사용하지 않는다.
+// 권한 체크 함수
 async function checkPermission(
+  supabase: ReturnType<typeof createServerClient>,
   resource: string,
   action: 'create' | 'read' | 'update' | 'delete' | 'manage' | 'use'
 ): Promise<{ allowed: boolean; userRole?: string; error?: string }> {
   try {
-    // 쿠키 바인딩 클라이언트로 요청자 JWT 세션 검증
-    const authClient = createClient()
-    const { data: { user }, error: authError } = await authClient.auth.getUser()
+    // 사용자 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return { allowed: false, error: 'Unauthorized' }
     }
 
     // 사용자 프로필 조회 (권한 확인용)
-    const { data: currentUserProfile } = await authClient
+    const { data: currentUserProfile } = await supabase
       .from('user_profiles')
       .select('*, user_roles(type, permissions)')
       .eq('user_id', user.id)
@@ -71,18 +70,19 @@ async function checkPermission(
 // GET: 사용자 목록 조회
 export async function GET(_request: NextRequest) {
   try {
-    // 권한 체크 (쿠키 바인딩 클라이언트 내부 사용)
-    const permissionCheck = await checkPermission('users', 'read')
+    const supabase = createServerClient()
+
+    // 권한 체크
+    const permissionCheck = await checkPermission(supabase, 'users', 'read')
     if (!permissionCheck.allowed) {
       return NextResponse.json(
         { success: false, error: permissionCheck.error || '권한이 없습니다.' },
         { status: permissionCheck.error === 'Unauthorized' ? 401 : 403 }
       )
     }
-
-    // auth.admin.* 작업은 service-role 클라이언트(createAdminClient)로 수행
-    const adminClient = createAdminClient()
-    const { data, error } = await adminClient.auth.admin.listUsers()
+    
+    // auth.users 테이블에서 사용자 목록 조회
+    const { data, error } = await supabase.auth.admin.listUsers()
 
     if (error) {
       logger.error('사용자 목록 조회 오류:', error)
@@ -117,8 +117,10 @@ export async function GET(_request: NextRequest) {
 // POST: 새 사용자 생성
 export async function POST(request: NextRequest) {
   try {
-    // 권한 체크 (쿠키 바인딩 클라이언트 내부 사용)
-    const permissionCheck = await checkPermission('users', 'create')
+    const supabase = createServerClient()
+
+    // 권한 체크
+    const permissionCheck = await checkPermission(supabase, 'users', 'create')
     if (!permissionCheck.allowed) {
       return NextResponse.json(
         { success: false, error: permissionCheck.error || '권한이 없습니다.' },
@@ -127,7 +129,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-
+    
     // 입력 데이터 유효성 검증
     const validationResult = createUserSchema.safeParse(body)
     if (!validationResult.success) {
@@ -143,9 +145,8 @@ export async function POST(request: NextRequest) {
 
     const { email, password, name, employeeId, department, position, shift, phone } = validationResult.data
 
-    // auth.admin.* 작업은 service-role 클라이언트(createAdminClient)로 수행
-    const adminClient = createAdminClient()
-    const { data, error } = await adminClient.auth.admin.createUser({
+    // 사용자 생성
+    const { data, error } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true, // 이메일 인증을 자동으로 완료
@@ -197,8 +198,10 @@ export async function POST(request: NextRequest) {
 // PUT: 사용자 정보 업데이트
 export async function PUT(request: NextRequest) {
   try {
-    // 권한 체크 (쿠키 바인딩 클라이언트 내부 사용)
-    const permissionCheck = await checkPermission('users', 'update')
+    const supabase = createServerClient()
+
+    // 권한 체크
+    const permissionCheck = await checkPermission(supabase, 'users', 'update')
     if (!permissionCheck.allowed) {
       return NextResponse.json(
         { success: false, error: permissionCheck.error || '권한이 없습니다.' },
@@ -229,11 +232,8 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // auth.admin.* 작업은 service-role 클라이언트(createAdminClient)로 수행
-    const adminClient = createAdminClient()
-
     // 현재 사용자 정보 조회
-    const { data: currentUser, error: fetchError } = await adminClient.auth.admin.getUserById(userId)
+    const { data: currentUser, error: fetchError } = await supabase.auth.admin.getUserById(userId)
     if (fetchError || !currentUser.user) {
       return NextResponse.json(
         { success: false, error: '사용자를 찾을 수 없습니다.' },
@@ -249,7 +249,7 @@ export async function PUT(request: NextRequest) {
       updatedBy: 'admin', // TODO: 실제 관리자 ID로 변경
     }
 
-    const { data, error } = await adminClient.auth.admin.updateUserById(userId, {
+    const { data, error } = await supabase.auth.admin.updateUserById(userId, {
       user_metadata: updatedMetadata,
     })
 
@@ -283,8 +283,10 @@ export async function PUT(request: NextRequest) {
 // DELETE: 사용자 삭제
 export async function DELETE(request: NextRequest) {
   try {
-    // 권한 체크 (쿠키 바인딩 클라이언트 내부 사용)
-    const permissionCheck = await checkPermission('users', 'delete')
+    const supabase = createServerClient()
+
+    // 권한 체크
+    const permissionCheck = await checkPermission(supabase, 'users', 'delete')
     if (!permissionCheck.allowed) {
       return NextResponse.json(
         { success: false, error: permissionCheck.error || '권한이 없습니다.' },
@@ -302,9 +304,8 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // auth.admin.* 작업은 service-role 클라이언트(createAdminClient)로 수행
-    const adminClient = createAdminClient()
-    const { error } = await adminClient.auth.admin.deleteUser(userId)
+    // 사용자 삭제
+    const { error } = await supabase.auth.admin.deleteUser(userId)
 
     if (error) {
       logger.error('사용자 삭제 오류:', error)

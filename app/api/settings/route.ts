@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
+import { createServerClient } from '@/lib/supabase/client'
 import { SettingsCategory } from '@/lib/types/settings'
 import { logger } from '@/lib/utils/logger'
 
-// GET: 설정 조회 (인증 게이트 없음 — 로그인 사용자 누구나 UI 구성을 위해 읽기 허용)
+// GET: 설정 조회
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createAdminClient()
+    const supabase = createServerClient()
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category') as SettingsCategory | null
 
@@ -74,31 +73,7 @@ export async function GET(request: NextRequest) {
 // PUT: 설정 업데이트
 export async function PUT(request: NextRequest) {
   try {
-    // 쿠키 바인딩 클라이언트로 요청자 JWT 세션 검증
-    const authClient = createClient()
-    const { data: { user }, error: authError } = await authClient.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    const { data: currentUserProfile } = await authClient
-      .from('user_profiles')
-      .select('*, user_roles(*)')
-      .eq('user_id', user.id)
-      .single()
-    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
-    }
-    const userRole = (currentUserProfile as any).user_roles.type
-    const rolePermissions = ((currentUserProfile as any).user_roles?.permissions || {}) as Record<string, string[]>
-    const userPermissions = ((currentUserProfile as any).permissions || {}) as Record<string, string[]>
-    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
-    const customPermissions = parsePermissionsFromDB(mergedPermissions)
-    if (!hasPermission(userRole, 'settings', 'update', customPermissions)) {
-      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 })
-    }
-
-    // DB 작업용 어드민 클라이언트 (service-role, RLS 우회)
-    const supabase = createAdminClient()
+    const supabase = createServerClient()
     const body = await request.json()
     const { updates, category, reason } = body
 
@@ -109,7 +84,8 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // 현재 사용자 ID
+    // 현재 사용자 ID 가져오기
+    const { data: { user } } = await supabase.auth.getUser()
     const userId = user?.id
 
     // 카테고리별 업데이트
@@ -249,32 +225,7 @@ export async function PUT(request: NextRequest) {
 // POST: 설정 초기화, 가져오기/내보내기
 export async function POST(request: NextRequest) {
   try {
-    // 쿠키 바인딩 클라이언트로 요청자 JWT 세션 검증
-    const authClient = createClient()
-    const { data: { user }, error: authError } = await authClient.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    const { data: currentUserProfile } = await authClient
-      .from('user_profiles')
-      .select('*, user_roles(*)')
-      .eq('user_id', user.id)
-      .single()
-    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
-    }
-    const userRole = (currentUserProfile as any).user_roles.type
-    const rolePermissions = ((currentUserProfile as any).user_roles?.permissions || {}) as Record<string, string[]>
-    const userPermissions = ((currentUserProfile as any).permissions || {}) as Record<string, string[]>
-    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
-    const customPermissions = parsePermissionsFromDB(mergedPermissions)
-    // import/reset 등 파괴적 작업이므로 'update' 가 아닌 'manage' 권한 요구
-    if (!hasPermission(userRole, 'settings', 'manage', customPermissions)) {
-      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 })
-    }
-
-    // DB 작업용 어드민 클라이언트 (service-role, RLS 우회)
-    const supabase = createAdminClient()
+    const supabase = createServerClient()
     const body = await request.json()
     const { action, data } = body
 
@@ -358,32 +309,7 @@ export async function POST(request: NextRequest) {
 // DELETE: 설정 히스토리 삭제
 export async function DELETE(request: NextRequest) {
   try {
-    // 쿠키 바인딩 클라이언트로 요청자 JWT 세션 검증
-    const authClient = createClient()
-    const { data: { user }, error: authError } = await authClient.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    const { data: currentUserProfile } = await authClient
-      .from('user_profiles')
-      .select('*, user_roles(*)')
-      .eq('user_id', user.id)
-      .single()
-    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
-    }
-    const userRole = (currentUserProfile as any).user_roles.type
-    const rolePermissions = ((currentUserProfile as any).user_roles?.permissions || {}) as Record<string, string[]>
-    const userPermissions = ((currentUserProfile as any).permissions || {}) as Record<string, string[]>
-    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
-    const customPermissions = parsePermissionsFromDB(mergedPermissions)
-    // 설정 이력 삭제는 파괴적 작업이므로 'update' 가 아닌 'manage' 권한 요구
-    if (!hasPermission(userRole, 'settings', 'manage', customPermissions)) {
-      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 })
-    }
-
-    // DB 작업용 어드민 클라이언트 (service-role, RLS 우회)
-    const supabase = createAdminClient()
+    const supabase = createServerClient()
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category') as SettingsCategory | null
 
