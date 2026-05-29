@@ -216,7 +216,35 @@ export async function PUT(
       }
     });
 
-    const updateResults = await Promise.all(processPromises);
+    // Promise.allSettled 로 부분 실패를 감지 — 실패가 1건이라도 있으면 헤더 update 없이 즉시 500 반환
+    const settled = await Promise.allSettled(processPromises);
+    const failures = settled.filter(
+      (s): s is PromiseRejectedResult => s.status === 'rejected'
+    );
+
+    if (failures.length > 0) {
+      // 실패 목록 로깅
+      logger.error('❌ tool_positions 일괄 처리 중 실패 발생:', {
+        failureCount: failures.length,
+        reasons: failures.map(f => f.reason)
+      });
+      return NextResponse.json(
+        {
+          error: '일부 공구 포지션 갱신에 실패했습니다.',
+          failures: failures.map(f =>
+            f.reason instanceof Error
+              ? { message: f.reason.message }
+              : { message: String(f.reason) }
+          )
+        },
+        { status: 500 }
+      );
+    }
+
+    // 모두 fulfilled 인 경우 — value 배열로 기존 통계 집계 코드와 호환
+    const updateResults = settled
+      .filter((s): s is PromiseFulfilledResult<(typeof settled)[number] extends PromiseSettledResult<infer T> ? T : never> => s.status === 'fulfilled')
+      .map(s => s.value);
     const createdCount = updateResults.filter(r => r.action === 'created_and_installed').length;
     const installedCount = updateResults.filter(r => r.action === 'installed').length;
     const updatedCount = updateResults.filter(r => r.action === 'updated').length;

@@ -80,6 +80,13 @@ export const useToolChanges = (
   const [totalCount, setTotalCount] = useState(0)
 
   const fetchToolChanges = useCallback(async (reset: boolean = false) => {
+    // 공장이 아직 확정되지 않았으면 조회하지 않음 — 무필터 요청으로 타 공장
+    // 데이터가 잠시 노출되는 것을 방지 (factoryId 확정 시 useEffect가 재실행).
+    // 공장 미할당 사용자에서 로딩 스피너가 영구 고착되지 않도록 isLoading 도 해제.
+    if (!factoryId) {
+      setIsLoading(false)
+      return
+    }
     try {
       setError(null)
       if (reset) {
@@ -259,6 +266,8 @@ export const useToolChanges = (
   // 실시간 업데이트
   useRealtime({
     table: 'tool_changes',
+    // 현재 공장 이벤트만 구독 — 타 공장 변경이 현재 목록을 불필요하게 갱신하는 것 방지
+    filter: factoryId ? `factory_id=eq.${factoryId}` : undefined,
     enabled: enableRealtime,
     onInsert: (payload) => {
       clientLogger.log('New tool change:', payload.new)
@@ -332,6 +341,11 @@ export const useToolChangeStats = (
   const [error, setError] = useState<string | null>(null)
 
   const fetchStats = useCallback(async () => {
+    // 공장 미확정 시 조회 생략 — 무필터 전체 공장 통계 노출 방지 (로딩 고착 방지 위해 isLoading 해제)
+    if (!factoryId) {
+      setIsLoading(false)
+      return
+    }
     try {
       setError(null)
       setIsLoading(true)
@@ -389,6 +403,8 @@ export const useToolChangeStats = (
   // 실시간 업데이트 - tool_changes 테이블에 변경이 있을 때 통계 새로고침
   useRealtime({
     table: 'tool_changes',
+    // 현재 공장 이벤트만 구독
+    filter: factoryId ? `factory_id=eq.${factoryId}` : undefined,
     enabled: enableRealtime,
     onInsert: () => {
       clientLogger.log('Tool change inserted, refreshing stats...')

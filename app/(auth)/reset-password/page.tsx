@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createBrowserClient } from '@/lib/supabase/client'
+import { useTranslation } from '../../../lib/hooks/useTranslations'
 import { clientLogger } from '@/lib/utils/logger'
 
 function ResetPasswordForm() {
+  const { t } = useTranslation()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -25,7 +27,7 @@ function ResetPasswordForm() {
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
-        
+
         if (error || !session) {
           setIsValidSession(false)
         } else {
@@ -43,26 +45,26 @@ function ResetPasswordForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const validatePassword = (password: string) => {
-    if (password.length < 8) {
-      return '비밀번호는 최소 8자 이상이어야 합니다.'
+  const validatePassword = (pwd: string) => {
+    if (pwd.length < 8) {
+      return t('auth.passwordTooShortReset')
     }
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      return '비밀번호는 대문자, 소문자, 숫자를 포함해야 합니다.'
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(pwd)) {
+      return t('auth.passwordComplexityReset')
     }
     return null
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!password || !confirmPassword) {
-      setError('모든 필드를 입력해주세요.')
+      setError(t('auth.allFieldsRequired'))
       return
     }
 
     if (password !== confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다.')
+      setError(t('auth.passwordMismatch'))
       return
     }
 
@@ -74,14 +76,14 @@ function ResetPasswordForm() {
 
     setLoading(true)
     setError('')
-    
+
     try {
       const { error } = await supabase.auth.updateUser({
         password: password
       })
-      
+
       if (error) {
-        setError('비밀번호 변경 중 오류가 발생했습니다.')
+        setError(t('auth.resetPasswordError'))
       } else {
         setIsSuccess(true)
         // 3초 후 로그인 페이지로 이동
@@ -91,7 +93,7 @@ function ResetPasswordForm() {
       }
     } catch (error) {
       clientLogger.error('비밀번호 변경 오류:', error)
-      setError('비밀번호 변경 중 오류가 발생했습니다.')
+      setError(t('auth.resetPasswordError'))
     } finally {
       setLoading(false)
     }
@@ -103,7 +105,7 @@ function ResetPasswordForm() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">확인 중...</p>
+          <p className="mt-4 text-gray-600">{t('auth.checkingSession')}</p>
         </div>
       </div>
     )
@@ -121,13 +123,13 @@ function ResetPasswordForm() {
               </svg>
             </div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              유효하지 않은 링크
+              {t('auth.invalidLinkTitle')}
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              비밀번호 재설정 링크가 만료되었거나 유효하지 않습니다.
+              {t('auth.invalidLinkSubtitle')}
             </p>
           </div>
-          
+
           <div className="bg-red-50 border border-red-200 rounded-md p-4">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -137,25 +139,25 @@ function ResetPasswordForm() {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-red-800">
-                  새로운 비밀번호 재설정 요청을 해주세요.
+                  {t('auth.invalidLinkMessage')}
                 </p>
               </div>
             </div>
           </div>
-          
+
           <div className="text-center space-y-2">
-            <Link 
+            <Link
               href="/forgot-password"
               className="inline-block text-sm text-blue-600 hover:text-blue-500 font-medium"
             >
-              비밀번호 재설정 요청하기
+              {t('auth.requestNewReset')}
             </Link>
             <div>
-              <Link 
+              <Link
                 href="/login"
                 className="text-sm text-blue-600 hover:text-blue-500"
               >
-                ← 로그인으로 돌아가기
+                {t('auth.backToLogin')}
               </Link>
             </div>
           </div>
@@ -176,13 +178,13 @@ function ResetPasswordForm() {
               </svg>
             </div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              비밀번호 변경 완료
+              {t('auth.passwordChangedTitle')}
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              새 비밀번호로 로그인하세요
+              {t('auth.passwordChangedSubtitle')}
             </p>
           </div>
-          
+
           <div className="bg-green-50 border border-green-200 rounded-md p-4">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -192,21 +194,21 @@ function ResetPasswordForm() {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-green-800">
-                  비밀번호가 성공적으로 변경되었습니다.
+                  {t('auth.passwordChangedMessage')}
                 </p>
                 <p className="text-sm text-green-700 mt-1">
-                  잠시 후 로그인 페이지로 이동합니다...
+                  {t('auth.redirectingToLogin')}
                 </p>
               </div>
             </div>
           </div>
-          
+
           <div className="text-center">
-            <Link 
+            <Link
               href="/login"
               className="text-sm text-blue-600 hover:text-blue-500"
             >
-              지금 로그인하기
+              {t('auth.loginNow')}
             </Link>
           </div>
         </div>
@@ -228,13 +230,13 @@ function ResetPasswordForm() {
             />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            새 비밀번호 설정
+            {t('auth.resetPasswordTitle')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            안전한 새 비밀번호를 입력하세요
+            {t('auth.resetPasswordSubtitle')}
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3">
@@ -250,11 +252,11 @@ function ResetPasswordForm() {
               </div>
             </div>
           )}
-          
+
           <div className="space-y-3">
             <div>
               <label htmlFor="password" className="sr-only">
-                새 비밀번호
+                {t('auth.newPassword')}
               </label>
               <input
                 id="password"
@@ -268,13 +270,13 @@ function ResetPasswordForm() {
                   if (error) setError('')
                 }}
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="새 비밀번호 (최소 8자, 대소문자, 숫자 포함)"
+                placeholder={t('auth.newPasswordPlaceholder')}
                 disabled={loading}
               />
             </div>
             <div>
               <label htmlFor="confirm-password" className="sr-only">
-                비밀번호 확인
+                {t('auth.confirmPassword')}
               </label>
               <input
                 id="confirm-password"
@@ -288,7 +290,7 @@ function ResetPasswordForm() {
                   if (error) setError('')
                 }}
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="비밀번호 확인"
+                placeholder={t('auth.confirmPasswordPlaceholder')}
                 disabled={loading}
               />
             </div>
@@ -303,12 +305,12 @@ function ResetPasswordForm() {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-blue-800">
-                  <strong>비밀번호 요구사항:</strong>
+                  <strong>{t('profile.passwordRequirements')}</strong>
                 </p>
                 <ul className="text-sm text-blue-700 mt-1 list-disc list-inside">
-                  <li>최소 8자 이상</li>
-                  <li>대문자와 소문자 포함</li>
-                  <li>숫자 포함</li>
+                  <li>{t('profile.minLength')}</li>
+                  <li>{t('profile.upperLower')}</li>
+                  <li>{t('profile.includeNumber')}</li>
                 </ul>
               </div>
             </div>
@@ -323,20 +325,20 @@ function ResetPasswordForm() {
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  변경 중...
+                  {t('auth.changingPassword')}
                 </>
               ) : (
-                '비밀번호 변경'
+                t('auth.changePassword')
               )}
             </button>
           </div>
 
           <div className="text-center">
-            <Link 
+            <Link
               href="/login"
               className="text-sm text-blue-600 hover:text-blue-500"
             >
-              ← 로그인으로 돌아가기
+              {t('auth.backToLogin')}
             </Link>
           </div>
         </form>
@@ -344,6 +346,7 @@ function ResetPasswordForm() {
     </div>
   )
 }
+
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>

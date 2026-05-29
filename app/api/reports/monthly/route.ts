@@ -147,7 +147,8 @@ export async function POST(request: NextRequest) {
     // ========================================
     const totalChanges = changes.length
     const totalCost = changes.reduce((sum: number, c: any) => sum + c.unitCost, 0)
-    const averageToolLife = calculateAverage(changes.map((c: any) => c.life))
+    // tool_life가 0이거나 누락된 레코드는 평균 수명 계산에서 제외
+    const averageToolLife = calculateAverage(changes.filter((c: any) => c.life > 0).map((c: any) => c.life))
 
     // 가장 많이 교체된 공구
     const toolChangeCount = new Map<string, number>()
@@ -233,7 +234,8 @@ export async function POST(request: NextRequest) {
         })
       }
       const stats = toolStats.get(c.toolCode)
-      stats.changes.push(c.life)
+      // tool_life가 0이거나 누락된 값은 평균 수명 계산에서 제외
+      if (c.life > 0) stats.changes.push(c.life)
       stats.totalCost += c.unitCost
     })
 

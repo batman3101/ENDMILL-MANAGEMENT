@@ -7,6 +7,8 @@ import { clientLogger } from '../utils/logger'
 
 interface RealtimeHookOptions {
   table: string
+  // PostgREST 필터(예: 'factory_id=eq.<uuid>') — 서버사이드에서 해당 행만 구독
+  filter?: string
   onInsert?: (payload: any) => void
   onUpdate?: (payload: any) => void
   onDelete?: (payload: any) => void
@@ -15,6 +17,7 @@ interface RealtimeHookOptions {
 
 export function useRealtime({
   table,
+  filter,
   onInsert,
   onUpdate,
   onDelete,
@@ -23,6 +26,14 @@ export function useRealtime({
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
+
+  // 인스턴스별 고유 채널 ID (마운트 시 1회 생성) — 같은 테이블을 구독하는
+  // 여러 컴포넌트의 채널명이 충돌해 서로 덮어쓰는 문제 방지
+  const instanceId = useRef<string>(
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+  )
 
   // 콜백들을 ref로 저장해서 의존성 문제 해결
   const callbacksRef = useRef({ onInsert, onUpdate, onDelete })
@@ -33,7 +44,7 @@ export function useRealtime({
 
     clientLogger.log(`🔄 Setting up realtime subscription for table: ${table}`)
 
-    const channelName = `realtime:${table}`
+    const channelName = `realtime:${table}:${filter ?? 'all'}:${instanceId.current}`
     const realtimeChannel = supabase
       .channel(channelName)
       .on(
@@ -41,7 +52,9 @@ export function useRealtime({
         {
           event: '*',
           schema: 'public',
-          table: table
+          table: table,
+          // filter 지정 시 서버사이드에서 해당 공장 행만 수신 (타 공장 이벤트 차단)
+          ...(filter ? { filter } : {})
         },
         (payload) => {
           clientLogger.log(`📡 Realtime event received for ${table}:`, payload)
@@ -90,7 +103,7 @@ export function useRealtime({
       setIsConnected(false)
       setChannel(null)
     }
-  }, [table, enabled]) // 콜백들을 의존성에서 제거
+  }, [table, enabled, filter]) // 콜백들을 의존성에서 제거 (filter 변경 시 재구독)
 
   return {
     isConnected,

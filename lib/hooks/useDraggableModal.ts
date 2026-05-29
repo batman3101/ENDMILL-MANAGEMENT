@@ -3,14 +3,16 @@
 import { useCallback, useRef } from 'react'
 
 /**
- * 모달을 마우스로 드래그하여 위치 이동할 수 있게 하는 훅.
+ * 모달을 드래그하여 위치 이동할 수 있게 하는 훅.
  *
  * 반환된 콜백 ref 를 `.mobile-modal-content` 요소에 연결하면, 내부의
  * `.mobile-modal-header` 를 드래그 핸들로 사용해 모달을 이동시킨다.
  *
  * 설계 메모:
- * - 데스크톱(>=768px)에서만 동작한다. 모바일에서는 모달이 하단 시트 형태라
- *   드래그 이동이 어색하고, 터치 스크롤과 충돌하므로 비활성화한다.
+ * - 마우스·터치·펜을 모두 지원한다(Pointer Events). 이전에는 mouse 이벤트만
+ *   바인딩해 태블릿(>=768px, 터치)에서 드래그가 전혀 동작하지 않는 버그가 있었다.
+ * - 모바일 폰(<768px)에서는 모달이 하단 시트 형태라 드래그 이동이 어색하고
+ *   터치 스크롤과 충돌하므로 비활성화한다(>=768px 에서만 동작).
  * - 드래그 중에는 매 프레임 state 를 갱신하면 리렌더가 과해지므로,
  *   ref 의 transform 을 직접 갱신한다(드래그 라이브러리들의 표준 패턴).
  * - 모달은 보통 상호 배타적으로 한 번에 하나만 열리므로, 파일당 훅 1개를
@@ -60,24 +62,32 @@ export function useDraggableModal() {
       }
     }
 
-    const onMouseMove = (e: MouseEvent) => {
+    const onPointerMove = (e: PointerEvent) => {
       if (!dragging) return
       const next = clamp(baseX + (e.clientX - startX), baseY + (e.clientY - startY))
       offset = next
       node.style.transform = `translate(${next.x}px, ${next.y}px)`
     }
 
-    const onMouseUp = () => {
+    const endDrag = (e: PointerEvent) => {
+      if (!dragging) return
       dragging = false
-      document.removeEventListener('mousemove', onMouseMove)
-      document.removeEventListener('mouseup', onMouseUp)
+      try {
+        handle.releasePointerCapture(e.pointerId)
+      } catch {
+        // 캡처가 이미 해제된 경우 등 — 무시
+      }
+      document.removeEventListener('pointermove', onPointerMove)
+      document.removeEventListener('pointerup', endDrag)
+      document.removeEventListener('pointercancel', endDrag)
     }
 
-    const onMouseDown = (e: MouseEvent) => {
-      // 좌클릭 + 데스크톱에서만, 그리고 헤더의 인터랙티브 요소(닫기 버튼 등)는 제외
+    const onPointerDown = (e: PointerEvent) => {
+      // 주 포인터(마우스 좌클릭/터치 첫 손가락/펜)만, 그리고 폰(<768px)에서는 비활성
       if (e.button !== 0) return
       if (window.innerWidth < 768) return
       const target = e.target as HTMLElement
+      // 헤더의 인터랙티브 요소(닫기 버튼 등)에서 시작한 입력은 드래그로 가로채지 않음
       if (target.closest('button, a, input, select, textarea, [role="button"]')) return
 
       e.preventDefault()
@@ -86,16 +96,28 @@ export function useDraggableModal() {
       startY = e.clientY
       baseX = offset.x
       baseY = offset.y
-      document.addEventListener('mousemove', onMouseMove)
-      document.addEventListener('mouseup', onMouseUp)
+      try {
+        // 포인터 캡처로 핸들 밖으로 빠르게 움직여도 이동 추적이 끊기지 않게 함
+        handle.setPointerCapture(e.pointerId)
+      } catch {
+        // 미지원 환경 — 무시 (document 리스너로 폴백)
+      }
+      document.addEventListener('pointermove', onPointerMove)
+      document.addEventListener('pointerup', endDrag)
+      document.addEventListener('pointercancel', endDrag)
     }
 
-    handle.addEventListener('mousedown', onMouseDown)
+    handle.addEventListener('pointerdown', onPointerDown)
+    // 터치 드래그가 페이지 스크롤/줌 제스처로 해석되지 않도록 차단
+    const prevTouchAction = handle.style.touchAction
+    handle.style.touchAction = 'none'
 
     const cleanup = () => {
-      handle.removeEventListener('mousedown', onMouseDown)
-      document.removeEventListener('mousemove', onMouseMove)
-      document.removeEventListener('mouseup', onMouseUp)
+      handle.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('pointermove', onPointerMove)
+      document.removeEventListener('pointerup', endDrag)
+      document.removeEventListener('pointercancel', endDrag)
+      handle.style.touchAction = prevTouchAction
     }
     active.current = { node, cleanup }
   }, [])

@@ -63,38 +63,43 @@ export const useConfirmation = (): UseConfirmationReturn => {
   }
 }
 
+// 편의 함수 공통 t 타입
+type TFunc = (key: string, opts?: Record<string, unknown>) => string
+
 // 편의 함수들
-export const createDeleteConfirmation = (itemName: string): ConfirmationConfig => ({
+export const createDeleteConfirmation = (itemName: string, t?: TFunc): ConfirmationConfig => ({
   type: 'delete',
-  title: '삭제 확인',
-  message: `"${itemName}"을(를) 정말로 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다.`,
-  confirmText: '삭제',
-  cancelText: '취소',
+  title: t ? t('common.confirmDelete') : '삭제 확인',
+  message: t
+    ? `"${itemName}"\n\n⚠️ ${t('common.deleteWarning')}`
+    : `"${itemName}"을(를) 정말로 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다.`,
+  confirmText: t ? t('common.delete') : '삭제',
+  cancelText: t ? t('common.cancel') : '취소',
   isDangerous: true
 })
 
-export const createSaveConfirmation = (itemName: string): ConfirmationConfig => ({
+export const createSaveConfirmation = (itemName: string, t?: TFunc): ConfirmationConfig => ({
   type: 'save',
-  title: '저장 확인',
-  message: `"${itemName}"을(를) 저장하시겠습니까?`,
-  confirmText: '저장',
-  cancelText: '취소'
+  title: t ? t('common.confirmSave') : '저장 확인',
+  message: `"${itemName}"`,
+  confirmText: t ? t('common.save') : '저장',
+  cancelText: t ? t('common.cancel') : '취소'
 })
 
-export const createUpdateConfirmation = (itemName: string): ConfirmationConfig => ({
+export const createUpdateConfirmation = (itemName: string, t?: TFunc): ConfirmationConfig => ({
   type: 'update',
-  title: '수정 확인',
-  message: `"${itemName}"을(를) 수정하시겠습니까?`,
-  confirmText: '수정',
-  cancelText: '취소'
+  title: t ? t('common.confirmUpdate') : '수정 확인',
+  message: `"${itemName}"`,
+  confirmText: t ? t('common.edit') : '수정',
+  cancelText: t ? t('common.cancel') : '취소'
 })
 
-export const createCreateConfirmation = (itemName: string): ConfirmationConfig => ({
+export const createCreateConfirmation = (itemName: string, t?: TFunc): ConfirmationConfig => ({
   type: 'create',
-  title: '생성 확인',
-  message: `"${itemName}"을(를) 생성하시겠습니까?`,
-  confirmText: '생성',
-  cancelText: '취소'
+  title: t ? t('common.confirmCreate') : '생성 확인',
+  message: `"${itemName}"`,
+  confirmText: t ? t('common.create') : '생성',
+  cancelText: t ? t('common.cancel') : '취소'
 })
 
 export const createCustomConfirmation = (
@@ -113,22 +118,27 @@ export const createCustomConfirmation = (
 
 // 특별한 확인들
 export const createStatusChangeConfirmation = (
-  equipmentNumber: string, 
-  currentStatus: string, 
-  newStatus: string
+  equipmentNumber: string,
+  currentStatus: string,
+  newStatus: string,
+  t?: TFunc
 ): ConfirmationConfig => ({
   type: 'update',
-  title: '상태 변경 확인',
-  message: `설비 "${equipmentNumber}"의 상태를 변경하시겠습니까?\n\n현재: ${currentStatus}\n변경: ${newStatus}`,
-  confirmText: '변경',
-  cancelText: '취소'
+  title: t ? t('common.confirmStatusChange') : '상태 변경 확인',
+  message: t
+    ? `"${equipmentNumber}"\n\n${currentStatus} → ${newStatus}`
+    : `설비 "${equipmentNumber}"의 상태를 변경하시겠습니까?\n\n현재: ${currentStatus}\n변경: ${newStatus}`,
+  confirmText: t ? t('common.change') : '변경',
+  cancelText: t ? t('common.cancel') : '취소'
 })
 
-export const createBulkDeleteConfirmation = (count: number): ConfirmationConfig => ({
+export const createBulkDeleteConfirmation = (count: number, t?: TFunc): ConfirmationConfig => ({
   type: 'delete',
-  title: '일괄 삭제 확인',
-  message: `선택된 ${count}개의 항목을 모두 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다.`,
-  confirmText: '모두 삭제',
-  cancelText: '취소',
+  title: t ? t('common.confirmBulkDelete') : '일괄 삭제 확인',
+  message: t
+    ? `${count} ${t('common.deleteWarning')}`
+    : `선택된 ${count}개의 항목을 모두 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다.`,
+  confirmText: t ? t('common.deleteAll') : '모두 삭제',
+  cancelText: t ? t('common.cancel') : '취소',
   isDangerous: true
 }) 

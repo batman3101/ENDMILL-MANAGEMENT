@@ -206,7 +206,7 @@ export default function ToolChangesPage() {
   // 삭제 처리
   const handleDelete = async (item: ToolChange) => {
     const confirmed = await confirmation.showConfirmation(
-      createDeleteConfirmation(`${item.equipment_number ? `C${item.equipment_number.toString().padStart(3, '0')}` : '설비'} T${item.t_number?.toString().padStart(2, '0') || '??'} 교체 실적 (${item.endmill_code} ${item.endmill_name})`)
+      createDeleteConfirmation(`${item.equipment_number ? `C${item.equipment_number.toString().padStart(3, '0')}` : '설비'} T${item.t_number?.toString().padStart(2, '0') || '??'} 교체 실적 (${item.endmill_code} ${item.endmill_name})`, t)
     )
 
     if (confirmed) {
@@ -553,7 +553,7 @@ export default function ToolChangesPage() {
               <button
                 onClick={() => setShowBulkUploadModal(true)}
                 title="Excel 일괄 입력은 데스크톱 전용입니다"
-                className="hidden md:flex px-4 py-2 bg-signal-go-strong text-paper rounded-sm hover:bg-signal-go transition-colors items-center gap-2 text-label font-medium"
+                className="hidden lg:flex px-4 py-2 bg-signal-go-strong text-paper rounded-sm hover:bg-signal-go transition-colors items-center gap-2 text-label font-medium"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -562,7 +562,7 @@ export default function ToolChangesPage() {
               </button>
               <Link
                 href="/dashboard/tool-changes/new"
-                className="hidden md:inline-flex items-center justify-center px-4 py-2 bg-gauge-cobalt text-paper rounded-sm hover:bg-gauge-cobalt-strong transition-colors text-label font-medium"
+                className="hidden lg:inline-flex items-center justify-center px-4 py-2 bg-gauge-cobalt text-paper rounded-sm hover:bg-gauge-cobalt-strong transition-colors text-label font-medium"
               >
                 {t('toolChanges.addChangeRecord')}
               </Link>
@@ -639,8 +639,8 @@ export default function ToolChangesPage() {
         </div>
       )}
 
-      {/* 모바일 카드 리스트 (md 미만) */}
-      <div className="md:hidden">
+      {/* 모바일·태블릿 카드 리스트 (lg 미만) */}
+      <div className="lg:hidden">
         <h2 className="text-title font-semibold text-ink mb-3">{t('toolChanges.changeHistoryList')}</h2>
         {toolChanges.length > 0 ? (
           <div className="space-y-3">
@@ -681,8 +681,8 @@ export default function ToolChangesPage() {
         )}
       </div>
 
-      {/* 데스크톱 테이블 (md 이상) */}
-      <div className="hidden md:block bg-paper-warm rounded-lg shadow-sm border border-divider overflow-hidden hover:shadow-xl transition-all duration-200">
+      {/* 데스크톱 테이블 (lg 이상) */}
+      <div className="hidden lg:block bg-paper-warm rounded-lg shadow-sm border border-divider overflow-hidden hover:shadow-xl transition-all duration-200">
         <div className="px-6 py-4 border-b border-divider">
           <h2 className="text-lg font-semibold text-ink">{t('toolChanges.changeHistoryList')}</h2>
         </div>
@@ -1059,7 +1059,7 @@ export default function ToolChangesPage() {
       <Link
         href="/dashboard/tool-changes/new"
         aria-label={t('toolChanges.addChangeRecord')}
-        className="md:hidden fixed right-4 z-40 inline-flex items-center justify-center min-h-action min-w-action rounded-md bg-gauge-cobalt text-paper shadow-modal hover:bg-gauge-cobalt-strong transition-colors"
+        className="lg:hidden fixed right-4 z-40 inline-flex items-center justify-center min-h-action min-w-action rounded-md bg-gauge-cobalt text-paper shadow-modal hover:bg-gauge-cobalt-strong transition-colors"
         style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
       >
         <Plus className="h-6 w-6" />

@@ -67,6 +67,11 @@ export async function GET(request: NextRequest) {
     const sortDirection = searchParams.get('sort_direction') as 'asc' | 'desc'
     const factoryId = searchParams.get('factoryId') || undefined
 
+    // 공장 필터 필수 — 누락 시 전체(접근 가능) 공장 데이터가 섞여 반환되는 것을 방지(fail-closed)
+    if (!factoryId) {
+      return NextResponse.json({ success: false, error: 'factoryId is required' }, { status: 400 })
+    }
+
     logger.log('GET /api/tool-changes params:', {
       equipmentNumber,
       endmillType,
@@ -189,6 +194,66 @@ export async function POST(request: NextRequest) {
     }
 
     logger.log('Creating tool change with data:', JSON.stringify(toolChangeData, null, 2))
+
+    // 공장 필수 — 동일 equipment_number 가 여러 공장에 존재할 수 있어, factory_id 없이
+    // 설비를 조회하면 아래 .maybeSingle() 이 다중 행 에러(500)로 실패한다(다중 공장 격리/정합성).
+    if (!body.factory_id) {
+      return NextResponse.json(
+        { success: false, error: '공장이 선택되지 않았습니다. 헤더에서 공장을 선택해 주세요.' },
+        { status: 400 }
+      )
+    }
+
+    // 사전 검증용 supabase 인스턴스 (동기화 블록과 동일한 인스턴스 재사용)
+    const supabaseForValidation = (serverSupabaseService.endmillType as any).supabase
+
+    // [사전 검증 1] endmill_types 에 해당 코드가 존재하는지 확인
+    const { data: endmillTypeCheck, error: endmillCheckError } = await supabaseForValidation
+      .from('endmill_types')
+      .select('id')
+      .eq('code', validatedData.endmill_code)
+      .maybeSingle()
+
+    if (endmillCheckError) {
+      logger.error('앤드밀 코드 검증 조회 오류:', endmillCheckError)
+      return NextResponse.json(
+        { success: false, error: '앤드밀 코드 검증 중 오류가 발생했습니다.' },
+        { status: 500 }
+      )
+    }
+    if (!endmillTypeCheck) {
+      return NextResponse.json(
+        { success: false, error: `앤드밀 코드 '${validatedData.endmill_code}'가 등록되어 있지 않습니다.` },
+        { status: 400 }
+      )
+    }
+
+    // [사전 검증 2] equipment 가 존재하는지 확인 (equipment_number + factory_id 방식)
+    let equipmentCheckQuery = supabaseForValidation
+      .from('equipment')
+      .select('id')
+      .eq('equipment_number', equipmentNumber)
+
+    if (body.factory_id) {
+      equipmentCheckQuery = equipmentCheckQuery.eq('factory_id', body.factory_id)
+    }
+
+    const { data: equipmentCheck, error: equipmentCheckError } = await equipmentCheckQuery.maybeSingle()
+
+    if (equipmentCheckError) {
+      logger.error('설비 검증 조회 오류:', equipmentCheckError)
+      return NextResponse.json(
+        { success: false, error: '설비 검증 중 오류가 발생했습니다.' },
+        { status: 500 }
+      )
+    }
+    if (!equipmentCheck) {
+      const factoryInfo = body.factory_id ? ` (공장 ID: ${body.factory_id})` : ''
+      return NextResponse.json(
+        { success: false, error: `설비 번호 '${equipmentNumber}'${factoryInfo}가 등록되어 있지 않습니다.` },
+        { status: 400 }
+      )
+    }
 
     // 1. 새 교체 실적 생성
     const newToolChange = await serverSupabaseService.toolChange.create(toolChangeData)

@@ -262,7 +262,13 @@ export default function InboundPage() {
     const totalPrice = quantity * unitPrice
     const confirmed = await confirmation.showConfirmation(
       createSaveConfirmation(
-        `${endmillData.code} ${quantity}개 입고 (${selectedSupplier}, ${totalPrice.toLocaleString()} VND)`
+        t('inventory.confirmInbound', {
+          code: endmillData.code,
+          quantity,
+          supplier: selectedSupplier,
+          price: totalPrice.toLocaleString(),
+        }),
+        t
       )
     )
 

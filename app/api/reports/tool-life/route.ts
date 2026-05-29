@@ -134,7 +134,8 @@ export async function POST(request: NextRequest) {
     // ========================================
     // Summary 계산
     // ========================================
-    const allLives = changes.map((c: any) => c.life)
+    // life=0 레코드 제외하여 평균 수명이 낮게 계산되는 문제 방지
+    const allLives = changes.filter((c: any) => c.life > 0).map((c: any) => c.life)
     const averageLife = calculateAverage(allLives)
     const totalChanges = changes.length
 
@@ -161,7 +162,10 @@ export async function POST(request: NextRequest) {
           lives: []
         })
       }
-      toolStats.get(c.toolCode).lives.push(c.life)
+      // life=0 레코드는 공구별 평균 수명 계산에서 제외
+      if (c.life > 0) {
+        toolStats.get(c.toolCode).lives.push(c.life)
+      }
     })
 
     const toolPerformance = Array.from(toolStats.values())

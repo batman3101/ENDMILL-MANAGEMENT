@@ -43,6 +43,10 @@ export function ChartPreview({ config, data, className }: ChartPreviewProps) {
   }
 
   const renderChart = () => {
+    // colors 누락/빈 배열 방어 — config.colors 가 없거나 비어 있으면 기본 팔레트 사용
+    // (저장된 인사이트/AI 생성 config 에서 colors 가 빠지면 차트 렌더가 크래시하던 문제 방지)
+    const DEFAULT_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+    const colors = Array.isArray(config.colors) && config.colors.length > 0 ? config.colors : DEFAULT_COLORS
     switch (config.type) {
       case 'bar':
         return (
@@ -53,7 +57,7 @@ export function ChartPreview({ config, data, className }: ChartPreviewProps) {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey={config.dataKey} fill={config.colors[0]} />
+              <Bar dataKey={config.dataKey} fill={colors[0]} />
             </BarChart>
           </ResponsiveContainer>
         )
@@ -70,7 +74,7 @@ export function ChartPreview({ config, data, className }: ChartPreviewProps) {
               <Line
                 type="monotone"
                 dataKey={config.dataKey}
-                stroke={config.colors[0]}
+                stroke={colors[0]}
                 strokeWidth={2}
               />
             </LineChart>
@@ -93,7 +97,7 @@ export function ChartPreview({ config, data, className }: ChartPreviewProps) {
                 {data.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={config.colors[index % config.colors.length]}
+                    fill={colors[index % colors.length]}
                   />
                 ))}
               </Pie>
@@ -115,8 +119,8 @@ export function ChartPreview({ config, data, className }: ChartPreviewProps) {
               <Area
                 type="monotone"
                 dataKey={config.dataKey}
-                stroke={config.colors[0]}
-                fill={config.colors[0]}
+                stroke={colors[0]}
+                fill={colors[0]}
                 fillOpacity={0.6}
               />
             </AreaChart>

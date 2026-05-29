@@ -4,12 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createBrowserClient } from '@/lib/supabase/client'
+import { useTranslation } from '../../../lib/hooks/useTranslations'
 import { clientLogger } from '@/lib/utils/logger'
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
 
@@ -17,30 +18,28 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!email) {
-      setError('이메일 주소를 입력해주세요.')
+      setError(t('auth.forgotEmailRequired'))
       return
     }
 
     setLoading(true)
     setError('')
-    setMessage('')
-    
+
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       })
-      
+
       if (error) {
-        setError('비밀번호 재설정 요청 중 오류가 발생했습니다.')
+        setError(t('auth.resetLinkError'))
       } else {
-        setMessage('비밀번호 재설정 링크가 이메일로 전송되었습니다.')
         setIsSubmitted(true)
       }
     } catch (error) {
       clientLogger.error('비밀번호 재설정 오류:', error)
-      setError('비밀번호 재설정 요청 중 오류가 발생했습니다.')
+      setError(t('auth.resetLinkError'))
     } finally {
       setLoading(false)
     }
@@ -57,13 +56,13 @@ export default function ForgotPasswordPage() {
               </svg>
             </div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              이메일 전송 완료
+              {t('auth.emailSentTitle')}
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              비밀번호 재설정 링크를 확인하세요
+              {t('auth.emailSentSubtitle')}
             </p>
           </div>
-          
+
           <div className="bg-green-50 border border-green-200 rounded-md p-4">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -73,36 +72,35 @@ export default function ForgotPasswordPage() {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-green-800">
-                  <strong>{email}</strong>로 비밀번호 재설정 링크가 전송되었습니다.
+                  {t('auth.emailSentMessage', { email })}
                 </p>
                 <p className="text-sm text-green-700 mt-2">
-                  이메일을 확인하고 링크를 클릭하여 새 비밀번호를 설정하세요.
+                  {t('auth.checkEmail')}
                 </p>
               </div>
             </div>
           </div>
-          
+
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">
-              이메일이 도착하지 않았나요? 스팸 폴더를 확인해보세요.
+              {t('auth.noEmailCheckSpam')}
             </p>
             <button
               onClick={() => {
                 setIsSubmitted(false)
                 setEmail('')
-                setMessage('')
                 setError('')
               }}
               className="text-sm text-blue-600 hover:text-blue-500 font-medium"
             >
-              다시 시도하기
+              {t('auth.retry')}
             </button>
             <div>
-              <Link 
+              <Link
                 href="/login"
                 className="text-sm text-blue-600 hover:text-blue-500"
               >
-                ← 로그인으로 돌아가기
+                {t('auth.backToLogin')}
               </Link>
             </div>
           </div>
@@ -125,13 +123,13 @@ export default function ForgotPasswordPage() {
             />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            비밀번호 재설정
+            {t('auth.forgotPasswordTitle')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            등록된 이메일 주소를 입력하세요
+            {t('auth.forgotPasswordSubtitle')}
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3">
@@ -147,25 +145,10 @@ export default function ForgotPasswordPage() {
               </div>
             </div>
           )}
-          
-          {message && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-3">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-green-800">{message}</p>
-                </div>
-              </div>
-            </div>
-          )}
-          
+
           <div>
             <label htmlFor="email-address" className="sr-only">
-              이메일 주소
+              {t('auth.emailAddress')}
             </label>
             <input
               id="email-address"
@@ -179,7 +162,7 @@ export default function ForgotPasswordPage() {
                 if (error) setError('')
               }}
               className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="이메일 주소"
+              placeholder={t('auth.emailAddress')}
               disabled={loading}
             />
           </div>
@@ -193,20 +176,20 @@ export default function ForgotPasswordPage() {
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  전송 중...
+                  {t('auth.sending')}
                 </>
               ) : (
-                '재설정 링크 전송'
+                t('auth.sendResetLink')
               )}
             </button>
           </div>
 
           <div className="text-center">
-            <Link 
+            <Link
               href="/login"
               className="text-sm text-blue-600 hover:text-blue-500"
             >
-              ← 로그인으로 돌아가기
+              {t('auth.backToLogin')}
             </Link>
           </div>
         </form>

@@ -754,7 +754,8 @@ export default function EquipmentPage() {
                     onOpen={id => {
                       const eq = equipments.find(e => e.id === id)
                       if (eq) {
-                        router.push(`/dashboard/equipment/${eq.equipment_number}`)
+                        // UUID(id)로 이동하여 다중 공장 환경에서 .single() 충돌 방지
+                        router.push(`/dashboard/equipment/${eq.id}`)
                       }
                     }}
                     onEdit={handleEditById}
@@ -859,8 +860,9 @@ export default function EquipmentPage() {
                               <button
                                 type="button"
                                 onClick={() =>
+                                  // UUID(id)로 이동하여 다중 공장 환경에서 .single() 충돌 방지
                                   router.push(
-                                    `/dashboard/equipment/${equipment.equipment_number}`
+                                    `/dashboard/equipment/${equipment.id}`
                                   )
                                 }
                                 className="text-base font-medium text-gauge-cobalt-strong tabular no-break transition-colors hover:underline"

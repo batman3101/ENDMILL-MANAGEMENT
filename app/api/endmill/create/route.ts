@@ -1,9 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '../../../../lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
+import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
 
 export async function POST(request: NextRequest) {
   try {
+    // 인증 게이트: 쿠키 바인딩 클라이언트로 요청자 JWT 세션 검증
+    const authClient = createClient()
+    const { data: { user }, error: authError } = await authClient.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const { data: currentUserProfile } = await authClient
+      .from('user_profiles')
+      .select('*, user_roles(*)')
+      .eq('user_id', user.id)
+      .single()
+    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
+    }
+    const userRole = (currentUserProfile as any).user_roles.type
+    const rolePermissions = ((currentUserProfile as any).user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = ((currentUserProfile as any).permissions || {}) as Record<string, string[]>
+    const mergedPermissions = mergePermissionMatrices(userPermissions, rolePermissions)
+    const customPermissions = parsePermissionsFromDB(mergedPermissions)
+    if (!hasPermission(userRole, 'endmills', 'create', customPermissions)) {
+      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 })
+    }
+
     const { supplier_prices, cam_sheet_data, factory_id, ...endmillData } = await request.json()
 
     // 기본 유효성 검사

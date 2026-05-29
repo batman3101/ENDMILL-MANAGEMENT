@@ -123,27 +123,27 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-paper-warm rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gauge-cobalt-strong">평균 수명</span>
+            <span className="text-sm font-medium text-gauge-cobalt-strong">{t('reports.averageLife')}</span>
             <span className="text-2xl">⏱️</span>
           </div>
           <div className="text-3xl font-bold text-gauge-cobalt-strong">
             {summary.averageLife.toLocaleString()}
           </div>
           <div className="text-sm text-gauge-cobalt-strong mt-1">
-            총 {summary.totalChanges}건 교체
+            {t('reports.totalChangesCount', { count: summary.totalChanges })}
           </div>
         </div>
 
         <div className="bg-paper-warm rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-signal-go-strong">표준 수명 달성률</span>
+            <span className="text-sm font-medium text-signal-go-strong">{t('reports.standardLifeAchievement')}</span>
             <span className="text-2xl">📊</span>
           </div>
           <div className="text-3xl font-bold text-signal-go-strong">
             {summary.standardLifeAchievement.toFixed(1)}%
           </div>
           <div className="text-sm text-signal-go-strong mt-1">
-            전체 평균 달성률
+            {t('reports.overallAchievementRate')}
           </div>
         </div>
 
@@ -162,7 +162,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
 
         <div className="bg-paper rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-ink-soft">성능 범위</span>
+            <span className="text-sm font-medium text-ink-soft">{t('reports.performanceRange')}</span>
             <span className="text-2xl">🏆</span>
           </div>
           <div className="text-xs text-ink-soft mt-1">
@@ -181,8 +181,8 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
       {/* 공구별 수명 분석 */}
       <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b bg-paper">
-          <h3 className="text-lg font-semibold text-ink">공구별 수명 분석</h3>
-          <p className="text-sm text-ink-soft mt-1">표준 수명 달성률 기준 정렬</p>
+          <h3 className="text-lg font-semibold text-ink">{t('reports.toolByToolAnalysis')}</h3>
+          <p className="text-sm text-ink-soft mt-1">{t('reports.sortByAchievementRate')}</p>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-divider">
@@ -193,7 +193,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   onClick={() => handleSort('toolName', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
-                    공구
+                    {t('reports.tool')}
                     <SortIcon field="toolName" currentField={toolSortField} currentOrder={toolSortOrder} />
                   </div>
                 </th>
@@ -202,7 +202,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   onClick={() => handleSort('category', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
-                    카테고리
+                    {t('reports.category')}
                     <SortIcon field="category" currentField={toolSortField} currentOrder={toolSortOrder} />
                   </div>
                 </th>
@@ -211,7 +211,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   onClick={() => handleSort('averageLife', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
-                    평균 수명
+                    {t('reports.averageLife')}
                     <SortIcon field="averageLife" currentField={toolSortField} currentOrder={toolSortOrder} />
                   </div>
                 </th>
@@ -220,7 +220,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   onClick={() => handleSort('standardLife', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
-                    표준 수명
+                    {t('reports.standardLife')}
                     <SortIcon field="standardLife" currentField={toolSortField} currentOrder={toolSortOrder} />
                   </div>
                 </th>
@@ -229,7 +229,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   onClick={() => handleSort('achievementRate', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
-                    달성률
+                    {t('reports.achievementRate')}
                     <SortIcon field="achievementRate" currentField={toolSortField} currentOrder={toolSortOrder} />
                   </div>
                 </th>
@@ -238,7 +238,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   onClick={() => handleSort('minLife', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
-                    범위
+                    {t('reports.range')}
                     <SortIcon field="minLife" currentField={toolSortField} currentOrder={toolSortOrder} />
                   </div>
                 </th>
@@ -247,7 +247,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   onClick={() => handleSort('changeCount', toolSortField, toolSortOrder, setToolSortField, setToolSortOrder)}
                 >
                   <div className="flex items-center">
-                    교체 횟수
+                    {t('reports.changeCount')}
                     <SortIcon field="changeCount" currentField={toolSortField} currentOrder={toolSortOrder} />
                   </div>
                 </th>
@@ -280,7 +280,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     {item.minLife} - {item.maxLife}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-soft">
-                    {item.changeCount}건
+                    {item.changeCount}{t('toolChanges.cases')}
                   </td>
                 </tr>
               ))}
@@ -327,7 +327,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
         {/* 수명 분포 */}
         <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
           <div className="px-6 py-4 border-b bg-paper">
-            <h3 className="text-lg font-semibold text-ink">수명 분포</h3>
+            <h3 className="text-lg font-semibold text-ink">{t('reports.lifeDistribution')}</h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
@@ -335,7 +335,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                 <div key={index}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-ink-soft">{item.range}</span>
-                    <span className="text-sm font-bold text-ink">{item.count}건</span>
+                    <span className="text-sm font-bold text-ink">{item.count}{t('toolChanges.cases')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-paper-warm rounded-full h-2">
@@ -358,7 +358,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
       {/* 시간별 수명 트렌드 */}
       <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b bg-paper">
-          <h3 className="text-lg font-semibold text-ink">시간별 수명 트렌드</h3>
+          <h3 className="text-lg font-semibold text-ink">{t('reports.lifeTrend')}</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-divider">
@@ -369,7 +369,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   onClick={() => handleSort('period', trendSortField, trendSortOrder, setTrendSortField, setTrendSortOrder)}
                 >
                   <div className="flex items-center">
-                    기간
+                    {t('reports.period')}
                     <SortIcon field="period" currentField={trendSortField} currentOrder={trendSortOrder} />
                   </div>
                 </th>
@@ -378,7 +378,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   onClick={() => handleSort('changeCount', trendSortField, trendSortOrder, setTrendSortField, setTrendSortOrder)}
                 >
                   <div className="flex items-center justify-end">
-                    교체 건수
+                    {t('reports.changeCount')}
                     <SortIcon field="changeCount" currentField={trendSortField} currentOrder={trendSortOrder} />
                   </div>
                 </th>
@@ -387,7 +387,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                   onClick={() => handleSort('averageLife', trendSortField, trendSortOrder, setTrendSortField, setTrendSortOrder)}
                 >
                   <div className="flex items-center justify-end">
-                    평균 수명
+                    {t('reports.averageLife')}
                     <SortIcon field="averageLife" currentField={trendSortField} currentOrder={trendSortOrder} />
                   </div>
                 </th>
@@ -400,7 +400,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     {item.period}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink-soft">
-                    {item.changeCount}건
+                    {item.changeCount}{t('toolChanges.cases')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
                     <span className="text-lg font-bold text-gauge-cobalt-strong">{item.averageLife.toFixed(0)}</span>
@@ -417,7 +417,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
         <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
           <div className="px-6 py-4 border-b bg-paper-warm">
             <h3 className="text-lg font-semibold text-signal-stop-strong">{t('reports.prematureFailureAnalysis')}</h3>
-            <p className="text-sm text-signal-stop-strong mt-1">표준 수명의 50% 미만으로 교체된 공구</p>
+            <p className="text-sm text-signal-stop-strong mt-1">{t('reports.standardLifeBelow50Desc')}</p>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-divider">
@@ -428,7 +428,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     onClick={() => handleSort('toolName', failureSortField, failureSortOrder, setFailureSortField, setFailureSortOrder)}
                   >
                     <div className="flex items-center">
-                      공구
+                      {t('reports.tool')}
                       <SortIcon field="toolName" currentField={failureSortField} currentOrder={failureSortOrder} />
                     </div>
                   </th>
@@ -446,7 +446,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     onClick={() => handleSort('averageLifeAtFailure', failureSortField, failureSortOrder, setFailureSortField, setFailureSortOrder)}
                   >
                     <div className="flex items-center">
-                      평균 수명
+                      {t('reports.averageLife')}
                       <SortIcon field="averageLifeAtFailure" currentField={failureSortField} currentOrder={failureSortOrder} />
                     </div>
                   </th>
@@ -455,7 +455,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     onClick={() => handleSort('standardLife', failureSortField, failureSortOrder, setFailureSortField, setFailureSortOrder)}
                   >
                     <div className="flex items-center">
-                      표준 수명
+                      {t('reports.standardLife')}
                       <SortIcon field="standardLife" currentField={failureSortField} currentOrder={failureSortOrder} />
                     </div>
                   </th>
@@ -464,7 +464,7 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
                     onClick={() => handleSort('achievementRate', failureSortField, failureSortOrder, setFailureSortField, setFailureSortOrder)}
                   >
                     <div className="flex items-center">
-                      달성률
+                      {t('reports.achievementRate')}
                       <SortIcon field="achievementRate" currentField={failureSortField} currentOrder={failureSortOrder} />
                     </div>
                   </th>
@@ -520,17 +520,17 @@ export default function ToolLifeAnalysisView({ data }: ToolLifeAnalysisViewProps
             <Lightbulb className="w-6 h-6 text-gauge-cobalt-strong" aria-hidden="true" />
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-gauge-cobalt-strong">개선 권장사항</h3>
+            <h3 className="text-sm font-medium text-gauge-cobalt-strong">{t('reports.improvementRecommendations')}</h3>
             <div className="mt-2 text-sm text-gauge-cobalt-strong">
               <ul className="list-disc list-inside space-y-1">
                 {summary.prematureFailures > 0 && (
                   <li>{t('reports.prematureFailureRecommendation', { count: summary.prematureFailures })}</li>
                 )}
                 {summary.standardLifeAchievement < 70 && (
-                  <li>표준 수명 달성률이 {summary.standardLifeAchievement.toFixed(1)}%로 낮습니다. 공구 사용 방법을 개선하세요.</li>
+                  <li>{t('reports.lowAchievementWarning', { rate: summary.standardLifeAchievement.toFixed(1) })}</li>
                 )}
                 {lifeByTool.length > 0 && lifeByTool[lifeByTool.length - 1].achievementRate < 50 && (
-                  <li>일부 공구의 성능이 매우 저조합니다. 대체 공구를 검토하세요.</li>
+                  <li>{t('reports.poorPerformingToolWarning')}</li>
                 )}
               </ul>
             </div>

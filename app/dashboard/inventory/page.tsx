@@ -375,7 +375,7 @@ export default function InventoryPage() {
     if (!editFormData) return
 
     const confirmed = await confirmation.showConfirmation(
-      createUpdateConfirmation('재고 정보')
+      createUpdateConfirmation(t('inventory.confirmUpdate'), t)
     )
     if (!confirmed) return
 
@@ -398,7 +398,7 @@ export default function InventoryPage() {
 
   const handleDelete = async (item: any) => {
     const confirmed = await confirmation.showConfirmation(
-      createDeleteConfirmation(`${t('inventory.confirmDelete')} (${item.code})`)
+      createDeleteConfirmation(`${t('inventory.confirmDelete')} (${item.code})`, t)
     )
     if (!confirmed) return
 
@@ -414,7 +414,7 @@ export default function InventoryPage() {
     e.preventDefault()
 
     const confirmed = await confirmation.showConfirmation(
-      createCreateConfirmation(t('inventory.confirmCreate'))
+      createCreateConfirmation(t('inventory.confirmCreate'), t)
     )
     if (!confirmed) return
 
@@ -1207,23 +1207,25 @@ export default function InventoryPage() {
                     >
                       📷
                     </button>
+                    {/* 자동완성 드롭다운 — 입력 래퍼(.relative) 내부에 배치해 input 기준으로 정렬.
+                        이전에는 .relative 밖에 있어 absolute 기준이 fixed 모달 컨테이너로 올라가
+                        엉뚱한 위치에 렌더되던 버그가 있었다. */}
+                    {searchSuggestions.length > 0 && (
+                      <div className="absolute z-20 left-0 top-full w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                        {searchSuggestions.map((suggestion) => (
+                          <div
+                            key={suggestion.id}
+                            onClick={() => handleSelectSuggestion(suggestion)}
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="font-medium text-gray-900">{suggestion.code}</div>
+                            <div className="text-sm text-gray-500">{suggestion.name}</div>
+                            <div className="text-xs text-gray-400">{suggestion.category}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  {/* 자동완성 드롭다운 */}
-                  {searchSuggestions.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                      {searchSuggestions.map((suggestion) => (
-                        <div
-                          key={suggestion.id}
-                          onClick={() => handleSelectSuggestion(suggestion)}
-                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
-                        >
-                          <div className="font-medium text-gray-900">{suggestion.code}</div>
-                          <div className="text-sm text-gray-500">{suggestion.name}</div>
-                          <div className="text-xs text-gray-400">{suggestion.category}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 <div>

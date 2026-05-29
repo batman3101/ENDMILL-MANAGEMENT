@@ -151,7 +151,7 @@ export async function GET(
       // 수명 사용률: 실제 누적 평균 수명 / CAM Sheet 표준 수명
       // 교체 실적이 없으면 null 반환
       const usagePercentage = averageActualLife && camSheetToolLife > 0
-        ? Math.round((averageActualLife / camSheetToolLife) * 100)
+        ? Math.min(100, Math.round((averageActualLife / camSheetToolLife) * 100))
         : null;
 
       // 실제 장착일: tool_changes에서 가장 최근 교체일 사용

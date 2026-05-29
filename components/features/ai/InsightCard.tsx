@@ -67,7 +67,9 @@ export function InsightCard({
   className,
 }: InsightCardProps) {
   const { t } = useTranslations()
-  const PriorityIcon = priorityIcons[insight.priority]
+  // LLM 이 예상 외 priority 값(대문자/타언어 등)을 반환하면 priorityIcons[...] 가 undefined 가 되어
+  // JSX 렌더 시 'Element type is invalid' 크래시가 난다 — Info 아이콘으로 폴백해 방어.
+  const PriorityIcon = priorityIcons[insight.priority] ?? Info
 
   return (
     <Card className={cn('hover:shadow-md transition-shadow', className)}>

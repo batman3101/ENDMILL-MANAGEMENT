@@ -83,7 +83,9 @@ export function useFactoryProvider() {
           'reports',
           'endmill-disposals',
           'endmill-types',
-          'users'
+          'users',
+          'insights',       // AI 인사이트 (queryKey: ['insights', factoryId, lang])
+          'savedInsights'   // 저장된 인사이트 목록 (queryKey: ['savedInsights', factoryId, options])
         ].some(key => queryKey.includes(key))
       }
     })

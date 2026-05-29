@@ -111,24 +111,57 @@ export async function PUT(
 
     // 재고 수량 조정 (수량 차이만큼)
     if (quantityDiff !== 0 && existingTransaction.inventory) {
+      const inventoryId = (existingTransaction.inventory as any).id
       const currentStock = (existingTransaction.inventory as any).current_stock || 0
       const newStock = currentStock - quantityDiff // 출고는 차감이므로 -
 
-      const { error: stockError } = await supabase
-        .from('inventory')
-        .update({
-          current_stock: newStock,
-          last_updated: new Date().toISOString(),
-          status: newStock >= 50 ? 'sufficient' : newStock >= 20 ? 'low' : 'critical'
-        })
-        .eq('id', (existingTransaction.inventory as any).id)
+      if (quantityDiff > 0) {
+        // 출고 증가: 동시성/재고부족 방어를 위해 .gte('current_stock', quantityDiff) 조건부 UPDATE
+        const { data: updatedStock, error: stockError } = await supabase
+          .from('inventory')
+          .update({
+            current_stock: newStock,
+            last_updated: new Date().toISOString(),
+            status: newStock >= 50 ? 'sufficient' : newStock >= 20 ? 'low' : 'critical'
+          })
+          .eq('id', inventoryId)
+          .gte('current_stock', quantityDiff) // 재고가 추가 차감량 이상일 때만 UPDATE
+          .select('id')
+          .maybeSingle()
 
-      if (stockError) {
-        logger.error('재고 수량 조정 오류:', stockError)
-        return NextResponse.json(
-          { error: '재고 수량 조정 중 오류가 발생했습니다.' },
-          { status: 500 }
-        )
+        if (stockError) {
+          logger.error('재고 수량 조정 오류:', stockError)
+          return NextResponse.json(
+            { error: '재고 수량 조정 중 오류가 발생했습니다.' },
+            { status: 500 }
+          )
+        }
+
+        if (!updatedStock) {
+          // 조건부 UPDATE 미충족: 동시 요청 또는 재고 부족
+          return NextResponse.json(
+            { error: '재고가 부족합니다. 새로고침 후 다시 시도해 주세요.' },
+            { status: 409 }
+          )
+        }
+      } else {
+        // 출고 감소(재고 증가): 음수 우려 없으므로 조건 없이 UPDATE
+        const { error: stockError } = await supabase
+          .from('inventory')
+          .update({
+            current_stock: newStock,
+            last_updated: new Date().toISOString(),
+            status: newStock >= 50 ? 'sufficient' : newStock >= 20 ? 'low' : 'critical'
+          })
+          .eq('id', inventoryId)
+
+        if (stockError) {
+          logger.error('재고 수량 조정 오류:', stockError)
+          return NextResponse.json(
+            { error: '재고 수량 조정 중 오류가 발생했습니다.' },
+            { status: 500 }
+          )
+        }
       }
     }
 

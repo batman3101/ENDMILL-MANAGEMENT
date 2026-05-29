@@ -196,6 +196,9 @@ export function getDefaultPermissionMatrix(userRole: UserRole): Record<string, s
 }
 
 // 권한 매트릭스 병합 (커스텀 권한 + 기본 권한)
+// 주의: 합집합(union) 방식 — 개인 커스텀 권한은 역할 권한에 "추가"만 되며,
+// 역할로 부여된 권한을 개인 단위로 회수(제거)할 수는 없다(설계상 의도된 동작).
+// 개인 단위 회수가 필요해지면 리소스별 override 방식으로 변경해야 한다.
 export function mergePermissionMatrices(
   customMatrix: Record<string, string[]>,
   defaultMatrix: Record<string, string[]>

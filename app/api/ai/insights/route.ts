@@ -146,26 +146,10 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10)
 
-    // 재고 부족 통계
-    let lowStockQuery = supabase
-      .from('inventory')
-      .select('*', { count: 'exact', head: true })
-      .in('status', ['low', 'critical'])
-    if (factoryId) lowStockQuery = lowStockQuery.eq('factory_id', factoryId)
-    const { count: lowStockCount } = await lowStockQuery
-
-    let inventoryStatsQuery = supabase
-      .from('inventory')
-      .select('status')
-      .in('status', ['low', 'critical'])
-    if (factoryId) inventoryStatsQuery = inventoryStatsQuery.eq('factory_id', factoryId)
-    const { data: inventoryStats } = await inventoryStatsQuery
-
-    const criticalCount = (inventoryStats || []).filter((inv: any) => inv.status === 'critical').length
-    const lowCount = (inventoryStats || []).filter((inv: any) => inv.status === 'low').length
-
-    // 재고 부족 품목 상세 (상위 20개)
-    let inventoryItemsQuery = supabase
+    // 재고 부족 통계 — stale 'status' 컬럼 대신 current_stock vs min_stock 로 즉석 계산.
+    // (대시보드/useInventory 와 동일 기준: critical = 현재고 <= 최소재고, low = 최소재고 초과 ~ 최소재고*1.5 이하)
+    // 이전에는 저장된 status 컬럼에 의존해 대시보드 수치와 불일치했다.
+    let allInventoryQuery = supabase
       .from('inventory')
       .select(`
         id,
@@ -178,11 +162,24 @@ export async function GET(request: NextRequest) {
           unit_cost
         )
       `)
-      .in('status', ['low', 'critical'])
-      .order('current_stock', { ascending: true })
-      .limit(20)
-    if (factoryId) inventoryItemsQuery = inventoryItemsQuery.eq('factory_id', factoryId)
-    const { data: inventoryItems } = await inventoryItemsQuery
+    if (factoryId) allInventoryQuery = allInventoryQuery.eq('factory_id', factoryId)
+    const { data: allInventory } = await allInventoryQuery
+
+    const isCritical = (inv: any) => (inv.current_stock ?? 0) <= (inv.min_stock ?? 0)
+    const isLow = (inv: any) =>
+      (inv.current_stock ?? 0) > (inv.min_stock ?? 0) &&
+      (inv.current_stock ?? 0) <= (inv.min_stock ?? 0) * 1.5
+
+    const criticalItemsList = (allInventory || []).filter(isCritical)
+    const lowItemsList = (allInventory || []).filter(isLow)
+    const criticalCount = criticalItemsList.length
+    const lowCount = lowItemsList.length
+    const lowStockCount = criticalCount + lowCount
+
+    // 재고 부족 품목 상세 (위험→부족 순, 현재고 오름차순, 상위 20개)
+    const inventoryItems = [...criticalItemsList, ...lowItemsList]
+      .sort((a: any, b: any) => (a.current_stock ?? 0) - (b.current_stock ?? 0))
+      .slice(0, 20)
 
     // 실제 통계 값
     const totalChanges = totalChangesCount || 0

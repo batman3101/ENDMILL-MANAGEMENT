@@ -38,6 +38,9 @@ interface OutboundItem {
   processedAt: string
   processedBy: string
   purpose: string
+  // 수정 모달 재고 상한 검증용 필드
+  currentStock?: number
+  originalQuantity?: number
 }
 
 export default function OutboundPage() {
@@ -352,16 +355,32 @@ export default function OutboundPage() {
     const _totalValue = quantity * endmillData.unitPrice
 
     // 확인 메시지 생성
-    let confirmMessage = `${endmillData.code} ${quantity}개 출고`
-    if (equipmentNumber.trim()) {
-      confirmMessage += ` (${equipmentNumber} T${tNumber.toString().padStart(2, '0')})`
-    }
-    if (purpose.trim()) {
-      confirmMessage += ` - ${purpose}`
+    let confirmMessage: string
+    const tNumberPadded = tNumber.toString().padStart(2, '0')
+    if (equipmentNumber.trim() && purpose.trim()) {
+      confirmMessage = t('inventory.confirmOutboundWithPurpose', {
+        code: endmillData.code,
+        quantity,
+        equipment: equipmentNumber,
+        tNumber: tNumberPadded,
+        purpose,
+      })
+    } else if (equipmentNumber.trim()) {
+      confirmMessage = t('inventory.confirmOutboundWithEquip', {
+        code: endmillData.code,
+        quantity,
+        equipment: equipmentNumber,
+        tNumber: tNumberPadded,
+      })
+    } else {
+      confirmMessage = t('inventory.confirmOutbound', {
+        code: endmillData.code,
+        quantity,
+      })
     }
 
     const confirmed = await confirmation.showConfirmation(
-      createSaveConfirmation(confirmMessage)
+      createSaveConfirmation(confirmMessage, t)
     )
 
     if (confirmed) {
@@ -450,9 +469,33 @@ export default function OutboundPage() {
     }
   }
 
-  // 출고 내역 수정 핸들러
-  const handleEditOutbound = (item: OutboundItem) => {
-    setEditingItem(item)
+  // 출고 내역 수정 핸들러 - 모달 열 때 현재 재고를 조회해 상한 설정
+  const handleEditOutbound = async (item: OutboundItem) => {
+    // 해당 품목의 현재 재고를 조회 (신규 출고 폼과 동일한 API 재사용)
+    let currentStock = 0
+    try {
+      const factoryId = currentFactory?.id
+      const inventoryResponse = await fetch(`/api/inventory${factoryId ? `?factoryId=${factoryId}` : ''}`)
+      if (inventoryResponse.ok) {
+        const inventoryResult = await inventoryResponse.json()
+        if (inventoryResult.success && inventoryResult.data) {
+          const inventoryItem = inventoryResult.data.find((inv: any) =>
+            inv.endmill_type?.code === item.endmillCode
+          )
+          if (inventoryItem) {
+            currentStock = inventoryItem.current_stock || 0
+          }
+        }
+      }
+    } catch (error) {
+      clientLogger.error('수정 모달 재고 조회 오류:', error)
+    }
+
+    setEditingItem({
+      ...item,
+      currentStock,
+      originalQuantity: item.quantity // 원래 출고수량 보존
+    })
     setIsEditModalOpen(true)
   }
 
@@ -1163,13 +1206,26 @@ export default function OutboundPage() {
                 <label className="block text-label font-medium text-ink-soft mb-1">
                   {t('common.quantity')}
                 </label>
+                {/* 실질 상한 = 원래 출고수량 + 현재 재고 (신규 출고 폼과 대칭 검증) */}
                 <input
                   type="number"
                   min="1"
+                  max={(editingItem.originalQuantity ?? editingItem.quantity) + (editingItem.currentStock ?? 0)}
                   value={editingItem.quantity}
                   onChange={(e) => setEditingItem({ ...editingItem, quantity: parseInt(e.target.value) || 1 })}
-                  className="w-full min-h-touch px-3 py-2 text-base bg-paper border border-divider rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-signal-go-strong transition-colors tabular"
+                  className={`w-full min-h-touch px-3 py-2 text-base bg-paper border rounded-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors tabular ${
+                    editingItem.quantity < 1 ||
+                    editingItem.quantity > (editingItem.originalQuantity ?? editingItem.quantity) + (editingItem.currentStock ?? 0)
+                      ? 'border-signal-stop bg-signal-stop-soft focus:border-signal-stop-strong'
+                      : 'border-divider focus:border-signal-go-strong'
+                  }`}
                 />
+                {/* 재고 초과 경고 메시지 */}
+                {editingItem.quantity > (editingItem.originalQuantity ?? editingItem.quantity) + (editingItem.currentStock ?? 0) && (
+                  <p className="text-signal-stop-strong text-caption mt-1" role="alert">
+                    {t('inventory.insufficientStock')}! {t('inventory.currentStock')}: {editingItem.currentStock ?? 0}{t('inventory.pieces')} ({t('common.max')}: {(editingItem.originalQuantity ?? editingItem.quantity) + (editingItem.currentStock ?? 0)}{t('inventory.pieces')})
+                  </p>
+                )}
               </div>
 
               <div>
@@ -1199,9 +1255,14 @@ export default function OutboundPage() {
               >
                 {t('common.cancel')}
               </button>
+              {/* 수량 < 1 또는 재고 상한 초과 시 저장 불가 */}
               <button
                 onClick={handleSaveEditOutbound}
-                className="w-full sm:w-auto inline-flex min-h-touch items-center justify-center px-4 py-2 bg-signal-go-strong text-paper text-label font-medium rounded-sm transition-colors hover:bg-signal-go"
+                disabled={
+                  editingItem.quantity < 1 ||
+                  editingItem.quantity > (editingItem.originalQuantity ?? editingItem.quantity) + (editingItem.currentStock ?? 0)
+                }
+                className="w-full sm:w-auto inline-flex min-h-touch items-center justify-center px-4 py-2 bg-signal-go-strong text-paper text-label font-medium rounded-sm transition-colors hover:bg-signal-go disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t('common.save')}
               </button>

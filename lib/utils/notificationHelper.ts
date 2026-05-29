@@ -25,10 +25,19 @@ export async function createNotification(notification: NotificationData) {
 
     // recipient_id가 null이면 모든 admin 사용자에게 알림
     if (!notification.recipient_id) {
+      // admin/system_admin 역할 ID를 먼저 조회한 뒤 role_id 로 필터한다.
+      // PostgREST 임베디드 필터(user_roles.type)는 부모 행을 걸러내지 못하고(user_roles:null 로
+      // 전체 반환) 결국 일반 user 까지 포함돼 전 직원에게 관리자 알림이 발송되던 버그를 방지.
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('id')
+        .in('type', ['system_admin', 'admin'])
+      const adminRoleIds = (adminRoles || []).map((r: any) => r.id)
+
       const { data: adminProfiles, error: adminError } = await supabase
         .from('user_profiles')
-        .select('id, role_id, user_roles(type)')
-        .in('user_roles.type', ['system_admin', 'admin'])
+        .select('id, role_id')
+        .in('role_id', adminRoleIds)
 
       if (adminError) {
         logger.error('관리자 조회 오류:', adminError)

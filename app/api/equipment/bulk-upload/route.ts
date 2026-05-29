@@ -95,6 +95,9 @@ export async function POST(request: NextRequest) {
     const BATCH_SIZE = 50
     const totalEquipments = validatedData.equipments.length
 
+    // 같은 파일(배치 전체) 내 중복 설비번호 추적
+    const processedInBatch = new Set<string>()
+
     logger.log(`총 ${totalEquipments}개 설비 일괄 등록 시작`)
 
     for (let i = 0; i < totalEquipments; i += BATCH_SIZE) {
@@ -105,7 +108,7 @@ export async function POST(request: NextRequest) {
       await Promise.all(
         batch.map(async (equipment) => {
           try {
-            // 중복 체크
+            // DB에 이미 존재하는 설비번호 중복 체크
             if (existingNumbers.has(equipment.equipment_number)) {
               results.duplicates.push({
                 equipment_number: equipment.equipment_number,
@@ -113,6 +116,16 @@ export async function POST(request: NextRequest) {
               })
               return
             }
+
+            // 같은 파일 내 중복 설비번호 체크
+            if (processedInBatch.has(equipment.equipment_number)) {
+              results.duplicates.push({
+                equipment_number: equipment.equipment_number,
+                reason: '같은 파일에 중복된 설비번호입니다.'
+              })
+              return
+            }
+            processedInBatch.add(equipment.equipment_number)
 
             // 설비번호에서 숫자 추출 (C001 -> 1)
             const numberMatch = equipment.equipment_number.match(/\d+/)
@@ -141,6 +154,8 @@ export async function POST(request: NextRequest) {
               ...(factoryId && { factory_id: factoryId })
             } as any)
 
+            // 배치 간 방어 이중화: 성공한 번호를 existingNumbers에도 추가
+            existingNumbers.add(equipment.equipment_number)
             results.success.push({
               equipment_number: equipment.equipment_number,
               id: newEquipment.id,

@@ -138,17 +138,18 @@ export default function StatusChangeDropdown({
     setIsOpen(false)
   }
 
-  // 외부 클릭 시 드롭다운 닫기
+  // 외부 클릭 시 드롭다운 닫기 — pointerdown 으로 마우스·터치를 모두 처리
+  // (기존 mousedown 만 청취하면 터치 디바이스에서 바깥 탭으로 닫히지 않는 버그가 있었다)
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: Event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false)
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('pointerdown', handleClickOutside)
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('pointerdown', handleClickOutside)
     }
   }, [])
 
@@ -193,7 +194,7 @@ export default function StatusChangeDropdown({
 
       {/* 드롭다운 메뉴 */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+        <div className="absolute right-0 top-full mt-2 w-[min(20rem,calc(100vw-2rem))] max-w-[calc(100vw-1rem)] bg-white rounded-lg shadow-lg border border-gray-200 z-50">
           <div className="p-3 border-b border-gray-100">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <span className="text-base">🏭</span>

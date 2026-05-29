@@ -87,7 +87,7 @@ export default function EditToolChangePage() {
     try {
       const cached = window.sessionStorage.getItem(SESSION_CACHE_KEY(id))
       if (!cached) {
-        setLoadError('편집할 기록을 찾을 수 없습니다. 목록에서 다시 시도해주세요.')
+        setLoadError(t('toolChanges.loadErrorNotFound'))
         return
       }
       const parsed = JSON.parse(cached) as ToolChange
@@ -95,9 +95,9 @@ export default function EditToolChangePage() {
       setForm(recordToForm(parsed))
     } catch (error) {
       clientLogger.error('Edit record load error:', error)
-      setLoadError('기록을 불러오는 중 오류가 발생했습니다.')
+      setLoadError(t('toolChanges.loadErrorGeneral'))
     }
-  }, [id])
+  }, [id, t])
 
   // Load users
   useEffect(() => {
@@ -209,7 +209,7 @@ export default function EditToolChangePage() {
       const result = await response.json()
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || '교체 실적 수정에 실패했습니다.')
+        throw new Error(result.error || t('toolChanges.editUpdateFailedMessage'))
       }
 
       try {
@@ -219,15 +219,18 @@ export default function EditToolChangePage() {
       }
 
       showSuccess(
-        '수정 완료',
-        `${form.equipment_number} T${String(form.t_number).padStart(2, '0')} 수정됨`
+        t('toolChanges.editSuccessTitle'),
+        t('toolChanges.editSuccessMessage', {
+          equipment: form.equipment_number,
+          tNumber: String(form.t_number).padStart(2, '0'),
+        })
       )
       router.push('/dashboard/tool-changes')
     } catch (error) {
       clientLogger.error('교체 실적 수정 오류:', error)
       showError(
-        '수정 실패',
-        error instanceof Error ? error.message : '교체 실적 수정 중 오류가 발생했습니다.'
+        t('toolChanges.editFailedTitle'),
+        error instanceof Error ? error.message : t('toolChanges.editFailedMessage')
       )
     } finally {
       setIsSubmitting(false)
@@ -274,11 +277,11 @@ export default function EditToolChangePage() {
             variant="ghost"
             size="icon"
             onClick={() => router.push('/dashboard/tool-changes')}
-            aria-label="뒤로"
+            aria-label={t('toolChanges.back')}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-title font-semibold text-ink">교체 실적 수정</h1>
+          <h1 className="text-title font-semibold text-ink">{t('toolChanges.editTitle')}</h1>
         </header>
         <main className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center p-4">
           <div className="rounded-md border border-divider bg-paper-warm p-6 text-center">
@@ -290,7 +293,7 @@ export default function EditToolChangePage() {
               onClick={() => router.push('/dashboard/tool-changes')}
               className="mt-4"
             >
-              목록으로 돌아가기
+              {t('toolChanges.backToList')}
             </Button>
           </div>
         </main>
@@ -307,7 +310,7 @@ export default function EditToolChangePage() {
   }
 
   const formattedSuggestedToolLife =
-    suggestedToolLife !== null ? `${suggestedToolLife.toLocaleString()}회` : '—'
+    suggestedToolLife !== null ? `${suggestedToolLife.toLocaleString()}${t('toolChanges.toolLifeTimesSuffix')}` : '—'
 
   return (
     <div className="flex min-h-screen flex-col bg-paper">
@@ -317,18 +320,18 @@ export default function EditToolChangePage() {
           variant="ghost"
           size="icon"
           onClick={() => router.push('/dashboard/tool-changes')}
-          aria-label="뒤로"
+          aria-label={t('toolChanges.back')}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-title font-semibold text-ink">교체 실적 수정</h1>
+        <h1 className="text-title font-semibold text-ink">{t('toolChanges.editTitle')}</h1>
       </header>
 
       <form
         onSubmit={handleSubmit}
         className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4 pb-48 sm:px-6 lg:px-8 md:pb-32"
       >
-        <Field label="설비번호" htmlFor="equipment_number" hint="C001 형식">
+        <Field label={t('toolChanges.equipmentNumber')} htmlFor="equipment_number" hint={t('toolChanges.equipmentNumberHint')}>
           <Input
             id="equipment_number"
             type="text"
@@ -342,50 +345,50 @@ export default function EditToolChangePage() {
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="생산모델" htmlFor="production_model">
+          <Field label={t('toolChanges.productionModel')} htmlFor="production_model">
             <SmartDropdown
-              title="생산모델 선택"
+              title={t('toolChanges.selectProductionModel')}
               options={modelOptions}
               value={form.production_model}
               onChange={(v) => updateField('production_model', v)}
-              placeholder="선택"
+              placeholder={t('toolChanges.selectShort')}
               required
             />
           </Field>
-          <Field label="공정" htmlFor="process">
+          <Field label={t('toolChanges.process')} htmlFor="process">
             <SmartDropdown
-              title="공정 선택"
+              title={t('toolChanges.selectProcess')}
               options={processOptions}
               value={form.process}
               onChange={(v) => updateField('process', v)}
-              placeholder="선택"
+              placeholder={t('toolChanges.selectShort')}
               required
             />
           </Field>
         </div>
 
-        <Field label="T번호" htmlFor="t_number">
+        <Field label={t('toolChanges.tNumber')} htmlFor="t_number">
           <SmartDropdown
-            title="T번호 선택"
+            title={t('toolChanges.selectTNumber')}
             options={tNumberOptions}
             value={String(form.t_number)}
             onChange={(v) => updateField('t_number', parseInt(v, 10))}
-            placeholder="선택"
+            placeholder={t('toolChanges.selectShort')}
             required
           />
         </Field>
 
         <Field
-          label="엔드밀 코드"
+          label={t('toolChanges.endmillCode')}
           htmlFor="endmill_code"
-          hint={isManualEndmillInput ? '수동 입력 모드' : 'CAM Sheet 자동 입력'}
+          hint={isManualEndmillInput ? t('toolChanges.manualInputMode') : t('toolChanges.camSheetAutoInputHint')}
           action={
             <button
               type="button"
               onClick={() => setIsManualEndmillInput((v) => !v)}
               className="text-caption font-medium text-gauge-cobalt transition-colors hover:text-gauge-cobalt-strong"
             >
-              {isManualEndmillInput ? '자동 입력' : '수동 입력'}
+              {isManualEndmillInput ? t('toolChanges.autoInputAction') : t('toolChanges.manualInputAction')}
             </button>
           }
         >
@@ -402,7 +405,7 @@ export default function EditToolChangePage() {
           />
         </Field>
 
-        <Field label="엔드밀 이름" htmlFor="endmill_name">
+        <Field label={t('toolChanges.endmillName')} htmlFor="endmill_name">
           <Input
             id="endmill_name"
             type="text"
@@ -416,7 +419,7 @@ export default function EditToolChangePage() {
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="적용 Tool Life" htmlFor="suggested_tool_life" hint="CAM Sheet 기준 (참고)">
+          <Field label={t('toolChanges.appliedToolLifeShort')} htmlFor="suggested_tool_life" hint={t('toolChanges.camSheetReferenceHint')}>
             <Input
               id="suggested_tool_life"
               type="text"
@@ -427,7 +430,7 @@ export default function EditToolChangePage() {
             />
           </Field>
 
-          <Field label="실제 Tool Life" htmlFor="tool_life" hint="회 단위">
+          <Field label={t('toolChanges.actualToolLifeShort')} htmlFor="tool_life" hint={t('toolChanges.timesUnitHint')}>
             <Input
               id="tool_life"
               type="number"
@@ -458,13 +461,13 @@ export default function EditToolChangePage() {
           />
         </Field>
 
-        <Field label="작업자" htmlFor="changed_by">
+        <Field label={t('toolChanges.workerLabel')} htmlFor="changed_by">
           <SmartDropdown
-            title="작업자 선택"
+            title={t('toolChanges.selectWorker')}
             options={userOptions}
             value={form.changed_by}
             onChange={(v) => updateField('changed_by', v)}
-            placeholder="선택"
+            placeholder={t('toolChanges.selectShort')}
           />
         </Field>
       </form>
@@ -481,7 +484,7 @@ export default function EditToolChangePage() {
             onClick={() => router.push('/dashboard/tool-changes')}
             className="flex-1"
           >
-            취소
+            {t('toolChanges.cancel')}
           </Button>
           <Button
             type="button"
@@ -495,7 +498,7 @@ export default function EditToolChangePage() {
             ) : (
               <>
                 <Check className="mr-2 h-5 w-5" />
-                저장
+                {t('toolChanges.save')}
               </>
             )}
           </Button>

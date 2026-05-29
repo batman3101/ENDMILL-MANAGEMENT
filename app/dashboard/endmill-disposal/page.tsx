@@ -470,7 +470,8 @@ export default function EndmillDisposalPage() {
       createDeleteConfirmation(
         `${formatDateForLocale(disposal.disposal_date, dateLocale)} ${t(
           'endmillDisposal.recordList'
-        )}`
+        )}`,
+        t
       )
     )
     if (confirmed) {

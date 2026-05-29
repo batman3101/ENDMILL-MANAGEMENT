@@ -393,7 +393,7 @@ export default function CAMSheetsPage() {
 
   const handleCreateCAMSheet = async (data: any) => {
     const confirmed = await confirmation.showConfirmation(
-      createSaveConfirmation(`${data.model} - ${data.process} CAM Sheet`)
+      createSaveConfirmation(`${data.model} - ${data.process} CAM Sheet`, t)
     )
     if (confirmed) {
       createCAMSheet(data)
@@ -439,7 +439,7 @@ export default function CAMSheetsPage() {
   const handleUpdateCAMSheet = async (data: any) => {
     if (!editingSheet) return
     const confirmed = await confirmation.showConfirmation(
-      createSaveConfirmation(`${data.model} - ${data.process} CAM Sheet`)
+      createSaveConfirmation(`${data.model} - ${data.process} CAM Sheet`, t)
     )
     if (confirmed) {
       updateCAMSheet({
@@ -459,7 +459,7 @@ export default function CAMSheetsPage() {
     const target = camSheets.find(s => s.id === id)
     if (!target) return
     const confirmed = await confirmation.showConfirmation(
-      createDeleteConfirmation(`${target.model} - ${target.process} CAM Sheet`)
+      createDeleteConfirmation(`${target.model} - ${target.process} CAM Sheet`, t)
     )
     if (confirmed) {
       deleteCAMSheet(id)

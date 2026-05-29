@@ -122,7 +122,7 @@ export function MobileBottomNav() {
     <>
       {/* 더보기 메뉴 오버레이 */}
       {showMore && (
-        <div className="fixed inset-0 z-[60] md:hidden">
+        <div className="fixed inset-0 z-[60] lg:hidden">
           {/* 배경 오버레이 */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -168,7 +168,7 @@ export function MobileBottomNav() {
       )}
 
       {/* 하단 네비게이션 바 */}
-      <nav className="mobile-bottom-nav bg-paper border-t border-divider z-50 md:hidden safe-area-bottom">
+      <nav className="mobile-bottom-nav bg-paper border-t border-divider z-50 lg:hidden safe-area-bottom">
         <div className="flex items-center justify-around h-16">
           {mainItems.map((item) => (
             <Link

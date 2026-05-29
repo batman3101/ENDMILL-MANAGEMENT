@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import {
   ReportType,
@@ -17,6 +17,11 @@ export const useReports = () => {
   const { currentFactory } = useFactory()
   const factoryId = currentFactory?.id
   const [generatedReport, setGeneratedReport] = useState<any>(null)
+
+  // 공장 전환 시 이전 공장 기준 리포트를 자동 초기화 (이전 공장 데이터 화면 잔류 방지)
+  useEffect(() => {
+    setGeneratedReport(null)
+  }, [factoryId])
 
   // 월간 리포트 생성
   const generateMonthlyReport = useMutation({

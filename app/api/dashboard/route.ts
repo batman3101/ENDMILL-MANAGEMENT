@@ -1,6 +1,8 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { unstable_noStore as noStore } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
+import { hasPermission, parsePermissionsFromDB, mergePermissionMatrices } from '@/lib/auth/permissions'
 import { logger } from '@/lib/utils/logger'
 import { getFactoryToday, getFactoryYesterday, getFactoryDayRange } from '@/lib/utils/dateUtils'
 import { applyFactoryFilter } from '@/lib/utils/factoryFilter'
@@ -89,6 +91,33 @@ export async function GET(request: NextRequest) {
   const factoryId = request.nextUrl.searchParams.get('factoryId') || undefined
   logger.log('🚀 대시보드 API 호출됨:', new Date().toISOString(), { factoryId })
   try {
+    // 인증·권한 검증 (쿠키 바인딩 클라이언트로 요청자 세션 확인 — service-role 은 getUser 불가)
+    const authClient = createClient()
+    const { data: { user }, error: authError } = await authClient.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    const { data: currentUserProfile } = await authClient
+      .from('user_profiles')
+      .select('*, user_roles(*)')
+      .eq('user_id', user.id)
+      .single()
+    if (!currentUserProfile || !(currentUserProfile as any).user_roles) {
+      return NextResponse.json({ success: false, error: 'User profile not found' }, { status: 404 })
+    }
+    const userRole = (currentUserProfile as any).user_roles.type
+    const rolePermissions = ((currentUserProfile as any).user_roles?.permissions || {}) as Record<string, string[]>
+    const userPermissions = ((currentUserProfile as any).permissions || {}) as Record<string, string[]>
+    const customPermissions = parsePermissionsFromDB(mergePermissionMatrices(userPermissions, rolePermissions))
+    if (!hasPermission(userRole, 'dashboard', 'read', customPermissions)) {
+      return NextResponse.json({ success: false, error: 'Permission denied' }, { status: 403 })
+    }
+
+    // 공장 필수 — 누락 시 전체 공장 집계가 섞여 반환되는 격리 위반 방지(fail-closed)
+    if (!factoryId) {
+      return NextResponse.json({ success: false, error: 'factoryId is required' }, { status: 400 })
+    }
+
     const supabase = createServerClient()
 
     // 1단계: 공통 데이터 병렬 조회 (5개 테이블, 각 1회씩 - inventory 추가로 이중 조회 제거)
@@ -252,10 +281,10 @@ function getEndmillUsageStats(allToolChanges: any[]) {
     return { total: 0, normalLife: 0, broken: 0, premature: 0, brokenRate: 0 }
   }
 
-  // 교체 사유별 집계
+  // 교체 사유별 집계 (stats/route.ts 기준: 수명완료+예방교체→normalLife, 파손→broken, 나머지→premature)
   const stats = recentChanges.reduce((acc, change) => {
     const reason = change.change_reason || '기타'
-    if (reason === '수명완료') acc.normalLife++
+    if (reason === '수명완료' || reason === '예방교체') acc.normalLife++
     else if (reason === '파손') acc.broken++
     else acc.premature++
     return acc
@@ -353,10 +382,10 @@ function getCostAnalysis(allToolChanges: any[], allEndmillTypes: any[]) {
   const calcCost = (changes: any[]) =>
     changes.reduce((sum, change) => {
       const endmill = endmillMap.get(change.endmill_code)
-      if (!endmill) return sum + 50000
-      const unitCostString = endmill.unit_cost || '50000'
+      if (!endmill) return sum + 0
+      const unitCostString = endmill.unit_cost || '0'
       const unitCost = typeof unitCostString === 'string' ? parseFloat(unitCostString) : Number(unitCostString)
-      return sum + (isNaN(unitCost) ? 50000 : unitCost)
+      return sum + (isNaN(unitCost) ? 0 : unitCost)
     }, 0)
 
   const currentMonthCost = calcCost(currentMonthChanges)
@@ -463,9 +492,9 @@ function getModelCostAnalysis(allToolChanges: any[], allEquipment: any[], allEnd
     const series = model.split('-')[0]
 
     const endmill = endmillMap.get(change.endmill_code)
-    const unitCostString = endmill?.unit_cost || '50000'
+    const unitCostString = endmill?.unit_cost || '0'
     const cost = typeof unitCostString === 'string' ? parseFloat(unitCostString) : Number(unitCostString)
-    const finalCost = isNaN(cost) ? 50000 : cost
+    const finalCost = isNaN(cost) ? 0 : cost
 
     acc[series] = (acc[series] || 0) + finalCost
     return acc

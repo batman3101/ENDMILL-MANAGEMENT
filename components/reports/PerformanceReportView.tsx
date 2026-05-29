@@ -136,33 +136,33 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-paper-warm rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gauge-cobalt-strong">총 설비 수</span>
+            <span className="text-sm font-medium text-gauge-cobalt-strong">{t('reports.totalEquipmentLabel')}</span>
             <span className="text-2xl">🏭</span>
           </div>
           <div className="text-3xl font-bold text-gauge-cobalt-strong">
-            {summary.totalEquipment}대
+            {summary.totalEquipment}{t('reports.totalEquipmentUnit')}
           </div>
           <div className="text-sm text-gauge-cobalt-strong mt-1">
-            설비당 평균 {summary.averageChangesPerEquipment}건 교체
+            {t('reports.avgChangesPerEquipment', { count: summary.averageChangesPerEquipment })}
           </div>
         </div>
 
         <div className="bg-paper-warm rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-signal-go-strong">전체 효율성</span>
+            <span className="text-sm font-medium text-signal-go-strong">{t('reports.overallEfficiency')}</span>
             <span className="text-2xl">📊</span>
           </div>
           <div className="text-3xl font-bold text-signal-go-strong">
             {summary.overallEfficiency.toFixed(1)}%
           </div>
           <div className="text-sm text-signal-go-strong mt-1">
-            평균 표준 수명 달성률
+            {t('reports.avgStandardLifeAchievement')}
           </div>
         </div>
 
         <div className="bg-paper rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-ink-soft">최고 성능</span>
+            <span className="text-sm font-medium text-ink-soft">{t('reports.topPerformer')}</span>
             <span className="text-2xl">🏆</span>
           </div>
           <div className="text-lg font-bold text-ink mt-1">
@@ -175,7 +175,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
 
         <div className="bg-paper rounded-md p-6 border border-divider">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-ink-soft">최저 성능</span>
+            <span className="text-sm font-medium text-ink-soft">{t('reports.worstPerformer')}</span>
             <span className="text-2xl">⚠️</span>
           </div>
           <div className="text-lg font-bold text-ink mt-1">
@@ -190,8 +190,8 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       {/* 설비별 성능 분석 */}
       <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b bg-paper">
-          <h3 className="text-lg font-semibold text-ink">설비별 성능 분석</h3>
-          <p className="text-sm text-ink-soft mt-1">효율성 점수 기준 정렬</p>
+          <h3 className="text-lg font-semibold text-ink">{t('reports.equipmentAnalysis')}</h3>
+          <p className="text-sm text-ink-soft mt-1">{t('reports.sortByEfficiency')}</p>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-divider">
@@ -202,7 +202,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('ranking', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
-                    순위
+                    {t('reports.ranking')}
                     <SortIcon field="ranking" currentField={equipmentSortField} currentOrder={equipmentSortOrder} />
                   </div>
                 </th>
@@ -211,7 +211,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('equipmentNumber', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
-                    설비
+                    {t('reports.equipment')}
                     <SortIcon field="equipmentNumber" currentField={equipmentSortField} currentOrder={equipmentSortOrder} />
                   </div>
                 </th>
@@ -220,7 +220,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('model', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
-                    모델
+                    {t('reports.model')}
                     <SortIcon field="model" currentField={equipmentSortField} currentOrder={equipmentSortOrder} />
                   </div>
                 </th>
@@ -229,7 +229,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('location', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
-                    위치
+                    {t('reports.location')}
                     <SortIcon field="location" currentField={equipmentSortField} currentOrder={equipmentSortOrder} />
                   </div>
                 </th>
@@ -238,7 +238,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('totalChanges', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
-                    교체 건수
+                    {t('reports.changeCount')}
                     <SortIcon field="totalChanges" currentField={equipmentSortField} currentOrder={equipmentSortOrder} />
                   </div>
                 </th>
@@ -247,7 +247,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('totalCost', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
-                    총 비용
+                    {t('reports.totalCost')}
                     <SortIcon field="totalCost" currentField={equipmentSortField} currentOrder={equipmentSortOrder} />
                   </div>
                 </th>
@@ -256,7 +256,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('averageToolLife', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
-                    평균 수명
+                    {t('reports.averageLife')}
                     <SortIcon field="averageToolLife" currentField={equipmentSortField} currentOrder={equipmentSortOrder} />
                   </div>
                 </th>
@@ -265,7 +265,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('standardLifeAchievement', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
-                    수명 달성률
+                    {t('reports.lifeAchievementRate')}
                     <SortIcon field="standardLifeAchievement" currentField={equipmentSortField} currentOrder={equipmentSortOrder} />
                   </div>
                 </th>
@@ -283,7 +283,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('efficiencyScore', equipmentSortField, equipmentSortOrder, setEquipmentSortField, setEquipmentSortOrder)}
                 >
                   <div className="flex items-center">
-                    효율성
+                    {t('reports.efficiency')}
                     <SortIcon field="efficiencyScore" currentField={equipmentSortField} currentOrder={equipmentSortOrder} />
                   </div>
                 </th>
@@ -309,7 +309,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     {item.location}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
-                    {item.totalChanges}건
+                    {item.totalChanges}{t('toolChanges.cases')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-ink">
                     {formatCurrency(item.totalCost)}
@@ -331,7 +331,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getEfficiencyColor(item.efficiencyScore)}`}>
-                      {item.efficiencyScore}점
+                      {item.efficiencyScore}{t('reports.scoreUnit')}
                     </span>
                   </td>
                 </tr>
@@ -346,7 +346,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
         {/* 모델별 비교 */}
         <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
           <div className="px-6 py-4 border-b bg-paper">
-            <h3 className="text-lg font-semibold text-ink">모델별 비교</h3>
+            <h3 className="text-lg font-semibold text-ink">{t('reports.modelComparison')}</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-divider">
@@ -357,7 +357,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     onClick={() => handleSort('model', modelSortField, modelSortOrder, setModelSortField, setModelSortOrder)}
                   >
                     <div className="flex items-center">
-                      모델
+                      {t('reports.model')}
                       <SortIcon field="model" currentField={modelSortField} currentOrder={modelSortOrder} />
                     </div>
                   </th>
@@ -366,7 +366,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     onClick={() => handleSort('equipmentCount', modelSortField, modelSortOrder, setModelSortField, setModelSortOrder)}
                   >
                     <div className="flex items-center justify-end">
-                      설비 수
+                      {t('reports.equipmentCount')}
                       <SortIcon field="equipmentCount" currentField={modelSortField} currentOrder={modelSortOrder} />
                     </div>
                   </th>
@@ -375,7 +375,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     onClick={() => handleSort('averageChanges', modelSortField, modelSortOrder, setModelSortField, setModelSortOrder)}
                   >
                     <div className="flex items-center justify-end">
-                      평균 교체
+                      {t('reports.averageChanges')}
                       <SortIcon field="averageChanges" currentField={modelSortField} currentOrder={modelSortOrder} />
                     </div>
                   </th>
@@ -384,7 +384,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     onClick={() => handleSort('efficiencyScore', modelSortField, modelSortOrder, setModelSortField, setModelSortOrder)}
                   >
                     <div className="flex items-center justify-end">
-                      효율성
+                      {t('reports.efficiency')}
                       <SortIcon field="efficiencyScore" currentField={modelSortField} currentOrder={modelSortOrder} />
                     </div>
                   </th>
@@ -397,14 +397,14 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                       {item.model}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink-soft">
-                      {item.equipmentCount}대
+                      {item.equipmentCount}{t('reports.totalEquipmentUnit')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
-                      {item.averageChanges}건
+                      {item.averageChanges}{t('toolChanges.cases')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getEfficiencyColor(item.efficiencyScore)}`}>
-                        {item.efficiencyScore}점
+                        {item.efficiencyScore}{t('reports.scoreUnit')}
                       </span>
                     </td>
                   </tr>
@@ -417,7 +417,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
         {/* 위치별 비교 */}
         <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
           <div className="px-6 py-4 border-b bg-paper">
-            <h3 className="text-lg font-semibold text-ink">위치별 비교</h3>
+            <h3 className="text-lg font-semibold text-ink">{t('reports.locationComparison')}</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-divider">
@@ -428,7 +428,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     onClick={() => handleSort('location', locationSortField, locationSortOrder, setLocationSortField, setLocationSortOrder)}
                   >
                     <div className="flex items-center">
-                      위치
+                      {t('reports.location')}
                       <SortIcon field="location" currentField={locationSortField} currentOrder={locationSortOrder} />
                     </div>
                   </th>
@@ -437,7 +437,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     onClick={() => handleSort('equipmentCount', locationSortField, locationSortOrder, setLocationSortField, setLocationSortOrder)}
                   >
                     <div className="flex items-center justify-end">
-                      설비 수
+                      {t('reports.equipmentCount')}
                       <SortIcon field="equipmentCount" currentField={locationSortField} currentOrder={locationSortOrder} />
                     </div>
                   </th>
@@ -446,7 +446,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     onClick={() => handleSort('totalChanges', locationSortField, locationSortOrder, setLocationSortField, setLocationSortOrder)}
                   >
                     <div className="flex items-center justify-end">
-                      총 교체
+                      {t('reports.totalChanges')}
                       <SortIcon field="totalChanges" currentField={locationSortField} currentOrder={locationSortOrder} />
                     </div>
                   </th>
@@ -455,7 +455,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     onClick={() => handleSort('efficiencyScore', locationSortField, locationSortOrder, setLocationSortField, setLocationSortOrder)}
                   >
                     <div className="flex items-center justify-end">
-                      효율성
+                      {t('reports.efficiency')}
                       <SortIcon field="efficiencyScore" currentField={locationSortField} currentOrder={locationSortOrder} />
                     </div>
                   </th>
@@ -468,14 +468,14 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                       {item.location}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink-soft">
-                      {item.equipmentCount}대
+                      {item.equipmentCount}{t('reports.totalEquipmentUnit')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
-                      {item.totalChanges}건
+                      {item.totalChanges}{t('toolChanges.cases')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getEfficiencyColor(item.efficiencyScore)}`}>
-                        {item.efficiencyScore}점
+                        {item.efficiencyScore}{t('reports.scoreUnit')}
                       </span>
                     </td>
                   </tr>
@@ -489,7 +489,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       {/* 공정별 효율성 */}
       <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b bg-paper">
-          <h3 className="text-lg font-semibold text-ink">공정별 효율성 분석</h3>
+          <h3 className="text-lg font-semibold text-ink">{t('reports.processEfficiency')}</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-divider">
@@ -500,7 +500,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('process', processSortField, processSortOrder, setProcessSortField, setProcessSortOrder)}
                 >
                   <div className="flex items-center">
-                    공정
+                    {t('reports.process')}
                     <SortIcon field="process" currentField={processSortField} currentOrder={processSortOrder} />
                   </div>
                 </th>
@@ -509,7 +509,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('changeCount', processSortField, processSortOrder, setProcessSortField, setProcessSortOrder)}
                 >
                   <div className="flex items-center">
-                    교체 건수
+                    {t('reports.changeCount')}
                     <SortIcon field="changeCount" currentField={processSortField} currentOrder={processSortOrder} />
                   </div>
                 </th>
@@ -518,7 +518,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('averageLife', processSortField, processSortOrder, setProcessSortField, setProcessSortOrder)}
                 >
                   <div className="flex items-center">
-                    평균 수명
+                    {t('reports.averageLife')}
                     <SortIcon field="averageLife" currentField={processSortField} currentOrder={processSortOrder} />
                   </div>
                 </th>
@@ -527,7 +527,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('cost', processSortField, processSortOrder, setProcessSortField, setProcessSortOrder)}
                 >
                   <div className="flex items-center">
-                    비용
+                    {t('reports.cost')}
                     <SortIcon field="cost" currentField={processSortField} currentOrder={processSortOrder} />
                   </div>
                 </th>
@@ -536,7 +536,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('efficiencyScore', processSortField, processSortOrder, setProcessSortField, setProcessSortOrder)}
                 >
                   <div className="flex items-center">
-                    효율성 점수
+                    {t('reports.efficiencyScore')}
                     <SortIcon field="efficiencyScore" currentField={processSortField} currentOrder={processSortOrder} />
                   </div>
                 </th>
@@ -549,7 +549,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     {item.process}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-ink-soft">
-                    {item.changeCount}건
+                    {item.changeCount}{t('toolChanges.cases')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                     {item.averageLife.toLocaleString()}
@@ -559,7 +559,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getEfficiencyColor(item.efficiencyScore)}`}>
-                      {item.efficiencyScore}점
+                      {item.efficiencyScore}{t('reports.scoreUnit')}
                     </span>
                   </td>
                 </tr>
@@ -572,7 +572,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
       {/* 시간별 분석 */}
       <div className="rounded-md border border-divider bg-paper-warm overflow-hidden">
         <div className="px-6 py-4 border-b bg-paper">
-          <h3 className="text-lg font-semibold text-ink">시간별 성능 추이</h3>
+          <h3 className="text-lg font-semibold text-ink">{t('reports.timeBasedPerformance')}</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-divider">
@@ -583,7 +583,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('period', timeSortField, timeSortOrder, setTimeSortField, setTimeSortOrder)}
                 >
                   <div className="flex items-center">
-                    기간
+                    {t('reports.period')}
                     <SortIcon field="period" currentField={timeSortField} currentOrder={timeSortOrder} />
                   </div>
                 </th>
@@ -592,7 +592,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('changeCount', timeSortField, timeSortOrder, setTimeSortField, setTimeSortOrder)}
                 >
                   <div className="flex items-center justify-end">
-                    교체 건수
+                    {t('reports.changeCount')}
                     <SortIcon field="changeCount" currentField={timeSortField} currentOrder={timeSortOrder} />
                   </div>
                 </th>
@@ -601,7 +601,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('cost', timeSortField, timeSortOrder, setTimeSortField, setTimeSortOrder)}
                 >
                   <div className="flex items-center justify-end">
-                    비용
+                    {t('reports.cost')}
                     <SortIcon field="cost" currentField={timeSortField} currentOrder={timeSortOrder} />
                   </div>
                 </th>
@@ -610,7 +610,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('averageLife', timeSortField, timeSortOrder, setTimeSortField, setTimeSortOrder)}
                 >
                   <div className="flex items-center justify-end">
-                    평균 수명
+                    {t('reports.averageLife')}
                     <SortIcon field="averageLife" currentField={timeSortField} currentOrder={timeSortOrder} />
                   </div>
                 </th>
@@ -619,7 +619,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   onClick={() => handleSort('efficiencyScore', timeSortField, timeSortOrder, setTimeSortField, setTimeSortOrder)}
                 >
                   <div className="flex items-center justify-end">
-                    효율성 점수
+                    {t('reports.efficiencyScore')}
                     <SortIcon field="efficiencyScore" currentField={timeSortField} currentOrder={timeSortOrder} />
                   </div>
                 </th>
@@ -632,7 +632,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                     {item.period}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink-soft">
-                    {item.changeCount}건
+                    {item.changeCount}{t('toolChanges.cases')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-ink">
                     {formatCurrency(item.cost)}
@@ -642,7 +642,7 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getEfficiencyColor(item.efficiencyScore)}`}>
-                      {item.efficiencyScore}점
+                      {item.efficiencyScore}{t('reports.scoreUnit')}
                     </span>
                   </td>
                 </tr>
@@ -659,20 +659,20 @@ export default function PerformanceReportView({ data }: PerformanceReportViewPro
             <Lightbulb className="w-6 h-6 text-gauge-cobalt-strong" aria-hidden="true" />
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-gauge-cobalt-strong">성능 개선 권장사항</h3>
+            <h3 className="text-sm font-medium text-gauge-cobalt-strong">{t('reports.performanceImprovementRecommendations')}</h3>
             <div className="mt-2 text-sm text-gauge-cobalt-strong">
               <ul className="list-disc list-inside space-y-1">
                 {summary.overallEfficiency < 70 && (
-                  <li>전체 효율성이 {summary.overallEfficiency.toFixed(1)}%로 낮습니다. 전반적인 공구 관리 프로세스를 개선하세요.</li>
+                  <li>{t('reports.lowOverallEfficiencyWarning', { rate: summary.overallEfficiency.toFixed(1) })}</li>
                 )}
                 {equipmentPerformance.length > 0 && equipmentPerformance[equipmentPerformance.length - 1].efficiencyScore < 60 && (
-                  <li>일부 설비의 성능이 매우 저조합니다. 해당 설비의 가동 조건 및 공구 선택을 재검토하세요.</li>
+                  <li>{t('reports.poorEquipmentWarning')}</li>
                 )}
                 {equipmentPerformance.some(e => e.prematureFailures > 0) && (
                   <li>{t('reports.equipmentPrematureFailureRecommendation')}</li>
                 )}
                 {modelComparison.length > 1 && (
-                  <li>모델별 성능 차이가 있습니다. 최고 성능 모델의 관리 방법을 다른 모델에도 적용하세요.</li>
+                  <li>{t('reports.modelPerformanceDifferenceWarning')}</li>
                 )}
               </ul>
             </div>
