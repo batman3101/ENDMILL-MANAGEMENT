@@ -8,6 +8,7 @@ import { useSettings } from '../../lib/hooks/useSettings'
 import { usePermissions } from '../../lib/hooks/usePermissions'
 import { useMultiTableRealtime } from '../../lib/hooks/useRealtime'
 import { StatusBadge } from '../../components/ui/status-badge'
+import { Switch } from '../../components/ui/switch'
 import {
   useDashboard,
   formatVND,
@@ -19,11 +20,28 @@ import {
 export default function DashboardPage() {
   const { t } = useTranslation()
   // 권한 확인
-  const { canAccessPage } = usePermissions()
-  const { settings, getSetting } = useSettings()
+  const { canAccessPage, isAdmin, user } = usePermissions()
+  const { settings, getSetting, updateSetting } = useSettings()
   // 사용자가 설정 페이지에서 조정한 새로고침 주기(초) → useDashboard는 ms 단위
   const refreshIntervalMs = (settings.ui?.dashboard?.refreshInterval ?? 300) * 1000
   const { data, isLoading, error, refreshData, lastRefresh } = useDashboard(refreshIntervalMs)
+
+  // 비용 분석 카드 표시 여부 — 관리자가 토글로 제어하며 전역 설정(ui.dashboard)에 저장된다.
+  // 값이 없으면(레거시 설정) 기본 표시.
+  const isAdminUser = isAdmin()
+  const showCostAnalysis = settings.ui?.dashboard?.showCostAnalysis ?? true
+
+  // 토글 변경 시 ui.dashboard 객체를 통째로 병합 저장 — refreshInterval/chartColors 보존.
+  const handleToggleCostAnalysis = useCallback((checked: boolean) => {
+    const currentDashboard = settings.ui?.dashboard ?? { refreshInterval: 300, chartColors: [] as string[] }
+    void updateSetting(
+      'ui',
+      'dashboard',
+      { ...currentDashboard, showCostAnalysis: checked },
+      user?.id || 'admin',
+      '비용 분석 카드 표시 설정 변경'
+    ).catch((err) => clientLogger.error('비용 분석 표시 설정 저장 실패:', err))
+  }, [settings.ui?.dashboard, updateSetting, user])
 
   // 실시간 연동 설정 (throttled refresh)
   // const [realtimeData, setRealtimeData] = useState<any>(null) // 미사용 (향후 사용 예정)
@@ -272,43 +290,57 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 공구 사용 비용 */}
-        <div className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider transition-all duration-200">
+        {/* 공구 사용 비용 (비용 분석) — 관리자 토글로 표시 제어 */}
+        {(showCostAnalysis || isAdminUser) && (
+        <div className="bg-paper-warm rounded-md p-4 sm:p-6 border border-divider transition-all duration-200 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-title font-semibold text-ink-soft">{t('reports.costAnalysis')}</h4>
             <span className="text-headline">📊</span>
           </div>
-          {isLoading ? (
-            <div className="animate-pulse">
-              <div className="h-4 bg-divider rounded mb-2"></div>
-              <div className="h-8 bg-divider rounded mb-2"></div>
-              <div className="h-4 bg-divider rounded"></div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="text-caption text-ink-mute">
-                {t('reports.monthlyReport')} ({t('dashboard.previous')}): {formatVND(data?.costAnalysis?.lastMonth || 0)}
+          {showCostAnalysis && (
+            isLoading ? (
+              <div className="animate-pulse">
+                <div className="h-4 bg-divider rounded mb-2"></div>
+                <div className="h-8 bg-divider rounded mb-2"></div>
+                <div className="h-4 bg-divider rounded"></div>
               </div>
-              <div className="text-caption text-ink-mute">
-                {t('reports.monthlyReport')} ({t('dashboard.current')}): {formatVND(data?.costAnalysis?.currentMonth || 0)}
+            ) : (
+              <div className="space-y-3">
+                <div className="text-caption text-ink-mute">
+                  {t('reports.monthlyReport')} ({t('dashboard.previous')}): {formatVND(data?.costAnalysis?.lastMonth || 0)}
+                </div>
+                <div className="text-caption text-ink-mute">
+                  {t('reports.monthlyReport')} ({t('dashboard.current')}): {formatVND(data?.costAnalysis?.currentMonth || 0)}
+                </div>
+                <div className={`text-base font-semibold tabular-nums ${
+                  (data?.costAnalysis?.savings || 0) >= 0 ? 'text-signal-go-strong' : 'text-signal-stop-strong'
+                }`}>
+                  {t('dashboard.savings')}: {formatVND(data?.costAnalysis?.savings || 0)}
+                  ({data?.costAnalysis?.savingsPercent || 0}%)
+                </div>
+                <div className="mt-3 h-2 bg-paper-warm rounded border border-divider">
+                  <div
+                    className="h-2 bg-gauge-cobalt rounded transition-all duration-300"
+                    style={{
+                      width: `${Math.min(100, Math.abs((data?.costAnalysis?.currentMonth || 0) / (data?.costAnalysis?.lastMonth || 1) * 100))}%`
+                    }}
+                  ></div>
+                </div>
               </div>
-              <div className={`text-base font-semibold tabular-nums ${
-                (data?.costAnalysis?.savings || 0) >= 0 ? 'text-signal-go-strong' : 'text-signal-stop-strong'
-              }`}>
-                {t('dashboard.savings')}: {formatVND(data?.costAnalysis?.savings || 0)}
-                ({data?.costAnalysis?.savingsPercent || 0}%)
-              </div>
-              <div className="mt-3 h-2 bg-paper-warm rounded border border-divider">
-                <div
-                  className="h-2 bg-gauge-cobalt rounded transition-all duration-300"
-                  style={{
-                    width: `${Math.min(100, Math.abs((data?.costAnalysis?.currentMonth || 0) / (data?.costAnalysis?.lastMonth || 1) * 100))}%`
-                  }}
-                ></div>
-              </div>
+            )
+          )}
+          {/* 관리자 전용 토글 — 컨테이너 최하단에 설명 없이 스위치만 배치 */}
+          {isAdminUser && (
+            <div className="mt-auto pt-4 flex justify-end">
+              <Switch
+                checked={showCostAnalysis}
+                onCheckedChange={handleToggleCostAnalysis}
+                aria-label={t('reports.costAnalysis')}
+              />
             </div>
           )}
         </div>
+        )}
           </>
         )}
       </div>
