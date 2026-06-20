@@ -66,6 +66,7 @@ export interface SystemSettings {
     dashboard: {
       refreshInterval: number // 초
       chartColors: string[]
+      showCostAnalysis: boolean // 비용 분석 카드 표시 여부 (관리자 토글)
     }
   }
 
@@ -210,7 +211,8 @@ export const DEFAULT_SETTINGS: SystemSettings = {
     },
     dashboard: {
       refreshInterval: 30,
-      chartColors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+      chartColors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+      showCostAnalysis: true
     }
   },
 
