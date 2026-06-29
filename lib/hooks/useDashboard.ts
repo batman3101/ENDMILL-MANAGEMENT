@@ -154,7 +154,7 @@ export const useDashboard = (refreshInterval: number = 300000): UseDashboardRetu
     refetchInterval: refreshInterval, // 주기적 새로고침
     refetchIntervalInBackground: false, // 백그라운드에서는 새로고침 안 함
     staleTime: 60 * 1000, // 1분간 fresh 유지 (Disk IO 절감)
-    gcTime: 1000 * 60, // 1분 동안 캐시 유지
+    gcTime: 10 * 60 * 1000, // 10분 캐시 유지 (staleTime과 같으면 재마운트마다 재요청 → 불필요한 부하)
     retry: 1
   })
 

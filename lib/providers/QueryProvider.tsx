@@ -20,13 +20,17 @@ export default function QueryProvider({ children }: { children: React.ReactNode 
             refetchOnMount: true,
             // 재연결 시 자동 새로고침 활성화
             refetchOnReconnect: true,
-            // 에러 재시도 설정
+            // 에러 재시도 설정 (장애 시 재시도 폭주 방지)
             retry: (failureCount, error: any) => {
-              // 401 에러는 재시도하지 않음
-              if (error?.status === 401) return false;
-              // 3번까지 재시도
-              return failureCount < 3;
+              // 인증 실패(401/403)는 재시도하지 않음
+              const status = error?.status ?? error?.statusCode;
+              if (status === 401 || status === 403) return false;
+              // 최대 1회만 재시도 (과거 3회 → DB 장애 시 요청 4배 증폭의 원인)
+              return failureCount < 1;
             },
+            // 지수 백오프 + 지터: 다수 클라이언트의 동시 재시도(thundering herd)를 분산
+            retryDelay: (attemptIndex) =>
+              Math.min(2000 * 2 ** attemptIndex, 30000) + Math.floor(Math.random() * 1000),
           },
         },
       })

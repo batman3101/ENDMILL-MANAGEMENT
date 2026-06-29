@@ -5,6 +5,11 @@ import { supabase } from '../supabase/client'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { clientLogger } from '../utils/logger'
 
+// Realtime 전역 킬스위치.
+// NEXT_PUBLIC_REALTIME_ENABLED='false' 로 설정하면 모든 실시간 구독이 비활성화된다.
+// (Realtime 폭주로 DB가 과부하될 때 즉시 부하를 끊기 위한 운영 레버 — 변경 후 재배포 필요)
+const REALTIME_ENABLED = process.env.NEXT_PUBLIC_REALTIME_ENABLED !== 'false'
+
 interface RealtimeHookOptions {
   table: string
   onInsert?: (payload: any) => void
@@ -29,7 +34,7 @@ export function useRealtime({
   callbacksRef.current = { onInsert, onUpdate, onDelete }
 
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled || !REALTIME_ENABLED) return
 
     clientLogger.log(`🔄 Setting up realtime subscription for table: ${table}`)
 
@@ -86,7 +91,9 @@ export function useRealtime({
 
     return () => {
       clientLogger.log(`🔌 Cleaning up realtime subscription for ${table}`)
-      realtimeChannel.unsubscribe()
+      // unsubscribe()만으로는 채널이 소켓 레지스트리에 남아 재연결 시 재join을 시도한다.
+      // removeChannel()로 완전히 제거해 재연결 churn을 차단한다.
+      supabase.removeChannel(realtimeChannel)
       setIsConnected(false)
       setChannel(null)
     }
@@ -105,7 +112,7 @@ export function useMultiTableRealtime(tables: string[], callbacks?: {
     onUpdate?: (payload: any) => void
     onDelete?: (payload: any) => void
   }
-}) {
+}, enabled: boolean = true) {
   const [connections, setConnections] = useState<{ [table: string]: boolean }>({})
   const [errors, setErrors] = useState<{ [table: string]: string | null }>({})
 
@@ -117,6 +124,8 @@ export function useMultiTableRealtime(tables: string[], callbacks?: {
   const tablesKey = tables.join(',')
 
   useEffect(() => {
+    if (!enabled || !REALTIME_ENABLED) return
+
     const channels: RealtimeChannel[] = []
 
     tables.forEach(table => {
@@ -172,12 +181,12 @@ export function useMultiTableRealtime(tables: string[], callbacks?: {
 
     return () => {
       clientLogger.log('🔌 Cleaning up all multi-table realtime subscriptions')
-      channels.forEach(channel => channel.unsubscribe())
+      channels.forEach(channel => supabase.removeChannel(channel))
       setConnections({})
       setErrors({})
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tablesKey]) // Use tablesKey instead of tables and callbacks
+  }, [tablesKey, enabled]) // Use tablesKey instead of tables and callbacks
 
   const isAllConnected = tables.every(table => connections[table] === true)
   const hasErrors = Object.values(errors).some(error => error !== null)
