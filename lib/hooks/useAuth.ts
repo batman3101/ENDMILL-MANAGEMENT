@@ -305,7 +305,17 @@ export function AuthProvider(props: { children: ReactNode }) {
 
       if (result.success && result.user) {
         setUser(result.user)
-        await refreshSession()
+        // 서버 로그인 API가 설정한 쿠키 세션과 클라이언트(localStorage) 세션을 동기화한다.
+        // 이 동기화가 없으면 새로고침 시 useAuth(localStorage=로그아웃)와 미들웨어(쿠키=로그인)가
+        // 불일치하여 /login↔/dashboard 무한 리다이렉트 루프로 대시보드가 멈춘다.
+        if (result.session?.access_token && result.session?.refresh_token) {
+          await supabase.auth.setSession({
+            access_token: result.session.access_token,
+            refresh_token: result.session.refresh_token,
+          })
+        } else {
+          await refreshSession()
+        }
         showSuccess('로그인 성공', `${result.user.name}님, 환영합니다!`)
         return { success: true }
       } else {

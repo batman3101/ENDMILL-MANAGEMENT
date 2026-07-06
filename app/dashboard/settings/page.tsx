@@ -7,6 +7,7 @@ import {
   Bell,
   Boxes,
   Cpu,
+  Disc3,
   Factory,
   Globe2,
   Info,
@@ -26,6 +27,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react'
+import ArborGradeRulesSettings from '../../../components/features/arbor/ArborGradeRulesSettings'
 import { useSettings } from '../../../lib/hooks/useSettings'
 import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { SettingsCategory } from '../../../lib/types/settings'
@@ -61,6 +63,7 @@ const TAB_DEFS: Array<{
   { id: 'inventory', Icon: Boxes, labelKey: 'settings.tabs.inventory' },
   { id: 'toolChanges', Icon: Wrench, labelKey: 'settings.tabs.toolChanges' },
   { id: 'ui', Icon: Palette, labelKey: 'settings.tabs.ui' },
+  { id: 'arbor', Icon: Disc3, labelKey: 'arbor.title' },
 ]
 
 const DEFAULT_LOCATIONS = ['A동', 'B동']
@@ -530,6 +533,9 @@ function SettingsPageContent() {
                   onReset={() => handleReset('ui')}
                   isSubmitting={isSubmitting}
                 />
+              )}
+              {activeTab === 'arbor' && (
+                <ArborGradeRulesSettings />
               )}
             </div>
           </div>

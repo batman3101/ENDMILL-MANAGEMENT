@@ -134,6 +134,117 @@ export type Database = {
         }
         Relationships: []
       }
+      arbor_inspections: {
+        Row: {
+          id: string
+          arbor_id: string
+          factory_id: string
+          runout_um: number
+          taper_condition: string | null
+          judged_grade: string
+          previous_grade: string | null
+          rule_snapshot: Json
+          inspected_by: string | null
+          inspected_at: string
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          arbor_id: string
+          factory_id: string
+          runout_um: number
+          taper_condition: string | null
+          judged_grade: string
+          previous_grade?: string | null
+          rule_snapshot: Json
+          inspected_by?: string | null
+          inspected_at?: string
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          runout_um?: number
+          taper_condition?: string
+          judged_grade?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'arbor_inspections_arbor_id_fkey'
+            columns: ['arbor_id']
+            isOneToOne: false
+            referencedRelation: 'arbors'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'arbor_inspections_factory_id_fkey'
+            columns: ['factory_id']
+            isOneToOne: false
+            referencedRelation: 'factories'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      arbors: {
+        Row: {
+          id: string
+          factory_id: string
+          serial_number: string
+          arbor_model: string | null
+          tool_diameter: string | null
+          status: string
+          current_grade: string | null
+          last_inspected_at: string | null
+          last_runout_um: number | null
+          last_taper_condition: string | null
+          purchase_date: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          factory_id: string
+          serial_number: string
+          arbor_model?: string | null
+          tool_diameter?: string | null
+          status?: string
+          current_grade?: string | null
+          last_inspected_at?: string | null
+          last_runout_um?: number | null
+          last_taper_condition?: string | null
+          purchase_date?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          factory_id?: string
+          serial_number?: string
+          arbor_model?: string | null
+          tool_diameter?: string | null
+          status?: string
+          current_grade?: string | null
+          last_inspected_at?: string | null
+          last_runout_um?: number | null
+          last_taper_condition?: string | null
+          purchase_date?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'arbors_factory_id_fkey'
+            columns: ['factory_id']
+            isOneToOne: false
+            referencedRelation: 'factories'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       cam_sheet_endmills: {
         Row: {
           cam_sheet_id: string | null
@@ -1027,6 +1138,20 @@ export type Database = {
           p_value: Json
         }
         Returns: undefined
+      }
+      get_arbor_stats: {
+        Args: {
+          p_factory_id: string
+          p_interval_days?: number
+        }
+        Returns: Json
+      }
+      find_arbors_by_number: {
+        Args: {
+          p_factory_id: string
+          p_num: number
+        }
+        Returns: Database["public"]["Tables"]["arbors"]["Row"][]
       }
     }
     Enums: {

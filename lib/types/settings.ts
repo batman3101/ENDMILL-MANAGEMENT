@@ -70,6 +70,16 @@ export interface SystemSettings {
     }
   }
 
+  // Arbor 등급 관리 설정
+  arbor: {
+    gradeRules: {
+      runoutThresholds: { A: number; B: number; C: number }  // µm 상한, D는 C 초과 (런아웃 단독 기준)
+    }
+    inspectionIntervalDays: number
+    models: string[]  // Arbor 규격(BT30/BT40 등) 선택 목록
+    toolDiameters: string[]  // 공구경(샹크경) 선택 목록
+  }
+
 }
 
 // 설비 상태 설정
@@ -99,6 +109,7 @@ export type SettingsCategory =
   | 'inventory'
   | 'toolChanges'
   | 'ui'
+  | 'arbor'
 
 // 설정 수정 내역
 export interface SettingsHistory {
@@ -214,6 +225,15 @@ export const DEFAULT_SETTINGS: SystemSettings = {
       chartColors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
       showCostAnalysis: true
     }
+  },
+
+  arbor: {
+    gradeRules: {
+      runoutThresholds: { A: 10, B: 30, C: 50 }
+    },
+    inspectionIntervalDays: 180,
+    models: ['BT30', 'BT40', 'BT50'],
+    toolDiameters: ['Ø10', 'Ø8', 'Ø6', 'Ø5', 'Ø4', 'Ø3']
   },
 
 }
