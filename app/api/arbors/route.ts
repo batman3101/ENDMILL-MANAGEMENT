@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { createServerClient } from '../../../lib/supabase/client'
 import { ARBOR_GRADES, ARBOR_STATUSES, ARBOR_SERIAL_REGEX } from '../../../lib/types/arbor'
 
+export const dynamic = 'force-dynamic'
+
 const SORTABLE = ['serial_number', 'current_grade', 'status', 'last_inspected_at', 'arbor_model', 'created_at'] as const
 
 // GET /api/arbors?factoryId=&page=1&pageSize=50&grade=&status=&search=&serial=&sortBy=&sortDir=

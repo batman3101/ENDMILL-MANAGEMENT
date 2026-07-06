@@ -3,6 +3,8 @@ import { createServerClient } from '../../../../lib/supabase/client'
 import { logger } from '@/lib/utils/logger'
 import ExcelJS from 'exceljs'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(_request: NextRequest) {
   try {
     const supabase = createServerClient()

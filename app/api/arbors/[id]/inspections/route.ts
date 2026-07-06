@@ -6,6 +6,8 @@ import { TAPER_CONDITIONS } from '../../../../../lib/types/arbor'
 import { createClient } from '@/lib/supabase/server'
 import type { Json } from '../../../../../lib/types/database'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/arbors/[id]/inspections — 해당 Arbor의 이력만 (최근 100건)
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
