@@ -51,7 +51,7 @@ export default function ArborsPage() {
   const total = data?.pagination.total ?? 0
   const lastPage = Math.max(1, Math.ceil(total / params.pageSize))
 
-  const { data: statsRes } = useArborStats()
+  const { data: statsRes, refetch: refetchStats } = useArborStats()
   const stats = statsRes?.data
 
   // 재검사: 검사 모드로 해당 시리얼을 미리 조회한 상태로 진입
@@ -70,6 +70,7 @@ export default function ArborsPage() {
       if (!json.success) { showError(t('arbor.deleteFailed'), json.error ?? ''); return }
       showSuccess(t('arbor.deleteSuccess'), a.serial_number)
       refetch()
+      refetchStats() // 등급별 수량 카드 갱신 (삭제 반영)
     } finally {
       setDeletingId(null)
       setPendingDelete(null)
@@ -236,14 +237,14 @@ export default function ArborsPage() {
 
       {showCreate && (
         <ArborCreateModal
-          onCreated={() => { setShowCreate(false); refetch() }}
+          onCreated={() => { setShowCreate(false); refetch(); refetchStats() }}
           onCancel={() => setShowCreate(false)}
         />
       )}
 
       {showUploader && (
         <ArborExcelUploader
-          onUploadSuccess={() => { refetch() }}
+          onUploadSuccess={() => { refetch(); refetchStats() }}
           onCancel={() => setShowUploader(false)}
         />
       )}

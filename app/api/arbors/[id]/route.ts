@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { createServerClient } from '../../../../lib/supabase/client'
 import { ARBOR_STATUSES } from '../../../../lib/types/arbor'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const supabase = createServerClient()

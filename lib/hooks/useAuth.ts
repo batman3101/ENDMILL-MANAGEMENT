@@ -38,6 +38,42 @@ interface AuthContextType {
 // Auth 컨텍스트 생성
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// user_profiles 조회 결과 (직접 쿼리/서버 API 공통 형태)
+interface ProfileData {
+  name?: string | null
+  department?: string | null
+  position?: string | null
+  shift?: string | null
+  permissions?: Record<string, string[]> | null
+  user_roles?: { name?: string; type?: string; permissions?: Record<string, string[]> } | null
+}
+
+// 프로필 조회: 서버(/api/auth/me, 쿠키 세션) 우선.
+// 전체 새로고침 시 클라이언트 토큰 복원 레이스로 직접 쿼리가 anon 컨텍스트로 나가
+// user_profiles RLS에 걸려 0행이 되는 문제를 회피한다(서버는 항상 authenticated).
+// 서버 조회 실패(쿠키 desync 등) 시 기존 직접 쿼리로 폴백해 현행 동작을 보존한다.
+async function fetchUserProfileData(userId: string): Promise<ProfileData | null> {
+  try {
+    const res = await fetch('/api/auth/me')
+    if (res.ok) {
+      const json = await res.json()
+      if (json.success && json.profile) return json.profile as ProfileData
+    }
+  } catch (error) {
+    clientLogger.error('서버 프로필 조회 실패, 직접 조회로 폴백:', error)
+  }
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('id, name, department, position, shift, phone, permissions, user_roles(name, type, permissions)')
+    .eq('user_id', userId)
+    .single()
+  if (error) {
+    clientLogger.error('사용자 정보 조회 오류:', error)
+    return null
+  }
+  return data as unknown as ProfileData
+}
+
 // Auth Provider 컴포넌트
 export function AuthProvider(props: { children: ReactNode }) {
   const { children } = props
@@ -68,10 +104,27 @@ export function AuthProvider(props: { children: ReactNode }) {
     try {
       setLoading(true)
 
-      const { error } = await supabase.auth.signOut()
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+      })
+
+      let result: { success?: boolean; error?: string } | null = null
+      try {
+        result = await response.json()
+      } catch (_error) {
+        result = null
+      }
+
+      if (!response.ok || result?.success === false) {
+        throw new Error(result?.error || '서버 로그아웃에 실패했습니다.')
+      }
+
+      const { error } = await supabase.auth.signOut({ scope: 'local' })
 
       if (error) {
-        clientLogger.error('Supabase 로그아웃 오류:', error)
+        clientLogger.error('Supabase 로컬 세션 정리 오류:', error)
       }
 
       setUser(null)
@@ -80,6 +133,7 @@ export function AuthProvider(props: { children: ReactNode }) {
     } catch (error) {
       clientLogger.error('로그아웃 오류:', error)
       showError('로그아웃 실패', '로그아웃 중 오류가 발생했습니다.')
+      throw error
     } finally {
        setLoading(false)
      }
@@ -191,16 +245,8 @@ export function AuthProvider(props: { children: ReactNode }) {
           clientLogger.log('✅ Supabase 세션 발견:', session.user.email)
           setSession(session)
 
-          // user_profiles 테이블에서 사용자 프로필 정보 조회
-          const { data: userData, error: userError } = await supabase
-            .from('user_profiles')
-            .select('id, name, department, position, shift, phone, permissions, user_roles(name, type, permissions)')
-            .eq('user_id', session.user.id)
-            .single()
-
-          if (userError) {
-            clientLogger.error('사용자 정보 조회 오류:', userError)
-          }
+          // 사용자 프로필 조회 (서버 우선 + 직접 쿼리 폴백 — RLS/토큰 레이스 안전)
+          const userData = await fetchUserProfileData(session.user.id)
 
           const userProfile = {
             id: session.user.id,
@@ -246,12 +292,8 @@ export function AuthProvider(props: { children: ReactNode }) {
         if (event === 'SIGNED_IN' && session) {
           setSession(session)
 
-          // SIGNED_IN 이벤트에서도 user_profiles에서 permissions 조회
-          const { data: userData } = await supabase
-            .from('user_profiles')
-            .select('id, name, department, position, shift, permissions, user_roles(name, type, permissions)')
-            .eq('user_id', session.user.id)
-            .single()
+          // SIGNED_IN 이벤트에서도 프로필 조회 (서버 우선 + 직접 쿼리 폴백)
+          const userData = await fetchUserProfileData(session.user.id)
 
           const userProfile = {
             id: session.user.id,

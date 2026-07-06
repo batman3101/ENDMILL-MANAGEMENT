@@ -1,25 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { Database } from '../../../../lib/types/database'
 import { logger } from '@/lib/utils/logger'
 
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
+    const response = NextResponse.json({
+      success: true,
+      message: '로그아웃이 완료되었습니다.',
+    })
+
     // Supabase 클라이언트 생성
-    const cookieStore = cookies()
-    const supabase = createServerClient(
+    const supabase = createServerClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
+          getAll() {
+            return request.cookies.getAll()
           },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options })
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options)
+            })
           },
         },
       }
@@ -40,10 +43,7 @@ export async function POST(_request: NextRequest) {
     }
 
     // 로그아웃 성공
-    return NextResponse.json({
-      success: true,
-      message: '로그아웃이 완료되었습니다.',
-    })
+    return response
 
   } catch (error) {
     logger.error('로그아웃 API 오류:', error)
