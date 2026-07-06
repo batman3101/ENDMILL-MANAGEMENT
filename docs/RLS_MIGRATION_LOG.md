@@ -45,6 +45,21 @@
 3. 브라우저: 관련 페이지 스윕(로그인 세션), Realtime 구독 상태(SUBSCRIBED) 콘솔 확인
 4. 실패 시: 준비된 롤백 즉시 실행 → 원인 규명 → 코드 수정 후 재시도
 
+## 추가 테스트 (PR 전, 2026-07-06)
+
+| # | 테스트 | 결과 |
+|---|---|---|
+| 1 | Realtime 실이벤트 배달 (RLS-on activity_logs에 SQL INSERT/DELETE) | ✅ 브라우저 `📡` 이벤트 수신 — WALRUS가 authenticated 구독자에 배달. 공장 작업자의 라이브 tool_changes 이벤트도 동시 수신 확인 |
+| 2 | 공장 전환 (ALT→ALV→ALT) | ✅ 공장 스코프 정확 분리 (ALV에서 ALT arbor 미노출) |
+| 3 | Arbor 쓰기 전체 사이클 (ALV에서 등록→재검사 자동조회→Runout 60→D판정→저장→D등급 하드삭제) | ✅ 전 단계 UI 통과, DB 완전 정리(0/0). 부수 발견: 삭제/등록 후 등급 통계 카드 미갱신 버그 → refetchStats 추가로 수정 |
+| 4 | AI 자연어 쿼리 (#6 통합) | ✅ 답변 생성(10.2s) + RLS-on ai_query_cache에 service-role 캐시 저장 확인 |
+| 5 | 분석&리포트 · 폐기 관리(기존 RLS 테이블) 페이지 | ✅ 정상 로드, 회귀 없음 |
+| 6 | 전체 새로고침 반복 (#5-fix 재검증) | ✅ 프로필·메뉴 유지, 브라우저→user_profiles 직접 REST 0건 |
+| 7 | 프로덕션 빌드 (`next build`, dev 중지 후 클린 빌드) | 결과는 커밋 메시지 참조 |
+
+**미검증(사용자 직접 확인 권장)**: 로그아웃→재로그인 플로우 — 테스트 시 현재 세션이 파괴되어
+자동화에서 제외. #5-fix가 SIGNED_IN 핸들러도 서버 조회로 바꿨으므로 한 번 확인 권장.
+
 ## Advisor 잔여 항목 (2026-07-06 기준)
 
 - `rls_disabled_in_public` ERROR 3건: user_profiles, user_roles, notifications (#5 재적용 대기)
