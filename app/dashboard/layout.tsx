@@ -22,6 +22,7 @@ import {
   LogOut,
   User,
   Clock,
+  Disc3,
   type LucideIcon,
 } from 'lucide-react'
 import { useTranslation } from '../../lib/hooks/useTranslations'
@@ -239,6 +240,14 @@ export default function DashboardLayout({
       labelKey: 'navigation.toolChanges',
       descriptionKey: 'toolChanges.subtitle',
       active: pathname === '/dashboard/tool-changes',
+      requiresPermission: false,
+    },
+    {
+      href: '/dashboard/arbors',
+      Icon: Disc3,
+      labelKey: 'navigation.arbors',
+      descriptionKey: 'arbor.subtitle',
+      active: pathname.startsWith('/dashboard/arbors'),
       requiresPermission: false,
     },
     {

@@ -151,6 +151,12 @@ Runout(회전 흔들림) 증가는 가공 정밀도 저하, 표면 조도 불량
    **차후 별도 트랙에서 일괄 적용**한다. 그 전까지 신규 Arbor API는 `hasPermission()` 권한 검증 +
    factoryId 필수 검증을 주 통제로 삼고, §6.2의 RLS 정책 초안은 적용 시점에 사용한다
 4. **fail-closed 공장 필터** — API에서 `factoryId` 필수 검증(누락 시 400), DB에 복합 UNIQUE
+   - ⚠️ **알려진 갭 (보안 리뷰 2026-07-04)**: 현재 arbor 라우트는 `factoryId`의 **존재만** 검증하며,
+     요청자가 해당 공장에 접근 권한이 있는지(사용자별 공장 멤버십)·`arbors:read/create` 권한이 있는지는
+     **아직 검사하지 않는다**. 두 공장이 별개 법인(ALT/ALV)이므로 인증된 사용자가 임의 `factoryId`로
+     타 공장 데이터를 조회·등록할 수 있는 IDOR가 성립한다. 이는 기존 equipment/inventory/tool-changes
+     라우트와 **동일한 패턴**(버그 감사 #2, §4.2 #7의 CRITICAL)이며, RLS와 함께 **차후 보안 트랙에서
+     일괄 적용**한다: `get_user_accessible_factories()` RPC로 접근 공장 교차검증 + `hasPermission()` 강제
 5. **집계는 SQL로** — 통계는 RPC 함수(GROUP BY)로 계산해 행이 아닌 결과만 전송한다
 
 ---

@@ -27,6 +27,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'reports', action: 'read' },
     { resource: 'settings', action: 'manage' },
     { resource: 'ai_insights', action: 'manage' },
+    { resource: 'arbors', action: 'manage' },
   ],
   user: [
     // 일반 사용자 권한
@@ -40,6 +41,8 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'endmill_disposals', action: 'read' },
     { resource: 'reports', action: 'read' },
     { resource: 'ai_insights', action: 'use' },
+    { resource: 'arbors', action: 'read' },
+    { resource: 'arbors', action: 'create' },
   ],
 }
 
@@ -100,6 +103,7 @@ export function canAccessPage(
     '/settings': { resource: 'settings', action: 'read' },
     '/users': { resource: 'users', action: 'read' },
     '/ai-insights': { resource: 'ai_insights', action: 'use' },
+    '/dashboard/arbors': { resource: 'arbors', action: 'read' },
   }
 
   const pagePermission = pagePermissions[pagePath]
@@ -229,7 +233,8 @@ export const AVAILABLE_RESOURCES = [
   'reports',
   'settings',
   'users',
-  'ai_insights'
+  'ai_insights',
+  'arbors'
 ] as const
 
 // 모든 가능한 액션 목록
@@ -254,7 +259,8 @@ export const RESOURCE_AVAILABLE_ACTIONS: Record<string, Permission['action'][]> 
   reports: ['read', 'manage'],
   settings: ['read', 'update', 'manage'],
   users: ['create', 'read', 'update', 'delete', 'manage'],
-  ai_insights: ['use', 'manage']
+  ai_insights: ['use', 'manage'],
+  arbors: ['create', 'read', 'update', 'delete', 'manage'],
 }
 
 // ===== Factory Permission Functions =====
