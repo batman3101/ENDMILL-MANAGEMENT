@@ -104,10 +104,27 @@ export function AuthProvider(props: { children: ReactNode }) {
     try {
       setLoading(true)
 
-      const { error } = await supabase.auth.signOut()
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+      })
+
+      let result: { success?: boolean; error?: string } | null = null
+      try {
+        result = await response.json()
+      } catch (_error) {
+        result = null
+      }
+
+      if (!response.ok || result?.success === false) {
+        throw new Error(result?.error || '서버 로그아웃에 실패했습니다.')
+      }
+
+      const { error } = await supabase.auth.signOut({ scope: 'local' })
 
       if (error) {
-        clientLogger.error('Supabase 로그아웃 오류:', error)
+        clientLogger.error('Supabase 로컬 세션 정리 오류:', error)
       }
 
       setUser(null)
@@ -116,6 +133,7 @@ export function AuthProvider(props: { children: ReactNode }) {
     } catch (error) {
       clientLogger.error('로그아웃 오류:', error)
       showError('로그아웃 실패', '로그아웃 중 오류가 발생했습니다.')
+      throw error
     } finally {
        setLoading(false)
      }
