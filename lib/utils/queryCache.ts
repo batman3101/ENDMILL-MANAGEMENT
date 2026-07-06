@@ -3,9 +3,14 @@
  * 자연어 쿼리 결과를 캐싱하여 응답 속도 향상 및 API 비용 절감
  */
 
-import { supabase } from '@/lib/supabase/client'
+import { createServerClient } from '@/lib/supabase/client'
 import { createHash } from 'crypto'
 import { logger } from './logger'
+
+// 서버 전용 모듈 (AI 쿼리 API 라우트에서만 사용).
+// anon 클라이언트는 서버에서 사용자 세션이 없어 ai_query_cache RLS에 차단되므로
+// service-role 클라이언트를 사용한다 (RLS 우회 — 캐시 테이블은 서버 전용).
+const db = () => createServerClient()
 
 // 캐시 TTL (초) - 환경 변수에서 가져오거나 기본값 300초 (5분)
 const CACHE_TTL_SECONDS =
@@ -52,7 +57,7 @@ export async function getCachedQuery(
 
     // Supabase RPC 함수 사용 (hit_count 자동 증가)
     // @ts-expect-error - RPC 함수가 아직 데이터베이스에 생성되지 않음
-    const { data, error } = await supabase.rpc('get_cached_query', {
+    const { data, error } = await db().rpc('get_cached_query', {
       p_query_hash: queryHash,
     }) as { data: CachedQuery[] | null; error: any }
 
@@ -91,7 +96,7 @@ export async function cacheQuery(
 
     // 캐시에 저장
     // @ts-expect-error - AI 캐시 테이블이 아직 데이터베이스에 생성되지 않음
-    const { error } = await (supabase.from('ai_query_cache') as any).upsert(
+    const { error } = await (db().from('ai_query_cache') as any).upsert(
       {
         query_hash: queryHash,
         question: question.trim(),
@@ -126,7 +131,7 @@ export async function clearExpiredCache(): Promise<number> {
   try {
     // Supabase RPC 함수 사용
     // @ts-expect-error - RPC 함수가 아직 데이터베이스에 생성되지 않음
-    const { data, error } = await supabase.rpc('delete_expired_cache') as { data: number | null; error: any }
+    const { data, error } = await db().rpc('delete_expired_cache') as { data: number | null; error: any }
 
     if (error) {
       logger.error('만료된 캐시 삭제 오류:', error)
@@ -148,7 +153,7 @@ export async function invalidateCache(question: string): Promise<boolean> {
     const queryHash = hashQuestion(question)
 
     // @ts-expect-error - AI 캐시 테이블이 아직 데이터베이스에 생성되지 않음
-    const { error } = await (supabase.from('ai_query_cache') as any)
+    const { error } = await (db().from('ai_query_cache') as any)
       .delete()
       .eq('query_hash', queryHash)
 
@@ -170,7 +175,7 @@ export async function invalidateCache(question: string): Promise<boolean> {
 export async function clearAllCache(): Promise<boolean> {
   try {
     // @ts-expect-error - AI 캐시 테이블이 아직 데이터베이스에 생성되지 않음
-    const { error } = await (supabase.from('ai_query_cache') as any).delete().neq('id', '00000000-0000-0000-0000-000000000000') // 모든 레코드 삭제
+    const { error } = await (db().from('ai_query_cache') as any).delete().neq('id', '00000000-0000-0000-0000-000000000000') // 모든 레코드 삭제
 
     if (error) {
       logger.error('전체 캐시 삭제 오류:', error)
@@ -196,7 +201,7 @@ export async function getCacheStats(): Promise<{
   try {
     // 전체 캐시 통계
     // @ts-expect-error - AI 캐시 테이블이 아직 데이터베이스에 생성되지 않음
-    const { data: allData, error: allError } = await (supabase.from('ai_query_cache') as any)
+    const { data: allData, error: allError } = await (db().from('ai_query_cache') as any)
       .select('hit_count, expires_at')
 
     if (allError || !allData) {
