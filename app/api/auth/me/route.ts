@@ -51,6 +51,18 @@ export async function GET(_request: NextRequest) {
       )
     }
 
+    // user_profiles + 역할 정보 (인증된 SSR 쿠키 컨텍스트에서 서버 조회 — RLS 활성화에도 안전)
+    // 브라우저의 localStorage 토큰 복원 레이스와 무관하게 항상 authenticated로 실행된다.
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('id, name, department, position, shift, phone, permissions, user_roles(name, type, permissions)')
+      .eq('user_id', session.user.id)
+      .single()
+
+    if (profileError) {
+      logger.error('프로필 조회 오류:', profileError)
+    }
+
     // 사용자 정보 반환
     return NextResponse.json({
       success: true,
@@ -61,6 +73,7 @@ export async function GET(_request: NextRequest) {
         last_sign_in_at: session.user.last_sign_in_at,
         user_metadata: session.user.user_metadata,
       },
+      profile: profile ?? null,
       session: {
         access_token: session.access_token,
         expires_at: session.expires_at,
