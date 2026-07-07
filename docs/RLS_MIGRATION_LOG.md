@@ -4,6 +4,26 @@
 > (`20260309014504_emergency_rollback_all_rls_changes`)이 있어, 이번에는
 > **배치 넘버링 + apply-test-rollback** 방식으로 운영 DB에 단계 적용했다.
 
+## ⛔ 전면 롤백 (2026-07-07) — `20260706070000_rls_full_rollback_to_0daed22.sql`
+
+**#1~#6 적용 후 프로덕션에서 접속·데이터 읽기 장애가 재발(2번째)하여 마지막 정상 커밋
+`0daed22`(PR#47) 상태로 전면 롤백했다.** 라이브 DB의 17개 테이블 RLS를 해제하고 정책을 제거했으며,
+되돌림 마이그레이션으로 리포에 기록해 향후 `db push` 시 재활성화를 원천 차단했다.
+
+- **재발 근본 원인**: `#5-fix`는 `user_profiles`의 anon-레이스만 서버 조회로 막았으나,
+  나머지 16개 데이터 테이블(equipment·inventory·tool_changes 등)은 여전히 `TO authenticated`
+  정책이라 **브라우저 클라이언트가 JWT를 신뢰성 있게 첨부하지 못하거나 토큰 복원 레이스**가
+  나면 anon으로 읽혀 0행(406)을 반환한다 — #5 롤백과 동일 메커니즘이 데이터 테이블 전반에서 재현.
+- **해제 대상(17개)**: arbors, arbor_inspections, suppliers, endmill_categories, app_settings,
+  system_settings, activity_logs, inventory_transactions, equipment, endmill_types,
+  endmill_supplier_prices, cam_sheets, cam_sheet_endmills, tool_positions, inventory,
+  tool_changes, ai_query_cache.
+- **유지(건드리지 않음)**: user_profiles/user_roles/notifications(#5에서 이미 롤백) + `0daed22`
+  이전부터 정상 운영되던 baseline RLS 테이블(factories, user_factory_access, endmill_disposals,
+  saved_insights, insight_comments, ai_chat_history, settings_history).
+- **재적용 조건**: 이 파일을 되돌린 뒤 별도 트랙(Stage 2)에서 **클라이언트 JWT 첨부 신뢰성 확보 →
+  공장/역할 스코프 정책** 순으로. 그 전엔 절대 재활성화 금지.
+
 ## 정책 모델 (2-Stage)
 
 - **Stage 1 (이번 브랜치)** — *행동 보존형 하드닝*: `TO authenticated`에 현행 접근을
