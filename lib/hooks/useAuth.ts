@@ -48,18 +48,35 @@ interface ProfileData {
   user_roles?: { name?: string; type?: string; permissions?: Record<string, string[]> } | null
 }
 
+// 프로필 조회 결과.
+// 'unauthorized'는 서버(쿠키) 세션이 없어 localStorage 세션과 불일치(desync)함을 의미한다.
+// 이 경우 호출 측에서 로컬 세션을 정리해 미들웨어(쿠키 기준)와 상태를 일치시켜야 한다.
+type ProfileFetchResult =
+  | { status: 'ok'; profile: ProfileData | null }
+  | { status: 'unauthorized' }
+
 // 프로필 조회: 서버(/api/auth/me, 쿠키 세션) 우선.
 // 전체 새로고침 시 클라이언트 토큰 복원 레이스로 직접 쿼리가 anon 컨텍스트로 나가
 // user_profiles RLS에 걸려 0행이 되는 문제를 회피한다(서버는 항상 authenticated).
-// 서버 조회 실패(쿠키 desync 등) 시 기존 직접 쿼리로 폴백해 현행 동작을 보존한다.
-async function fetchUserProfileData(userId: string): Promise<ProfileData | null> {
+// 서버 조회 실패(네트워크/서버 오류) 시 기존 직접 쿼리로 폴백해 현행 동작을 보존한다.
+async function fetchUserProfileData(userId: string): Promise<ProfileFetchResult> {
   try {
     const res = await fetch('/api/auth/me')
+    // 401 = 쿠키 세션 없음/만료 → localStorage 세션과 desync.
+    // 직접 쿼리로 폴백하면 (localStorage=인증) 프로필이 조회돼 desync가 은폐되고,
+    // 미들웨어(쿠키=미인증)와 어긋나 /login↔/dashboard 무한 리다이렉트 루프가 생긴다.
+    // 따라서 401은 명시적으로 미인증으로 전파해 호출 측이 로컬 세션을 정리하게 한다.
+    if (res.status === 401) {
+      return { status: 'unauthorized' }
+    }
     if (res.ok) {
       const json = await res.json()
-      if (json.success && json.profile) return json.profile as ProfileData
+      if (json.success && json.profile) {
+        return { status: 'ok', profile: json.profile as ProfileData }
+      }
     }
   } catch (error) {
+    // 네트워크/서버 오류는 desync로 단정하지 않고 기존 직접 쿼리 폴백을 유지한다.
     clientLogger.error('서버 프로필 조회 실패, 직접 조회로 폴백:', error)
   }
   const { data, error } = await supabase
@@ -69,9 +86,9 @@ async function fetchUserProfileData(userId: string): Promise<ProfileData | null>
     .single()
   if (error) {
     clientLogger.error('사용자 정보 조회 오류:', error)
-    return null
+    return { status: 'ok', profile: null }
   }
-  return data as unknown as ProfileData
+  return { status: 'ok', profile: data as unknown as ProfileData }
 }
 
 // Auth Provider 컴포넌트
@@ -243,24 +260,38 @@ export function AuthProvider(props: { children: ReactNode }) {
           setSession(null)
         } else if (session?.user) {
           clientLogger.log('✅ Supabase 세션 발견:', session.user.email)
-          setSession(session)
 
           // 사용자 프로필 조회 (서버 우선 + 직접 쿼리 폴백 — RLS/토큰 레이스 안전)
-          const userData = await fetchUserProfileData(session.user.id)
+          const result = await fetchUserProfileData(session.user.id)
 
-          const userProfile = {
-            id: session.user.id,
-            email: session.user.email || '',
-            name: userData?.name || session.user.user_metadata?.name || '',
-            department: userData?.department || session.user.user_metadata?.department || '',
-            position: userData?.position || session.user.user_metadata?.position || '',
-            shift: userData?.shift || session.user.user_metadata?.shift || '',
-            role: (userData?.user_roles as any)?.type || session.user.user_metadata?.role || 'user',
-            language: session.user.user_metadata?.language || 'ko',
-            // 역할 권한 + 사용자 개별 권한 병합 (사용자 권한이 역할 권한보다 우선)
-            permissions: mergePermissionMatrices((userData?.permissions || {}) as Record<string, string[]>, ((userData?.user_roles as any)?.permissions || {}) as Record<string, string[]>)
+          if (!mounted) return
+
+          if (result.status === 'unauthorized') {
+            // 쿠키 세션 없음 → localStorage 세션과 desync.
+            // 서버(쿠키)를 권위 소스로 삼아 로컬 세션을 정리하고 로그아웃 상태로 확정한다.
+            // (그대로 두면 isAuthenticated=true로 판단해 /login↔/dashboard 무한 루프에 빠진다)
+            clientLogger.log('⚠️ 세션 불일치 감지(쿠키 세션 없음) → 로컬 세션 정리')
+            await supabase.auth.signOut({ scope: 'local' })
+            setUser(null)
+            setSession(null)
+          } else {
+            setSession(session)
+            const userData = result.profile
+
+            const userProfile = {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: userData?.name || session.user.user_metadata?.name || '',
+              department: userData?.department || session.user.user_metadata?.department || '',
+              position: userData?.position || session.user.user_metadata?.position || '',
+              shift: userData?.shift || session.user.user_metadata?.shift || '',
+              role: (userData?.user_roles as any)?.type || session.user.user_metadata?.role || 'user',
+              language: session.user.user_metadata?.language || 'ko',
+              // 역할 권한 + 사용자 개별 권한 병합 (사용자 권한이 역할 권한보다 우선)
+              permissions: mergePermissionMatrices((userData?.permissions || {}) as Record<string, string[]>, ((userData?.user_roles as any)?.permissions || {}) as Record<string, string[]>)
+            }
+            setUser(userProfile)
           }
-          setUser(userProfile)
         } else {
           clientLogger.log('❌ 세션 없음')
           setUser(null)
@@ -292,8 +323,12 @@ export function AuthProvider(props: { children: ReactNode }) {
         if (event === 'SIGNED_IN' && session) {
           setSession(session)
 
-          // SIGNED_IN 이벤트에서도 프로필 조회 (서버 우선 + 직접 쿼리 폴백)
-          const userData = await fetchUserProfileData(session.user.id)
+          // SIGNED_IN 이벤트에서도 프로필 조회 (서버 우선 + 직접 쿼리 폴백).
+          // 방금 로그인해 쿠키가 갓 설정된 시점이므로 unauthorized는 정상 흐름이 아니다.
+          // 여기서 로컬 세션을 정리하면 방금의 로그인과 충돌하므로, 프로필만 메타데이터로
+          // 폴백하고 세션은 유지한다(desync 복구는 새로고침 시 checkSession이 담당).
+          const result = await fetchUserProfileData(session.user.id)
+          const userData = result.status === 'ok' ? result.profile : null
 
           const userProfile = {
             id: session.user.id,
