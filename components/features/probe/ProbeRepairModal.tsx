@@ -4,15 +4,18 @@ import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../../shared/Toast'
 import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
+import { useProbeVendors } from '@/lib/hooks/useProbeVendors'
+import { classifyExternalWarranty, PriorRepair } from '@/lib/domain/probeWarranty'
 import {
   REPAIR_TYPES, FAILURE_TYPES, RepairType, FailureType, ProbeRepair
 } from '../../../lib/types/probe'
 
-// 반환일 + 6개월 클라이언트 미리보기 (실제 값은 DB GENERATED 컬럼이 진실 소스)
-function previewWarrantyUntil(returnedAt: string): string | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(returnedAt)) return null
-  const d = new Date(`${returnedAt}T00:00:00`)
-  d.setMonth(d.getMonth() + 6)
+// 유형 인지 보증만료일 클라이언트 미리보기 (실제 값은 DB GENERATED 컬럼이 진실 소스)
+// internal: completedAt + 3개월 / external·rbe: returnedAt + 6개월
+function previewWarrantyUntil(baseDate: string, months: number): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(baseDate)) return null
+  const d = new Date(`${baseDate}T00:00:00`)
+  d.setMonth(d.getMonth() + months)
   return d.toISOString().slice(0, 10)
 }
 
@@ -40,25 +43,37 @@ export default function ProbeRepairModal({
   const [occurredAt, setOccurredAt] = useState(editRepair?.occurred_at ?? '')
   const [completedAt, setCompletedAt] = useState(editRepair?.completed_at ?? '')
   const [replacedParts, setReplacedParts] = useState(editRepair?.replaced_parts ?? '')
-  const [originalRepairId, setOriginalRepairId] = useState('')
   const [notes, setNotes] = useState(editRepair?.notes ?? '')
   const [sentAt, setSentAt] = useState(editRepair?.sent_at ?? '')
   const [returnedAt, setReturnedAt] = useState(editRepair?.returned_at ?? '')
   const [serialAfter, setSerialAfter] = useState('')
   const [saving, setSaving] = useState(false)
 
-  // 보증 내 재수리 연결 후보: 완료된 외주/RBE 건 중 보증 만료일이 발생일 이후인 것
-  const warrantyCandidates = useMemo(() => {
-    if (mode !== 'register' || repairType === 'internal') return []
-    const ref = occurredAt || new Date().toISOString().slice(0, 10)
-    return repairHistory.filter(r =>
-      r.status === 'completed' && r.repair_type !== 'internal' && r.warranty_until && r.warranty_until >= ref
-    )
-  }, [mode, repairType, occurredAt, repairHistory])
+  // 업체 드롭다운: internal은 부품 구매 업체, external/rbe는 외주 수리 업체 목록
+  const vendorRole = repairType === 'internal' ? 'parts' : 'repair'
+  const { data: vendors = [] } = useProbeVendors(factoryId, vendorRole, true)
+  const [vendorId, setVendorId] = useState(editRepair?.vendor_id ?? '')
+
+  const handleRepairTypeChange = (rt: RepairType) => {
+    setRepairType(rt)
+    setVendorId('') // 유형 변경 시 역할이 바뀌므로 선택 초기화
+  }
 
   const registerValid =
     !!failureType && !!occurredAt &&
+    (repairType === 'rbe' || !!vendorId) && // 외주·내부는 업체 필수, RBE는 선택
     (repairType !== 'internal' || (!!completedAt && replacedParts.trim().length > 0))
+
+  // 등록 모달의 보증 현황 미리보기 (서버가 최종 진실). 외주/RBE + 업체 선택 시에만 표시.
+  const warrantyPreview = useMemo(() => {
+    if (mode !== 'register' || repairType === 'internal' || !vendorId) return null
+    const ref = occurredAt || new Date().toISOString().slice(0, 10)
+    const prior = repairHistory.filter(r => r.vendor_id === vendorId) as unknown as PriorRepair[]
+    const cls = classifyExternalWarranty(prior, ref)
+    return cls.isWarrantyClaim
+      ? { claim: true as const, seq: cls.claimSequence }
+      : { claim: false as const, seq: 0 }
+  }, [mode, repairType, vendorId, occurredAt, repairHistory])
 
   // 승인 워크플로우: reported →(승인)→ approved →(발송)→ sent →(입고)→ completed
   const processStage: 'approve' | 'send' | 'close' | null =
@@ -89,10 +104,10 @@ export default function ProbeRepairModal({
           repair_type: repairType,
           failure_type: failureType,
           occurred_at: occurredAt,
+          ...(vendorId ? { vendor_id: vendorId } : {}),
           ...(repairType === 'internal'
             ? { completed_at: completedAt, replaced_parts: replacedParts.trim() }
             : {}),
-          ...(repairType !== 'internal' && originalRepairId ? { original_repair_id: originalRepairId } : {}),
           notes: notes.trim() || undefined,
         }),
       })
@@ -199,7 +214,7 @@ export default function ProbeRepairModal({
               <div className="grid grid-cols-3 gap-2">
                 {REPAIR_TYPES.map(rt => (
                   <button key={rt} type="button"
-                    onClick={() => setRepairType(rt)}
+                    onClick={() => handleRepairTypeChange(rt)}
                     className={`min-h-touch rounded border px-2 py-2 text-sm font-medium
                       ${repairType === rt ? 'border-primary bg-primary-100 text-primary-800' : 'border-divider'}`}>
                     {t(`probe.repairType_${rt}`)}
@@ -221,6 +236,28 @@ export default function ProbeRepairModal({
             </div>
 
             <div>
+              <label className="mb-1 block text-sm font-medium">
+                {t('probe.vendor')}
+                {repairType !== 'rbe' && <span className="text-danger"> *</span>}
+              </label>
+              <select
+                value={vendorId}
+                onChange={e => setVendorId(e.target.value)}
+                className="min-h-touch w-full rounded border border-divider bg-white pl-3 pr-8"
+              >
+                <option value="">{t('common.select')}</option>
+                {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+              </select>
+              {warrantyPreview && (
+                <p className="mt-1 text-xs text-secondary-600">
+                  {warrantyPreview.claim
+                    ? t('probe.warrantyClaimInfo', { seq: warrantyPreview.seq })
+                    : t('probe.warrantyNewPeriodInfo')}
+                </p>
+              )}
+            </div>
+
+            <div>
               <label className="mb-1 block text-sm font-medium">{t('probe.occurredAt')}</label>
               <input type="date" value={occurredAt} onChange={e => setOccurredAt(e.target.value)}
                 className="min-h-touch w-full rounded border border-divider px-3" />
@@ -239,24 +276,6 @@ export default function ProbeRepairModal({
                     className="min-h-touch w-full rounded border border-divider px-3" />
                 </div>
               </>
-            )}
-
-            {repairType !== 'internal' && warrantyCandidates.length > 0 && (
-              <div>
-                <label className="mb-1 block text-sm font-medium">{t('probe.warrantyRepairCandidate')}</label>
-                <div className="space-y-1 rounded border border-divider p-2">
-                  <label className="flex items-center gap-2 text-sm">
-                    <input type="radio" checked={originalRepairId === ''} onChange={() => setOriginalRepairId('')} />
-                    {t('probe.warrantyRepairNone')}
-                  </label>
-                  {warrantyCandidates.map(c => (
-                    <label key={c.id} className="flex items-center gap-2 text-sm">
-                      <input type="radio" checked={originalRepairId === c.id} onChange={() => setOriginalRepairId(c.id)} />
-                      {c.occurred_at} → {c.returned_at} ({t(`probe.repairType_${c.repair_type}`)}, ~{c.warranty_until})
-                    </label>
-                  ))}
-                </div>
-              </div>
             )}
 
             <div>
@@ -321,9 +340,9 @@ export default function ProbeRepairModal({
                 <label className="mb-1 block text-sm font-medium">{t('probe.returnedAt')}</label>
                 <input type="date" value={returnedAt} onChange={e => setReturnedAt(e.target.value)}
                   className="min-h-touch w-full rounded border border-divider px-3" />
-                {returnedAt && previewWarrantyUntil(returnedAt) && (
+                {returnedAt && previewWarrantyUntil(returnedAt, 6) && (
                   <p className="mt-1 text-xs text-secondary-500">
-                    {t('probe.warrantyUntil')}: {previewWarrantyUntil(returnedAt)}
+                    {t('probe.warrantyUntil')}: {previewWarrantyUntil(returnedAt, 6)}
                   </p>
                 )}
               </div>
@@ -376,9 +395,9 @@ export default function ProbeRepairModal({
                   className="min-h-touch w-full rounded border border-divider px-3 font-mono" />
               </div>
             )}
-            {returnedAt && previewWarrantyUntil(returnedAt) && (
+            {returnedAt && previewWarrantyUntil(returnedAt, 6) && (
               <p className="text-xs text-secondary-500">
-                {t('probe.warrantyUntil')}: {previewWarrantyUntil(returnedAt)}
+                {t('probe.warrantyUntil')}: {previewWarrantyUntil(returnedAt, 6)}
               </p>
             )}
           </div>
