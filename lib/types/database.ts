@@ -1015,6 +1015,279 @@ export type Database = {
           },
         ]
       }
+      probe_inspections: {
+        Row: {
+          created_at: string
+          factory_id: string
+          id: string
+          inspected_at: string
+          inspected_by: string | null
+          judged_result: string
+          notes: string | null
+          previous_result: string | null
+          probe_id: string
+          repeatability_um: number
+          rule_snapshot: Json
+          trigger_reason: string
+        }
+        Insert: {
+          created_at?: string
+          factory_id: string
+          id?: string
+          inspected_at?: string
+          inspected_by?: string | null
+          judged_result: string
+          notes?: string | null
+          previous_result?: string | null
+          probe_id: string
+          repeatability_um: number
+          rule_snapshot: Json
+          trigger_reason: string
+        }
+        Update: {
+          created_at?: string
+          factory_id?: string
+          id?: string
+          inspected_at?: string
+          inspected_by?: string | null
+          judged_result?: string
+          notes?: string | null
+          previous_result?: string | null
+          probe_id?: string
+          repeatability_um?: number
+          rule_snapshot?: Json
+          trigger_reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "probe_inspections_factory_id_fkey"
+            columns: ["factory_id"]
+            isOneToOne: false
+            referencedRelation: "factories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "probe_inspections_inspected_by_fkey"
+            columns: ["inspected_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "probe_inspections_probe_id_fkey"
+            columns: ["probe_id"]
+            isOneToOne: false
+            referencedRelation: "probes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      probe_repairs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          factory_id: string
+          approved_at: string | null
+          approved_by: string | null
+          failure_type: string
+          id: string
+          notes: string | null
+          occurred_at: string
+          original_repair_id: string | null
+          probe_id: string
+          repair_type: string
+          replaced_parts: string | null
+          requested_by: string | null
+          returned_at: string | null
+          sent_at: string | null
+          serial_after: string | null
+          serial_before: string | null
+          status: string
+          updated_at: string
+          warranty_until: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          factory_id: string
+          approved_at?: string | null
+          approved_by?: string | null
+          failure_type: string
+          id?: string
+          notes?: string | null
+          occurred_at: string
+          original_repair_id?: string | null
+          probe_id: string
+          repair_type: string
+          replaced_parts?: string | null
+          requested_by?: string | null
+          returned_at?: string | null
+          sent_at?: string | null
+          serial_after?: string | null
+          serial_before?: string | null
+          status?: string
+          updated_at?: string
+          warranty_until?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          factory_id?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          failure_type?: string
+          id?: string
+          notes?: string | null
+          occurred_at?: string
+          original_repair_id?: string | null
+          probe_id?: string
+          repair_type?: string
+          replaced_parts?: string | null
+          requested_by?: string | null
+          returned_at?: string | null
+          sent_at?: string | null
+          serial_after?: string | null
+          serial_before?: string | null
+          status?: string
+          updated_at?: string
+          warranty_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "probe_repairs_factory_id_fkey"
+            columns: ["factory_id"]
+            isOneToOne: false
+            referencedRelation: "factories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "probe_repairs_original_repair_id_fkey"
+            columns: ["original_repair_id"]
+            isOneToOne: false
+            referencedRelation: "probe_repairs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "probe_repairs_probe_id_fkey"
+            columns: ["probe_id"]
+            isOneToOne: false
+            referencedRelation: "probes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "probe_repairs_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      probe_movements: {
+        Row: {
+          created_at: string
+          factory_id: string
+          from_equipment_id: string | null
+          id: string
+          moved_at: string
+          moved_by: string | null
+          notes: string | null
+          probe_id: string
+          to_equipment_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          factory_id: string
+          from_equipment_id?: string | null
+          id?: string
+          moved_at?: string
+          moved_by?: string | null
+          notes?: string | null
+          probe_id: string
+          to_equipment_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          factory_id?: string
+          from_equipment_id?: string | null
+          id?: string
+          moved_at?: string
+          moved_by?: string | null
+          notes?: string | null
+          probe_id?: string
+          to_equipment_id?: string | null
+        }
+        Relationships: []
+      }
+      probes: {
+        Row: {
+          asset_number: string
+          created_at: string
+          current_result: string | null
+          equipment_id: string | null
+          factory_id: string
+          id: string
+          last_inspected_at: string | null
+          last_repeatability_um: number | null
+          model: string | null
+          notes: string | null
+          purchase_date: string | null
+          renishaw_serial: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          asset_number: string
+          created_at?: string
+          current_result?: string | null
+          equipment_id?: string | null
+          factory_id: string
+          id?: string
+          last_inspected_at?: string | null
+          last_repeatability_um?: number | null
+          model?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          renishaw_serial?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          asset_number?: string
+          created_at?: string
+          current_result?: string | null
+          equipment_id?: string | null
+          factory_id?: string
+          id?: string
+          last_inspected_at?: string | null
+          last_repeatability_um?: number | null
+          model?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          renishaw_serial?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "probes_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "probes_factory_id_fkey"
+            columns: ["factory_id"]
+            isOneToOne: false
+            referencedRelation: "factories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_insights: {
         Row: {
           chart_config: Json | null
@@ -1152,6 +1425,36 @@ export type Database = {
           p_num: number
         }
         Returns: Database["public"]["Tables"]["arbors"]["Row"][]
+      }
+      close_probe_repair: {
+        Args: {
+          p_repair_id: string
+          p_returned_at: string
+          p_serial_after?: string
+          p_probe_status?: string
+        }
+        Returns: undefined
+      }
+      get_probe_stats: {
+        Args: {
+          p_factory_id: string
+          p_interval_days?: number
+        }
+        Returns: Json
+      }
+      get_probe_repair_stats: {
+        Args: {
+          p_factory_id: string
+          p_months?: number
+        }
+        Returns: Json
+      }
+      find_probes_by_number: {
+        Args: {
+          p_factory_id: string
+          p_number: number
+        }
+        Returns: Database["public"]["Tables"]["probes"]["Row"][]
       }
     }
     Enums: {

@@ -80,6 +80,13 @@ export interface SystemSettings {
     toolDiameters: string[]  // 공구경(샹크경) 선택 목록
   }
 
+  // Probe(Renishaw 터치 프로브) 등급 관리 설정
+  probe: {
+    repeatabilityThreshold: number  // 반복 정밀도 판정 임계값(µm): 이하 OK, 초과 NG
+    inspectionIntervalDays: number  // 정밀도(교정) 검사 주기(일) = 3개월
+    models: string[]  // 프로브 모델(OMP40-2/OMP400 등) 선택 목록
+  }
+
 }
 
 // 설비 상태 설정
@@ -110,6 +117,7 @@ export type SettingsCategory =
   | 'toolChanges'
   | 'ui'
   | 'arbor'
+  | 'probe'
 
 // 설정 수정 내역
 export interface SettingsHistory {
@@ -234,6 +242,12 @@ export const DEFAULT_SETTINGS: SystemSettings = {
     inspectionIntervalDays: 180,
     models: ['BT30', 'BT40', 'BT50'],
     toolDiameters: ['Ø10', 'Ø8', 'Ø6', 'Ø5', 'Ø4', 'Ø3']
+  },
+
+  probe: {
+    repeatabilityThreshold: 5.0,
+    inspectionIntervalDays: 90,
+    models: ['OMP40-2', 'OMP400']
   },
 
 }
