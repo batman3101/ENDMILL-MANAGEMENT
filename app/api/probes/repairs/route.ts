@@ -30,13 +30,16 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('probe_repairs')
       // probes 조인으로 자산번호/모델 표시에 필요한 필드만 가져온다 (FK: probe_repairs_probe_id_fkey)
-      .select('*, probe:probes!probe_repairs_probe_id_fkey(asset_number, model, equipment_id)', { count: 'exact' })
+      .select('*, probe:probes!probe_repairs_probe_id_fkey(asset_number, model, equipment_id), vendor:probe_vendors(id, name)', { count: 'exact' })
       .eq('factory_id', factoryId)
 
     if (status === 'open') query = query.in('status', OPEN_STATUSES)
     else if (status === 'completed') query = query.eq('status', 'completed')
 
     if (warrantyRerepair) query = query.not('original_repair_id', 'is', null)
+
+    const vendorId = sp.get('vendorId')
+    if (vendorId) query = query.eq('vendor_id', vendorId)
 
     // 지연: 발송(sent) 상태로 overdueDays일 넘게 입고되지 않은 건
     if (overdueOnly) {
