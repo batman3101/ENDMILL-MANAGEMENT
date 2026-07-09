@@ -81,10 +81,25 @@ export interface ProbeRepair {
   serial_before: string | null // RBE 등록 시점의 renishaw_serial 스냅샷
   serial_after: string | null  // RBE 완료 시 신규 시리얼
   original_repair_id: string | null // 보증 내 재수리 시 원 수리 건 연결
+  vendor_id: string | null
   description: string | null
   requested_by: string | null  // 요청자 (user)
   approved_by: string | null   // 승인자 (admin)
   notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ProbeVendor {
+  id: string
+  factory_id: string
+  name: string
+  is_repair_vendor: boolean
+  is_parts_vendor: boolean
+  contact_name: string | null
+  phone: string | null
+  notes: string | null
+  is_active: boolean
   created_at: string
   updated_at: string
 }

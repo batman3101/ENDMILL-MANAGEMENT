@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { createServerClient } from '../../../../../lib/supabase/client'
 import { FAILURE_TYPES } from '../../../../../lib/types/probe'
 import { authorizeFactory, isAdminRole } from '@/lib/auth/serverRole'
+import { classifyExternalWarranty, PriorRepair } from '@/lib/domain/probeWarranty'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,7 +33,6 @@ const baseFields = {
   factoryId: z.string().uuid(),
   failure_type: z.enum(FAILURE_TYPES),
   occurred_at: z.string().regex(DATE_RE),
-  original_repair_id: z.string().uuid().optional(),
   notes: z.string().optional()
 }
 
@@ -41,10 +41,11 @@ const repairCreateSchema = z.discriminatedUnion('repair_type', [
     repair_type: z.literal('internal'),
     completed_at: z.string().regex(DATE_RE),
     replaced_parts: z.string().trim().min(1),
+    vendor_id: z.string().uuid(),      // 내부: 부품 구매 업체 필수
     ...baseFields
   }),
-  z.object({ repair_type: z.literal('external'), ...baseFields }),
-  z.object({ repair_type: z.literal('rbe'), ...baseFields })
+  z.object({ repair_type: z.literal('external'), vendor_id: z.string().uuid(), ...baseFields }), // 외주 필수
+  z.object({ repair_type: z.literal('rbe'), vendor_id: z.string().uuid().optional(), ...baseFields }) // RBE optional
 ])
 
 // POST /api/probes/[id]/repairs — 수리 요청/등록 (검사입력·수리요청은 user 권한 허용)
@@ -74,25 +75,29 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ success: false, error: '폐기 또는 분실된 프로브는 수리를 등록할 수 없습니다.' }, { status: 409 })
     }
 
-    // 보증 내 재수리 연결: 같은 probe_id + 원 수리 입고일 이후 + 보증만료일 이전인지 서버 검증 (DB 트리거와 이중화)
-    if (body.original_repair_id) {
-      const { data: original, error: originalError } = await supabase
-        .from('probe_repairs')
-        .select('id, probe_id, returned_at, warranty_until')
-        .eq('id', body.original_repair_id)
-        .maybeSingle()
-      if (originalError || !original) {
-        return NextResponse.json({ success: false, error: '연결할 원 수리 건을 찾을 수 없습니다.' }, { status: 400 })
-      }
-      if (original.probe_id !== probe.id) {
-        return NextResponse.json({ success: false, error: '원 수리 건이 동일한 프로브 소속이 아닙니다.' }, { status: 400 })
-      }
-      if (original.returned_at && body.occurred_at < original.returned_at) {
-        return NextResponse.json({ success: false, error: '재수리 발생일은 원 수리의 입고일 이후여야 합니다.' }, { status: 400 })
-      }
-      if (!original.warranty_until || original.warranty_until < body.occurred_at) {
-        return NextResponse.json({ success: false, error: '보증기간이 만료된 수리 건입니다.' }, { status: 400 })
-      }
+    // 업체 역할 검증 (vendor_id가 있으면)
+    const vendorId: string | null = ('vendor_id' in body ? body.vendor_id : undefined) ?? null
+    if (vendorId) {
+      const { data: vendor, error: vErr } = await supabase
+        .from('probe_vendors' as any).select('id, factory_id, is_repair_vendor, is_parts_vendor, is_active')
+        .eq('id', vendorId).maybeSingle()
+      if (vErr || !vendor) return NextResponse.json({ success: false, error: '선택한 업체를 찾을 수 없습니다.' }, { status: 400 })
+      if ((vendor as any).factory_id !== body.factoryId) return NextResponse.json({ success: false, error: '선택한 공장의 업체가 아닙니다.' }, { status: 403 })
+      const needsRepair = body.repair_type === 'external' || body.repair_type === 'rbe'
+      if (needsRepair && !(vendor as any).is_repair_vendor) return NextResponse.json({ success: false, error: '외주 수리 업체가 아닙니다.' }, { status: 400 })
+      if (body.repair_type === 'internal' && !(vendor as any).is_parts_vendor) return NextResponse.json({ success: false, error: '부품 구매 업체가 아닙니다.' }, { status: 400 })
+    }
+
+    // 자동 보증 분류 (external/rbe). internal은 항상 새 건(original 없음).
+    let originalRepairId: string | null = null
+    if (body.repair_type !== 'internal' && vendorId) {
+      const { data: prior, error: priorErr } = await supabase
+        .from('probe_repairs' as any)
+        .select('id, repair_type, vendor_id, status, returned_at, original_repair_id, warranty_until')
+        .eq('probe_id', probe.id).eq('vendor_id', vendorId)
+      if (priorErr) throw priorErr
+      const cls = classifyExternalWarranty((prior ?? []) as unknown as PriorRepair[], body.occurred_at)
+      originalRepairId = cls.originalRepairId
     }
 
     const isInternal = body.repair_type === 'internal'
@@ -104,7 +109,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         repair_type: body.repair_type,
         failure_type: body.failure_type,
         occurred_at: body.occurred_at,
-        original_repair_id: body.original_repair_id ?? null,
+        original_repair_id: originalRepairId,
+        vendor_id: vendorId,
         requested_by: me.profileId,
         notes: body.notes ?? null,
         // 사내수리: 등록 즉시 완료 고정 / 외주·RBE: 요청(reported) 상태로 시작
@@ -113,7 +119,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         replaced_parts: isInternal ? body.replaced_parts : null,
         // RBE: 등록 시점의 마스터 시리얼을 스냅샷 보존
         serial_before: body.repair_type === 'rbe' ? probe.renishaw_serial : null
-      })
+      } as any)
       .select()
       .single()
     if (error) {

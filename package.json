@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "create-admin": "node scripts/create-admin.js",
     "create-default-admin": "node scripts/create-admin.js --default",
     "cleanup-users": "tsx scripts/cleanup-orphaned-users.ts",

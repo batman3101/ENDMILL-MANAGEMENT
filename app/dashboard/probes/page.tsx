@@ -9,6 +9,7 @@ import {
   Probe, ProbeResult, ProbeListParams, ProbeStatus, PROBE_RESULTS, PROBE_STATUSES, PROBE_MODELS
 } from '../../../lib/types/probe'
 import { useFactory } from '../../../lib/hooks/useFactory'
+import { useAuth } from '../../../lib/hooks/useAuth'
 import { useSettings } from '../../../lib/hooks/useSettings'
 import { useEquipment } from '../../../lib/hooks/useEquipment'
 import { exportProbesToExcel } from '../../../lib/utils/probeExcelTemplate'
@@ -35,6 +36,8 @@ export default function ProbesPage() {
   const { t } = useTranslation()
   const router = useRouter()
   const { currentFactory } = useFactory()
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin' || user?.role === 'system_admin'
   const { settings } = useSettings()
   const { showError, showSuccess } = useToast()
   const { equipments } = useEquipment()
@@ -114,6 +117,12 @@ export default function ProbesPage() {
             className="min-h-touch rounded border px-4">
             {t('probe.repairsPageTitle')}
           </button>
+          {isAdmin && (
+            <button onClick={() => router.push('/dashboard/probes/vendors')}
+              className="min-h-touch rounded border px-4">
+              {t('probe.vendorManage')}
+            </button>
+          )}
           <button onClick={() => setShowCreate(true)}
             className="min-h-touch rounded border px-4">
             {t('probe.createNew')}
