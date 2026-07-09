@@ -8,6 +8,7 @@ import { Probe, ProbeRepair } from '../../../../lib/types/probe'
 import { useFactory } from '../../../../lib/hooks/useFactory'
 import { useAuth } from '../../../../lib/hooks/useAuth'
 import { useProbeRepairs } from '../../../../lib/hooks/useProbes'
+import { useProbeVendors } from '../../../../lib/hooks/useProbeVendors'
 import { useToast } from '../../../../components/shared/Toast'
 import { exportProbeRepairsToExcel } from '../../../../lib/utils/probeExcelTemplate'
 import ProbeRepairModal from '../../../../components/features/probe/ProbeRepairModal'
@@ -20,6 +21,8 @@ type RepairRow = ProbeRepair & {
   original?: { occurred_at: string; returned_at: string | null; warranty_until: string | null } | null
   // 이 건을 원 수리로 참조하는 재수리 건수
   reRepairCount?: number
+  // 연결된 업체 (외주수리/부품구매)
+  vendor?: { id: string; name: string } | null
 }
 
 type RepairFilter = 'all' | 'open' | 'overdue' | 'warranty' | 'completed'
@@ -121,6 +124,7 @@ export default function ProbeRepairsPage() {
   const factoryId = currentFactory?.id
 
   const [filter, setFilter] = useState<RepairFilter>('all')
+  const [vendorId, setVendorId] = useState('')
   const [page, setPage] = useState(1)
   const [exporting, setExporting] = useState(false)
   const [showPicker, setShowPicker] = useState(false)
@@ -130,8 +134,11 @@ export default function ProbeRepairsPage() {
   const [deleteTarget, setDeleteTarget] = useState<RepairRow | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  // 업체 필터 드롭다운 옵션 (외주수리·부품구매 전체, 비활성 포함)
+  const { data: vendors = [] } = useProbeVendors(factoryId ?? null, undefined, false)
+
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['probe-repairs-all', factoryId, filter, page],
+    queryKey: ['probe-repairs-all', factoryId, filter, vendorId, page],
     enabled: !!factoryId,
     placeholderData: keepPreviousData,
     queryFn: async () => {
@@ -139,7 +146,8 @@ export default function ProbeRepairsPage() {
         factoryId: factoryId as string,
         page: String(page),
         pageSize: String(PAGE_SIZE),
-        ...filterParams(filter)
+        ...filterParams(filter),
+        ...(vendorId ? { vendorId } : {})
       })
       const res = await fetch(`/api/probes/repairs?${sp.toString()}`)
       const json = await res.json()
@@ -236,7 +244,7 @@ export default function ProbeRepairsPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {FILTERS.map(f => (
           <button
             key={f.key}
@@ -250,6 +258,14 @@ export default function ProbeRepairsPage() {
             {t(f.labelKey)}
           </button>
         ))}
+        <select
+          value={vendorId}
+          onChange={e => { setVendorId(e.target.value); setPage(1) }}
+          className="min-h-touch rounded border border-divider bg-paper-warm px-3 text-sm"
+        >
+          <option value="">{t('probe.vendor')} ({t('probe.repairsAll')})</option>
+          {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+        </select>
       </div>
 
       <div className="overflow-x-auto rounded-md border border-divider bg-paper-warm">
@@ -265,14 +281,15 @@ export default function ProbeRepairsPage() {
               <th className="p-3">{t('probe.sentAt')}</th>
               <th className="p-3">{t('probe.returnedAt')}</th>
               <th className="p-3">{t('probe.warrantyUntil')}</th>
+              <th className="p-3">{t('probe.vendor')}</th>
               <th className="p-3 text-right">{t('probe.colActions')}</th>
             </tr>
           </thead>
           <tbody>
             {isLoading && rows.length === 0 ? (
-              <tr><td colSpan={10} className="p-6 text-center text-secondary-500">{t('common.loading')}</td></tr>
+              <tr><td colSpan={11} className="p-6 text-center text-secondary-500">{t('common.loading')}</td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={10} className="p-6 text-center text-secondary-500">{t('probe.repairsEmptyList')}</td></tr>
+              <tr><td colSpan={11} className="p-6 text-center text-secondary-500">{t('probe.repairsEmptyList')}</td></tr>
             ) : rows.map(r => (
               <tr key={r.id}
                 onClick={() => router.push(`/dashboard/probes/${r.probe_id}`)}
@@ -305,6 +322,7 @@ export default function ProbeRepairsPage() {
                 <td className="p-3">{r.sent_at ?? '—'}</td>
                 <td className="p-3">{r.returned_at ?? r.completed_at ?? '—'}</td>
                 <td className="p-3">{r.warranty_until ?? '—'}</td>
+                <td className="p-3">{r.vendor?.name ?? '-'}</td>
                 <td className="p-3">
                   {/* 승인·발송·입고·수정·삭제는 관리자 전용 (수리 요청은 사용자 가능) */}
                   {isAdmin ? (
