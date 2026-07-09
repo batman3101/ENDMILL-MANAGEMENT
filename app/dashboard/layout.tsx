@@ -23,6 +23,7 @@ import {
   User,
   Clock,
   Disc3,
+  Crosshair,
   type LucideIcon,
 } from 'lucide-react'
 import { useTranslation } from '../../lib/hooks/useTranslations'
@@ -248,6 +249,14 @@ export default function DashboardLayout({
       labelKey: 'navigation.arbors',
       descriptionKey: 'arbor.subtitle',
       active: pathname.startsWith('/dashboard/arbors'),
+      requiresPermission: false,
+    },
+    {
+      href: '/dashboard/probes',
+      Icon: Crosshair,
+      labelKey: 'navigation.probes',
+      descriptionKey: 'probe.subtitle',
+      active: pathname.startsWith('/dashboard/probes'),
       requiresPermission: false,
     },
     {

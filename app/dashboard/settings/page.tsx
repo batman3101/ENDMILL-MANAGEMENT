@@ -7,6 +7,7 @@ import {
   Bell,
   Boxes,
   Cpu,
+  Crosshair,
   Disc3,
   Factory,
   Globe2,
@@ -28,6 +29,7 @@ import {
   X,
 } from 'lucide-react'
 import ArborGradeRulesSettings from '../../../components/features/arbor/ArborGradeRulesSettings'
+import ProbeGradeRulesSettings from '../../../components/features/probe/ProbeGradeRulesSettings'
 import { useSettings } from '../../../lib/hooks/useSettings'
 import { useDraggableModal } from '@/lib/hooks/useDraggableModal'
 import { SettingsCategory } from '../../../lib/types/settings'
@@ -64,6 +66,7 @@ const TAB_DEFS: Array<{
   { id: 'toolChanges', Icon: Wrench, labelKey: 'settings.tabs.toolChanges' },
   { id: 'ui', Icon: Palette, labelKey: 'settings.tabs.ui' },
   { id: 'arbor', Icon: Disc3, labelKey: 'arbor.title' },
+  { id: 'probe', Icon: Crosshair, labelKey: 'probe.title' },
 ]
 
 const DEFAULT_LOCATIONS = ['A동', 'B동']
@@ -536,6 +539,9 @@ function SettingsPageContent() {
               )}
               {activeTab === 'arbor' && (
                 <ArborGradeRulesSettings />
+              )}
+              {activeTab === 'probe' && (
+                <ProbeGradeRulesSettings />
               )}
             </div>
           </div>
