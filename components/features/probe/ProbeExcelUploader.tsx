@@ -18,9 +18,9 @@ interface ProbeExcelUploaderProps {
 const REQUEST_CHUNK = 1000 // 서버 Zod 상한과 동일
 
 interface UploadSummary {
-  success: string[]
+  inserted: string[]
+  updated: string[]
   failed: { asset_number: string; reason: string }[]
-  duplicates: string[]
   inspectionsCreated: number
 }
 
@@ -68,7 +68,7 @@ export default function ProbeExcelUploader({ onUploadSuccess, onCancel }: ProbeE
     setIsUploading(true)
     setProgress(0)
 
-    const total: UploadSummary = { success: [], failed: [], duplicates: [], inspectionsCreated: 0 }
+    const total: UploadSummary = { inserted: [], updated: [], failed: [], inspectionsCreated: 0 }
     const chunks: ProbeExcelRow[][] = []
     for (let i = 0; i < rows.length; i += REQUEST_CHUNK) chunks.push(rows.slice(i, i + REQUEST_CHUNK))
 
@@ -87,15 +87,16 @@ export default function ProbeExcelUploader({ onUploadSuccess, onCancel }: ProbeE
           showError(t('probe.uploadInterrupted'), t('probe.remainingDownloaded'))
           break
         }
-        total.success.push(...json.results.success)
+        total.inserted.push(...json.results.inserted)
+        total.updated.push(...json.results.updated)
         total.failed.push(...json.results.failed)
-        total.duplicates.push(...json.results.duplicates)
         total.inspectionsCreated += json.results.inspectionsCreated
         setProgress(Math.round(((i + 1) / chunks.length) * 100))
       }
       setSummary(total)
-      if (total.success.length > 0) {
-        showSuccess(t('probe.uploadComplete'), `${total.success.length}${t('probe.itemsRegistered')}`)
+      const processed = total.inserted.length + total.updated.length
+      if (processed > 0) {
+        showSuccess(t('probe.uploadComplete'), `${processed}${t('probe.itemsRegistered')}`)
         onUploadSuccess()
       }
     } finally {
@@ -105,7 +106,7 @@ export default function ProbeExcelUploader({ onUploadSuccess, onCancel }: ProbeE
 
   const handleDownloadFailed = async () => {
     if (!summary) return
-    const failedSet = new Set([...summary.failed.map(f => f.asset_number), ...summary.duplicates])
+    const failedSet = new Set(summary.failed.map(f => f.asset_number))
     await exportProbeRowsToExcel(rows.filter(r => failedSet.has(r.asset_number)), 'probe_failed_rows.xlsx', templateLang)
   }
 
@@ -144,10 +145,13 @@ export default function ProbeExcelUploader({ onUploadSuccess, onCancel }: ProbeE
 
         {summary && (
           <div className="mb-3 rounded border p-3 text-sm">
-            <p>{t('probe.resultSuccess')}: {summary.success.length}</p>
-            <p>{t('probe.resultDuplicates')}: {summary.duplicates.length}</p>
+            <p>{t('probe.resultInserted')}: {summary.inserted.length}</p>
+            <p>{t('probe.resultUpdated')}: {summary.updated.length}</p>
             <p>{t('probe.resultFailed')}: {summary.failed.length}</p>
-            {(summary.failed.length > 0 || summary.duplicates.length > 0) && (
+            {summary.inspectionsCreated > 0 && (
+              <p>{t('probe.resultInspections')}: {summary.inspectionsCreated}</p>
+            )}
+            {summary.failed.length > 0 && (
               <button onClick={handleDownloadFailed} className="mt-2 rounded border px-2 py-1 text-xs">
                 {t('probe.downloadFailedRows')}
               </button>
